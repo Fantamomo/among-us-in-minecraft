@@ -1,0 +1,8 @@
+name: AmongUs
+version: '1.0-SNAPSHOT'
+main: com.fantamomo.mc.amongus.AmongUs
+api-version: '1.21'
+prefix: AmongUs
+load: STARTUP
+authors: [Fantamomo]
+bootstrapper: com.fantamomo.mc.amongus.AmongUsBootstrapper
