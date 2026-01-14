@@ -172,6 +172,20 @@ class ActionBarManager(private val game: Game) {
         bar(player).add(part)
         return part
     }
+    @OptIn(ExperimentalContracts::class)
+    fun part(
+        player: AmongUsPlayer,
+        id: String,
+        type: ActionBarPartType,
+        priority: Int,
+        componentLike: ComponentLike,
+        expireAfterTicks: Int? = null
+    ): ActionBarPart {
+        val part = ActionBarPart(id, type, priority, false, expireAfterTicks)
+        part.componentProvider = componentLike::asComponent
+        bar(player).add(part)
+        return part
+    }
 
     fun part(
         player: AmongUsPlayer,
