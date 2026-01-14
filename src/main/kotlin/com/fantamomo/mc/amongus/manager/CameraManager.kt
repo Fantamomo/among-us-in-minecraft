@@ -36,11 +36,11 @@ class CameraManager(val game: Game) {
                 player.player?.sendBlockChange(value.location, Material.BARRIER.createBlockData())
                 player.player?.hideEntity(AmongUs, field.armorStand)
                 player.player?.sendBlockChange(field.location, Material.AIR.createBlockData())
-                actionBar.component = value.actionBarMessage
+                actionBar.componentLike = value.actionBarMessage
                 field = value
                 lastCameraChange = System.currentTimeMillis()
             }
-        val actionBar = game.actionBarManager.createActionBarPart(
+        val actionBar = game.actionBarManager.part(
             player,
             "cams",
             ActionBarManager.ActionBarPartType.CENTER,
@@ -54,7 +54,7 @@ class CameraManager(val game: Game) {
                 player.sendBlockChange(camera.location, Material.BARRIER.createBlockData())
             }
             setSpectatorTarget(camera.armorStand)
-            actionBar.component = camera.actionBarMessage
+            actionBar.componentLike = camera.actionBarMessage
         }
 
         private fun setSpectatorTarget(target: ArmorStand?) {
@@ -73,7 +73,7 @@ class CameraManager(val game: Game) {
             checkIsValid()
             invalid = true
 
-            actionBar.removeFromAllPlayers()
+            actionBar.remove()
 
             val player = player.player
             if (player != null) {
