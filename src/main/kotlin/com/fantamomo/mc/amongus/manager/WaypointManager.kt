@@ -14,8 +14,6 @@ import org.bukkit.Location
 import org.bukkit.craftbukkit.entity.CraftPlayer
 import java.util.*
 import kotlin.math.abs
-import kotlin.math.atan2
-import kotlin.math.sqrt
 
 class WaypointManager(val game: Game) {
     private val waypointData: MutableSet<WaypointData> = mutableSetOf()
@@ -23,11 +21,12 @@ class WaypointManager(val game: Game) {
     private inner class WaypointData(
         val player: AmongUsPlayer
     ) {
-        val actionBar = game.actionBarManager.createActionBarPart(
+        val actionBar = game.actionBarManager.part(
             player,
             "waypoint",
             ActionBarManager.ActionBarPartType.CENTER,
-            100
+            100,
+            { showActionbar(this) }
         )
 
         val waypoints: MutableSet<Waypoint> = mutableSetOf()
@@ -103,16 +102,16 @@ class WaypointManager(val game: Game) {
         waypointData.remove(data)
     }
 
-    private var ticks = 2
+//    private var ticks = 2
 
     fun tick() {
-        if (ticks % 5 == 0) {
-            for (data in waypointData) {
-                val component = showActionbar(data)
-                data.actionBar.component = component
-            }
-        }
-        ticks++
+//        if (ticks % 5 == 0) {
+//            for (data in waypointData) {
+//                val component = showActionbar(data)
+//                data.actionBar.componentLike = component
+//            }
+//        }
+//        ticks++
     }
 
     private fun showActionbar(data: WaypointData): Component? {
@@ -121,68 +120,62 @@ class WaypointManager(val game: Game) {
         if (amongUsPlayer.isInCams()) return null
 
         val eyeLoc = player.eyeLocation
+        val px = eyeLoc.x
+        val py = eyeLoc.y
+        val pz = eyeLoc.z
+
         val playerYaw = normalizeYaw(eyeLoc.yaw)
 
         var bestWaypoint: Waypoint? = null
         var bestAngle = Double.MAX_VALUE
-        var bestDistance = Double.MAX_VALUE
+        var bestDistSq = Double.MAX_VALUE
 
         for (waypoint in data.waypoints) {
-            val dx = waypoint.vector.x + 0.5 - eyeLoc.x
-            val dy = waypoint.vector.y + 0.5 - eyeLoc.y
-            val dz = waypoint.vector.z + 0.5 - eyeLoc.z
+            val v = waypoint.vector
+            val dx = v.x + 0.5 - px
+            val dy = v.y + 0.5 - py
+            val dz = v.z + 0.5 - pz
 
-            val distance = sqrt(dx * dx + dy * dy + dz * dz)
+            val distSq = dx * dx + dy * dy + dz * dz
 
-            val angleTo = Math.toDegrees(atan2(-dx, dz))
-            val normalizedAngle = normalizeYaw(angleTo.toFloat())
-            val diff = yawDifference(playerYaw, normalizedAngle)
+            // Optional: grobe Distanz-Grenze, falls Waypoints sehr weit weg sind
+            if (distSq > bestDistSq) continue
+
+            val angleTo = Math.toDegrees(kotlin.math.atan2(-dx, dz))
+            val diff = yawDifference(playerYaw, angleTo)
 
             if (diff < bestAngle) {
                 bestAngle = diff
                 bestWaypoint = waypoint
-                bestDistance = distance
+                bestDistSq = distSq
+
+                if (diff == 0.0) break
             }
         }
 
-        if (bestWaypoint == null) {
-            return null
-        }
+        val waypoint = bestWaypoint ?: return null
 
-        val allowedAngle = allowedAngleForDistance(bestDistance)
+        val distance = kotlin.math.sqrt(bestDistSq)
+        val allowedAngle = allowedAngleForDistance(distance)
 
-        if (bestAngle > allowedAngle) {
-            return null
-        }
+        if (bestAngle > allowedAngle) return null
 
-        return Component.translatable(bestWaypoint.translationKey)
-
+        return Component.translatable(waypoint.translationKey)
     }
 
     private fun allowedAngleForDistance(distance: Double): Double {
-        val minDist = 5.0
-        val maxDist = 50.0
-
-        val maxAngle = 30.0
-        val minAngle = 3.0
-
-        val t = ((distance - minDist) / (maxDist - minDist))
-            .coerceIn(0.0, 1.0)
-
-        return maxAngle + (minAngle - maxAngle) * t
+        val t = ((distance - 5.0) / 45.0).coerceIn(0.0, 1.0)
+        return 30.0 - 27.0 * t
     }
 
     private fun normalizeYaw(yaw: Float): Double {
-        var y = yaw.toDouble()
-        while (y <= -180) y += 360
-        while (y > 180) y -= 360
-        return y
+        val y = yaw.toDouble()
+        return ((y + 180.0) % 360.0 + 360.0) % 360.0 - 180.0
     }
 
     private fun yawDifference(a: Double, b: Double): Double {
-        var diff = abs(a - b)
-        if (diff > 180) diff = 360 - diff
-        return diff
+        val diff = abs(a - b)
+        return if (diff > 180.0) 360.0 - diff else diff
     }
 
     companion object {
