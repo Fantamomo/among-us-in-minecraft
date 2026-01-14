@@ -5,6 +5,7 @@ import com.fantamomo.mc.adventure.text.textComponent
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.ComponentLike
 import net.kyori.adventure.text.JoinConfiguration
 import net.kyori.adventure.text.format.NamedTextColor
 import kotlin.contracts.ExperimentalContracts
@@ -64,7 +65,7 @@ class ActionBarManager(private val game: Game) {
                 slots[type]
                     ?.onEach { it.tick(context) }
                     ?.lastOrNull { it.visible }
-                    ?.componentLike
+                    ?.componentProvider
                     ?.invoke()
             }
 
@@ -101,7 +102,19 @@ class ActionBarManager(private val game: Game) {
     ) : Comparable<ActionBarPart> {
 
         var visible: Boolean = true
-        var componentLike: (() -> Component?)? = null
+        var componentProvider: (() -> Component?)? = null
+        var componentLike: ComponentLike?
+            get() {
+                val locale = componentProvider ?: return null
+                return { locale.invoke() ?: Component.empty() }
+            }
+            set(value) {
+                componentProvider = if (value == null) {
+                    null
+                } else {
+                    value::asComponent
+                }
+            }
 
         private var age = 0
 
@@ -112,7 +125,7 @@ class ActionBarManager(private val game: Game) {
         @OptIn(ExperimentalContracts::class)
         fun component(block: KTextComponent.() -> Unit) {
             contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
-            componentLike = textComponent(block)::asComponent
+            componentProvider = textComponent(block)::asComponent
         }
 
         internal fun tick(context: RenderContext) {
@@ -155,7 +168,7 @@ class ActionBarManager(private val game: Game) {
         expireAfterTicks: Int? = null
     ): ActionBarPart {
         val part = ActionBarPart(id, type, priority, false, expireAfterTicks)
-        part.componentLike = componentLike
+        part.componentProvider = componentLike
         bar(player).add(part)
         return part
     }
