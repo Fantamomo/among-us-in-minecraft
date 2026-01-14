@@ -5,77 +5,85 @@ import com.fantamomo.mc.adventure.text.textComponent
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.ComponentLike
 import net.kyori.adventure.text.JoinConfiguration
 import net.kyori.adventure.text.format.NamedTextColor
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 
-class ActionBarManager(val game: Game) {
+class ActionBarManager(private val game: Game) {
 
-    private val actionBars: MutableSet<ActionBar> = mutableSetOf()
+    private val bars = mutableMapOf<AmongUsPlayer, ActionBar>()
+    private val globalParts = mutableSetOf<ActionBarPart>()
 
-    inner class ActionBar(
-        val player: AmongUsPlayer,
-    ) {
-        var invalid = false
-            private set
-        private var lastTimeWasSend = false
-        private val leftParts: MutableSet<ActionBarPart> = sortedSetOf()
-        private val centerParts: MutableSet<ActionBarPart> = sortedSetOf()
-        private val rightParts: MutableSet<ActionBarPart> = sortedSetOf()
+    fun tick() {
+        bars.values.forEach { it.tick() }
+    }
 
-        fun addPart(part: ActionBarPart) {
-            remove(part)
-            checkIsValid()
-            when (part.type) {
-                ActionBarPartType.LEFT -> leftParts.add(part)
-                ActionBarPartType.CENTER -> centerParts.add(part)
-                ActionBarPartType.RIGHT -> rightParts.add(part)
-            }
+    fun bar(player: AmongUsPlayer): ActionBar =
+        bars.getOrPut(player) { ActionBar(player) }
+
+    fun removeAll(player: AmongUsPlayer) {
+        bars.remove(player)?.dispose()
+    }
+
+    fun addGlobalPart(part: ActionBarPart) {
+        globalParts += part
+        bars.values.forEach { it.add(part) }
+    }
+
+    fun removeGlobalPart(part: ActionBarPart) {
+        globalParts -= part
+        bars.values.forEach { it.remove(part) }
+    }
+
+    inner class ActionBar(private val owner: AmongUsPlayer) {
+
+        private val slots = ActionBarPartType.entries.associateWith {
+            sortedSetOf<ActionBarPart>()
         }
 
-        fun showActionBar() {
-            checkIsValid()
-
-            val player = player.player ?: return
-            // wir gehen hier davon aus das es nach priority sortiert ist (letztes element == höchste priority)
-            val left = leftParts.lastOrNull { it.visible && it.component != null }?.component
-            val center = centerParts.lastOrNull { it.visible && it.component != null }?.component
-            val right = rightParts.lastOrNull { it.visible && it.component != null }?.component
-
-            val elements = listOfNotNull(left, center, right)
-
-            if (elements.isEmpty()) {
-                if (lastTimeWasSend) {
-                    player.sendActionBar(Component.empty())
-                    lastTimeWasSend = false
-                }
-                return
-            }
-            val component = Component.join(joinConfiguration, elements)
-            player.sendActionBar(component)
-            lastTimeWasSend = true
+        fun add(part: ActionBarPart) {
+            slots[part.type]!!.remove(part)
+            slots[part.type]!!.add(part)
+            part.onAdd?.invoke(owner)
         }
 
         fun remove(part: ActionBarPart) {
-            when (part.type) {
-                ActionBarPartType.LEFT -> leftParts.remove(part)
-                ActionBarPartType.CENTER -> centerParts.remove(part)
-                ActionBarPartType.RIGHT -> rightParts.remove(part)
+            if (slots[part.type]!!.remove(part)) {
+                part.onRemove?.invoke(owner)
             }
         }
 
-        private fun checkIsValid() {
-            if (invalid) throw IllegalStateException("This action is already valid")
+        fun tick() {
+            val player = owner.player ?: return
+
+            val context = RenderContext(owner)
+
+            val components = ActionBarPartType.entries.mapNotNull { type ->
+                slots[type]
+                    ?.onEach { it.tick(context) }
+                    ?.lastOrNull { it.visible }
+                    ?.componentLike
+                    ?.asComponent()
+            }
+
+            if (components.isEmpty()) {
+                player.sendActionBar(Component.empty())
+                return
+            }
+
+            player.sendActionBar(
+                Component.join(JOIN_CONFIG, components)
+            )
         }
 
         fun dispose() {
-            checkIsValid()
-            invalid = true
-            leftParts.clear()
-            centerParts.clear()
-            rightParts.clear()
+            slots.values.flatten().forEach {
+                it.onRemove?.invoke(owner)
+            }
+            slots.values.forEach { it.clear() }
         }
     }
 
@@ -83,59 +91,73 @@ class ActionBarManager(val game: Game) {
         val id: String,
         val type: ActionBarPartType,
         val priority: Int,
+        val isGlobal: Boolean = false,
+        val expireAfterTicks: Int? = null,
     ) : Comparable<ActionBarPart> {
+
         var visible: Boolean = true
-        var component: Component? = null
+        var componentLike: ComponentLike? = null
+
+        private var age = 0
+
+        var onAdd: ((AmongUsPlayer) -> Unit)? = null
+        var onRemove: ((AmongUsPlayer) -> Unit)? = null
+        var onTick: ((RenderContext) -> Unit)? = null
 
         @OptIn(ExperimentalContracts::class)
-        inline fun component(block: KTextComponent.() -> Unit) {
+        fun component(block: KTextComponent.() -> Unit) {
             contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
-            component = textComponent(block)
+            componentLike = textComponent(block)
         }
 
-        override fun compareTo(other: ActionBarPart) = when {
-            this.visible != other.visible -> if (this.visible) 1 else -1
-            this.priority != other.priority -> if (this.priority > other.priority) 1 else -1
-            else -> this.id.compareTo(other.id)
+        internal fun tick(context: RenderContext) {
+            onTick?.invoke(context)
+
+            expireAfterTicks?.let {
+                age++
+                if (age >= it) {
+                    visible = false
+                }
+            }
         }
 
-        fun removeFromAllPlayers() {
-            removeBarPart(this)
-        }
+        override fun compareTo(other: ActionBarPart): Int =
+            compareValuesBy(
+                this,
+                other,
+                { it.visible },
+                { it.priority },
+                { it.id }
+            )
     }
 
-    fun tick() {
-        actionBars.forEach(ActionBar::showActionBar)
-    }
+    class RenderContext(val player: AmongUsPlayer)
 
-    fun createActionBarPart(player: AmongUsPlayer, id: String, type: ActionBarPartType, priority: Int): ActionBarPart {
-        val actionBar = actionBars.find { it.player === player } ?: ActionBar(player).also(actionBars::add)
-        val part = ActionBarPart(id, type, priority)
-        actionBar.addPart(part)
+    @OptIn(ExperimentalContracts::class)
+    fun part(
+        player: AmongUsPlayer,
+        id: String,
+        type: ActionBarPartType,
+        priority: Int,
+        expireAfterTicks: Int? = null,
+        builder: KTextComponent.() -> Unit
+    ): ActionBarPart {
+        contract { callsInPlace(builder, InvocationKind.EXACTLY_ONCE) }
+        val part = ActionBarPart(id, type, priority, false, expireAfterTicks)
+        part.component(builder)
+        bar(player).add(part)
         return part
     }
 
-    fun removeBarPart(part: ActionBarPart) {
-        for (bar in actionBars) {
-            bar.remove(part)
-        }
-    }
-
-    fun removeAll(player: AmongUsPlayer) {
-        val actionBar = actionBars.find { it.player === player } ?: return
-        actionBars.remove(actionBar)
-        actionBar.dispose()
+    companion object {
+        private val JOIN_CONFIG = JoinConfiguration.builder()
+            .separator(Component.text(" | ").color(NamedTextColor.DARK_GRAY))
+            .build()
     }
 
     enum class ActionBarPartType {
         LEFT,
         CENTER,
-        RIGHT,
-    }
-
-    companion object {
-        private val joinConfiguration =
-            JoinConfiguration.builder().separator { Component.text(" | ").color(NamedTextColor.DARK_GRAY) }.build()
-
+        RIGHT
     }
 }
