@@ -69,13 +69,13 @@ class VentManager(val game: Game) {
                     .mapKeys { it.key.normalizedLocation }.also { _otherVentByLocation = it }
             }
 
-        val actionBar = game.actionBarManager.createActionBarPart(
+        val actionBar = game.actionBarManager.part(
             player,
             "vent",
             ActionBarManager.ActionBarPartType.CENTER,
-            200
+            200,
+            Component.translatable("actionbar.vent.next")
         ).apply {
-            component = Component.translatable("actionbar.vent.next")
             visible = false
         }
 
@@ -142,7 +142,6 @@ class VentManager(val game: Game) {
             vent.group.vents.forEach { vent ->
                 game.waypointManager.removeWaypoint(player, vent.waypoint)
             }
-            game.actionBarManager.removeBarPart(actionBar)
         }
     }
 
