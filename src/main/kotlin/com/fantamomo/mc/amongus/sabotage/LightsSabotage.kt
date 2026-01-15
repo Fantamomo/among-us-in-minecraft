@@ -18,7 +18,7 @@ import java.util.*
 import kotlin.random.Random
 
 class LightsSabotage internal constructor(override val game: Game) :
-    AssignedSabotageType<SabotageType.Lights, LightsSabotage> {
+    Sabotage<SabotageType.Lights, LightsSabotage> {
     override val sabotageType = SabotageType.Lights
 
     private val min =
