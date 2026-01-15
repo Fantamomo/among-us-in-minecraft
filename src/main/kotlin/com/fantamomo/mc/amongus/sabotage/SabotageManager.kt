@@ -8,6 +8,10 @@ import com.fantamomo.mc.amongus.util.Cooldown
 import net.kyori.adventure.bossbar.BossBar
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.title.TitlePart
+import net.minecraft.network.protocol.game.ClientboundInitializeBorderPacket
+import net.minecraft.world.level.border.WorldBorder
+import org.bukkit.craftbukkit.CraftWorld
+import org.bukkit.craftbukkit.entity.CraftPlayer
 import org.bukkit.entity.Player
 import kotlin.time.Duration.Companion.seconds
 
@@ -16,8 +20,8 @@ class SabotageManager(private val game: Game) {
     private val cooldownBetweenSabotages =
         game.settings[SettingsKey.SABOTAGE_CRISIS_COOLDOWN].seconds
 
-    private val cooldowns = mutableMapOf<AssignedSabotageType<*, *>, Cooldown>()
-    private var currentSabotage: AssignedSabotageType<*, *>? = null
+    private val cooldowns = mutableMapOf<Sabotage<*, *>, Cooldown>()
+    private var currentSabotage: Sabotage<*, *>? = null
 
     val bossBar = BossBar.bossBar(
         Component.empty(),
@@ -26,27 +30,34 @@ class SabotageManager(private val game: Game) {
         BossBar.Overlay.PROGRESS
     )
 
-    val supportedSabotages: Map<SabotageType<*, *>, AssignedSabotageType<*, *>> =
+    val supportedSabotages: Map<SabotageType<*, *>, Sabotage<*, *>> =
         SabotageType.types.mapNotNull { it.create(game) }.associateBy { it.sabotageType }
 
-    fun currentSabotage(): AssignedSabotageType<*, *>? = currentSabotage
+    private val fakeWordBorder = WorldBorder().apply {
+        warningTime = 2
+        warningBlocks = 300000000
+    }
+
+    private var ticks: Int = 0
+
+    fun currentSabotage(): Sabotage<*, *>? = currentSabotage
     fun currentSabotageType(): SabotageType<*, *>? = currentSabotage?.sabotageType
     fun isCurrentlySabotage() = currentSabotage != null
     fun isCrisis() = currentSabotageType()?.isCrisis == true
 
     /* ------------------- COOLDOWN ------------------- */
 
-    fun cooldown(type: AssignedSabotageType<*, *>) =
+    fun cooldown(type: Sabotage<*, *>) =
         cooldowns.getOrPut(type) { Cooldown(10.seconds, true) }
 
-    fun canSabotage(type: AssignedSabotageType<*, *>): Boolean =
+    fun canSabotage(type: Sabotage<*, *>): Boolean =
         type in supportedSabotages.values &&
                 currentSabotage == null &&
                 cooldown(type).isFinished()
 
     /* ------------------- FLOW ------------------- */
 
-    fun sabotage(sabotage: AssignedSabotageType<*, *>, ignoreCooldown: Boolean = false): Boolean {
+    fun sabotage(sabotage: Sabotage<*, *>, ignoreCooldown: Boolean = false): Boolean {
         if (!ignoreCooldown && !canSabotage(sabotage)) return false
 
         currentSabotage = sabotage
@@ -65,6 +76,8 @@ class SabotageManager(private val game: Game) {
             }
         }
 
+        ticks = 0
+
         updateBossbarViewerAndWaypoints()
         return true
     }
@@ -73,6 +86,22 @@ class SabotageManager(private val game: Game) {
         val sabotage = currentSabotage ?: return
         sabotage.tick()
         updateBossbar()
+        ticks++
+        if (sabotage.sabotageType.isCrisis) {
+            if (ticks % 15 == 0) {
+                sendWorldBorder(ticks % 30 == 0)
+            }
+        }
+    }
+
+    private fun sendWorldBorder(real: Boolean) {
+        // todo: check if ClientboundSetBorderWarningDistancePacket is a alternative
+        val packet = if (real) ClientboundInitializeBorderPacket((game.world as CraftWorld).handle.worldBorder)
+        else ClientboundInitializeBorderPacket(fakeWordBorder)
+        for (amongUsPlayer in game.players) {
+            val craftPlayer = amongUsPlayer.player as? CraftPlayer ?: continue
+            craftPlayer.handle.connection.send(packet)
+        }
     }
 
     fun endSabotage() {
@@ -86,13 +115,15 @@ class SabotageManager(private val game: Game) {
 
         currentSabotage = null
 
+        sendWorldBorder(true)
+
         updateBossbarViewerAndWaypoints()
     }
 
     fun updateBossbar() {
         val sabotage = currentSabotage ?: return
         bossBar.progress(sabotage.progress())
-        val name = sabotage.bossbarComponent()
+        val name = sabotage.bossbarName()
         if (name != null) bossBar.name(name)
     }
 
@@ -115,7 +146,7 @@ class SabotageManager(private val game: Game) {
         }
 
         bossBar.name(
-            sabotage.bossbarComponent() ?: Component.translatable("sabotage.bossbar.${sabotage.sabotageType.id}")
+            sabotage.bossbarName() ?: Component.translatable("sabotage.bossbar.${sabotage.sabotageType.id}")
         )
         game.players.mapNotNull { it.player }.forEach(bossBar::addViewer)
 
