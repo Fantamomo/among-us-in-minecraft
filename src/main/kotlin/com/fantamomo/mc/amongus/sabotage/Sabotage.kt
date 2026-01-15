@@ -4,7 +4,7 @@ import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.manager.WaypointManager
 import net.kyori.adventure.text.Component
 
-interface AssignedSabotageType<S : SabotageType<S, A>, A : AssignedSabotageType<S, A>> {
+interface Sabotage<S : SabotageType<S, A>, A : Sabotage<S, A>> {
     val game: Game
     val sabotageType: S
     val waypoints: Set<WaypointManager.Waypoint>
@@ -18,7 +18,7 @@ interface AssignedSabotageType<S : SabotageType<S, A>, A : AssignedSabotageType<
 
     fun progress(): Float = -1.0f
 
-    fun bossbarComponent(): Component? = null
+    fun bossbarName(): Component? = null
 
     fun pause() {}
 
