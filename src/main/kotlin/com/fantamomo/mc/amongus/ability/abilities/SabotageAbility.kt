@@ -7,7 +7,7 @@ import com.fantamomo.mc.amongus.ability.item.AbilityItem
 import com.fantamomo.mc.amongus.ability.item.CooldownAbilityItem
 import com.fantamomo.mc.amongus.ability.item.game
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
-import com.fantamomo.mc.amongus.sabotage.AssignedSabotageType
+import com.fantamomo.mc.amongus.sabotage.Sabotage
 import com.fantamomo.mc.amongus.util.textComponent
 import io.papermc.paper.datacomponent.DataComponentTypes
 import org.bukkit.inventory.ItemStack
@@ -23,7 +23,7 @@ object SabotageAbility : Ability<SabotageAbility, SabotageAbility.AssignedSabota
     }
 
     @Suppress("UnstableApiUsage")
-    class SabotageAbilityItem(ability: AssignedAbility<*, *>, val sabotageType: AssignedSabotageType<*, *>) : CooldownAbilityItem(
+    class SabotageAbilityItem(ability: AssignedAbility<*, *>, val sabotageType: Sabotage<*, *>) : CooldownAbilityItem(
         ability,
         sabotageType.sabotageType.id,
         ability.player.game.sabotageManager.cooldown(sabotageType)
