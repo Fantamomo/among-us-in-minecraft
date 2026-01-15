@@ -1,7 +1,7 @@
 package com.fantamomo.mc.amongus.listeners
 
-import com.fantamomo.mc.amongus.manager.SabotageManager
 import com.fantamomo.mc.amongus.player.PlayerManager
+import com.fantamomo.mc.amongus.sabotage.LightsSabotage
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerInteractEvent
@@ -15,9 +15,9 @@ object SabotageListener : Listener {
         val sabotageManager = amongUsPlayer.game.sabotageManager
         val sabotage = sabotageManager.currentSabotage() ?: return
         when (sabotage) {
-            SabotageManager.SabotageType.Lights -> {
+            is LightsSabotage -> {
                 val targetBlock = event.clickedBlock ?: return
-                sabotageManager.onLightLeverFlip(targetBlock.location)
+                sabotage.onLightLeverFlip(targetBlock.location)
             }
             else -> {}
         }
@@ -48,9 +48,9 @@ object SabotageListener : Listener {
         val amongUsPlayer = PlayerManager.getPlayer(player) ?: return
         val sabotageManager = amongUsPlayer.game.sabotageManager
         val sabotage = sabotageManager.currentSabotage() ?: return
-        if (sabotage == SabotageManager.SabotageType.Lights) {
+        if (sabotage is LightsSabotage) {
             val location = player.location
-            sabotageManager.mayShowLightDisplayBlocks(amongUsPlayer, location)
+            sabotage.mayShowLightDisplayBlocks(amongUsPlayer, location)
         }
     }
 }
