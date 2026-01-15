@@ -23,7 +23,7 @@ object AmongUs : JavaPlugin() {
     }
 
     override fun onDisable() {
-        GameAreaManager.saveAll()
         EntityManager.dispose()
+        GameAreaManager.saveAll()
     }
 }
