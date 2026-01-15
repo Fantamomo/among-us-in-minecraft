@@ -37,6 +37,14 @@ data class GameArea(
         set(value) {
             field = value?.toBlockLocation()
         }
+    var seismicStabilizers1: Location? = null
+        set(value) {
+            field = value?.toBlockLocation()
+        }
+    var seismicStabilizers2: Location? = null
+        set(value) {
+            field = value?.toBlockLocation()
+        }
 
     var cams: MutableMap<String, Location> = mutableMapOf()
         private set
@@ -67,6 +75,8 @@ data class GameArea(
         clone.cameraJoinPointMax = cameraJoinPointMax?.withWorld(world)
         clone.lightPosMin = lightPosMin?.withWorld(world)
         clone.lightPosMax = lightPosMax?.withWorld(world)
+        clone.seismicStabilizers1 = seismicStabilizers1?.withWorld(world)
+        clone.seismicStabilizers2 = seismicStabilizers2?.withWorld(world)
 
         cams.forEach { clone.cams[it.key] = it.value.withWorld(world) }
         vents.forEach { clone.vents.add(it.withWorld(world)) }
@@ -86,6 +96,8 @@ data class GameArea(
             "ejectedViewPoint" to GameArea::ejectedViewPoint,
             "cameraJoinPointMin" to GameArea::cameraJoinPointMin,
             "cameraJoinPointMax" to GameArea::cameraJoinPointMax,
+            "seismicStabilizers1" to GameArea::seismicStabilizers1,
+            "seismicStabilizers2" to GameArea::seismicStabilizers2,
             "lightPosMin" to GameArea::lightPosMin,
             "lightPosMax" to GameArea::lightPosMax
         )
