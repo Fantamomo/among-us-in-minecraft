@@ -36,7 +36,7 @@ abstract class AbilityItem(val ability: AssignedAbility<*, *>, val id: String) {
 
         item.editPersistentDataContainer {
             it.set(ABILITY_UUID, CustomPersistentDataTypes.UUID, uuid)
-            it.set(ABILITY_ID, PersistentDataType.STRING, id)
+            it.set(ABILITY_ID, PersistentDataType.STRING, ability.definition.id)
             it.set(GAME_UUID, CustomPersistentDataTypes.UUID, ability.player.game.uuid)
         }
 
