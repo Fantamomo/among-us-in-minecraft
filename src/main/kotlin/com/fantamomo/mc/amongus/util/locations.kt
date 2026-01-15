@@ -9,3 +9,5 @@ fun Location.isBetween(min: Location, max: Location): Boolean {
 
     return this.x >= min.x && this.x <= max.x && this.y >= min.y && this.y <= max.y && this.z >= min.z && this.z <= max.z
 }
+
+fun Location.isSameBlockPosition(other: Location): Boolean = this.blockX == other.blockX && this.blockY == other.blockY && this.blockZ == other.blockZ
