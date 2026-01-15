@@ -1,15 +1,10 @@
 package com.fantamomo.mc.amongus.util
 
 import kotlinx.serialization.Serializable
-import org.bukkit.Bukkit
 import org.bukkit.Location
-import kotlin.uuid.Uuid
-import kotlin.uuid.toJavaUuid
-import kotlin.uuid.toKotlinUuid
 
 @Serializable
 data class SerializableLocation(
-    val world: Uuid?,
     val x: Double,
     val y: Double,
     val z: Double,
@@ -18,7 +13,7 @@ data class SerializableLocation(
 ) {
     fun toBukkit(): Location =
         Location(
-            world?.let { Bukkit.getWorld(it.toJavaUuid()) },
+            null,
             x, y, z,
             yaw, pitch
         )
@@ -26,7 +21,6 @@ data class SerializableLocation(
     companion object {
         fun fromBukkit(loc: Location): SerializableLocation =
             SerializableLocation(
-                world = loc.world?.uid?.toKotlinUuid(),
                 x = loc.x,
                 y = loc.y,
                 z = loc.z,
