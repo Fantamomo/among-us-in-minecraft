@@ -8,7 +8,7 @@ import com.fantamomo.mc.amongus.util.Cooldown
 import net.kyori.adventure.bossbar.BossBar
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.title.TitlePart
-import net.minecraft.network.protocol.game.ClientboundInitializeBorderPacket
+import net.minecraft.network.protocol.game.ClientboundSetBorderWarningDistancePacket
 import net.minecraft.world.level.border.WorldBorder
 import org.bukkit.craftbukkit.CraftWorld
 import org.bukkit.craftbukkit.entity.CraftPlayer
@@ -95,9 +95,8 @@ class SabotageManager(private val game: Game) {
     }
 
     private fun sendWorldBorder(real: Boolean) {
-        // todo: check if ClientboundSetBorderWarningDistancePacket is a alternative
-        val packet = if (real) ClientboundInitializeBorderPacket((game.world as CraftWorld).handle.worldBorder)
-        else ClientboundInitializeBorderPacket(fakeWordBorder)
+        val packet = if (real) ClientboundSetBorderWarningDistancePacket((game.world as CraftWorld).handle.worldBorder)
+        else ClientboundSetBorderWarningDistancePacket(fakeWordBorder)
         for (amongUsPlayer in game.players) {
             val craftPlayer = amongUsPlayer.player as? CraftPlayer ?: continue
             craftPlayer.handle.connection.send(packet)
