@@ -26,7 +26,7 @@ object SabotageAbility : Ability<SabotageAbility, SabotageAbility.AssignedSabota
     class SabotageAbilityItem(ability: AssignedAbility<*, *>, val sabotageType: SabotageManager.SabotageType) : CooldownAbilityItem(
         ability,
         sabotageType.id,
-        ability.player.game.sabotageManager.getCooldown(sabotageType)
+        ability.player.game.sabotageManager.cooldown(sabotageType)
     ) {
         override fun activatedItem() = ItemStack(sabotageType.activeItem).apply {
             setData(
