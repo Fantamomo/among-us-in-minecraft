@@ -39,5 +39,7 @@ data class SettingsKey<T : Any, S : SettingsType<T>>(
         val VENT_COOLDOWN = key("vent.cooldown", IntSettingsType.range(1, 60), 1)
         val VENT_VISIBLY_AS_WAYPOINT = key("vent.visibly.as.waypoint", BooleanSettingsType, false)
         val CAMERA_SWITCH_SAFE_COOLDOWN = key("camera.switch.safe.cooldown", IntSettingsType.range(0, 1000), 750)
+
+        val SABOTAGE_CRISIS_COOLDOWN = key("sabotage.crisis.cooldown", IntSettingsType.range(10, 300), 60)
     }
 }
