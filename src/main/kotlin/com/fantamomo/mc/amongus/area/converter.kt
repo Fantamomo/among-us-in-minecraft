@@ -31,6 +31,8 @@ fun GameArea.toDTO(): GameAreaDTO {
         cameraJoinPointMax = cameraJoinPointMax?.let(::fromBukkit),
         lightPosMin = lightPosMin?.let(::fromBukkit),
         lightPosMax = lightPosMax?.let(::fromBukkit),
+        seismicStabilizers1 = seismicStabilizers1?.let(::fromBukkit),
+        seismicStabilizers2 = seismicStabilizers2?.let(::fromBukkit),
         cams = cams.mapValues { fromBukkit(it.value) },
         vents = vents.map {
             VentGroupDTO(
@@ -55,6 +57,8 @@ fun GameAreaDTO.toGameArea(): GameArea {
     area.cameraJoinPointMax = cameraJoinPointMax?.toBukkit()
     area.lightPosMin = lightPosMin?.toBukkit()
     area.lightPosMax = lightPosMax?.toBukkit()
+    area.seismicStabilizers1 = seismicStabilizers1?.toBukkit()
+    area.seismicStabilizers2 = seismicStabilizers2?.toBukkit()
 
     area.cams.putAll(cams.mapValues { it.value.toBukkit() })
     area.vents.addAll(
