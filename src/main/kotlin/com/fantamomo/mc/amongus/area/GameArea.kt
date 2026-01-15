@@ -29,10 +29,20 @@ data class GameArea(
         set(value) {
             field = value?.toBlockLocation()
         }
+    var lightPosMin: Location? = null
+        set(value) {
+            field = value?.toBlockLocation()
+        }
+    var lightPosMax: Location? = null
+        set(value) {
+            field = value?.toBlockLocation()
+        }
 
     var cams: MutableMap<String, Location> = mutableMapOf()
         private set
     var vents: MutableList<VentGroup> = mutableListOf()
+        private set
+    var lightLevers: MutableList<Location> = mutableListOf()
         private set
 
     fun isValid(): Boolean {
@@ -55,8 +65,12 @@ data class GameArea(
         clone.ejectedViewPoint = ejectedViewPoint?.withWorld(world)
         clone.cameraJoinPointMin = cameraJoinPointMin?.withWorld(world)
         clone.cameraJoinPointMax = cameraJoinPointMax?.withWorld(world)
+        clone.lightPosMin = lightPosMin?.withWorld(world)
+        clone.lightPosMax = lightPosMax?.withWorld(world)
+
         cams.forEach { clone.cams[it.key] = it.value.withWorld(world) }
         vents.forEach { clone.vents.add(it.withWorld(world)) }
+        lightLevers.forEach { clone.lightLevers.add(it.withWorld(world)) }
         return clone
     }
 
@@ -71,7 +85,9 @@ data class GameArea(
             "ejectedFallPoint" to GameArea::ejectedFallPoint,
             "ejectedViewPoint" to GameArea::ejectedViewPoint,
             "cameraJoinPointMin" to GameArea::cameraJoinPointMin,
-            "cameraJoinPointMax" to GameArea::cameraJoinPointMax
+            "cameraJoinPointMax" to GameArea::cameraJoinPointMax,
+            "lightPosMin" to GameArea::lightPosMin,
+            "lightPosMax" to GameArea::lightPosMax
         )
     }
 }

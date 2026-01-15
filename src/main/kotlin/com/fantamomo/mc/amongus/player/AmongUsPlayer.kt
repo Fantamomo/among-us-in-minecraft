@@ -81,4 +81,6 @@ class AmongUsPlayer internal constructor(
     fun isInVent(): Boolean = game.ventManager.isNearVent(this)
 
     fun isInCams(): Boolean = game.cameraManager.isInCams(this)
+
+    fun canSeeWhenLightsSabotage(): Boolean = false
 }

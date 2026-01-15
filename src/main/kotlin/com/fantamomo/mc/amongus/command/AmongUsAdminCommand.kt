@@ -4,6 +4,7 @@ package com.fantamomo.mc.amongus.command
 
 import com.fantamomo.mc.adventure.text.*
 import com.fantamomo.mc.amongus.ability.abilities.KillAbility
+import com.fantamomo.mc.amongus.ability.abilities.SabotageAbility
 import com.fantamomo.mc.amongus.ability.abilities.VentAbility
 import com.fantamomo.mc.amongus.area.GameArea
 import com.fantamomo.mc.amongus.area.GameAreaManager
@@ -145,6 +146,7 @@ private fun PaperCommand.testCommand() {
 
             amongUsPlayer.addNewAbility(KillAbility)
             amongUsPlayer.addNewAbility(VentAbility)
+            amongUsPlayer.addNewAbility(SabotageAbility)
 
             SINGLE_SUCCESS
         }
@@ -228,6 +230,34 @@ private fun AreaCommand.areaAddLocationCommand() = literal("add") {
                 val name = arg<String>("name")
 
                 area.cams[name] = (source.sender as Player).eyeLocation
+
+                SINGLE_SUCCESS
+            }
+        }
+    }
+    literal("lights_levers") {
+        argument("block", ArgumentTypes.blockPosition()) {
+            execute {
+                val areaName = arg<String>("area")
+
+                val area = GameAreaManager.getArea(areaName)
+                if (area == null) {
+                    source.sender.sendMessage(textComponent {
+                        translatable("command.error.admin.area.not_found") {
+                            args {
+                                string("area", areaName)
+                            }
+                        }
+                    })
+                    return@execute 0
+                }
+
+                val positionResolver = arg<BlockPositionResolver>("block")
+                val position = positionResolver.resolve(source)
+
+                val location = Location(null, position.x(), position.y(), position.z())
+
+                area.lightLevers.add(location)
 
                 SINGLE_SUCCESS
             }

@@ -1,7 +1,11 @@
 package com.fantamomo.mc.amongus.ability.item
 
+import com.fantamomo.mc.adventure.text.args
+import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.ability.AssignedAbility
+import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.util.Cooldown
+import com.fantamomo.mc.amongus.util.textComponent
 import io.papermc.paper.datacomponent.DataComponentTypes
 import io.papermc.paper.datacomponent.item.UseCooldown
 import net.kyori.adventure.key.Key
@@ -37,7 +41,22 @@ abstract class CooldownAbilityItem(ability: AssignedAbility<*, *>, id: String, v
         return item
     }
 
-    protected abstract fun cooldownItem(): ItemStack
+    @Suppress("UnstableApiUsage")
+    protected open fun cooldownItem(): ItemStack {
+        val itemStack = if (canUse()) activatedItem() else deactivatedItem()
+        itemStack.setData(
+            DataComponentTypes.ITEM_NAME,
+            textComponent(ability.player.locale) {
+                translatable("ability.general.cooldown") {
+                    args {
+                        string("cooldown", cooldown.remaining().toString(DurationUnit.SECONDS, 0))
+                        string("ability", ability.definition.id)
+                    }
+                }
+            }
+        )
+        return itemStack
+    }
 
     protected open fun shouldCoundDown() = true
 }

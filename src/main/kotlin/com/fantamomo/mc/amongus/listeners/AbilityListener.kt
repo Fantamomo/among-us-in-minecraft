@@ -99,6 +99,9 @@ object AbilityListener : Listener {
 
     @EventHandler
     fun onPlayerQuit(event: PlayerQuitEvent) {
-        event.player.inventory.removeAll { it.isAbilityItem() }
+        val inventory = event.player.inventory
+        val indexes =
+            inventory.mapIndexedNotNull { index, stack -> index.takeIf { stack?.isAbilityItem() == true } }
+        indexes.forEach { inventory.setItem(it, null) }
     }
 }

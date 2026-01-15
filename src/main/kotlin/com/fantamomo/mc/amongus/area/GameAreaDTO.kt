@@ -15,8 +15,11 @@ data class GameAreaDTO(
     val ejectedFallPoint: SerializableLocation?,
     val ejectedViewPoint: SerializableLocation?,
     val cameraJoinPointMin: SerializableLocation?,
-    var cameraJoinPointMax: SerializableLocation?,
+    val cameraJoinPointMax: SerializableLocation?,
+    val lightPosMin: SerializableLocation?,
+    val lightPosMax: SerializableLocation?,
 
     val cams: Map<String, SerializableLocation>,
-    val vents: List<VentGroupDTO>
+    val vents: List<VentGroupDTO>,
+    val lightLevers: Set<SerializableLocation>
 )

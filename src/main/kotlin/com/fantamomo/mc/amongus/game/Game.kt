@@ -3,15 +3,13 @@ package com.fantamomo.mc.amongus.game
 import com.fantamomo.mc.adventure.text.content
 import com.fantamomo.mc.adventure.text.textComponent
 import com.fantamomo.mc.amongus.area.GameArea
-import com.fantamomo.mc.amongus.manager.ActionBarManager
-import com.fantamomo.mc.amongus.manager.CameraManager
-import com.fantamomo.mc.amongus.manager.VentManager
-import com.fantamomo.mc.amongus.manager.WaypointManager
+import com.fantamomo.mc.amongus.manager.*
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.settings.Settings
 import io.papermc.paper.datacomponent.item.ResolvableProfile
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.title.TitlePart
 import org.bukkit.DyeColor
 import org.bukkit.World
 import org.bukkit.entity.EntityType
@@ -35,14 +33,16 @@ class Game(
     val name: String get() = area.name
     val uuid: Uuid = Uuid.random()
 
+    val settings: Settings = Settings()
+
     val ventManager = VentManager(this)
     val cameraManager = CameraManager(this)
     val waypointManager = WaypointManager(this)
     val actionBarManager = ActionBarManager(this)
+    val sabotageManager = SabotageManager(this)
 
     internal val players = mutableListOf<AmongUsPlayer>()
     var phase: GamePhase = GamePhase.LOBBY
-    val settings: Settings = Settings()
 
     var resultMessage: Component? = null
 
@@ -114,5 +114,9 @@ class Game(
 
     fun sendChatMessage(component: Component) {
         players.forEach { it.player?.sendMessage(component) }
+    }
+
+    fun <T : Any> sendTitle(titlePart: TitlePart<T>, value: T) {
+        players.forEach { it.player?.sendTitlePart(titlePart, value) }
     }
 }

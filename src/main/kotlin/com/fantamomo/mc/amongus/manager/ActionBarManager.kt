@@ -43,6 +43,7 @@ class ActionBarManager(private val game: Game) {
         private val slots = ActionBarPartType.entries.associateWith {
             sortedSetOf<ActionBarPart>()
         }
+        private var actionBarWasSend = false
 
         fun add(part: ActionBarPart) {
             slots[part.type]!!.remove(part)
@@ -70,13 +71,17 @@ class ActionBarManager(private val game: Game) {
             }
 
             if (components.isEmpty()) {
-                player.sendActionBar(Component.empty())
+                if (actionBarWasSend) {
+                    player.sendActionBar(Component.empty())
+                    actionBarWasSend = false
+                }
                 return
             }
 
             player.sendActionBar(
                 Component.join(JOIN_CONFIG, components)
             )
+            actionBarWasSend = true
         }
 
         fun dispose() {
