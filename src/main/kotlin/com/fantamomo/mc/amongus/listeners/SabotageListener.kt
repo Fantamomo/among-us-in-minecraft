@@ -1,10 +1,7 @@
 package com.fantamomo.mc.amongus.listeners
 
-import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.manager.SabotageManager
 import com.fantamomo.mc.amongus.player.PlayerManager
-import com.fantamomo.mc.amongus.util.isBetween
-import com.fantamomo.mc.amongus.util.isSameBlockPosition
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerInteractEvent
@@ -20,11 +17,7 @@ object SabotageListener : Listener {
         when (sabotage) {
             SabotageManager.SabotageType.Lights -> {
                 val targetBlock = event.clickedBlock ?: return
-                sabotageManager.lightLevers.forEach { lever ->
-                    if (targetBlock.location.isSameBlockPosition(lever)) {
-                        sabotageManager.lightLeverFlip(lever, player, targetBlock.blockData)
-                    }
-                }
+                sabotageManager.onLightLeverFlip(targetBlock.location)
             }
             else -> {}
         }
@@ -57,22 +50,7 @@ object SabotageListener : Listener {
         val sabotage = sabotageManager.currentSabotage() ?: return
         if (sabotage == SabotageManager.SabotageType.Lights) {
             val location = player.location
-            val min = sabotageManager.minLights
-            val max = sabotageManager.maxLights
-            if (min == null || max == null) return
-            if (location.isBetween(min, max)) {
-                if (sabotageManager.playerWhoSeeLeverDisplays.add(amongUsPlayer)) {
-                    sabotageManager.lightsBlockDisplays.values.forEach { display ->
-                        player.showEntity(AmongUs, display)
-                    }
-                }
-            } else {
-                if (sabotageManager.playerWhoSeeLeverDisplays.remove(amongUsPlayer)) {
-                    sabotageManager.lightsBlockDisplays.values.forEach { display ->
-                        player.hideEntity(AmongUs, display)
-                    }
-                }
-            }
+            sabotageManager.mayShowLightDisplayBlocks(amongUsPlayer, location)
         }
     }
 }
