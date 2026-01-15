@@ -9,6 +9,7 @@ import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.settings.Settings
 import io.papermc.paper.datacomponent.item.ResolvableProfile
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.title.TitlePart
 import org.bukkit.DyeColor
 import org.bukkit.World
 import org.bukkit.entity.EntityType
@@ -113,5 +114,9 @@ class Game(
 
     fun sendChatMessage(component: Component) {
         players.forEach { it.player?.sendMessage(component) }
+    }
+
+    fun <T : Any> sendTitle(titlePart: TitlePart<T>, value: T) {
+        players.forEach { it.player?.sendTitlePart(titlePart, value) }
     }
 }
