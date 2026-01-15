@@ -8,7 +8,8 @@ object Listeners {
         JoinQuitListener,
         AbilityListener,
         VentListener,
-        CameraListener
+        CameraListener,
+        SabotageListener
     )
 
     fun registerAll() {
