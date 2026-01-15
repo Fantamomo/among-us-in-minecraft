@@ -4,7 +4,7 @@ import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.util.isBetween
 import org.bukkit.Material
 
-sealed interface SabotageType<S : SabotageType<S, A>, A : AssignedSabotageType<S, A>> {
+sealed interface SabotageType<S : SabotageType<S, A>, A : Sabotage<S, A>> {
     val id: String
     val activeMaterial: Material
     val deactivateMaterial: Material
@@ -14,10 +14,10 @@ sealed interface SabotageType<S : SabotageType<S, A>, A : AssignedSabotageType<S
     val canCallEmergencyMeeting: Boolean
         get() = false
 
-    fun create(game: Game): AssignedSabotageType<S, A>?
+    fun create(game: Game): Sabotage<S, A>?
 
     companion object {
-        val types: Set<SabotageType<*, *>> = setOf(Lights)
+        val types: Set<SabotageType<*, *>> = setOf(Lights, SeismicStabilizers)
     }
 
     object Lights : SabotageType<Lights, LightsSabotage> {
@@ -33,6 +33,20 @@ sealed interface SabotageType<S : SabotageType<S, A>, A : AssignedSabotageType<S
             if (min == null || max == null) return null
             if (area.lightLevers.none { it.isBetween(min, max) }) return null
             return LightsSabotage(game)
+        }
+    }
+
+    object SeismicStabilizers : SabotageType<SeismicStabilizers, SeismicStabilizersSabotage> {
+        override val id: String = "seismic_stabilizers"
+        override val activeMaterial: Material = Material.END_CRYSTAL
+        override val isCrisis: Boolean = true
+        override val stopOnBodyReport: Boolean = true
+
+        override fun create(game: Game): SeismicStabilizersSabotage? {
+            val area = game.area
+            area.seismicStabilizers1 ?: return null
+            area.seismicStabilizers2 ?: return null
+            return SeismicStabilizersSabotage(game)
         }
     }
 }
