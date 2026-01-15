@@ -6,8 +6,8 @@ import com.fantamomo.mc.amongus.ability.AssignedAbility
 import com.fantamomo.mc.amongus.ability.item.AbilityItem
 import com.fantamomo.mc.amongus.ability.item.CooldownAbilityItem
 import com.fantamomo.mc.amongus.ability.item.game
-import com.fantamomo.mc.amongus.manager.SabotageManager
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import com.fantamomo.mc.amongus.sabotage.AssignedSabotageType
 import com.fantamomo.mc.amongus.util.textComponent
 import io.papermc.paper.datacomponent.DataComponentTypes
 import org.bukkit.inventory.ItemStack
@@ -19,32 +19,32 @@ object SabotageAbility : Ability<SabotageAbility, SabotageAbility.AssignedSabota
 
     class AssignedSabotageAbility(override val player: AmongUsPlayer) : AssignedAbility<SabotageAbility, AssignedSabotageAbility> {
         override val definition = SabotageAbility
-        override val items: List<AbilityItem> = player.game.sabotageManager.supportedSabotages.map { SabotageAbilityItem(this, it) }
+        override val items: List<AbilityItem> = player.game.sabotageManager.supportedSabotages.map { SabotageAbilityItem(this, it.value) }
     }
 
     @Suppress("UnstableApiUsage")
-    class SabotageAbilityItem(ability: AssignedAbility<*, *>, val sabotageType: SabotageManager.SabotageType) : CooldownAbilityItem(
+    class SabotageAbilityItem(ability: AssignedAbility<*, *>, val sabotageType: AssignedSabotageType<*, *>) : CooldownAbilityItem(
         ability,
-        sabotageType.id,
+        sabotageType.sabotageType.id,
         ability.player.game.sabotageManager.cooldown(sabotageType)
     ) {
-        override fun activatedItem() = ItemStack(sabotageType.activeItem).apply {
+        override fun activatedItem() = ItemStack(sabotageType.sabotageType.activeMaterial).apply {
             setData(
                 DataComponentTypes.ITEM_NAME,
                 textComponent(ability.player.locale) {
                     translatable(
-                        "ability.sabotage.${sabotageType.id}.active"
+                        "ability.sabotage.${sabotageType.sabotageType.id}.active"
                     )
                 }
             )
         }
 
-        override fun deactivatedItem() = ItemStack(sabotageType.deactivatedItem).apply {
+        override fun deactivatedItem() = ItemStack(sabotageType.sabotageType.deactivateMaterial).apply {
             setData(
                 DataComponentTypes.ITEM_NAME,
                 textComponent(ability.player.locale) {
                     translatable(
-                        "ability.sabotage.${sabotageType.id}.deactivate"
+                        "ability.sabotage.${sabotageType.sabotageType.id}.deactivate"
                     )
                 }
             )
