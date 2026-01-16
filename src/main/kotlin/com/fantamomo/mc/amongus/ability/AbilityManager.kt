@@ -15,7 +15,7 @@ object AbilityManager {
 
     fun registerAbility(ability: AssignedAbility<*, *>) {
         abilities.add(ability)
-        if (taskId == -1 && ability.items.any { it is DeactivatableAbilityItem }) {
+        if (taskId == -1) {
             taskId = AmongUs.server.scheduler.scheduleSyncRepeatingTask(AmongUs, {
                 update()
             }, 0L, 1L)
