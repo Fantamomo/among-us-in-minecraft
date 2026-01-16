@@ -45,6 +45,14 @@ data class GameArea(
         set(value) {
             field = value?.toBlockLocation()
         }
+    var seismicStabilizers1Particle: Location? = null
+        set(value) {
+            field = value?.toCenterLocation()
+        }
+    var seismicStabilizers2Particle: Location? = null
+        set(value) {
+            field = value?.toCenterLocation()
+        }
 
     var cams: MutableMap<String, Location> = mutableMapOf()
         private set
@@ -77,6 +85,8 @@ data class GameArea(
         clone.lightPosMax = lightPosMax?.withWorld(world)
         clone.seismicStabilizers1 = seismicStabilizers1?.withWorld(world)
         clone.seismicStabilizers2 = seismicStabilizers2?.withWorld(world)
+        clone.seismicStabilizers1Particle = seismicStabilizers1Particle?.withWorld(world)
+        clone.seismicStabilizers2Particle = seismicStabilizers2Particle?.withWorld(world)
 
         cams.forEach { clone.cams[it.key] = it.value.withWorld(world) }
         vents.forEach { clone.vents.add(it.withWorld(world)) }
@@ -98,8 +108,10 @@ data class GameArea(
             "cameraJoinPointMax" to GameArea::cameraJoinPointMax,
             "seismicStabilizers1" to GameArea::seismicStabilizers1,
             "seismicStabilizers2" to GameArea::seismicStabilizers2,
+            "seismicStabilizers1Particle" to GameArea::seismicStabilizers1Particle,
+            "seismicStabilizers2Particle" to GameArea::seismicStabilizers2Particle,
             "lightPosMin" to GameArea::lightPosMin,
-            "lightPosMax" to GameArea::lightPosMax
+            "lightPosMax" to GameArea::lightPosMax,
         )
     }
 }
