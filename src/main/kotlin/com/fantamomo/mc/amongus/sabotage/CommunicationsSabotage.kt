@@ -88,7 +88,7 @@ class CommunicationsSabotage(
 
         val direction = start.getDirection().normalize()
         val maxDistance = 75.0
-        val step = 0.3
+        val step = 0.5
 
         var d = 0.0
         while (d <= maxDistance) {
@@ -165,7 +165,7 @@ class CommunicationsSabotage(
 
         private var lockProgress = 0f
         private var tickCounter = 0
-        private var lastBeamLocation: Pair<Float, Location>? = null
+        private var lastBeamLocation: Pair<Pair<Float, Float>, Location>? = null
 
         private val actionBar = game.actionBarManager.part(
             player,
@@ -187,6 +187,7 @@ class CommunicationsSabotage(
 
         fun tick() {
             val player = player.player ?: return
+            val rotation = player.location.run { yaw to pitch }
             val accuracy = aimAccuracy()
             val lockedOn = accuracy >= LOCK_THRESHOLD
 
@@ -236,20 +237,14 @@ class CommunicationsSabotage(
                 }
             }
 
-            if (outgoingBeam != null) {
+            if (outgoingBeam != null && player.location.pitch <= -10) {
                 val last = lastBeamLocation
-                if (lastBeamLocation == null) {
+                if (last == null || last.first != rotation) {
                     val beamAimPoint = computeAimingLocation(outgoingBeam, player.eyeLocation, 75)
                     shootParticleBeam(beamAimPoint, player, color)
-                    lastBeamLocation = accuracy to beamAimPoint
-                } else {
-                    if (last?.first != accuracy) {
-                        val beamAimPoint = computeAimingLocation(outgoingBeam, player.eyeLocation, 75)
-                        shootParticleBeam(beamAimPoint, player, color)
-                        lastBeamLocation = accuracy to beamAimPoint
-                    } else if (tickCounter % 10 == 0) {
-                        shootParticleBeam(last.second, player, color)
-                    }
+                    lastBeamLocation = rotation to beamAimPoint
+                } else if (tickCounter % 15 == 0) {
+                    shootParticleBeam(last.second, player, color)
                 }
             }
 
