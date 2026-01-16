@@ -94,6 +94,8 @@ class VentManager(val game: Game) {
                     }
                 }
             }
+            this.player.mannequinController.hideFromAll()
+            actionBar.remove()
         }
 
         private var lastActive: Vent? = null
@@ -142,6 +144,7 @@ class VentManager(val game: Game) {
             vent.group.vents.forEach { vent ->
                 game.waypointManager.removeWaypoint(player, vent.waypoint)
             }
+            player.mannequinController.showToAll()
         }
     }
 
