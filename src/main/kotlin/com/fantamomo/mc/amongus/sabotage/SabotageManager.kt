@@ -126,7 +126,8 @@ class SabotageManager(private val game: Game) {
 
     fun updateBossbar() {
         val sabotage = currentSabotage ?: return
-        bossBar.progress(sabotage.progress())
+        val progress = sabotage.progress()
+        if (progress != 1.0f) bossBar.progress(progress)
         val name = sabotage.bossbarName()
         if (name != null) bossBar.name(name)
     }
