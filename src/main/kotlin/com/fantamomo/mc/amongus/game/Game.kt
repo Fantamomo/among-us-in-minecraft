@@ -11,13 +11,10 @@ import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.sabotage.SabotageManager
 import com.fantamomo.mc.amongus.settings.Settings
-import io.papermc.paper.datacomponent.item.ResolvableProfile
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.title.TitlePart
 import org.bukkit.DyeColor
 import org.bukkit.World
-import org.bukkit.entity.EntityType
-import org.bukkit.entity.Mannequin
 import org.bukkit.entity.Player
 import java.util.*
 import kotlin.uuid.Uuid
@@ -64,6 +61,7 @@ class Game(
         cameraManager.leaveCams(player)
         waypointManager.removePlayer(player)
         actionBarManager.removeAll(player)
+        sabotageManager.removePlayer(player)
     }
 
     fun tick() {
@@ -91,7 +89,6 @@ class Game(
             GamePhase.DISCUSSION,
             GamePhase.VOTING,
             GamePhase.ENDING_MEETING -> {
-                spawnMannequin(player)
                 sendChatMessage(textComponent {
                     content("${player.name} has disconnected from the game. He has 60 seconds to reconnect, before he will be killed.")
                 })
@@ -103,18 +100,6 @@ class Game(
 
     internal fun onRejoin(amongUsPlayer: AmongUsPlayer) {
         // todo
-    }
-
-    @Suppress("UnstableApiUsage")
-    private fun spawnMannequin(forPlayer: AmongUsPlayer) {
-        val player = forPlayer.player ?: throw IllegalStateException()
-
-        val mannequin = world.spawnEntity(player.location, EntityType.MANNEQUIN) as Mannequin
-
-        mannequin.profile = ResolvableProfile.resolvableProfile(player.playerProfile)
-        mannequin.equipment.armorContents = player.equipment.armorContents
-
-        forPlayer.mannequin = mannequin
     }
 
     fun sendChatMessage(component: Component) {
