@@ -55,6 +55,10 @@ class CameraManager(val game: Game) {
             }
             setSpectatorTarget(camera.armorStand)
             actionBar.componentLike = camera.actionBarMessage
+            this.player.mannequinController.apply {
+                showToSelf()
+                freeze()
+            }
         }
 
         private fun setSpectatorTarget(target: ArmorStand?) {
@@ -81,6 +85,10 @@ class CameraManager(val game: Game) {
                 setSpectatorTarget(null)
                 player.hideEntity(AmongUs, camera.armorStand)
                 player.sendBlockChange(camera.location, Material.AIR.createBlockData())
+            }
+            this.player.mannequinController.apply {
+                hideFromSelf()
+                unfreeze()
             }
         }
     }
