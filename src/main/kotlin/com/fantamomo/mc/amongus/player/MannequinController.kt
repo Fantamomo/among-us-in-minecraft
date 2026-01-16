@@ -8,6 +8,7 @@ import org.bukkit.Location
 import org.bukkit.entity.Mannequin
 import org.bukkit.entity.Player
 import java.util.*
+import kotlin.time.Duration
 
 class MannequinController(
     private val owner: AmongUsPlayer
@@ -25,6 +26,7 @@ class MannequinController(
     private var frozen = false
     private var static = false
     private var invisible = false
+    private var dontShowSneakingUntil: Long? = null
 
     /* =========================
        === Lifecycle ===
@@ -148,7 +150,13 @@ class MannequinController(
 
     private fun syncPose(player: Player, mannequin: Mannequin) {
         mannequin.pose = player.pose
-        mannequin.isSneaking = player.isSneaking
+        val dontShowSneakingUntil = dontShowSneakingUntil
+        if (dontShowSneakingUntil == null || dontShowSneakingUntil <= System.currentTimeMillis()) {
+            mannequin.isSneaking = player.isSneaking
+            this.dontShowSneakingUntil = null
+        } else {
+            mannequin.isSneaking = false
+        }
         mannequin.isGliding = player.isGliding
         mannequin.isJumping = player.isJumping
     }
@@ -179,6 +187,10 @@ class MannequinController(
 
     fun hideFromSelf() {
         hideFrom(owner.player ?: return)
+    }
+
+    fun hideSneakingFor(duration: Duration) {
+        dontShowSneakingUntil = System.currentTimeMillis() + duration.inWholeMilliseconds
     }
 
     /* =========================
