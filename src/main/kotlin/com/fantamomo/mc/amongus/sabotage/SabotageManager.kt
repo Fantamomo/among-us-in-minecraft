@@ -2,6 +2,7 @@ package com.fantamomo.mc.amongus.sabotage
 
 import com.fantamomo.mc.adventure.text.textComponent
 import com.fantamomo.mc.adventure.text.translatable
+import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.util.Cooldown
@@ -114,9 +115,13 @@ class SabotageManager(private val game: Game) {
 
         currentSabotage = null
 
+        updateBossbarViewerAndWaypoints()
+
         sendWorldBorder(true)
 
-        updateBossbarViewerAndWaypoints()
+        AmongUs.server.scheduler.runTask(AmongUs) { ->
+            sendWorldBorder(true)
+        }
     }
 
     fun updateBossbar() {

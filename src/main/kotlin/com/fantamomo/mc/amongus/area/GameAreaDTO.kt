@@ -20,6 +20,8 @@ data class GameAreaDTO(
     val lightPosMax: SerializableLocation?,
     val seismicStabilizers1: SerializableLocation?,
     val seismicStabilizers2: SerializableLocation?,
+    val seismicStabilizers1Particle: SerializableLocation?,
+    val seismicStabilizers2Particle: SerializableLocation?,
 
     val cams: Map<String, SerializableLocation>,
     val vents: List<VentGroupDTO>,
