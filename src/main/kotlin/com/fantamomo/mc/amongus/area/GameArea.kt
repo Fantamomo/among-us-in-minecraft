@@ -53,6 +53,11 @@ data class GameArea(
         set(value) {
             field = value?.toCenterLocation()
         }
+    var communications: Location? = null
+        set(value) {
+            field = value?.toBlockLocation()
+        }
+    var outgoingCommunicationBeam: Location? = null
 
     var cams: MutableMap<String, Location> = mutableMapOf()
         private set
@@ -87,6 +92,8 @@ data class GameArea(
         clone.seismicStabilizers2 = seismicStabilizers2?.withWorld(world)
         clone.seismicStabilizers1Particle = seismicStabilizers1Particle?.withWorld(world)
         clone.seismicStabilizers2Particle = seismicStabilizers2Particle?.withWorld(world)
+        clone.communications = communications?.withWorld(world)
+        clone.outgoingCommunicationBeam = outgoingCommunicationBeam?.withWorld(world)
 
         cams.forEach { clone.cams[it.key] = it.value.withWorld(world) }
         vents.forEach { clone.vents.add(it.withWorld(world)) }
@@ -112,6 +119,8 @@ data class GameArea(
             "seismicStabilizers2Particle" to GameArea::seismicStabilizers2Particle,
             "lightPosMin" to GameArea::lightPosMin,
             "lightPosMax" to GameArea::lightPosMax,
+            "communications" to GameArea::communications,
+            "outgoingCommunicationBeam" to GameArea::outgoingCommunicationBeam
         )
     }
 }

@@ -1,7 +1,9 @@
 package com.fantamomo.mc.amongus.listeners
 
 import com.fantamomo.mc.amongus.player.PlayerManager
+import com.fantamomo.mc.amongus.sabotage.CommunicationsSabotage
 import com.fantamomo.mc.amongus.sabotage.LightsSabotage
+import com.fantamomo.mc.amongus.util.isSameBlockPosition
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerInteractEvent
@@ -19,7 +21,12 @@ object SabotageListener : Listener {
                 val targetBlock = event.clickedBlock ?: return
                 sabotage.onLightLeverFlip(targetBlock.location)
             }
-            else -> {}
+            is CommunicationsSabotage -> {
+                val targetBlock = event.clickedBlock ?: return
+                if (sabotage.position.isSameBlockPosition(targetBlock.location)) {
+                    sabotage.onPlayerInteract(amongUsPlayer)
+                }
+            }
         }
     }
 
@@ -51,6 +58,10 @@ object SabotageListener : Listener {
         if (sabotage is LightsSabotage) {
             val location = player.location
             sabotage.mayShowLightDisplayBlocks(amongUsPlayer, location)
+        } else if (sabotage is CommunicationsSabotage) {
+            if (event.hasChangedPosition()) {
+                sabotage.removePlayer(amongUsPlayer)
+            }
         }
     }
 }
