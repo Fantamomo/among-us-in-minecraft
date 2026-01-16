@@ -1,14 +1,23 @@
 package com.fantamomo.mc.amongus.util
 
 import org.bukkit.Color
-import kotlin.math.abs
-import kotlin.math.sqrt
+import kotlin.math.PI
+import kotlin.math.acos
+import kotlin.math.cos
+import kotlin.math.sin
 
-private fun deltaAngle(a: Float, b: Float): Float {
-    var diff = (a - b) % 360f
-    if (diff < -180f) diff += 360f
-    if (diff > 180f) diff -= 360f
-    return diff
+fun toDirection(yaw: Float, pitch: Float): Triple<Float, Float, Float> {
+    val yawRad = Math.toRadians(yaw.toDouble())
+    val pitchRad = Math.toRadians(pitch.toDouble())
+    val x = cos(pitchRad) * cos(yawRad)
+    val y = cos(pitchRad) * sin(yawRad)
+    val z = sin(pitchRad)
+    return Triple(x.toFloat(), y.toFloat(), z.toFloat())
+}
+
+fun angleBetween(a: Triple<Float, Float, Float>, b: Triple<Float, Float, Float>): Float {
+    val dot = a.first * b.first + a.second * b.second + a.third * b.third
+    return acos(dot.coerceIn(-1f, 1f)) * (180f / PI.toFloat())
 }
 
 fun getAimAccuracy(
@@ -20,20 +29,15 @@ fun getAimAccuracy(
 ): Float {
     val r = range.coerceIn(0f, 1f)
 
-    val yawDiff = abs(deltaAngle(yaw, targetYaw))
-    val pitchDiff = abs(pitch - targetPitch)
+    val dir = toDirection(yaw, pitch)
+    val targetDir = toDirection(targetYaw, targetPitch)
 
-    // Pitch etwas stärker gewichten
-    val angleError = sqrt(
-        yawDiff * yawDiff +
-                (pitchDiff * 1.3f) * (pitchDiff * 1.3f)
-    )
+    val angleError = angleBetween(dir, targetDir)
 
     val maxAngleError = 6f + (60f * r)
 
     val t = (1f - angleError / maxAngleError).coerceIn(0f, 1f)
 
-    // Smoothstep für weiche Kurve
     return t * t * (3f - 2f * t)
 }
 
