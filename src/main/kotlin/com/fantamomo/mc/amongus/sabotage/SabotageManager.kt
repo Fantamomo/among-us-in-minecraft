@@ -171,4 +171,6 @@ class SabotageManager(private val game: Game) {
             else -> {}
         }
     }
+
+    fun isSabotage(type: SabotageType<*, *>): Boolean = currentSabotageType() == type
 }
