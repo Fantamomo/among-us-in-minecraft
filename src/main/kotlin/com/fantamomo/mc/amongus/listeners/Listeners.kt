@@ -5,7 +5,7 @@ import org.bukkit.event.Listener
 
 object Listeners {
     private val listeners: MutableList<Listener> = mutableListOf(
-        JoinQuitListener,
+        PlayerListener,
         AbilityListener,
         VentListener,
         CameraListener,
