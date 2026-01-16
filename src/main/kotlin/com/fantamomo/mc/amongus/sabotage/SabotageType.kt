@@ -17,7 +17,7 @@ sealed interface SabotageType<S : SabotageType<S, A>, A : Sabotage<S, A>> {
     fun create(game: Game): Sabotage<S, A>?
 
     companion object {
-        val types: Set<SabotageType<*, *>> = setOf(Lights, SeismicStabilizers)
+        val types: Set<SabotageType<*, *>> = setOf(Lights, SeismicStabilizers, Communications)
     }
 
     object Lights : SabotageType<Lights, LightsSabotage> {
@@ -47,6 +47,19 @@ sealed interface SabotageType<S : SabotageType<S, A>, A : Sabotage<S, A>> {
             area.seismicStabilizers1 ?: return null
             area.seismicStabilizers2 ?: return null
             return SeismicStabilizersSabotage(game)
+        }
+    }
+
+    object Communications : SabotageType<Communications, CommunicationsSabotage> {
+        override val id: String = "communications"
+        override val activeMaterial: Material = Material.COMPASS
+        override val isCrisis: Boolean = false
+        override val stopOnBodyReport: Boolean = false
+
+        override fun create(game: Game): CommunicationsSabotage? {
+            val area = game.area
+            area.communications ?: return null
+            return CommunicationsSabotage(game)
         }
     }
 }
