@@ -1,5 +1,6 @@
 package com.fantamomo.mc.amongus.sabotage
 
+import com.destroystokyo.paper.ParticleBuilder
 import com.fantamomo.mc.adventure.text.args
 import com.fantamomo.mc.adventure.text.color
 import com.fantamomo.mc.adventure.text.textComponent
@@ -16,12 +17,16 @@ import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.util.accuracyToColor
 import com.fantamomo.mc.amongus.util.getAimAccuracy
 import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextColor
 import org.bukkit.Color
+import org.bukkit.Location
+import org.bukkit.Particle
 import org.bukkit.entity.BlockDisplay
+import org.bukkit.entity.Player
 import kotlin.math.roundToInt
+import kotlin.math.sqrt
 import kotlin.random.Random
+
 
 class CommunicationsSabotage(
     override val game: Game
@@ -30,15 +35,21 @@ class CommunicationsSabotage(
     override val sabotageType = SabotageType.Communications
 
     val position = game.area.communications
-        ?: throw IllegalStateException("Communications sabotage requires communications position")
+        ?: error("Communications sabotage requires communications position")
+    val outgoingBeam = game.area.outgoingCommunicationBeam
 
-    override val waypoints: Set<WaypointManager.Waypoint> = setOf(
-        WaypointManager.Waypoint("sabotage.waypoint.communications", Color.RED, position)
+    override val waypoints = setOf(
+        WaypointManager.Waypoint(
+            "sabotage.waypoint.communications",
+            Color.RED,
+            position
+        )
     )
 
     private val fixingPlayers = mutableSetOf<FixingPlayer>()
+    private var fixedPlayer: FixingPlayer? = null
 
-    private val display = position.world.spawn(position, BlockDisplay::class.java) {
+    private val display: BlockDisplay = position.world.spawn(position, BlockDisplay::class.java) {
         it.block = position.block.blockData
         it.isVisibleByDefault = false
         it.isGlowing = true
@@ -46,21 +57,84 @@ class CommunicationsSabotage(
         EntityManager.addEntityToRemoveOnStop(it)
     }
 
-    private val name = textComponent {
+    private val bossBarName = textComponent {
         translatable("sabotage.bossbar.communications")
     }
 
     override fun start() = resume()
 
-    override fun stop(cause: SabotageStopCause) = pause()
-
-    override fun tick() {
-        fixingPlayers.forEach { it.tick() }
+    override fun stop(cause: SabotageStopCause) {
+//        val fixedPlayer = fixedPlayer
+//        if (fixedPlayer != null && outgoingBeam != null) {
+//            val clone = outgoingBeam.clone()
+//            clone.yaw = fixedPlayer.targetYaw
+//            clone.pitch = fixedPlayer.targetPitch
+//            shootParticleBeam(clone)
+//        }
+        pause()
     }
 
-    override fun progress() = 1.0f
+    private val particle = ParticleBuilder(Particle.DUST)
+        .color(Color.FUCHSIA, 2.0f)
 
-    override fun bossbarName() = name
+    private fun shootParticleBeam(
+        start: Location,
+        player: Player,
+        color: Color
+    ) {
+        val particle = ParticleBuilder(Particle.DUST)
+            .color(color, 1.8f)
+            .receivers(player)
+
+        val direction = start.getDirection().normalize()
+        val maxDistance = 75.0
+        val step = 0.3
+
+        var d = 0.0
+        while (d <= maxDistance) {
+            val loc = start.clone().add(direction.clone().multiply(d))
+            particle.location(loc).spawn()
+            d += step
+        }
+    }
+
+
+    private fun computeAimingLocation(start: Location, playerEye: Location, length: Int): Location {
+        playerEye.yaw -= 180
+        if (playerEye.yaw < 0) playerEye.yaw += 360
+        playerEye.pitch = -playerEye.pitch
+
+        val eye = playerEye.toVector()
+        val dir = playerEye.getDirection().normalize()
+
+        val center = start.toVector()
+        val radius = length.toDouble()
+
+        val oc = eye.subtract(center)
+        val a = dir.dot(dir)
+        val b = 2.0 * oc.dot(dir)
+        val c = oc.dot(oc) - radius * radius
+
+        val discriminant = b * b - 4 * a * c
+        if (discriminant < 0) {
+            return start.clone().apply { setDirection(playerEye.toVector().subtract(start.toVector())) }
+        }
+
+        val t = (-b - sqrt(discriminant)) / (2 * a)
+        val targetPoint = playerEye.toVector().add(dir.multiply(t))
+        val directionFromStart = targetPoint.subtract(start.toVector()).normalize()
+
+        return start.clone()
+            .apply { setDirection(directionFromStart) }
+    }
+
+    override fun tick() {
+        fixingPlayers.forEach(FixingPlayer::tick)
+    }
+
+    override fun progress(): Float = 1.0f
+
+    override fun bossbarName(): Component = bossBarName
 
     override fun pause() {
         game.players.forEach { it.player?.hideEntity(AmongUs, display) }
@@ -74,25 +148,24 @@ class CommunicationsSabotage(
 
     fun onPlayerInteract(player: AmongUsPlayer) {
         if (fixingPlayers.any { it.player == player }) return
-        fixingPlayers.add(FixingPlayer(player))
+        fixingPlayers += FixingPlayer(player)
     }
 
     fun removePlayer(player: AmongUsPlayer) {
-        val fixing = fixingPlayers.find { it.player == player } ?: return
-        fixing.dispose()
-        fixingPlayers.remove(fixing)
+        fixingPlayers.firstOrNull { it.player == player }?.let {
+            it.dispose()
+            fixingPlayers -= it
+        }
     }
 
     inner class FixingPlayer(val player: AmongUsPlayer) {
 
-        private val targetYaw = Random.nextInt(360).toFloat()
-        private val targetPitch = Random.nextInt(-90, -15).toFloat()
+        val targetYaw = Random.nextFloat() * 360f
+        val targetPitch = Random.nextDouble(-90.0, -15.0).toFloat()
 
         private var lockProgress = 0f
-        private val lockTime = 3.0f
-
-        private val filledChar = "▌"
-        private val emptyChar = "▁"
+        private var tickCounter = 0
+        private var lastBeamLocation: Pair<Float, Location>? = null
 
         private val actionBar = game.actionBarManager.part(
             player,
@@ -101,54 +174,55 @@ class CommunicationsSabotage(
             200
         )
 
-        private var tick = 0
-
-        private fun accuracy(): Float {
-            val loc = player.player?.location ?: return 0f
+        private fun aimAccuracy(): Float {
+            val location = player.player?.location ?: return 0f
             return getAimAccuracy(
-                loc.yaw,
-                loc.pitch,
+                location.yaw,
+                location.pitch,
                 targetYaw,
                 targetPitch,
-                0.75f
+                AIM_TOLERANCE
             )
         }
 
         fun tick() {
-            val acc = accuracy()
-            var color = TextColor.color(accuracyToColor(acc).asRGB())
+            val player = player.player ?: return
+            val accuracy = aimAccuracy()
+            val lockedOn = accuracy >= LOCK_THRESHOLD
 
-            val isLockedOn = acc > 0.99f
-
-            // Lock-Fortschritt
-            if (isLockedOn) {
-                lockProgress += 0.05f
-            } else {
-                lockProgress = (lockProgress - 0.1f).coerceAtLeast(0f)
+            lockProgress = when {
+                lockedOn -> lockProgress + LOCK_INCREASE
+                else -> (lockProgress - LOCK_DECREASE).coerceAtLeast(0f)
             }
 
-            val accuracyPercent = (acc * 100).roundToInt().coerceIn(0, 100)
-            val lockPercent = ((lockProgress / lockTime) * 100).roundToInt().coerceIn(0, 100)
+            val accuracyPercent = (accuracy * 100).roundToInt().coerceIn(0, 100)
+            val lockPercent = ((lockProgress / LOCK_TIME) * 100)
+                .roundToInt()
+                .coerceIn(0, 100)
 
-            val barValue = if (isLockedOn) lockPercent else accuracyPercent
-            val barFilled = (barValue / 5).coerceIn(0, 20)
+            val barValue = if (lockedOn) lockPercent else accuracyPercent
+            val filledBars = (barValue / 5).coerceIn(0, BAR_LENGTH)
 
-            val bar =
-                filledChar.repeat(barFilled) +
-                        emptyChar.repeat(20 - barFilled)
+            val bar = BAR_FILLED.repeat(filledBars) +
+                    BAR_EMPTY.repeat(BAR_LENGTH - filledBars)
 
             val status = when {
-                lockProgress >= lockTime -> LOCKED
-                isLockedOn -> HOLDING
-                acc > 0.8f -> STABILIZING
-                acc > 0.5f -> SEARCHING
+                lockProgress >= LOCK_TIME -> LOCKED
+                lockedOn -> HOLDING
+                accuracy > 0.8f -> STABILIZING
+                accuracy > 0.5f -> SEARCHING
                 else -> NO_SIGNAL
             }
 
-            if (lockProgress >= lockTime && tick % 6 < 3) {
-                color = NamedTextColor.WHITE
-            } else if (isLockedOn) {
-                color = NamedTextColor.LIGHT_PURPLE
+            val color = when {
+                lockProgress >= LOCK_TIME && tickCounter % 6 < 3 ->
+                    Color.WHITE
+
+                lockedOn ->
+                    Color.FUCHSIA
+
+                else ->
+                    accuracyToColor(accuracy)
             }
 
             actionBar.componentLike = textComponent {
@@ -158,21 +232,47 @@ class CommunicationsSabotage(
                         string("bar", bar)
                         numeric("percent", barValue)
                     }
-                    color(color)
+                    color(TextColor.color(color.asRGB()))
                 }
             }
-//                Component.text("📡 $status $bar $barValue%")
-//                    .color(TextColor.color(color.asRGB()))
 
-            if (lockProgress >= lockTime) {
-                AmongUs.server.scheduler.runTaskLater(AmongUs, { ->
-                    if (lockProgress >= lockTime && acc > 0.99f) {
-                        game.sabotageManager.endSabotage()
+            if (outgoingBeam != null) {
+                val last = lastBeamLocation
+                if (lastBeamLocation == null) {
+                    val beamAimPoint = computeAimingLocation(outgoingBeam, player.eyeLocation, 75)
+                    shootParticleBeam(beamAimPoint, player, color)
+                    lastBeamLocation = accuracy to beamAimPoint
+                } else {
+                    if (last?.first != accuracy) {
+                        val beamAimPoint = computeAimingLocation(outgoingBeam, player.eyeLocation, 75)
+                        shootParticleBeam(beamAimPoint, player, color)
+                        lastBeamLocation = accuracy to beamAimPoint
+                    } else if (tickCounter % 10 == 0) {
+                        shootParticleBeam(last.second, player, color)
                     }
-                }, 40L)
+                }
             }
 
-            tick++
+            if (lockProgress >= LOCK_TIME) {
+                scheduleSabotageFinish()
+            }
+
+            tickCounter++
+        }
+
+        private fun scheduleSabotageFinish() {
+            AmongUs.server.scheduler.runTaskLater(
+                AmongUs,
+                { ->
+                    if (lockProgress >= LOCK_TIME && aimAccuracy() >= LOCK_THRESHOLD) {
+                        if (game.sabotageManager.currentSabotage() === this@CommunicationsSabotage) {
+                            fixedPlayer = this
+                            game.sabotageManager.endSabotage()
+                        }
+                    }
+                },
+                FINISH_DELAY_TICKS
+            )
         }
 
         fun dispose() {
@@ -181,6 +281,17 @@ class CommunicationsSabotage(
     }
 
     companion object {
+        private const val LOCK_TIME = 3.0f
+        private const val LOCK_INCREASE = 0.05f
+        private const val LOCK_DECREASE = 0.1f
+        private const val LOCK_THRESHOLD = 0.99f
+        private const val AIM_TOLERANCE = 0.5f
+        private const val BAR_LENGTH = 20
+        private const val FINISH_DELAY_TICKS = 40L
+
+        private const val BAR_FILLED = "▌"
+        private const val BAR_EMPTY = "▁"
+
         private val LOCKED = Component.translatable("sabotage.actionbar.communications.locked")
         private val HOLDING = Component.translatable("sabotage.actionbar.communications.holding")
         private val STABILIZING = Component.translatable("sabotage.actionbar.communications.stabilizing")
