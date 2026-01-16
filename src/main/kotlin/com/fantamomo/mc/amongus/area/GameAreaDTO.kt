@@ -23,6 +23,7 @@ data class GameAreaDTO(
     val seismicStabilizers1Particle: SerializableLocation?,
     val seismicStabilizers2Particle: SerializableLocation?,
     val communications: SerializableLocation?,
+    val outgoingCommunicationBeam: SerializableLocation?,
 
     val cams: Map<String, SerializableLocation>,
     val vents: List<VentGroupDTO>,

@@ -36,6 +36,7 @@ fun GameArea.toDTO(): GameAreaDTO {
         seismicStabilizers1Particle = seismicStabilizers1Particle?.let(::fromBukkit),
         seismicStabilizers2Particle = seismicStabilizers2Particle?.let(::fromBukkit),
         communications = communications?.let(::fromBukkit),
+        outgoingCommunicationBeam = outgoingCommunicationBeam?.let(::fromBukkit),
 
         cams = cams.mapValues { fromBukkit(it.value) },
         vents = vents.map {
@@ -66,6 +67,7 @@ fun GameAreaDTO.toGameArea(): GameArea {
     area.seismicStabilizers1Particle = seismicStabilizers1Particle?.toBukkit()
     area.seismicStabilizers2Particle = seismicStabilizers2Particle?.toBukkit()
     area.communications = communications?.toBukkit()
+    area.outgoingCommunicationBeam = outgoingCommunicationBeam?.toBukkit()
 
     area.cams.putAll(cams.mapValues { it.value.toBukkit() })
     area.vents.addAll(
