@@ -3,13 +3,20 @@ package com.fantamomo.mc.amongus.player
 import com.fantamomo.mc.adventure.text.append
 import com.fantamomo.mc.adventure.text.content
 import com.fantamomo.mc.adventure.text.textComponent
+import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.game.GamePhase
+import org.bukkit.entity.Mannequin
 import org.bukkit.entity.Player
 import java.util.*
 
 object PlayerManager {
     private val players = mutableListOf<AmongUsPlayer>()
+    private var taskId = -1
+
+    init {
+        taskId = AmongUs.server.scheduler.scheduleSyncRepeatingTask(AmongUs, ::tick, 0L, 1L)
+    }
 
     fun getPlayers(): List<AmongUsPlayer> = players
 
@@ -17,25 +24,31 @@ object PlayerManager {
 
     fun getPlayer(uuid: UUID) = players.find { it.uuid == uuid }
 
+    fun getPlayer(mannequin: Mannequin) = players.find { it.mannequinController.getEntity() == mannequin }
+
     internal fun joinGame(player: Player, game: Game) {
         if (exists(player.uniqueId)) throw IllegalStateException("Player already in a game")
-        val amongUsPlayer = AmongUsPlayer(
-            player.uniqueId,
-            player.name,
-            game,
-            player.location
-        )
-        amongUsPlayer.player = player
-        players.add(amongUsPlayer)
-        game.players.add(amongUsPlayer)
+        val auPlayer = AmongUsPlayer(player.uniqueId, player.name, game, player.location)
+        auPlayer.player = player
+
+        auPlayer.mannequinController.spawn()
+
+        players.add(auPlayer)
+        game.players.add(auPlayer)
+
+        player.server.onlinePlayers.forEach {
+            it.hidePlayer(AmongUs, player)
+        }
     }
 
     internal fun onPlayerQuit(player: Player) {
-        val amongUsPlayer = getPlayer(player.uniqueId) ?: return
-        val game = amongUsPlayer.game
-        game.onDisconnected(amongUsPlayer)
-        amongUsPlayer.player = null
-        if (game.phase.onDisconnectRemove) players.remove(amongUsPlayer)
+        val auPlayer = getPlayer(player.uniqueId) ?: return
+        auPlayer.player = null
+
+        if (auPlayer.game.phase.onDisconnectRemove) {
+            auPlayer.mannequinController.despawn()
+            players.remove(auPlayer)
+        }
     }
 
     internal fun onPlayerJoin(player: Player) {
@@ -47,15 +60,16 @@ object PlayerManager {
                 append(game.resultMessage ?: textComponent { content("No result") })
             })
             player.teleport(player.world.spawnLocation)
+            amongUsPlayer.mannequinController.despawn()
             players.remove(amongUsPlayer)
             return
         }
         amongUsPlayer.player = player
-        val mannequin = amongUsPlayer.mannequin
-        if (mannequin != null) {
-            player.teleport(mannequin.location)
-            mannequin.remove()
-            amongUsPlayer.mannequin = null
+        for (onlinePlayer in player.server.onlinePlayers) {
+            onlinePlayer.hidePlayer(AmongUs, player)
+        }
+        for (otherPlayer in game.players) {
+            player.hidePlayer(AmongUs, otherPlayer.player ?: continue)
         }
         game.onRejoin(amongUsPlayer)
     }
@@ -64,5 +78,11 @@ object PlayerManager {
         val amongUsPlayer = getPlayer(player.uniqueId)
         amongUsPlayer?.player = player
         return amongUsPlayer
+    }
+
+    private fun tick() {
+        players.forEach {
+            it.mannequinController.syncFromPlayer()
+        }
     }
 }

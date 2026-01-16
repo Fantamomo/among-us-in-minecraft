@@ -4,6 +4,7 @@ import com.fantamomo.mc.adventure.text.textComponent
 import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.game.Game
+import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.util.Cooldown
 import net.kyori.adventure.bossbar.BossBar
@@ -137,7 +138,7 @@ class SabotageManager(private val game: Game) {
     private fun updateBossbarViewerAndWaypoints() {
         val sabotage = currentSabotage
         if (sabotage == null) {
-            for (it in bossBar.viewers()) {
+            for (it in bossBar.viewers().toList()) {
                 bossBar.removeViewer(it as? Player ?: continue)
             }
             for (player in game.players) {
@@ -159,6 +160,15 @@ class SabotageManager(private val game: Game) {
             for (waypoint in sabotage.waypoints) {
                 game.waypointManager.assignWaypoint(player, waypoint)
             }
+        }
+    }
+
+    fun removePlayer(player: AmongUsPlayer) {
+        when (val sabotage = currentSabotage) {
+            is CommunicationsSabotage -> {
+                sabotage.removePlayer(player)
+            }
+            else -> {}
         }
     }
 }

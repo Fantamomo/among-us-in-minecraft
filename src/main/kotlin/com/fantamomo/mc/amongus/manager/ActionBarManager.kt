@@ -91,10 +91,10 @@ class ActionBarManager(private val game: Game) {
             slots.values.forEach { it.clear() }
         }
 
-        fun removeIfEmpty() {
-            if (slots.values.flatten().isNotEmpty()) return
+        fun removeIfEmpty(): Boolean {
+            if (slots.values.flatten().isNotEmpty()) return false
             dispose()
-            bars.remove(owner)
+            return true
         }
     }
 
@@ -154,10 +154,14 @@ class ActionBarManager(private val game: Game) {
             )
 
         fun remove() {
+            val shouldRemove: MutableSet<ActionBar> = mutableSetOf()
             for (entry in bars) {
                 entry.value.remove(this)
-                entry.value.removeIfEmpty()
+                if (entry.value.removeIfEmpty()) {
+                    shouldRemove.add(entry.value)
+                }
             }
+            bars.values.removeAll(shouldRemove)
         }
     }
 

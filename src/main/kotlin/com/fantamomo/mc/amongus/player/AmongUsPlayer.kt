@@ -11,7 +11,6 @@ import com.fantamomo.mc.amongus.util.CustomPersistentDataTypes
 import org.bukkit.DyeColor
 import org.bukkit.Location
 import org.bukkit.entity.LivingEntity
-import org.bukkit.entity.Mannequin
 import org.bukkit.entity.Player
 import java.util.*
 
@@ -25,17 +24,17 @@ class AmongUsPlayer internal constructor(
     private var _locale: Locale = Locale.getDefault()
     private val abilities: MutableList<AssignedAbility<*, *>> = mutableListOf()
 
+    val mannequinController = MannequinController(this)
+
     val name: String
         get() = player?.name?.also { _name = it } ?: _name
     val livingEntity: LivingEntity
-        get() = player ?: mannequin ?: throw IllegalStateException("AmongUsPlayer has no player or mannequin")
+        get() = player ?: mannequinController.getEntity() ?: throw IllegalStateException("No living entity available")
     var player: Player? = null
     var color: DyeColor = game.randomDyeColor()
     val locale: Locale
         get() = player?.locale()?.also { _locale = it } ?: _locale
     var assignedRole: AssignedRole<*, *>? = null
-
-    var mannequin: Mannequin? = null
 
     private fun checkGameRunning() {
         if (game.phase != GamePhase.RUNNING) throw IllegalStateException("Cannot perform this action in this phase")
