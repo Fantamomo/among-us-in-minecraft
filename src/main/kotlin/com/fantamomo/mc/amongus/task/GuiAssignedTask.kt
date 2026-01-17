@@ -22,7 +22,7 @@ abstract class GuiAssignedTask<T : Task<T, A>, A : GuiAssignedTask<T, A>> : Assi
     open fun setupInventory() {}
 
     open fun onInventoryClose() {
-        stop()
+        inv.clear()
     }
 
     abstract fun onInventoryClick(event: InventoryClickEvent)
