@@ -61,6 +61,13 @@ class WaypointManager(val game: Game) {
         fun maySendUpdate() {
             for (waypoint in waypoints) {
                 if (waypoint.dirty) {
+                    val visible = waypoint.isVisible
+                    if (visible != waypoint.lastVisible) {
+                        if (visible) sendPacket(waypoint.createAddPacket())
+                        else sendPacket(waypoint.createRemovePacket())
+                        waypoint.lastVisible = visible
+                    }
+                    if (!visible) continue
                     sendPacket(waypoint.createUpdatePacket())
                     waypoint.dirty = false
                 }
@@ -73,6 +80,12 @@ class WaypointManager(val game: Game) {
         val color: Int,
         vector: Vec3i
     ) {
+        internal var lastVisible: Boolean = true
+        var isVisible: Boolean = true
+            set(value) {
+                field = value
+                setDirty()
+            }
         val uuid: UUID = UUID.randomUUID()
         val icon = createIcon(color)
         var dirty: Boolean = false
@@ -137,6 +150,8 @@ class WaypointManager(val game: Game) {
     }
 
     private fun showActionbar(data: WaypointData): Component? {
+        if (data.waypoints.isEmpty()) return null
+        if (data.waypoints.all { !it.isVisible }) return null
         val amongUsPlayer = data.player
         val player = amongUsPlayer.player ?: return null
         if (amongUsPlayer.isInCams()) return null
@@ -153,6 +168,7 @@ class WaypointManager(val game: Game) {
         var bestDistSq = Double.MAX_VALUE
 
         for (waypoint in data.waypoints) {
+            if (!waypoint.isVisible) continue
             val v = waypoint.vector
             val dx = v.x + 0.5 - px
             val dy = v.y + 0.5 - py
@@ -160,7 +176,6 @@ class WaypointManager(val game: Game) {
 
             val distSq = dx * dx + dy * dy + dz * dz
 
-            // Optional: grobe Distanz-Grenze, falls Waypoints sehr weit weg sind
             if (distSq > bestDistSq) continue
 
             val angleTo = Math.toDegrees(kotlin.math.atan2(-dx, dz))
