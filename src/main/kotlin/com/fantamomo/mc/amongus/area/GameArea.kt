@@ -65,6 +65,7 @@ data class GameArea(
         private set
     var lightLevers: MutableList<Location> = mutableListOf()
         private set
+    var tasks: MutableMap<String, MutableSet<Location>> = mutableMapOf()
 
     fun isValid(): Boolean {
         minCorner ?: return false
@@ -98,6 +99,7 @@ data class GameArea(
         cams.forEach { clone.cams[it.key] = it.value.withWorld(world) }
         vents.forEach { clone.vents.add(it.withWorld(world)) }
         lightLevers.forEach { clone.lightLevers.add(it.withWorld(world)) }
+        tasks.forEach { entry -> clone.tasks[entry.key] = entry.value.mapTo(mutableSetOf()) { it.withWorld(world) } }
         return clone
     }
 
