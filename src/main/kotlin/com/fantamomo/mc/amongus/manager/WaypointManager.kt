@@ -57,15 +57,30 @@ class WaypointManager(val game: Game) {
             }
             waypoints.clear()
         }
+
+        fun maySendUpdate() {
+            for (waypoint in waypoints) {
+                if (waypoint.dirty) {
+                    sendPacket(waypoint.createUpdatePacket())
+                    waypoint.dirty = false
+                }
+            }
+        }
     }
 
     class Waypoint(
         val translationKey: String,
         val color: Int,
-        val vector: Vec3i
+        vector: Vec3i
     ) {
         val uuid: UUID = UUID.randomUUID()
         val icon = createIcon(color)
+        var dirty: Boolean = false
+        var vector: Vec3i = vector
+            set(value) {
+                field = value
+                setDirty()
+            }
 
         constructor(translationKey: String, color: Int, location: Location) : this(
             translationKey = translationKey,
@@ -79,11 +94,22 @@ class WaypointManager(val game: Game) {
             location = location
         )
 
+        fun setDirty() {
+            dirty = true
+        }
+
+        fun setLocation(location: Location) {
+            vector = Vec3i(location.blockX, location.blockY, location.blockZ)
+        }
+
         fun createAddPacket(): ClientboundTrackedWaypointPacket =
             addWaypointPosition(uuid, icon, vector)
 
         fun createRemovePacket(): ClientboundTrackedWaypointPacket =
             ClientboundTrackedWaypointPacket.removeWaypoint(uuid)
+
+        fun createUpdatePacket(): ClientboundTrackedWaypointPacket =
+            ClientboundTrackedWaypointPacket.updateWaypointPosition(uuid, icon, vector)
     }
 
     fun assignWaypoint(player: AmongUsPlayer, waypoint: Waypoint) {
@@ -105,13 +131,9 @@ class WaypointManager(val game: Game) {
 //    private var ticks = 2
 
     fun tick() {
-//        if (ticks % 5 == 0) {
-//            for (data in waypointData) {
-//                val component = showActionbar(data)
-//                data.actionBar.componentLike = component
-//            }
-//        }
-//        ticks++
+        waypointData.forEach { data ->
+            data.maySendUpdate()
+        }
     }
 
     private fun showActionbar(data: WaypointData): Component? {
