@@ -1,8 +1,13 @@
 package com.fantamomo.mc.amongus.task
 
+import com.fantamomo.mc.amongus.AmongUs
+import org.bukkit.NamespacedKey
 import org.bukkit.event.inventory.InventoryClickEvent
+import org.bukkit.event.inventory.InventoryDragEvent
 import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.InventoryHolder
+import org.bukkit.inventory.ItemStack
+import org.bukkit.persistence.PersistentDataType
 
 abstract class GuiAssignedTask<T : Task<T, A>, A : GuiAssignedTask<T, A>> : AssignedTask<T, A>, InventoryHolder {
     protected abstract val inv: Inventory
@@ -27,7 +32,17 @@ abstract class GuiAssignedTask<T : Task<T, A>, A : GuiAssignedTask<T, A>> : Assi
 
     abstract fun onInventoryClick(event: InventoryClickEvent)
 
+    protected fun ItemStack.markAsMoveable(): ItemStack = apply {
+        editPersistentDataContainer {
+            it.set(MOVEABLE_ITEM_KEY, PersistentDataType.BYTE, 1)
+        }
+    }
+
+    open fun onInventoryDrag(event: InventoryDragEvent) {}
+
     companion object {
+        val MOVEABLE_ITEM_KEY = NamespacedKey(AmongUs, "task_item/moveable")
+
         fun getMiddleItemSlots(size: Int): List<Int> {
             val result = mutableListOf<Int>()
             val rows = size / 9
@@ -70,6 +85,6 @@ abstract class GuiAssignedTask<T : Task<T, A>, A : GuiAssignedTask<T, A>> : Assi
 
             return result
         }
-
     }
+
 }
