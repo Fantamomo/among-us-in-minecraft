@@ -7,14 +7,15 @@ import org.bukkit.event.Event
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
+import org.bukkit.event.block.Action
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryCloseEvent
 import org.bukkit.event.player.PlayerInteractEvent
 
 object TaskListener : Listener {
-    @EventHandler(priority = EventPriority.NORMAL)
+    @EventHandler(priority = EventPriority.HIGHEST)
     fun onPlayerInteract(event: PlayerInteractEvent) {
-        if (event.useInteractedBlock() == Event.Result.DENY) return
+        if (event.useInteractedBlock() == Event.Result.DENY || event.action == Action.PHYSICAL) return
         val player = event.player
         val amongUsPlayer = PlayerManager.getPlayer(player) ?: return
         val location = event.clickedBlock?.location ?: return
