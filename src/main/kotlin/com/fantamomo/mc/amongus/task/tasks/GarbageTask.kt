@@ -30,7 +30,7 @@ object GarbageTask : Task<GarbageTask, GarbageTask.AssignedGarbageTask> {
         GuiAssignedTask<GarbageTask, AssignedGarbageTask>() {
 
         override val inv: Inventory =
-            Bukkit.createInventory(this, SIZE, Component.translatable("task.garbage.title"))
+            Bukkit.createInventory(this, SIZE, Component.translatable("tasks.garbage.title"))
         val borderItemSlots = getBorderItemSlots(SIZE)
         val middleItemSlots = getMiddleItemSlots(SIZE)
 

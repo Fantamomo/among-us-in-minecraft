@@ -35,7 +35,7 @@ object NumbersTask : Task<NumbersTask, NumbersTask.AssignedNumbersTask> {
         private val borderItemSlots = getBorderItemSlots(SIZE)
         private val middleItemSlots = getMiddleItemSlots(SIZE)
 
-        override val inv: Inventory = Bukkit.createInventory(this, SIZE, Component.translatable("task.numbers.title"))
+        override val inv: Inventory = Bukkit.createInventory(this, SIZE, Component.translatable("tasks.numbers.title"))
 
         private var currentNumber = 0
         private var ticks = 0
