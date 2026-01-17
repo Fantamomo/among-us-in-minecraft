@@ -5,6 +5,7 @@ import com.fantamomo.mc.amongus.task.GuiAssignedTask
 import com.fantamomo.mc.amongus.task.Task
 import com.fantamomo.mc.amongus.task.TaskType
 import com.fantamomo.mc.amongus.task.areaLocation
+import com.fantamomo.mc.amongus.util.hideTooltip
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
 import org.bukkit.Location
@@ -29,7 +30,7 @@ object GarbageTask : Task<GarbageTask, GarbageTask.AssignedGarbageTask> {
         GuiAssignedTask<GarbageTask, AssignedGarbageTask>() {
 
         override val inv: Inventory =
-            Bukkit.createInventory(this, SIZE, Component.translatable("task.title.garbage"))
+            Bukkit.createInventory(this, SIZE, Component.translatable("task.garbage.title"))
         val borderItemSlots = getBorderItemSlots(SIZE)
         val middleItemSlots = getMiddleItemSlots(SIZE)
 
@@ -50,16 +51,16 @@ object GarbageTask : Task<GarbageTask, GarbageTask.AssignedGarbageTask> {
         }
 
         override fun setupInventory() {
-            val border = ItemStack(Material.BLACK_STAINED_GLASS_PANE)
+            val border = ItemStack(Material.BLACK_STAINED_GLASS_PANE).hideTooltip()
             borderItemSlots.forEach { slot ->
                 inv.setItem(slot, border)
             }
             middleItemSlots.forEach { slot ->
                 if (Random.nextBoolean()) {
-                    inv.setItem(slot, ItemStack(garbage.random()))
+                    inv.setItem(slot, ItemStack(garbage.random()).hideTooltip())
                 }
             }
-            middleItemSlots.random().let { inv.setItem(it, ItemStack(garbage.random())) }
+            middleItemSlots.random().let { inv.setItem(it, ItemStack(garbage.random()).hideTooltip()) }
         }
 
         companion object {
