@@ -7,6 +7,7 @@ import com.fantamomo.mc.amongus.ability.item.AbilityItem
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.game.GamePhase
 import com.fantamomo.mc.amongus.role.AssignedRole
+import com.fantamomo.mc.amongus.task.TaskManager
 import com.fantamomo.mc.amongus.util.CustomPersistentDataTypes
 import org.bukkit.DyeColor
 import org.bukkit.Location
@@ -35,6 +36,8 @@ class AmongUsPlayer internal constructor(
     val locale: Locale
         get() = player?.locale()?.also { _locale = it } ?: _locale
     var assignedRole: AssignedRole<*, *>? = null
+    val tasks: MutableSet<TaskManager.RegisteredTask>
+        get() = game.taskManager.get(this)
 
     private fun checkGameRunning() {
         if (game.phase != GamePhase.RUNNING) throw IllegalStateException("Cannot perform this action in this phase")
