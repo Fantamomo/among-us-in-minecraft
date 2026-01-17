@@ -100,7 +100,7 @@ object NumbersTask : Task<NumbersTask, NumbersTask.AssignedNumbersTask> {
 
         companion object {
             private const val SIZE = 36
-            private const val FRAME_TIME = 12
+            private const val FRAME_TIME = 10
             private const val ERROR_TIME = FRAME_TIME * 4
             private val NUMBER_KEY = NamespacedKey(AmongUs, "task/number/id")
         }
