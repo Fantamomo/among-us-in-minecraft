@@ -4,6 +4,7 @@ package com.fantamomo.mc.amongus.command
 
 import com.fantamomo.mc.adventure.text.*
 import com.fantamomo.mc.amongus.ability.abilities.KillAbility
+import com.fantamomo.mc.amongus.ability.abilities.RemoteCameraAbility
 import com.fantamomo.mc.amongus.ability.abilities.SabotageAbility
 import com.fantamomo.mc.amongus.ability.abilities.VentAbility
 import com.fantamomo.mc.amongus.area.GameArea
@@ -147,6 +148,7 @@ private fun PaperCommand.testCommand() {
             amongUsPlayer.addNewAbility(KillAbility)
             amongUsPlayer.addNewAbility(VentAbility)
             amongUsPlayer.addNewAbility(SabotageAbility)
+            amongUsPlayer.addNewAbility(RemoteCameraAbility)
 
             SINGLE_SUCCESS
         }

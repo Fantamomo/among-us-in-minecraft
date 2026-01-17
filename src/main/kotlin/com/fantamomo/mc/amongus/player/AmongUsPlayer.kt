@@ -77,6 +77,9 @@ class AmongUsPlayer internal constructor(
 
     fun hasAbility(ability: Ability<*, *>) = abilities.any { it.definition === ability }
 
+    @Suppress("UNCHECKED_CAST")
+    fun <A : Ability<A, S>, S : AssignedAbility<A, S>> getAssignedAbility(ability: A) = abilities.firstOrNull { it.definition === ability } as? S
+
     fun isInVent(): Boolean = game.ventManager.isNearVent(this)
 
     fun isInCams(): Boolean = game.cameraManager.isInCams(this)

@@ -4,6 +4,7 @@ import com.fantamomo.mc.adventure.text.args
 import com.fantamomo.mc.adventure.text.textComponent
 import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.AmongUs
+import com.fantamomo.mc.amongus.ability.abilities.RemoteCameraAbility
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
@@ -13,6 +14,7 @@ import org.bukkit.Material
 import org.bukkit.craftbukkit.entity.CraftEntity
 import org.bukkit.craftbukkit.entity.CraftPlayer
 import org.bukkit.entity.ArmorStand
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.uuid.Uuid
 
 class CameraManager(val game: Game) {
@@ -89,6 +91,11 @@ class CameraManager(val game: Game) {
             this.player.mannequinController.apply {
                 hideFromSelf()
                 unfreeze()
+                hideSneakingFor(500.milliseconds)
+            }
+            val ability = this.player.getAssignedAbility(RemoteCameraAbility)
+            if (ability != null) {
+                ability.lastCamera = camera
             }
         }
     }
