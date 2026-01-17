@@ -17,6 +17,9 @@ class TaskManager(val game: Game) {
         for (player in tasks.keys) {
             val location = player.player?.location ?: continue
             for (registeredTask in tasks[player]!!) {
+                if (!registeredTask.completed) {
+                    registeredTask.task.tick()
+                }
                 if (!registeredTask.completed && registeredTask.task.location.distanceSquared(location) <= 8 * 8) {
                     registeredTask.show()
                 } else {
@@ -80,7 +83,7 @@ class TaskManager(val game: Game) {
             EntityManager.addEntityToRemoveOnStop(display)
         }
 
-        val waypoint: WaypointManager.Waypoint = WaypointManager.Waypoint("task.waypoint.${task.task.id}", Color.YELLOW, task.location)
+        val waypoint: WaypointManager.Waypoint = WaypointManager.Waypoint("task.${task.task.id}.waypoint", Color.YELLOW, task.location)
 
         init {
             game.waypointManager.assignWaypoint(task.player, waypoint)
