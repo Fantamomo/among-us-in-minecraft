@@ -4,6 +4,7 @@ import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.task.GuiAssignedTask
 import com.fantamomo.mc.amongus.task.Task
 import com.fantamomo.mc.amongus.task.TaskType
+import com.fantamomo.mc.amongus.task.areaLocation
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
 import org.bukkit.Location
@@ -34,7 +35,7 @@ object GarbageTask : Task<GarbageTask, GarbageTask.AssignedGarbageTask> {
 
         override val task = GarbageTask
 
-        override val location: Location = player.game.area.tasks[task.id]?.firstOrNull() ?: throw IllegalArgumentException("No location for task $id")
+        override val location: Location = areaLocation ?: throw IllegalArgumentException("No location for task $id")
 
         override fun onInventoryClick(event: InventoryClickEvent) {
             val slot = event.slot
