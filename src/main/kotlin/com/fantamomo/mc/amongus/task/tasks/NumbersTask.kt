@@ -20,7 +20,7 @@ import kotlin.random.Random
 
 object NumbersTask : Task<NumbersTask, NumbersTask.AssignedNumbersTask> {
     override val id: String = "numbers"
-    override val type: TaskType = TaskType.NORMAL
+    override val type: TaskType = TaskType.SHORT
 
     override fun assignTo(player: AmongUsPlayer): AssignedNumbersTask? {
         if (player.game.area.tasks[id].isNullOrEmpty()) return null

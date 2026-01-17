@@ -15,11 +15,10 @@ import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 import kotlin.random.Random
 
-object StartReaktorTask :
-    Task<StartReaktorTask, StartReaktorTask.AssignedStartReaktorTask> {
+object StartReaktorTask : Task<StartReaktorTask, StartReaktorTask.AssignedStartReaktorTask> {
 
     override val id = "start_reaktor"
-    override val type = TaskType.NORMAL
+    override val type = TaskType.LONG
 
     override fun assignTo(player: AmongUsPlayer): AssignedStartReaktorTask? {
         if (player.game.area.tasks[id].isNullOrEmpty()) return null
@@ -113,7 +112,6 @@ object StartReaktorTask :
                 }
 
                 Phase.INPUT -> {
-                    // Verbleibende grüne Felder zählen
                     if (greenTicksRemaining > 0) {
                         greenTicksRemaining--
                         if (greenTicksRemaining == 0 && lastGreenSlot != -1) {
