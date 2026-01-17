@@ -2,6 +2,7 @@ package com.fantamomo.mc.amongus.task
 
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.task.tasks.GarbageTask
+import com.fantamomo.mc.amongus.task.tasks.NumbersTask
 
 interface Task<T : Task<T, A>, A : AssignedTask<T, A>> {
     val id: String
@@ -13,7 +14,8 @@ interface Task<T : Task<T, A>, A : AssignedTask<T, A>> {
 
     companion object {
         val tasks = setOf<Task<*, *>>(
-            GarbageTask
+            GarbageTask,
+            NumbersTask
         )
     }
 }
