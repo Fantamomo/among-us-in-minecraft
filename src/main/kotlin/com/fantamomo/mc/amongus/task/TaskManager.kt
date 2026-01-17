@@ -5,12 +5,12 @@ import com.fantamomo.mc.adventure.text.textComponent
 import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.game.Game
+import com.fantamomo.mc.amongus.languages.numeric
 import com.fantamomo.mc.amongus.manager.EntityManager
 import com.fantamomo.mc.amongus.manager.WaypointManager
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.sabotage.SabotageType
 import com.fantamomo.mc.amongus.util.isSameBlockPosition
-import net.kyori.adventure.text.minimessage.translation.Argument.numeric
 import net.kyori.adventure.title.TitlePart
 import org.bukkit.Color
 import org.bukkit.Location
