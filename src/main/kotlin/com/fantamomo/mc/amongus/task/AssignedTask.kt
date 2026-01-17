@@ -12,4 +12,6 @@ interface AssignedTask<T : Task<T, A>, A : AssignedTask<T, A>> {
     fun start()
 
     fun stop()
+
+    fun tick() {}
 }
