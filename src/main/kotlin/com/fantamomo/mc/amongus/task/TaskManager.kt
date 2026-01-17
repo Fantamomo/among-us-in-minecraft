@@ -1,5 +1,6 @@
 package com.fantamomo.mc.amongus.task
 
+import com.fantamomo.mc.adventure.text.args
 import com.fantamomo.mc.adventure.text.textComponent
 import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.AmongUs
@@ -9,6 +10,7 @@ import com.fantamomo.mc.amongus.manager.WaypointManager
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.sabotage.SabotageType
 import com.fantamomo.mc.amongus.util.isSameBlockPosition
+import net.kyori.adventure.text.minimessage.translation.Argument.numeric
 import net.kyori.adventure.title.TitlePart
 import org.bukkit.Color
 import org.bukkit.Location
@@ -54,7 +56,19 @@ class TaskManager(val game: Game) {
         }
     }
 
-    fun completeOneTaskStep(task: AssignedTask<*, *>) {
+    fun <T> completeOneTaskStep(task: T) where T : Steppable, T : AssignedTask<*, *> {
+        if (task.step + 1 >= task.maxSteps) {
+            completeTask(task)
+            return
+        }
+        task.player.player?.sendTitlePart(TitlePart.TITLE, textComponent {
+            translatable("task.step.title") {
+                args {
+                    numeric("step", task.step + 1)
+                    numeric("total", task.maxSteps)
+                }
+            }
+        })
         updateTask(task)
     }
 
