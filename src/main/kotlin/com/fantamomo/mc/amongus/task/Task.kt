@@ -1,10 +1,7 @@
 package com.fantamomo.mc.amongus.task
 
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
-import com.fantamomo.mc.amongus.task.tasks.FixWireTask
-import com.fantamomo.mc.amongus.task.tasks.GarbageTask
-import com.fantamomo.mc.amongus.task.tasks.NumbersTask
-import com.fantamomo.mc.amongus.task.tasks.StartReaktorTask
+import com.fantamomo.mc.amongus.task.tasks.*
 
 interface Task<T : Task<T, A>, A : AssignedTask<T, A>> {
     val id: String
@@ -17,7 +14,8 @@ interface Task<T : Task<T, A>, A : AssignedTask<T, A>> {
             GarbageTask,
             NumbersTask,
             StartReaktorTask,
-            FixWireTask
+            FixWireTask,
+            SwipeCardTask
         )
     }
 }
