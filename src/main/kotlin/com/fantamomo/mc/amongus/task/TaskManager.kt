@@ -1,24 +1,33 @@
 package com.fantamomo.mc.amongus.task
 
+import com.fantamomo.mc.adventure.text.textComponent
+import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.manager.EntityManager
 import com.fantamomo.mc.amongus.manager.WaypointManager
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import com.fantamomo.mc.amongus.sabotage.SabotageType
 import com.fantamomo.mc.amongus.util.isSameBlockPosition
+import net.kyori.adventure.title.TitlePart
 import org.bukkit.Color
 import org.bukkit.Location
 import org.bukkit.entity.BlockDisplay
 
 class TaskManager(val game: Game) {
     private val tasks: MutableMap<AmongUsPlayer, MutableSet<RegisteredTask>> = mutableMapOf()
+    private var commsSabotage: Boolean = game.sabotageManager.isSabotage(SabotageType.Communications)
 
     fun tick() {
+        val sabotage = game.sabotageManager.isSabotage(SabotageType.Communications)
         for (player in tasks.keys) {
             val location = player.player?.location ?: continue
             for (registeredTask in tasks[player]!!) {
                 if (!registeredTask.completed) {
                     registeredTask.task.tick()
+                    if (sabotage != commsSabotage) {
+                        registeredTask.waypointVisible(sabotage)
+                    }
                 }
                 if (!registeredTask.completed && registeredTask.task.location.distanceSquared(location) <= 8 * 8) {
                     registeredTask.show()
@@ -27,15 +36,22 @@ class TaskManager(val game: Game) {
                 }
             }
         }
+        commsSabotage = sabotage
     }
 
     private fun get(task: AssignedTask<*, *>) = tasks[task.player]?.find { it.task == task }
 
     fun completeTask(task: AssignedTask<*, *>) {
         val registeredTask = get(task) ?: return
+        if (registeredTask.completed) return
         registeredTask.completed = true
         registeredTask.hideCompletely()
         registeredTask.task.stop()
+        task.player.player?.apply {
+            sendTitlePart(TitlePart.TITLE, textComponent {
+                translatable("task.complete.title")
+            })
+        }
     }
 
     fun completeOneTaskStep(task: AssignedTask<*, *>) {
@@ -52,7 +68,8 @@ class TaskManager(val game: Game) {
 
     fun startTask(player: AmongUsPlayer, location: Location): Boolean {
         val registeredTasks = tasks[player] ?: return false
-        val task = registeredTasks.find { !it.completed && it.task.location.isSameBlockPosition(location) } ?: return false
+        val task =
+            registeredTasks.find { !it.completed && it.task.location.isSameBlockPosition(location) } ?: return false
         task.task.start()
         return true
     }
@@ -83,7 +100,8 @@ class TaskManager(val game: Game) {
             EntityManager.addEntityToRemoveOnStop(display)
         }
 
-        val waypoint: WaypointManager.Waypoint = WaypointManager.Waypoint("task.${task.task.id}.waypoint", Color.YELLOW, task.location)
+        val waypoint: WaypointManager.Waypoint =
+            WaypointManager.Waypoint("tasks.${task.task.id}.waypoint", Color.YELLOW, task.location)
 
         init {
             game.waypointManager.assignWaypoint(task.player, waypoint)
@@ -110,6 +128,10 @@ class TaskManager(val game: Game) {
             if (isShown) return
             task.player.player?.showEntity(AmongUs, display)
             isShown = true
+        }
+
+        fun waypointVisible(sabotage: Boolean) {
+            waypoint.isVisible = !sabotage
         }
     }
 }
