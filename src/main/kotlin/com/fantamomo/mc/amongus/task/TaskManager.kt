@@ -117,7 +117,8 @@ class TaskManager(val game: Game) {
     }
 
     fun assignTask(player: AmongUsPlayer, task: Task<*, *>) {
-        val assignedTask = task.assignTo(player) ?: return
+        if (!task.isAvailable(game)) return
+        val assignedTask = task.assignTo(player)
         assignTask(player, assignedTask)
     }
 
