@@ -12,7 +12,6 @@ import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.inventory.Inventory
-import org.bukkit.inventory.ItemStack
 
 object ScanBoardingPassTask : Task<ScanBoardingPassTask, ScanBoardingPassTask.AssignedScanBoardingPassTask> {
     override val id: String = "scan_boarding_pass"
@@ -35,7 +34,7 @@ object ScanBoardingPassTask : Task<ScanBoardingPassTask, ScanBoardingPassTask.As
             if (status > -1) return
             if (event.slot != TARGET_SLOT) return
             val item = event.cursor
-            if (item.type != Material.FILLED_MAP) return
+            if (!item.isMine() || !item.isMarkedWith("boarding_pass")) return
             status = 0
         }
 
@@ -46,11 +45,11 @@ object ScanBoardingPassTask : Task<ScanBoardingPassTask, ScanBoardingPassTask.As
         }
 
         override fun tick() {
-            if (status == -1) return
+            if (status <= -1) return
             ticks++
-            if (ticks % 2 == 0) {
-                if (inv.getItem(TARGET_SLOT)?.type != Material.FILLED_MAP) {
-                    val statusItem = ItemStack(Material.LIGHT_BLUE_STAINED_GLASS_PANE).hideTooltip()
+            if (ticks % 3 == 0) {
+                if (inv.getItem(TARGET_SLOT)?.isMarkedWith("boarding_pass") != true) {
+                    val statusItem = itemStack(Material.LIGHT_BLUE_STAINED_GLASS_PANE).hideTooltip()
                     inv.setItem(statusSlots[status], statusItem)
                     status--
                     return
@@ -61,22 +60,22 @@ object ScanBoardingPassTask : Task<ScanBoardingPassTask, ScanBoardingPassTask.As
                     player.game.taskManager.completeTask(this)
                     return
                 }
-                val greenItem = ItemStack(Material.LIME_STAINED_GLASS_PANE).hideTooltip()
+                val greenItem = itemStack(Material.LIME_STAINED_GLASS_PANE).hideTooltip()
                 inv.setItem(statusSlots[status], greenItem)
                 status++
             }
         }
 
         override fun setupInventory() {
-            val background = ItemStack(Material.BLACK_STAINED_GLASS_PANE).hideTooltip()
+            val background = itemStack(Material.BLACK_STAINED_GLASS_PANE).hideTooltip()
             for (slot in 0 until SIZE) {
                 inv.setItem(slot, background)
             }
-            val statusItem = ItemStack(Material.LIGHT_BLUE_STAINED_GLASS_PANE).hideTooltip()
+            val statusItem = itemStack(Material.LIGHT_BLUE_STAINED_GLASS_PANE).hideTooltip()
             for (slot in statusSlots) {
                 inv.setItem(slot, statusItem)
             }
-            val boardingPassItem = ItemStack(Material.FILLED_MAP).hideTooltip().markAsMoveable()
+            val boardingPassItem = itemStack(Material.FILLED_MAP).hideTooltip().markAsMoveable().markWith("boarding_pass")
             inv.setItem(BOARDING_PASS_SLOT, boardingPassItem)
             inv.setItem(TARGET_SLOT, null)
         }
