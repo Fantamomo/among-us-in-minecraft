@@ -14,7 +14,6 @@ import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.inventory.Inventory
-import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
 import kotlin.random.Random
 
@@ -45,8 +44,8 @@ object NumbersTask : Task<NumbersTask, NumbersTask.AssignedNumbersTask> {
             if (until > ticks) return
             val slot = event.slot
             if (slot !in middleItemSlots) return
-            val currentItem = event.currentItem
-            if (currentItem?.type != Material.LIGHT_BLUE_STAINED_GLASS_PANE) return
+            val currentItem = event.currentItem ?: return
+            if (!currentItem.isMine() || !currentItem.isMarkedWith("number")) return
             val i = currentItem.persistentDataContainer.get(NUMBER_KEY, PersistentDataType.INTEGER) ?: return
             if (i == currentNumber) {
                 currentNumber++
@@ -60,11 +59,11 @@ object NumbersTask : Task<NumbersTask, NumbersTask.AssignedNumbersTask> {
         }
 
         override fun setupInventory() {
-            val background = ItemStack(Material.BLACK_STAINED_GLASS_PANE).hideTooltip()
+            val background = itemStack(Material.BLACK_STAINED_GLASS_PANE).hideTooltip()
             borderItemSlots.forEach { slot -> inv.setItem(slot, background) }
             val middleItemSlots = middleItemSlots
             middleItemSlots.sortedBy { Random.nextInt() }.forEachIndexed { index, slot ->
-                val stack = ItemStack(Material.LIGHT_BLUE_STAINED_GLASS_PANE)
+                val stack = itemStack(Material.LIGHT_BLUE_STAINED_GLASS_PANE).markWith("number")
                 stack.amount = index + 1
                 stack.editPersistentDataContainer {
                     it.set(NUMBER_KEY, PersistentDataType.INTEGER, index)
