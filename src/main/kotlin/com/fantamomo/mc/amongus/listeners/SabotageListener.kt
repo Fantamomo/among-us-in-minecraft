@@ -5,12 +5,13 @@ import com.fantamomo.mc.amongus.sabotage.CommunicationsSabotage
 import com.fantamomo.mc.amongus.sabotage.LightsSabotage
 import com.fantamomo.mc.amongus.util.isSameBlockPosition
 import org.bukkit.event.EventHandler
+import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerMoveEvent
 
 object SabotageListener : Listener {
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGH)
     fun onPlayerInteract(event: PlayerInteractEvent) {
         val player = event.player
         val amongUsPlayer = PlayerManager.getPlayer(player) ?: return
