@@ -85,6 +85,32 @@ object StartReaktorTask : Task<StartReaktorTask, StartReaktorTask.AssignedStartR
             }
         }
 
+        override fun onHotbarButton(button: Int) {
+            if (phase != Phase.INPUT) return
+
+            if (button !in 0..9) return
+
+            val slot = rightGrid[button]
+
+            clearRight()
+
+            if (button != path[inputIndex]) {
+                startError()
+                return
+            }
+
+            inv.setItem(slot, green())
+            lastGreenSlot = slot
+            greenTicksRemaining = greenDuration
+
+            inputIndex++
+
+            if (inputIndex == step) {
+                phase = Phase.SUCCESS
+                ticks = 0
+            }
+        }
+
         override fun tick() {
             if (path.isEmpty()) return
             ticks++
