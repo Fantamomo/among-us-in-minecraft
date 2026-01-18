@@ -16,7 +16,9 @@ interface Task<T : Task<T, A>, A : AssignedTask<T, A>> {
             StartReaktorTask,
             FixWireTask,
             SwipeCardTask,
-            InspectSampleTask
+            InspectSampleTask,
+            InsertKeyTask,
+            ScanBoardingPassTask
         )
     }
 }
