@@ -92,6 +92,18 @@ object InspectSampleTask :
             }
         }
 
+        override fun onHotbarButton(button: Int) {
+            if (!countdown.isFinished()) return
+            if (button !in 0 until 5) return
+            val item = inv.getItem(BOTTLE_BASE_SLOT + button) ?: return
+            if (item.isMarkedWith("target")) {
+                player.game.taskManager.completeTask(this)
+            } else if (item.isMarkedWith("wrong")) {
+                resetState()
+                setupInventory()
+            }
+        }
+
         override fun onInventoryClose() {
             super.onInventoryClose()
             open = false

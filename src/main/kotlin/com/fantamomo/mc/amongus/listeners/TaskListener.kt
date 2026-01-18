@@ -9,6 +9,7 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.block.Action
+import org.bukkit.event.inventory.InventoryAction
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryCloseEvent
 import org.bukkit.event.inventory.InventoryDragEvent
@@ -20,7 +21,7 @@ import org.bukkit.persistence.PersistentDataType
 object TaskListener : Listener {
     private fun ItemStack.isMoveable() = persistentDataContainer.has(MOVEABLE_ITEM_KEY, PersistentDataType.BYTE)
 
-    @EventHandler(priority = EventPriority.HIGHEST)
+    @EventHandler(priority = EventPriority.HIGH)
     fun onPlayerInteract(event: PlayerInteractEvent) {
         if (event.useInteractedBlock() == Event.Result.DENY || event.action == Action.PHYSICAL) return
         val player = event.player
@@ -53,6 +54,17 @@ object TaskListener : Listener {
             event.isCancelled = true
         }
         task.onInventoryClick(event)
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    fun onInventoryHotbar(event: InventoryClickEvent) {
+        if (event.action != InventoryAction.HOTBAR_SWAP) return
+        if (event.hotbarButton == -1) return
+        val player = event.whoClicked as? Player ?: return
+        PlayerManager.getPlayer(player) ?: return
+        val task = event.clickedInventory?.holder as? GuiAssignedTask<*, *> ?: return
+        event.isCancelled = true
+        task.onHotbarButton(event.hotbarButton)
     }
 
     @EventHandler
