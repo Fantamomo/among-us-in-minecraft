@@ -10,11 +10,13 @@ import com.fantamomo.mc.amongus.manager.EntityManager
 import com.fantamomo.mc.amongus.manager.WaypointManager
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.sabotage.SabotageType
+import com.fantamomo.mc.amongus.task.GuiAssignedTask.Companion.MOVEABLE_ITEM_KEY
 import com.fantamomo.mc.amongus.util.isSameBlockPosition
 import net.kyori.adventure.title.TitlePart
 import org.bukkit.Color
 import org.bukkit.Location
 import org.bukkit.entity.BlockDisplay
+import org.bukkit.persistence.PersistentDataType
 
 class TaskManager(val game: Game) {
     private val tasks: MutableMap<AmongUsPlayer, MutableSet<RegisteredTask>> = mutableMapOf()
@@ -54,6 +56,10 @@ class TaskManager(val game: Game) {
                 translatable("task.complete.title")
             })
         }
+        removeMoveableItems(task.player)
+        AmongUs.server.scheduler.runTask(AmongUs) { ->
+            removeMoveableItems(task.player)
+        }
     }
 
     fun <T> completeOneTaskStep(task: T) where T : Steppable, T : AssignedTask<*, *> {
@@ -70,6 +76,21 @@ class TaskManager(val game: Game) {
             }
         })
         updateTask(task)
+        removeMoveableItems(task.player)
+        AmongUs.server.scheduler.runTask(AmongUs) { ->
+            removeMoveableItems(task.player)
+        }
+    }
+
+    private fun removeMoveableItems(player: AmongUsPlayer) {
+        player.player?.run {
+            inventory.forEachIndexed { index, stack ->
+                if (stack?.persistentDataContainer?.has(MOVEABLE_ITEM_KEY, PersistentDataType.BYTE) == true) inventory.setItem(index, null)
+            }
+            if (itemOnCursor.persistentDataContainer.has(MOVEABLE_ITEM_KEY, PersistentDataType.BYTE)) {
+                setItemOnCursor(null)
+            }
+        }
     }
 
     fun abortTask(task: AssignedTask<*, *>) {

@@ -18,7 +18,10 @@ interface Task<T : Task<T, A>, A : AssignedTask<T, A>> {
             SwipeCardTask,
             InspectSampleTask,
             InsertKeyTask,
-            ScanBoardingPassTask
+            ScanBoardingPassTask,
+            TransferDataTask,
+            FixWeatherNodeTask,
+            RepairDrillTask
         )
     }
 }

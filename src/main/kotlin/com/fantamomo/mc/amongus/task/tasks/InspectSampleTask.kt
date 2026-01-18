@@ -19,7 +19,7 @@ import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 import org.bukkit.potion.PotionType
 import kotlin.random.Random
-import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Duration.Companion.minutes
 
 object InspectSampleTask :
     Task<InspectSampleTask, InspectSampleTask.AssignedInspectSampleTask> {
@@ -62,7 +62,7 @@ object InspectSampleTask :
         private val greenItem = item(Material.LIME_STAINED_GLASS_PANE)
         private val grayItem = item(Material.GRAY_STAINED_GLASS_PANE)
 
-        private val countdown = Cooldown(20.seconds)
+        private val countdown = Cooldown(1.minutes)
         private var ticks = 0
         private var hopperIndex: Int? = null
         private var open = false
