@@ -101,7 +101,11 @@ object AbilityListener : Listener {
 
         if (!abilityInvolved) return
 
-        if (event.isShiftClick && player.openInventory.topInventory != playerInv) { // todo: allow player to use sneak-click in there one inventory, when no others are open
+        val topInventory = player.openInventory.topInventory
+        if (event.isShiftClick && topInventory.type == InventoryType.CRAFTING && topInventory.holder == player && event.action == InventoryAction.MOVE_TO_OTHER_INVENTORY) {
+            return
+        }
+        if (event.isShiftClick && topInventory != playerInv) {
             event.isCancelled = true
             return
         }
