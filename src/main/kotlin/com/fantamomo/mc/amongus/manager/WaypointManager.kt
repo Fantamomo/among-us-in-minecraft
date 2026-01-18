@@ -57,15 +57,43 @@ class WaypointManager(val game: Game) {
             }
             waypoints.clear()
         }
+
+        fun maySendUpdate() {
+            for (waypoint in waypoints) {
+                if (waypoint.dirty) {
+                    val visible = waypoint.isVisible
+                    if (visible != waypoint.lastVisible) {
+                        if (visible) sendPacket(waypoint.createAddPacket())
+                        else sendPacket(waypoint.createRemovePacket())
+                        waypoint.lastVisible = visible
+                    }
+                    if (!visible) continue
+                    sendPacket(waypoint.createUpdatePacket())
+                    waypoint.dirty = false
+                }
+            }
+        }
     }
 
     class Waypoint(
         val translationKey: String,
         val color: Int,
-        val vector: Vec3i
+        vector: Vec3i
     ) {
+        internal var lastVisible: Boolean = true
+        var isVisible: Boolean = true
+            set(value) {
+                field = value
+                setDirty()
+            }
         val uuid: UUID = UUID.randomUUID()
         val icon = createIcon(color)
+        var dirty: Boolean = false
+        var vector: Vec3i = vector
+            set(value) {
+                field = value
+                setDirty()
+            }
 
         constructor(translationKey: String, color: Int, location: Location) : this(
             translationKey = translationKey,
@@ -79,11 +107,22 @@ class WaypointManager(val game: Game) {
             location = location
         )
 
+        fun setDirty() {
+            dirty = true
+        }
+
+        fun setLocation(location: Location) {
+            vector = Vec3i(location.blockX, location.blockY, location.blockZ)
+        }
+
         fun createAddPacket(): ClientboundTrackedWaypointPacket =
             addWaypointPosition(uuid, icon, vector)
 
         fun createRemovePacket(): ClientboundTrackedWaypointPacket =
             ClientboundTrackedWaypointPacket.removeWaypoint(uuid)
+
+        fun createUpdatePacket(): ClientboundTrackedWaypointPacket =
+            ClientboundTrackedWaypointPacket.updateWaypointPosition(uuid, icon, vector)
     }
 
     fun assignWaypoint(player: AmongUsPlayer, waypoint: Waypoint) {
@@ -105,16 +144,14 @@ class WaypointManager(val game: Game) {
 //    private var ticks = 2
 
     fun tick() {
-//        if (ticks % 5 == 0) {
-//            for (data in waypointData) {
-//                val component = showActionbar(data)
-//                data.actionBar.componentLike = component
-//            }
-//        }
-//        ticks++
+        waypointData.forEach { data ->
+            data.maySendUpdate()
+        }
     }
 
     private fun showActionbar(data: WaypointData): Component? {
+        if (data.waypoints.isEmpty()) return null
+        if (data.waypoints.all { !it.isVisible }) return null
         val amongUsPlayer = data.player
         val player = amongUsPlayer.player ?: return null
         if (amongUsPlayer.isInCams()) return null
@@ -131,6 +168,7 @@ class WaypointManager(val game: Game) {
         var bestDistSq = Double.MAX_VALUE
 
         for (waypoint in data.waypoints) {
+            if (!waypoint.isVisible) continue
             val v = waypoint.vector
             val dx = v.x + 0.5 - px
             val dy = v.y + 0.5 - py
@@ -138,7 +176,6 @@ class WaypointManager(val game: Game) {
 
             val distSq = dx * dx + dy * dy + dz * dz
 
-            // Optional: grobe Distanz-Grenze, falls Waypoints sehr weit weg sind
             if (distSq > bestDistSq) continue
 
             val angleTo = Math.toDegrees(kotlin.math.atan2(-dx, dz))

@@ -17,6 +17,7 @@ import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.settings.SettingsType
+import com.fantamomo.mc.amongus.task.Task
 import com.fantamomo.mc.amongus.util.sendComponent
 import com.fantamomo.mc.brigadier.*
 import com.mojang.brigadier.arguments.IntegerArgumentType
@@ -152,6 +153,16 @@ private fun PaperCommand.testCommand() {
 
             SINGLE_SUCCESS
         }
+        literalExecute("assign") {
+            val player = source.sender as Player
+            val amongUsPlayer = PlayerManager.getPlayer(player)!!
+
+            Task.tasks.forEach {
+                amongUsPlayer.game.taskManager.assignTask(amongUsPlayer, it)
+            }
+
+            SINGLE_SUCCESS
+        }
     }
 }
 
@@ -262,6 +273,38 @@ private fun AreaCommand.areaAddLocationCommand() = literal("add") {
                 area.lightLevers.add(location)
 
                 SINGLE_SUCCESS
+            }
+        }
+    }
+    literal("tasks") {
+        argument("task", StringArgumentType.word()) {
+            argument("block", ArgumentTypes.blockPosition()) {
+                execute {
+                    val areaName = arg<String>("area")
+
+                    val area = GameAreaManager.getArea(areaName)
+                    if (area == null) {
+                        source.sender.sendMessage(textComponent {
+                            translatable("command.error.admin.area.not_found") {
+                                args {
+                                    string("area", areaName)
+                                }
+                            }
+                        })
+                        return@execute 0
+                    }
+
+                    val taskName = arg<String>("task")
+
+                    val positionResolver = arg<BlockPositionResolver>("block")
+                    val position = positionResolver.resolve(source)
+
+                    val location = Location(null, position.x(), position.y(), position.z())
+
+                    area.tasks.computeIfAbsent(taskName) { mutableSetOf() }.add(location)
+
+                    SINGLE_SUCCESS
+                }
             }
         }
     }

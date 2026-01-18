@@ -11,6 +11,7 @@ import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.sabotage.SabotageManager
 import com.fantamomo.mc.amongus.settings.Settings
+import com.fantamomo.mc.amongus.task.TaskManager
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.title.TitlePart
 import org.bukkit.DyeColor
@@ -41,6 +42,7 @@ class Game(
     val waypointManager = WaypointManager(this)
     val actionBarManager = ActionBarManager(this)
     val sabotageManager = SabotageManager(this)
+    val taskManager = TaskManager(this)
 
     internal val players = mutableListOf<AmongUsPlayer>()
     var phase: GamePhase = GamePhase.LOBBY
@@ -70,6 +72,7 @@ class Game(
         waypointManager.tick()
         actionBarManager.tick()
         sabotageManager.tick()
+        taskManager.tick()
     }
 
     fun getPlayer(uuid: UUID) = players.find { it.uuid == uuid }

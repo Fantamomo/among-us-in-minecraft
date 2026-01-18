@@ -27,5 +27,6 @@ data class GameAreaDTO(
 
     val cams: Map<String, SerializableLocation>,
     val vents: List<VentGroupDTO>,
-    val lightLevers: Set<SerializableLocation>
+    val lightLevers: Set<SerializableLocation>,
+    val tasks: Map<String, Set<SerializableLocation>>
 )
