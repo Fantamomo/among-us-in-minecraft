@@ -2,6 +2,7 @@ package com.fantamomo.mc.amongus.task
 
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.util.CustomPersistentDataTypes
+import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.event.inventory.InventoryClickEvent
@@ -13,6 +14,8 @@ import org.bukkit.persistence.PersistentDataType
 import kotlin.uuid.Uuid
 
 abstract class GuiAssignedTask<T : Task<T, A>, A : GuiAssignedTask<T, A>> : AssignedTask<T, A>, InventoryHolder {
+    abstract override val location: Location
+    abstract override val task: T
     val uuid = Uuid.random()
     protected abstract val inv: Inventory
 
@@ -28,7 +31,7 @@ abstract class GuiAssignedTask<T : Task<T, A>, A : GuiAssignedTask<T, A>> : Assi
         setupInventory()
     }
 
-    open fun setupInventory() {}
+    abstract fun setupInventory()
 
     open fun onInventoryClose() {
         inv.clear()
