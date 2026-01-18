@@ -7,10 +7,7 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.block.Action
-import org.bukkit.event.inventory.InventoryClickEvent
-import org.bukkit.event.inventory.InventoryDragEvent
-import org.bukkit.event.inventory.InventoryMoveItemEvent
-import org.bukkit.event.inventory.InventoryPickupItemEvent
+import org.bukkit.event.inventory.*
 import org.bukkit.event.player.PlayerAttemptPickupItemEvent
 import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerInteractEvent
@@ -76,23 +73,98 @@ object AbilityListener : Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.LOW)
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     fun onInventoryClick(event: InventoryClickEvent) {
         val player = event.whoClicked as? Player ?: return
-        val playerInventory = player.inventory
+        val playerInv = player.inventory
+
+        val clickedInv = event.clickedInventory
+        val action = event.action
 
         val clickedItem = event.currentItem
         val cursorItem = event.cursor
 
-        val isAbilityInvolved = (clickedItem?.isAbilityItem() == true) || cursorItem.isAbilityItem()
+        var abilityInvolved =
+            (clickedItem?.isAbilityItem() == true) || cursorItem.isAbilityItem()
 
-        if (!isAbilityInvolved) return
+        if (action == InventoryAction.HOTBAR_SWAP) {
+            if (clickedInv == playerInv) return
+            val button = event.hotbarButton
+            val hotbarItem =
+                if (button == -1) playerInv.itemInOffHand
+                else playerInv.getItem(button)
 
-        val clickedInventory = event.clickedInventory
+            if (hotbarItem?.isAbilityItem() == true) {
+                abilityInvolved = true
+            }
+        }
 
-        if (clickedInventory != null && (clickedInventory != playerInventory || event.isShiftClick)) {
+        if (!abilityInvolved) return
+
+        val topInventory = player.openInventory.topInventory
+        if (event.isShiftClick && topInventory.type == InventoryType.CRAFTING && topInventory.holder == player && event.action == InventoryAction.MOVE_TO_OTHER_INVENTORY) {
+            return
+        }
+        if (event.isShiftClick && topInventory != playerInv) {
             event.isCancelled = true
-        } else if (clickedInventory != null && event.isRightClick) {
+            return
+        }
+
+        if (clickedInv != null && clickedInv != playerInv) {
+            event.isCancelled = true
+            return
+        }
+
+
+
+        when (action) {
+
+            InventoryAction.DROP_ALL_CURSOR,
+            InventoryAction.DROP_ONE_CURSOR,
+            InventoryAction.DROP_ALL_SLOT,
+            InventoryAction.DROP_ONE_SLOT,
+
+            InventoryAction.MOVE_TO_OTHER_INVENTORY,
+
+            InventoryAction.CLONE_STACK,
+            InventoryAction.COLLECT_TO_CURSOR,
+
+            InventoryAction.UNKNOWN,
+
+            InventoryAction.PICKUP_FROM_BUNDLE,
+            InventoryAction.PICKUP_ALL_INTO_BUNDLE,
+            InventoryAction.PICKUP_SOME_INTO_BUNDLE,
+            InventoryAction.PLACE_FROM_BUNDLE,
+            InventoryAction.PLACE_ALL_INTO_BUNDLE,
+            InventoryAction.PLACE_SOME_INTO_BUNDLE -> {
+                event.isCancelled = true
+                return
+            }
+
+            else -> {
+            }
+        }
+
+        if (cursorItem.isAbilityItem()) {
+            if (clickedInv == null || clickedInv != playerInv) {
+                event.isCancelled = true
+                return
+            }
+        }
+
+        val allowedActions = setOf(
+            InventoryAction.NOTHING,
+            InventoryAction.PICKUP_ALL,
+            InventoryAction.PICKUP_SOME,
+            InventoryAction.PICKUP_HALF,
+            InventoryAction.PICKUP_ONE,
+            InventoryAction.PLACE_ALL,
+            InventoryAction.PLACE_SOME,
+            InventoryAction.PLACE_ONE,
+            InventoryAction.SWAP_WITH_CURSOR
+        )
+
+        if (action !in allowedActions) {
             event.isCancelled = true
         }
     }
