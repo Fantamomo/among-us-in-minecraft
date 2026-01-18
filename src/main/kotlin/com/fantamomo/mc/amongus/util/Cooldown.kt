@@ -41,6 +41,7 @@ open class Cooldown {
     fun reset(stop: Boolean = true, start: Boolean = false) {
         if (stop) stop()
         remainingMillis = durationMillis
+        finished = false
         if (start) start()
     }
 
