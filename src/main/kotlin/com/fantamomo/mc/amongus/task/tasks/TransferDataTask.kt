@@ -52,7 +52,7 @@ object TransferDataTask : Task<TransferDataTask, TransferDataTask.AssignedTransf
             for (slot in 0 until SIZE) {
                 inv.setItem(slot, backgroundItem)
             }
-            val startItem = itemStack(Material.GREEN_STAINED_GLASS_PANE).hideTooltip().markAsMoveable().markWith("start")
+            val startItem = itemStack(Material.GREEN_STAINED_GLASS_PANE).hideTooltip().markWith("start")
             inv.setItem(13, startItem)
         }
 
