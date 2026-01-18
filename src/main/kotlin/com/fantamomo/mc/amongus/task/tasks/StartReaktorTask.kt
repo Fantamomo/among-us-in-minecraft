@@ -1,5 +1,6 @@
 package com.fantamomo.mc.amongus.task.tasks
 
+import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.task.GuiAssignedTask
 import com.fantamomo.mc.amongus.task.Task
@@ -20,10 +21,9 @@ object StartReaktorTask : Task<StartReaktorTask, StartReaktorTask.AssignedStartR
     override val id = "start_reaktor"
     override val type = TaskType.LONG
 
-    override fun assignTo(player: AmongUsPlayer): AssignedStartReaktorTask? {
-        if (player.game.area.tasks[id].isNullOrEmpty()) return null
-        return AssignedStartReaktorTask(player)
-    }
+    override fun isAvailable(game: Game) = !game.area.tasks[id].isNullOrEmpty()
+
+    override fun assignTo(player: AmongUsPlayer) = AssignedStartReaktorTask(player)
 
     class AssignedStartReaktorTask(
         override val player: AmongUsPlayer

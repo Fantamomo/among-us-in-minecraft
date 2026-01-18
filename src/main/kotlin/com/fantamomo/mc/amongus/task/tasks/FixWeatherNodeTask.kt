@@ -1,5 +1,6 @@
 package com.fantamomo.mc.amongus.task.tasks
 
+import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.task.GuiAssignedTask
 import com.fantamomo.mc.amongus.task.Steppable
@@ -19,11 +20,9 @@ object FixWeatherNodeTask :
     override val id = "fix_weather_node"
     override val type = TaskType.LONG
 
-    override fun assignTo(player: AmongUsPlayer): AssignedFixWeatherNodeTask? {
-        if (player.game.area.tasks[id].isNullOrEmpty()) return null
-        if (player.game.area.tasks[FIX_WEATHER_NODE_STAGE_2].isNullOrEmpty()) return null
-        return AssignedFixWeatherNodeTask(player)
-    }
+    override fun isAvailable(game: Game): Boolean = !game.area.tasks[id].isNullOrEmpty() && !game.area.tasks[FIX_WEATHER_NODE_STAGE_2].isNullOrEmpty()
+
+    override fun assignTo(player: AmongUsPlayer) = AssignedFixWeatherNodeTask(player)
 
     class AssignedFixWeatherNodeTask(
         override val player: AmongUsPlayer

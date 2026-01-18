@@ -1,5 +1,6 @@
 package com.fantamomo.mc.amongus.task.tasks
 
+import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.task.GuiAssignedTask
 import com.fantamomo.mc.amongus.task.Steppable
@@ -21,12 +22,14 @@ object FixWireTask : Task<FixWireTask, FixWireTask.AssignedFixWireTask> {
     override val id = "fix_wire"
     override val type = TaskType.LONG
 
-    override fun assignTo(player: AmongUsPlayer): AssignedFixWireTask? {
-        val locations = player.game.area.tasks[id]
-        if (locations.isNullOrEmpty()) return null
-        if (locations.size < STEPS) return null
-        return AssignedFixWireTask(player)
+    override fun isAvailable(game: Game): Boolean {
+        val locations = game.area.tasks[id]
+        if (locations.isNullOrEmpty()) return false
+        if (locations.size < STEPS) return false
+        return true
     }
+
+    override fun assignTo(player: AmongUsPlayer) = AssignedFixWireTask(player)
 
     class AssignedFixWireTask(
         override val player: AmongUsPlayer,
