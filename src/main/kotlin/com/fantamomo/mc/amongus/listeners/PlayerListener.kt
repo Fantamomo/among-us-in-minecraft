@@ -1,11 +1,16 @@
 package com.fantamomo.mc.amongus.listeners
 
 import com.fantamomo.mc.amongus.player.PlayerManager
+import com.fantamomo.mc.amongus.sabotage.SabotageType
+import com.fantamomo.mc.amongus.util.isSameBlockPosition
+import org.bukkit.GameMode
 import org.bukkit.entity.Mannequin
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
+import org.bukkit.event.block.Action
 import org.bukkit.event.entity.EntityDamageEvent
+import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
 
@@ -26,5 +31,29 @@ object PlayerListener : Listener {
         val mannequin = event.entity as? Mannequin ?: return
         val player = PlayerManager.getPlayer(mannequin)
         if (player != null) event.isCancelled = true
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    fun onPlayerInteract(event: PlayerInteractEvent) {
+        val player = event.player
+        if (player.gameMode == GameMode.CREATIVE) return
+        val amongUsPlayer = PlayerManager.getPlayer(player) ?: return
+        if (event.action == Action.PHYSICAL || event.action.isLeftClick) {
+            event.isCancelled = true
+            return
+        }
+        val game = amongUsPlayer.game
+        val target = event.clickedBlock?.location ?: return
+        val area = game.area
+        if (area.lightLevers.any { it.isSameBlockPosition(target) } && game.sabotageManager.isSabotage(SabotageType.Lights)) {
+            return
+        }
+        if ((area.seismicStabilizers2?.isSameBlockPosition(target) == true ||
+                    area.seismicStabilizers1?.isSameBlockPosition(target) == true) &&
+            game.sabotageManager.isSabotage(SabotageType.SeismicStabilizers)
+        ) {
+            return
+        }
+        event.isCancelled = true
     }
 }

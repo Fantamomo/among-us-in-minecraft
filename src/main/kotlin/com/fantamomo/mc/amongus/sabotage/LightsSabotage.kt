@@ -7,6 +7,8 @@ import com.fantamomo.mc.amongus.manager.WaypointManager
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.util.centerLocationOf
 import com.fantamomo.mc.amongus.util.isBetween
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.title.TitlePart
 import org.bukkit.Color
 import org.bukkit.Location
 import org.bukkit.block.Block
@@ -118,9 +120,16 @@ class LightsSabotage internal constructor(override val game: Game) :
         }
     }
 
-    fun onLightLeverFlip(location: Location) {
+    fun onLightLeverFlip(location: Location, amongUsPlayer: AmongUsPlayer) {
         val block = location.block
         if (block !in levers) return
+        if (!amongUsPlayer.isAlive) {
+            amongUsPlayer.player?.run {
+                sendTitlePart(TitlePart.SUBTITLE, Component.translatable("sabotage.subtitle.dead"))
+                sendTitlePart(TitlePart.TITLE, Component.translatable("sabotage.title.dead"))
+            }
+            return
+        }
         val data = location.block.blockData as Switch
         data.isPowered = !data.isPowered
         val display = levers[block]

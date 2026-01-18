@@ -18,6 +18,7 @@ import com.fantamomo.mc.amongus.util.accuracyToColor
 import com.fantamomo.mc.amongus.util.getAimAccuracy
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.TextColor
+import net.kyori.adventure.title.TitlePart
 import org.bukkit.Color
 import org.bukkit.Location
 import org.bukkit.Particle
@@ -147,6 +148,13 @@ class CommunicationsSabotage(
     }
 
     fun onPlayerInteract(player: AmongUsPlayer) {
+        if (!player.isAlive) {
+            player.player?.run {
+                sendTitlePart(TitlePart.SUBTITLE, Component.translatable("sabotage.subtitle.dead"))
+                sendTitlePart(TitlePart.TITLE, Component.translatable("sabotage.title.dead"))
+            }
+            return
+        }
         if (fixingPlayers.any { it.player == player }) return
         fixingPlayers += FixingPlayer(player)
     }
