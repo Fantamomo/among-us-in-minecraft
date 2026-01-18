@@ -12,7 +12,6 @@ import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.inventory.Inventory
-import org.bukkit.inventory.ItemStack
 
 object InsertKeyTask : Task<InsertKeyTask, InsertKeyTask.AssignedInsertKeyTask> {
     override val id: String = "insert_key"
@@ -33,20 +32,20 @@ object InsertKeyTask : Task<InsertKeyTask, InsertKeyTask.AssignedInsertKeyTask> 
             val slot = event.slot
             if (slot != target) return
             val cursor = event.cursor
-            if (cursor.type != Material.TRIAL_KEY) return
+            if (!cursor.isMine() || !cursor.isMarkedWith("key") || cursor.type != Material.TRIAL_KEY) return
             event.isCancelled = true
             player.game.taskManager.completeTask(this)
         }
 
         override fun setupInventory() {
-            val background = ItemStack(Material.BLACK_STAINED_GLASS_PANE).hideTooltip()
+            val background = itemStack(Material.BLACK_STAINED_GLASS_PANE).hideTooltip()
             for (slot in 0 until SIZE) {
                 inv.setItem(slot, background)
             }
-            val key = ItemStack(Material.TRIAL_KEY).hideTooltip().markAsMoveable()
+            val key = itemStack(Material.TRIAL_KEY).hideTooltip().markAsMoveable().markWith("key")
             inv.setItem(40, key)
-            val red = ItemStack(Material.RED_STAINED_GLASS_PANE).hideTooltip()
-            val green = ItemStack(Material.LIME_STAINED_GLASS_PANE).hideTooltip()
+            val red = itemStack(Material.RED_STAINED_GLASS_PANE).hideTooltip()
+            val green = itemStack(Material.LIME_STAINED_GLASS_PANE).hideTooltip()
             for (slot in targetSlots) {
                 inv.setItem(slot, if (slot == target) green else red)
             }

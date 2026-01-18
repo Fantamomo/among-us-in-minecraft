@@ -14,7 +14,6 @@ import org.bukkit.Material
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryDragEvent
 import org.bukkit.inventory.Inventory
-import org.bukkit.inventory.ItemStack
 
 object SwipeCardTask : Task<SwipeCardTask, SwipeCardTask.AssignedSwipeCardTask> {
     override val id: String = "swipe_card"
@@ -63,16 +62,16 @@ object SwipeCardTask : Task<SwipeCardTask, SwipeCardTask.AssignedSwipeCardTask> 
         private fun check() {
             for (slot in 9 until 18) {
                 val stack = inv.getItem(slot) ?: return
-                if (stack.type != Material.NAME_TAG) return
+                if (!stack.isMarkedWith("card")) return
             }
             player.game.taskManager.completeTask(this)
         }
 
         override fun setupInventory() {
             opened = true
-            val item = ItemStack(Material.BLACK_STAINED_GLASS_PANE).hideTooltip()
+            val item = itemStack(Material.BLACK_STAINED_GLASS_PANE).hideTooltip()
             for (slot in border) inv.setItem(slot, item)
-            val stack = ItemStack(Material.NAME_TAG).hideTooltip().markAsMoveable()
+            val stack = itemStack(Material.NAME_TAG).hideTooltip().markAsMoveable().markWith("card")
             stack.amount = 9
             @Suppress("UnstableApiUsage")
             stack.setData(DataComponentTypes.MAX_STACK_SIZE, 1)

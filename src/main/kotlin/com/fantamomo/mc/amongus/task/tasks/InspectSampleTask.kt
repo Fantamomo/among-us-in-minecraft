@@ -72,19 +72,20 @@ object InspectSampleTask :
             countdown.onFinish(::setupInventory)
         }
 
-        @Suppress("UnstableApiUsage")
         override fun onInventoryClick(event: InventoryClickEvent) {
+            val item = event.currentItem ?: return
+            if (!item.isMine()) return
             if (countdown.isFinished()) {
-                val potionContents = event.currentItem?.getData(DataComponentTypes.POTION_CONTENTS) ?: return
-                if (potionContents.customColor() == color) {
+                if (item.isMarkedWith("target")) {
                     player.game.taskManager.completeTask(this)
-                } else {
+                } else if (item.isMarkedWith("wrong")) {
                     resetState()
                     setupInventory()
                 }
+                return
             }
             if (countdown.isRunning()) return
-            if (event.slot == START_BUTTON_SLOT) {
+            if (item.isMarkedWith("start")) {
                 hopperIndex = 0
                 inv.setItem(START_BUTTON_SLOT, backgroundItem)
             }
@@ -194,19 +195,19 @@ object InspectSampleTask :
         /* ---------------- Item Factories ---------------- */
 
         private fun item(type: Material) =
-            ItemStack(type).hideTooltip()
+            itemStack(type).hideTooltip()
 
         private fun hopperItem() =
-            ItemStack(Material.HOPPER).hideTooltip()
+            itemStack(Material.HOPPER).hideTooltip()
 
         private fun buttonItem() =
-            ItemStack(Material.OAK_BUTTON).hideTooltip()
+            itemStack(Material.OAK_BUTTON).hideTooltip().markWith("start")
 
         private fun emptyBottle() =
-            ItemStack(Material.GLASS_BOTTLE).hideTooltip()
+            itemStack(Material.GLASS_BOTTLE).hideTooltip()
 
         private fun blueBottle(): ItemStack =
-            ItemStack(Material.POTION).hideTooltip().apply {
+            itemStack(Material.POTION).hideTooltip().apply {
                 @Suppress("UnstableApiUsage")
                 setData(
                     DataComponentTypes.POTION_CONTENTS,
@@ -215,14 +216,14 @@ object InspectSampleTask :
             }
 
         private fun waterBottle(): ItemStack =
-            ItemStack(Material.POTION).hideTooltip().apply {
+            itemStack(Material.POTION).hideTooltip().markWith("wrong").apply {
                 @Suppress("UnstableApiUsage")
                 setData(
                     DataComponentTypes.POTION_CONTENTS,
                     PotionContents.potionContents().potion(PotionType.WATER)
                 )
             }
-        private fun targetBottle(): ItemStack = ItemStack(Material.POTION).hideTooltip().apply {
+        private fun targetBottle(): ItemStack = itemStack(Material.POTION).hideTooltip().markWith("target").apply {
             @Suppress("UnstableApiUsage")
             setData(
                 DataComponentTypes.POTION_CONTENTS,
