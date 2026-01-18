@@ -1,6 +1,8 @@
 package com.fantamomo.mc.amongus.task
 
 import com.fantamomo.mc.amongus.AmongUs
+import com.fantamomo.mc.amongus.util.CustomPersistentDataTypes
+import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryDragEvent
@@ -8,8 +10,10 @@ import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.InventoryHolder
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
+import kotlin.uuid.Uuid
 
 abstract class GuiAssignedTask<T : Task<T, A>, A : GuiAssignedTask<T, A>> : AssignedTask<T, A>, InventoryHolder {
+    val uuid = Uuid.random()
     protected abstract val inv: Inventory
 
     override fun getInventory() = inv
@@ -38,10 +42,30 @@ abstract class GuiAssignedTask<T : Task<T, A>, A : GuiAssignedTask<T, A>> : Assi
         }
     }
 
+    protected fun itemStack(material: Material): ItemStack = ItemStack(material).apply {
+        editPersistentDataContainer {
+            it.set(TASK_UUID, CustomPersistentDataTypes.UUID, uuid)
+        }
+    }
+
+    protected fun ItemStack.isMine(): Boolean = persistentDataContainer.run { has(TASK_UUID, CustomPersistentDataTypes.UUID) && get(TASK_UUID, CustomPersistentDataTypes.UUID) == uuid }
+
+    protected fun ItemStack.markWith(id: String): ItemStack = apply {
+        editPersistentDataContainer {
+            it.set(ITEM_STACK_CUSTOM_ID, PersistentDataType.STRING, id)
+        }
+    }
+
+    protected fun ItemStack.getCustomId(): String? = persistentDataContainer.get(ITEM_STACK_CUSTOM_ID, PersistentDataType.STRING)
+
+    protected fun ItemStack.isMarkedWith(id: String): Boolean = getCustomId() == id
+
     open fun onInventoryDrag(event: InventoryDragEvent) {}
 
     companion object {
         val MOVEABLE_ITEM_KEY = NamespacedKey(AmongUs, "task_item/moveable")
+        val TASK_UUID = NamespacedKey(AmongUs, "task_item/uuid")
+        val ITEM_STACK_CUSTOM_ID = NamespacedKey(AmongUs, "task_item/custom_id")
 
         fun getMiddleItemSlots(size: Int): List<Int> {
             val result = mutableListOf<Int>()
