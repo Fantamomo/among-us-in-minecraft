@@ -1,5 +1,6 @@
 package com.fantamomo.mc.amongus.task.tasks
 
+import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.task.GuiAssignedTask
 import com.fantamomo.mc.amongus.task.Task
@@ -17,10 +18,9 @@ object InsertKeyTask : Task<InsertKeyTask, InsertKeyTask.AssignedInsertKeyTask> 
     override val id: String = "insert_key"
     override val type: TaskType = TaskType.COMMON
 
-    override fun assignTo(player: AmongUsPlayer): AssignedInsertKeyTask? {
-        if (player.game.area.tasks[id].isNullOrEmpty()) return null
-        return AssignedInsertKeyTask(player)
-    }
+    override fun isAvailable(game: Game): Boolean = !game.area.tasks[id].isNullOrEmpty()
+
+    override fun assignTo(player: AmongUsPlayer) = AssignedInsertKeyTask(player)
 
     class AssignedInsertKeyTask(override val player: AmongUsPlayer) : GuiAssignedTask<InsertKeyTask, AssignedInsertKeyTask>() {
         override val task = InsertKeyTask

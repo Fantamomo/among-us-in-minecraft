@@ -1,5 +1,6 @@
 package com.fantamomo.mc.amongus.task.tasks
 
+import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.task.GuiAssignedTask
 import com.fantamomo.mc.amongus.task.Task
@@ -27,9 +28,9 @@ object InspectSampleTask :
     override val id = "inspect_sample"
     override val type = TaskType.LONG
 
-    override fun assignTo(player: AmongUsPlayer): AssignedInspectSampleTask? =
-        if (player.game.area.tasks[id].isNullOrEmpty()) null
-        else AssignedInspectSampleTask(player)
+    override fun isAvailable(game: Game): Boolean = !game.area.tasks[id].isNullOrEmpty()
+
+    override fun assignTo(player: AmongUsPlayer) = AssignedInspectSampleTask(player)
 
     class AssignedInspectSampleTask(
         override val player: AmongUsPlayer

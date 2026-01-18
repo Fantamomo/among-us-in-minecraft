@@ -1,5 +1,6 @@
 package com.fantamomo.mc.amongus.task.tasks
 
+import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.task.GuiAssignedTask
 import com.fantamomo.mc.amongus.task.Steppable
@@ -19,11 +20,9 @@ object TransferDataTask : Task<TransferDataTask, TransferDataTask.AssignedTransf
     override val id: String = "transfer_data"
     override val type: TaskType = TaskType.LONG
 
-    override fun assignTo(player: AmongUsPlayer): AssignedTransferDataTask? {
-        if (player.game.area.tasks[id].isNullOrEmpty()) return null
-        if (player.game.area.tasks[UPLOAD_DATA].isNullOrEmpty()) return null
-        return AssignedTransferDataTask(player)
-    }
+    override fun isAvailable(game: Game) = !game.area.tasks[id].isNullOrEmpty() && !game.area.tasks[UPLOAD_DATA].isNullOrEmpty()
+
+    override fun assignTo(player: AmongUsPlayer) = AssignedTransferDataTask(player)
 
     class AssignedTransferDataTask(override val player: AmongUsPlayer) : GuiAssignedTask<TransferDataTask, AssignedTransferDataTask>(), Steppable {
         override val task = TransferDataTask

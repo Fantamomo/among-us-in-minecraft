@@ -1,5 +1,6 @@
 package com.fantamomo.mc.amongus.task.tasks
 
+import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.task.GuiAssignedTask
 import com.fantamomo.mc.amongus.task.Task
@@ -19,10 +20,9 @@ object SwipeCardTask : Task<SwipeCardTask, SwipeCardTask.AssignedSwipeCardTask> 
     override val id: String = "swipe_card"
     override val type: TaskType = TaskType.COMMON
 
-    override fun assignTo(player: AmongUsPlayer): AssignedSwipeCardTask? {
-        if (player.game.area.tasks[id].isNullOrEmpty()) return null
-        return AssignedSwipeCardTask(player)
-    }
+    override fun isAvailable(game: Game) = !game.area.tasks[id].isNullOrEmpty()
+
+    override fun assignTo(player: AmongUsPlayer) = AssignedSwipeCardTask(player)
 
     class AssignedSwipeCardTask(override val player: AmongUsPlayer) :
         GuiAssignedTask<SwipeCardTask, AssignedSwipeCardTask>() {

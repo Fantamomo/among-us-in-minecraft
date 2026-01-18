@@ -1,6 +1,7 @@
 package com.fantamomo.mc.amongus.task.tasks
 
 import com.fantamomo.mc.amongus.AmongUs
+import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.task.GuiAssignedTask
 import com.fantamomo.mc.amongus.task.Task
@@ -21,10 +22,9 @@ object NumbersTask : Task<NumbersTask, NumbersTask.AssignedNumbersTask> {
     override val id: String = "numbers"
     override val type: TaskType = TaskType.SHORT
 
-    override fun assignTo(player: AmongUsPlayer): AssignedNumbersTask? {
-        if (player.game.area.tasks[id].isNullOrEmpty()) return null
-        return AssignedNumbersTask(player)
-    }
+    override fun isAvailable(game: Game): Boolean = !game.area.tasks[id].isNullOrEmpty()
+
+    override fun assignTo(player: AmongUsPlayer) = AssignedNumbersTask(player)
 
     class AssignedNumbersTask(override val player: AmongUsPlayer) :
         GuiAssignedTask<NumbersTask, AssignedNumbersTask>() {

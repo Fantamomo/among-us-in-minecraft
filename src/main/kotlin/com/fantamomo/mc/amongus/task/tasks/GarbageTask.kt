@@ -1,5 +1,6 @@
 package com.fantamomo.mc.amongus.task.tasks
 
+import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.task.GuiAssignedTask
 import com.fantamomo.mc.amongus.task.Task
@@ -18,12 +19,9 @@ object GarbageTask : Task<GarbageTask, GarbageTask.AssignedGarbageTask> {
     override val id: String = "garbage"
     override val type: TaskType = TaskType.SHORT
 
-    override fun assignTo(player: AmongUsPlayer): AssignedGarbageTask? {
-        if (player.game.area.tasks[id].isNullOrEmpty()) {
-            return null
-        }
-        return AssignedGarbageTask(player)
-    }
+    override fun isAvailable(game: Game): Boolean = !game.area.tasks[id].isNullOrEmpty()
+
+    override fun assignTo(player: AmongUsPlayer) = AssignedGarbageTask(player)
 
     class AssignedGarbageTask(override val player: AmongUsPlayer) :
         GuiAssignedTask<GarbageTask, AssignedGarbageTask>() {

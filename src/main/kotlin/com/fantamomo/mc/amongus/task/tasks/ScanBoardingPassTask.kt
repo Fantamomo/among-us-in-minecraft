@@ -1,5 +1,6 @@
 package com.fantamomo.mc.amongus.task.tasks
 
+import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.task.GuiAssignedTask
 import com.fantamomo.mc.amongus.task.Task
@@ -17,10 +18,9 @@ object ScanBoardingPassTask : Task<ScanBoardingPassTask, ScanBoardingPassTask.As
     override val id: String = "scan_boarding_pass"
     override val type: TaskType = TaskType.COMMON
 
-    override fun assignTo(player: AmongUsPlayer): AssignedScanBoardingPassTask? {
-        if (player.game.area.tasks[id].isNullOrEmpty()) return null
-        return AssignedScanBoardingPassTask(player)
-    }
+    override fun isAvailable(game: Game) = !game.area.tasks[id].isNullOrEmpty()
+
+    override fun assignTo(player: AmongUsPlayer) = AssignedScanBoardingPassTask(player)
 
     class AssignedScanBoardingPassTask(override val player: AmongUsPlayer) : GuiAssignedTask<ScanBoardingPassTask, AssignedScanBoardingPassTask>() {
         override val task = ScanBoardingPassTask
