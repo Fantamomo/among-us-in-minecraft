@@ -16,6 +16,7 @@ import org.bukkit.event.player.PlayerMoveEvent
 object SabotageListener : Listener {
     @EventHandler(priority = EventPriority.HIGH)
     fun onPlayerInteract(event: PlayerInteractEvent) {
+        if (!event.action.isRightClick) return
         val player = event.player
         val amongUsPlayer = PlayerManager.getPlayer(player) ?: return
         val sabotageManager = amongUsPlayer.game.sabotageManager
