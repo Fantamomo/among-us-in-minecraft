@@ -88,7 +88,7 @@ object StartReaktorTask : Task<StartReaktorTask, StartReaktorTask.AssignedStartR
         override fun onHotbarButton(button: Int) {
             if (phase != Phase.INPUT) return
 
-            if (button !in 0..9) return
+            if (button !in 0 until 9) return
 
             val slot = rightGrid[button]
 
