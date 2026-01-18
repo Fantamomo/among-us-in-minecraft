@@ -39,6 +39,10 @@ abstract class GuiAssignedTask<T : Task<T, A>, A : GuiAssignedTask<T, A>> : Assi
 
     abstract fun onInventoryClick(event: InventoryClickEvent)
 
+    open fun onInventoryDrag(event: InventoryDragEvent) {}
+
+    open fun onHotbarButton(button: Int) {}
+
     protected fun ItemStack.markAsMoveable(): ItemStack = apply {
         editPersistentDataContainer {
             it.set(MOVEABLE_ITEM_KEY, PersistentDataType.BYTE, 1)
@@ -62,8 +66,6 @@ abstract class GuiAssignedTask<T : Task<T, A>, A : GuiAssignedTask<T, A>> : Assi
     protected fun ItemStack.getCustomId(): String? = persistentDataContainer.get(ITEM_STACK_CUSTOM_ID, PersistentDataType.STRING)
 
     protected fun ItemStack.isMarkedWith(id: String): Boolean = getCustomId() == id
-
-    open fun onInventoryDrag(event: InventoryDragEvent) {}
 
     companion object {
         val MOVEABLE_ITEM_KEY = NamespacedKey(AmongUs, "task_item/moveable")
