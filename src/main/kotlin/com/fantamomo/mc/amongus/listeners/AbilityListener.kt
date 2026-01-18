@@ -18,7 +18,7 @@ object AbilityListener : Listener {
 
     private fun ItemStack.isAbilityItem() = AbilityManager.isAbilityItem(this)
 
-    @EventHandler(priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.NORMAL)
     fun onItemUse(event: PlayerInteractEvent) {
         if (event.action == Action.PHYSICAL) return
         val item = event.item ?: return
