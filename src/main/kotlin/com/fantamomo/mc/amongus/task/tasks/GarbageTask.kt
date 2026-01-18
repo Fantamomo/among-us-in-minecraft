@@ -12,7 +12,6 @@ import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.inventory.Inventory
-import org.bukkit.inventory.ItemStack
 import kotlin.random.Random
 
 object GarbageTask : Task<GarbageTask, GarbageTask.AssignedGarbageTask> {
@@ -51,16 +50,16 @@ object GarbageTask : Task<GarbageTask, GarbageTask.AssignedGarbageTask> {
         }
 
         override fun setupInventory() {
-            val border = ItemStack(Material.BLACK_STAINED_GLASS_PANE).hideTooltip()
+            val border = itemStack(Material.BLACK_STAINED_GLASS_PANE).hideTooltip()
             borderItemSlots.forEach { slot ->
                 inv.setItem(slot, border)
             }
             middleItemSlots.forEach { slot ->
                 if (Random.nextBoolean()) {
-                    inv.setItem(slot, ItemStack(garbage.random()).hideTooltip())
+                    inv.setItem(slot, itemStack(garbage.random()).hideTooltip())
                 }
             }
-            middleItemSlots.random().let { inv.setItem(it, ItemStack(garbage.random()).hideTooltip()) }
+            middleItemSlots.random().let { inv.setItem(it, itemStack(garbage.random()).hideTooltip()) }
         }
 
         companion object {
