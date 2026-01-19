@@ -3,10 +3,7 @@ package com.fantamomo.mc.amongus.game
 import com.fantamomo.mc.adventure.text.content
 import com.fantamomo.mc.adventure.text.textComponent
 import com.fantamomo.mc.amongus.area.GameArea
-import com.fantamomo.mc.amongus.manager.ActionBarManager
-import com.fantamomo.mc.amongus.manager.CameraManager
-import com.fantamomo.mc.amongus.manager.VentManager
-import com.fantamomo.mc.amongus.manager.WaypointManager
+import com.fantamomo.mc.amongus.manager.*
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.sabotage.SabotageManager
@@ -43,6 +40,7 @@ class Game(
     val actionBarManager = ActionBarManager(this)
     val sabotageManager = SabotageManager(this)
     val taskManager = TaskManager(this)
+    val meetingManager = MeetingManager(this)
 
     internal val players = mutableListOf<AmongUsPlayer>()
     var phase: GamePhase = GamePhase.LOBBY
@@ -64,6 +62,7 @@ class Game(
         waypointManager.removePlayer(player)
         actionBarManager.removeAll(player)
         sabotageManager.removePlayer(player)
+        taskManager.removePlayer(player)
     }
 
     fun tick() {
@@ -73,6 +72,7 @@ class Game(
         actionBarManager.tick()
         sabotageManager.tick()
         taskManager.tick()
+        meetingManager.tick()
     }
 
     fun getPlayer(uuid: UUID) = players.find { it.uuid == uuid }
@@ -102,7 +102,7 @@ class Game(
     }
 
     internal fun onRejoin(amongUsPlayer: AmongUsPlayer) {
-        // todo
+        amongUsPlayer.mannequinController.getEntity()?.location?.let { amongUsPlayer.player?.teleport(it) }
     }
 
     fun sendChatMessage(component: Component) {
