@@ -10,7 +10,8 @@ object Listeners {
         VentListener,
         CameraListener,
         SabotageListener,
-        TaskListener
+        TaskListener,
+        MeetingListener
     )
 
     fun registerAll() {
