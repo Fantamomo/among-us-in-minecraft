@@ -122,6 +122,10 @@ class TaskManager(val game: Game) {
         assignTask(player, assignedTask)
     }
 
+    fun removePlayer(player: AmongUsPlayer) {
+        tasks.remove(player)
+    }
+
     inner class RegisteredTask(
         val task: AssignedTask<*, *>
     ) {
