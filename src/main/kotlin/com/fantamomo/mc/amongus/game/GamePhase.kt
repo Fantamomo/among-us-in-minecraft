@@ -14,4 +14,7 @@ enum class GamePhase(val onDisconnectRemove: Boolean) {
 
     val isPlaying: Boolean
         get() = this == RUNNING || this == GamePhase.CALLING_MEETING || this == DISCUSSION || this == VOTING || this == ENDING_MEETING
+
+    val isMeeting: Boolean
+        get() = this == CALLING_MEETING || this == DISCUSSION || this == VOTING || this == ENDING_MEETING
 }
