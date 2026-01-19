@@ -89,6 +89,7 @@ class MeetingManager(private val game: Game) : Listener {
         caller.meetingButtonsPressed++
         buttonCooldown.reset()
         meeting = Meeting(caller, reason)
+        game.invalidateAbilities()
     }
 
     inner class Meeting(
@@ -138,7 +139,12 @@ class MeetingManager(private val game: Game) : Listener {
 
         private fun startDiscussion() {
             setPhase(GamePhase.DISCUSSION)
-            timer = Cooldown(game.settings[SettingsKey.MEETING_DISCUSSION_TIME], true)
+            val duration = game.settings[SettingsKey.MEETING_DISCUSSION_TIME]
+            if (duration <= Duration.ZERO) {
+                startVoting()
+                return
+            }
+            timer = Cooldown(duration, true)
         }
 
         private fun startVoting() {
@@ -287,6 +293,7 @@ class MeetingManager(private val game: Game) : Listener {
             meeting = null
             buttonCooldown.start()
             setPhase(GamePhase.RUNNING)
+            game.invalidateAbilities()
         }
 
         private fun setPhase(phase: GamePhase) {

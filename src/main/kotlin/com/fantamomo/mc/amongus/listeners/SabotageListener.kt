@@ -38,12 +38,14 @@ object SabotageListener : Listener {
                 }
             }
             is SeismicStabilizersSabotage -> {
+                if (amongUsPlayer.isAlive) return
                 val targetBlock = event.clickedBlock ?: return
                 if (sabotage.seismicStabilizers1 == targetBlock || sabotage.seismicStabilizers2 == targetBlock) {
                     player.run {
                         sendTitlePart(TitlePart.SUBTITLE, Component.translatable("sabotage.subtitle.dead"))
                         sendTitlePart(TitlePart.TITLE, Component.translatable("sabotage.title.dead"))
                     }
+                    event.isCancelled = true
                 }
             }
         }

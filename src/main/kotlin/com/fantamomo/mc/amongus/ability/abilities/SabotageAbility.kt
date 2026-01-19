@@ -1,61 +1,72 @@
 package com.fantamomo.mc.amongus.ability.abilities
 
-import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.ability.Ability
 import com.fantamomo.mc.amongus.ability.AssignedAbility
+import com.fantamomo.mc.amongus.ability.builder.BlockReason
+import com.fantamomo.mc.amongus.ability.builder.abilityItem
 import com.fantamomo.mc.amongus.ability.item.AbilityItem
-import com.fantamomo.mc.amongus.ability.item.CooldownAbilityItem
-import com.fantamomo.mc.amongus.ability.item.game
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.sabotage.Sabotage
-import com.fantamomo.mc.amongus.util.textComponent
-import io.papermc.paper.datacomponent.DataComponentTypes
-import org.bukkit.inventory.ItemStack
 
-object SabotageAbility : Ability<SabotageAbility, SabotageAbility.AssignedSabotageAbility> {
+object SabotageAbility :
+    Ability<SabotageAbility, SabotageAbility.AssignedSabotageAbility> {
+
     override val id: String = "sabotage"
 
-    override fun assignTo(player: AmongUsPlayer) = AssignedSabotageAbility(player)
+    override fun assignTo(player: AmongUsPlayer) =
+        AssignedSabotageAbility(player)
 
-    class AssignedSabotageAbility(override val player: AmongUsPlayer) : AssignedAbility<SabotageAbility, AssignedSabotageAbility> {
+    class AssignedSabotageAbility(
+        override val player: AmongUsPlayer
+    ) : AssignedAbility<SabotageAbility, AssignedSabotageAbility> {
+
         override val definition = SabotageAbility
-        override val items: List<AbilityItem> = player.game.sabotageManager.supportedSabotages.map { SabotageAbilityItem(this, it.value) }
-    }
 
-    @Suppress("UnstableApiUsage")
-    class SabotageAbilityItem(ability: AssignedAbility<*, *>, val sabotageType: Sabotage<*, *>) : CooldownAbilityItem(
-        ability,
-        sabotageType.sabotageType.id,
-        ability.player.game.sabotageManager.cooldown(sabotageType)
-    ) {
-        override fun activatedItem() = ItemStack(sabotageType.sabotageType.activeMaterial).apply {
-            setData(
-                DataComponentTypes.ITEM_NAME,
-                textComponent(ability.player.locale) {
-                    translatable(
-                        "ability.sabotage.${sabotageType.sabotageType.id}.active"
+        override val items: List<AbilityItem> =
+            player.game.sabotageManager.supportedSabotages.values.map { sabotage ->
+                sabotageItem(sabotage)
+            }
+
+        private fun sabotageItem(
+            sabotage: Sabotage<*, *>
+        ): AbilityItem = abilityItem(sabotage.sabotageType.id) {
+
+            cooldown {
+                game.sabotageManager.cooldown(sabotage)
+            }
+
+            material {
+                active = sabotage.sabotageType.activeMaterial
+                inactive = sabotage.sabotageType.deactivateMaterial
+            }
+
+            name {
+                active("ability.sabotage.${sabotage.sabotageType.id}.active")
+                inactive {
+                    whenBlocked(
+                        BlockReason.IN_MEETING,
+                        "ability.general.disabled.in_meeting"
+                    )
+                    whenBlocked(
+                        BlockReason.IN_VENT,
+                        "ability.general.disabled.in_vent"
+                    )
+                    whenBlocked(
+                        BlockReason.IN_MEETING,
+                        "ability.general.disabled.in_meeting"
                     )
                 }
-            )
-        }
+            }
 
-        override fun deactivatedItem() = ItemStack(sabotageType.sabotageType.deactivateMaterial).apply {
-            setData(
-                DataComponentTypes.ITEM_NAME,
-                textComponent(ability.player.locale) {
-                    translatable(
-                        "ability.sabotage.${sabotageType.sabotageType.id}.deactivate"
-                    )
-                }
-            )
-        }
+            blockWhen {
+                sabotage()
+                inMeeting()
+                inVent()
+            }
 
-        override fun canUse(): Boolean = game.sabotageManager.canSabotage(sabotageType)
-
-        override fun onRightClick() {
-            if (!canUse()) return
-            game.sabotageManager.sabotage(sabotageType)
-            notifyItemChange()
+            onRightClick {
+                game.sabotageManager.sabotage(sabotage)
+            }
         }
     }
 }

@@ -4,6 +4,7 @@ import com.fantamomo.mc.adventure.text.args
 import com.fantamomo.mc.adventure.text.textComponent
 import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.AmongUs
+import com.fantamomo.mc.amongus.ability.AbilityManager
 import com.fantamomo.mc.amongus.ability.abilities.RemoteCameraAbility
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.languages.component
@@ -61,6 +62,7 @@ class CameraManager(val game: Game) {
                 showToSelf()
                 freeze()
             }
+            AbilityManager.invalidatePlayer(this.player)
         }
 
         private fun setSpectatorTarget(target: ArmorStand?) {
@@ -141,6 +143,7 @@ class CameraManager(val game: Game) {
         val cameraPlayer = getCamera(amongUsPlayer) ?: return
         cameraPlayer.dispose()
         playersInCamera.remove(cameraPlayer)
+        AbilityManager.invalidatePlayer(amongUsPlayer)
     }
 
     private fun getNextCamera(camera: Camera): Camera {

@@ -23,7 +23,7 @@ class AmongUsPlayer internal constructor(
 ) {
     private var _name: String = name
     private var _locale: Locale = Locale.getDefault()
-    private val abilities: MutableList<AssignedAbility<*, *>> = mutableListOf()
+    internal val abilities: MutableList<AssignedAbility<*, *>> = mutableListOf()
 
     val mannequinController = MannequinController(this)
 
