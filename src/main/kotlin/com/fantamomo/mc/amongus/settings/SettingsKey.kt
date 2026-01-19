@@ -1,9 +1,13 @@
 package com.fantamomo.mc.amongus.settings
 
 import com.fantamomo.mc.amongus.settings.types.BooleanSettingsType
+import com.fantamomo.mc.amongus.settings.types.DurationSettingsType
 import com.fantamomo.mc.amongus.settings.types.EnumSettingsType
 import com.fantamomo.mc.amongus.settings.types.IntSettingsType
 import com.fantamomo.mc.amongus.util.data.DistanceEnum
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 data class SettingsKey<T : Any, S : SettingsType<T>>(
     val key: String,
@@ -41,5 +45,8 @@ data class SettingsKey<T : Any, S : SettingsType<T>>(
         val CAMERA_SWITCH_SAFE_COOLDOWN = key("camera.switch.safe.cooldown", IntSettingsType.range(0, 1000), 750)
 
         val SABOTAGE_CRISIS_COOLDOWN = key("sabotage.crisis.cooldown", IntSettingsType.range(10, 300), 60)
+        val MEETING_DISCUSSION_TIME =
+            key("meeting.discussion.time", DurationSettingsType.range(Duration.ZERO, 3.minutes), 1.minutes)
+        val MEETING_VOTING_TIME = key("meeting.voting.time", DurationSettingsType.range(15.seconds, 3.minutes), 30.seconds)
     }
 }
