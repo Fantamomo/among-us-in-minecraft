@@ -30,13 +30,7 @@ data class GameArea(
             field = value?.toBlockLocation()
         }
     var lightPosMin: Location? = null
-        set(value) {
-            field = value?.toBlockLocation()
-        }
     var lightPosMax: Location? = null
-        set(value) {
-            field = value?.toBlockLocation()
-        }
     var seismicStabilizers1: Location? = null
         set(value) {
             field = value?.toBlockLocation()
