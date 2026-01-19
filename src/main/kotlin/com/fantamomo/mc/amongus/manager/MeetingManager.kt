@@ -23,6 +23,7 @@ import org.bukkit.entity.ArmorStand
 import org.bukkit.event.Listener
 import org.bukkit.event.entity.PlayerDeathEvent
 import kotlin.time.Duration
+import kotlin.time.DurationUnit
 
 class MeetingManager(private val game: Game) : Listener {
 
@@ -37,6 +38,8 @@ class MeetingManager(private val game: Game) : Listener {
 
     private val ejectionViewPoint: Location =
         game.area.ejectedViewPoint ?: error("Ejection view point not found")
+
+    private val buttonCooldown = Cooldown(game.settings[SettingsKey.MEETING_BUTTON_COOLDOWN], true)
 
     private val cameraAnchor: ArmorStand =
         ejectionViewPoint.world.spawn(ejectionViewPoint, ArmorStand::class.java) {
@@ -61,16 +64,34 @@ class MeetingManager(private val game: Game) : Listener {
 
     fun isCurrentlyAMeeting(): Boolean = meeting != null
 
-    fun callMeeting(caller: AmongUsPlayer, reason: MeetingReason) {
+    fun callMeeting(caller: AmongUsPlayer, reason: MeetingReason, force: Boolean = reason == MeetingReason.BODY) {
         if (meeting != null) return
-        meeting = Meeting(caller, reason)
+        when {
+            force -> {
+                meeting = Meeting(caller, reason)
+            }
+            buttonCooldown.isRunning() -> {
+                caller.player?.sendMessage(textComponent {
+                    translatable("meeting.button_cooldown") {
+                        args { string("time", buttonCooldown.remaining().toString(DurationUnit.SECONDS, 0)) }
+                    }
+                })
+            }
+            caller.meetingButtonsPressed >= game.settings[SettingsKey.MEETING_BUTTONS] -> {
+                caller.meetingButtonsPressed++
+                buttonCooldown.reset()
+                meeting = Meeting(caller, reason)
+            }
+            else -> {
+                caller.player?.sendMessage(Component.translatable("meeting.no_buttons"))
+            }
+        }
     }
 
     inner class Meeting(
         private val caller: AmongUsPlayer,
         private val reason: MeetingReason
     ) {
-
         private var timer: Cooldown? = null
         private val votes: MutableMap<AmongUsPlayer, Vote> = mutableMapOf()
         private var ejectedPlayer: AmongUsPlayer? = null
@@ -261,6 +282,7 @@ class MeetingManager(private val game: Game) : Listener {
             }
 
             meeting = null
+            buttonCooldown.start()
             setPhase(GamePhase.RUNNING)
         }
 
