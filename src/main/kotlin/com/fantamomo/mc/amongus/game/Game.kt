@@ -2,6 +2,7 @@ package com.fantamomo.mc.amongus.game
 
 import com.fantamomo.mc.adventure.text.content
 import com.fantamomo.mc.adventure.text.textComponent
+import com.fantamomo.mc.amongus.ability.AbilityManager
 import com.fantamomo.mc.amongus.area.GameArea
 import com.fantamomo.mc.amongus.manager.*
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
@@ -111,5 +112,9 @@ class Game(
 
     fun <T : Any> sendTitle(titlePart: TitlePart<T>, value: T) {
         players.forEach { it.player?.sendTitlePart(titlePart, value) }
+    }
+
+    fun invalidateAbilities() {
+        AbilityManager.invalidateAll(this)
     }
 }
