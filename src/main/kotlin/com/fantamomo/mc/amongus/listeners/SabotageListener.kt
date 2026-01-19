@@ -1,5 +1,6 @@
 package com.fantamomo.mc.amongus.listeners
 
+import com.fantamomo.mc.amongus.game.GameManager
 import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.sabotage.CommunicationsSabotage
 import com.fantamomo.mc.amongus.sabotage.LightsSabotage
@@ -7,10 +8,12 @@ import com.fantamomo.mc.amongus.sabotage.SeismicStabilizersSabotage
 import com.fantamomo.mc.amongus.util.isSameBlockPosition
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.title.TitlePart
+import org.bukkit.Material
 import org.bukkit.event.Event
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
+import org.bukkit.event.block.BlockRedstoneEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerMoveEvent
 
@@ -46,24 +49,20 @@ object SabotageListener : Listener {
         }
     }
 
-//    @EventHandler
-//    fun onEntityChangeBlock(event: EntityChangeBlockEvent) {
-//        val player = event.entity as? Player ?: return
-//        val amongUsPlayer = PlayerManager.getPlayer(player) ?: return
-//        val sabotageManager = amongUsPlayer.game.sabotageManager
-//        val sabotage = sabotageManager.currentSabotage() ?: return
-//        when (sabotage) {
-//            SabotageManager.SabotageType.Lights -> {
-//                val targetBlock = event.block
-//                sabotageManager.lightLevers.forEach { lever ->
-//                    if (targetBlock.location.isSameBlockPosition(lever)) {
-//                        sabotageManager.lightLeverFlip(lever, player, event.blockData)
-//                    }
-//                }
-//            }
-//            else -> {}
-//        }
-//    }
+    @EventHandler
+    fun onBlockRedstone(event: BlockRedstoneEvent) {
+        if (event.newCurrent != 0) return
+        val block = event.block
+        for (game in GameManager.getGames()) {
+            val sabotage = game.sabotageManager.currentSabotage()
+            if (sabotage is LightsSabotage) {
+                if (block.type == Material.IRON_TRAPDOOR) {
+                    event.newCurrent = 15
+                    return
+                }
+            }
+        }
+    }
 
     @EventHandler
     fun onPlayerMove(event: PlayerMoveEvent) {
