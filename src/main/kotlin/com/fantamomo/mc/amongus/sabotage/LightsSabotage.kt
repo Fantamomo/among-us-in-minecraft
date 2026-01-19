@@ -31,7 +31,7 @@ class LightsSabotage internal constructor(override val game: Game) :
     override val waypoints: Set<WaypointManager.Waypoint> = setOf(
         WaypointManager.Waypoint("sabotage.waypoint.lights", Color.RED, centerLocationOf(min, max))
     )
-    private val levers: Map<Block, BlockDisplay> =
+    val levers: Map<Block, BlockDisplay> =
         game.area.lightLevers.filter { it.isBetween(min, max) }.map { it.block }.associateWith(::createBlockDisplay)
 
     private fun createBlockDisplay(block: Block) =
