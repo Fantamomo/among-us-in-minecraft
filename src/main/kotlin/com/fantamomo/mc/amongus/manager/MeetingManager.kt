@@ -66,26 +66,29 @@ class MeetingManager(private val game: Game) : Listener {
 
     fun callMeeting(caller: AmongUsPlayer, reason: MeetingReason, force: Boolean = reason == MeetingReason.BODY) {
         if (meeting != null) return
-        when {
-            force -> {
-                meeting = Meeting(caller, reason)
-            }
-            buttonCooldown.isRunning() -> {
-                caller.player?.sendMessage(textComponent {
-                    translatable("meeting.button_cooldown") {
-                        args { string("time", buttonCooldown.remaining().toString(DurationUnit.SECONDS, 0)) }
-                    }
-                })
-            }
-            caller.meetingButtonsPressed >= game.settings[SettingsKey.MEETING_BUTTONS] -> {
-                caller.meetingButtonsPressed++
-                buttonCooldown.reset()
-                meeting = Meeting(caller, reason)
-            }
-            else -> {
-                caller.player?.sendMessage(Component.translatable("meeting.no_buttons"))
-            }
+        if (force) {
+            meeting = Meeting(caller, reason)
+            return
         }
+        if (game.sabotageManager.isCurrentlySabotage()) {
+            caller.player?.sendMessage(Component.translatable("meeting.sabotage_in_progress"))
+            return
+        }
+        if (buttonCooldown.isRunning()) {
+            caller.player?.sendMessage(textComponent {
+                translatable("meeting.button_cooldown") {
+                    args { string("time", buttonCooldown.remaining().toString(DurationUnit.SECONDS, 0)) }
+                }
+            })
+            return
+        }
+        if (caller.meetingButtonsPressed >= game.settings[SettingsKey.MEETING_BUTTONS]) {
+            caller.player?.sendMessage(Component.translatable("meeting.button_limit_reached"))
+            return
+        }
+        caller.meetingButtonsPressed++
+        buttonCooldown.reset()
+        meeting = Meeting(caller, reason)
     }
 
     inner class Meeting(
