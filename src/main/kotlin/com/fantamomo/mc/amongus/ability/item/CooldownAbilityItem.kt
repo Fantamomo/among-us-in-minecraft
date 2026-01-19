@@ -47,7 +47,7 @@ abstract class CooldownAbilityItem(ability: AssignedAbility<*, *>, id: String, v
         itemStack.setData(
             DataComponentTypes.ITEM_NAME,
             textComponent(ability.player.locale) {
-                translatable("ability.general.cooldown") {
+                translatable("ability.general.disabled.cooldown") {
                     args {
                         string("cooldown", cooldown.remaining().toString(DurationUnit.SECONDS, 0))
                         string("ability", ability.definition.id)
