@@ -1,6 +1,7 @@
 package com.fantamomo.mc.amongus.manager
 
 import com.fantamomo.mc.amongus.AmongUs
+import com.fantamomo.mc.amongus.ability.AbilityManager
 import com.fantamomo.mc.amongus.ability.abilities.VentAbility
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
@@ -145,6 +146,7 @@ class VentManager(val game: Game) {
                 game.waypointManager.removeWaypoint(player, vent.waypoint)
             }
             player.mannequinController.showToAll()
+            AbilityManager.invalidatePlayer(this.player)
         }
     }
 
@@ -192,6 +194,7 @@ class VentManager(val game: Game) {
     fun ventIn(amongUsPlayer: AmongUsPlayer, vent: Vent) {
         if (isVented(amongUsPlayer)) return
         ventedPlayers[amongUsPlayer] = VentedPlayer(amongUsPlayer, vent)
+        AbilityManager.invalidatePlayer(amongUsPlayer)
     }
 
     fun ventOut(amongUsPlayer: AmongUsPlayer) {
