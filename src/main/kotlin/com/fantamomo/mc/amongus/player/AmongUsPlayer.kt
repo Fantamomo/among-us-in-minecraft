@@ -39,6 +39,7 @@ class AmongUsPlayer internal constructor(
     val tasks: MutableSet<TaskManager.RegisteredTask>
         get() = game.taskManager.get(this)
     var isAlive: Boolean = true
+    var meetingButtonsPressed: Int = 0
 
     private fun checkGameRunning() {
         if (game.phase != GamePhase.RUNNING) throw IllegalStateException("Cannot perform this action in this phase")
