@@ -7,6 +7,7 @@ import com.fantamomo.mc.amongus.sabotage.SeismicStabilizersSabotage
 import com.fantamomo.mc.amongus.util.isSameBlockPosition
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.title.TitlePart
+import org.bukkit.event.Event
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
@@ -14,8 +15,9 @@ import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerMoveEvent
 
 object SabotageListener : Listener {
-    @EventHandler(priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.MONITOR)
     fun onPlayerInteract(event: PlayerInteractEvent) {
+        if (event.useInteractedBlock() == Event.Result.DENY) return
         if (!event.action.isRightClick) return
         val player = event.player
         val amongUsPlayer = PlayerManager.getPlayer(player) ?: return
