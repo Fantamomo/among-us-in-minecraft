@@ -56,6 +56,7 @@ object PlayerListener : Listener {
                 target
             ) == true
         ) return
+        if (!game.meetingManager.isCurrentlyAMeeting() && area.meetingBlock?.isSameBlockPosition(target) == true) return
         event.isCancelled = true
     }
 }
