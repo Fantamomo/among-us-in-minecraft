@@ -45,15 +45,17 @@ object PlayerListener : Listener {
         val game = amongUsPlayer.game
         val target = event.clickedBlock?.location ?: return
         val area = game.area
-        if (area.lightLevers.any { it.isSameBlockPosition(target) } && game.sabotageManager.isSabotage(SabotageType.Lights)) {
-            return
-        }
-        if ((area.seismicStabilizers2?.isSameBlockPosition(target) == true ||
-                    area.seismicStabilizers1?.isSameBlockPosition(target) == true) &&
-            game.sabotageManager.isSabotage(SabotageType.SeismicStabilizers)
-        ) {
-            return
-        }
+        if (game.sabotageManager.isSabotage(SabotageType.Lights) &&
+            area.lightLevers.any { it.isSameBlockPosition(target) }
+        ) return
+        if (game.sabotageManager.isSabotage(SabotageType.SeismicStabilizers) &&
+            (area.seismicStabilizers2?.isSameBlockPosition(target) == true ||
+                    area.seismicStabilizers1?.isSameBlockPosition(target) == true)
+        ) return
+        if (game.sabotageManager.isSabotage(SabotageType.Communications) && area.communications?.isSameBlockPosition(
+                target
+            ) == true
+        ) return
         event.isCancelled = true
     }
 }
