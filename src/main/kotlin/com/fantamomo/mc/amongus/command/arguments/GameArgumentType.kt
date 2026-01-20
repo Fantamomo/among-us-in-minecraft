@@ -9,6 +9,7 @@ import com.fantamomo.mc.amongus.game.GameManager
 import com.fantamomo.mc.amongus.languages.numeric
 import com.fantamomo.mc.amongus.languages.string
 import com.mojang.brigadier.LiteralMessage
+import com.mojang.brigadier.StringReader
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.context.CommandContext
 import com.mojang.brigadier.exceptions.DynamicCommandExceptionType
@@ -19,7 +20,7 @@ import io.papermc.paper.command.brigadier.CommandSourceStack
 import io.papermc.paper.command.brigadier.argument.CustomArgumentType
 import java.util.concurrent.CompletableFuture
 
-object GameArgumentType : CustomArgumentType.Converted<Game, String> {
+object GameArgumentType : CustomArgumentType<Game, String> {
 
     private val invalidLength = DynamicCommandExceptionType { arg ->
         LiteralMessage("Invalid code length, must be 4 characters long, got $arg")
@@ -32,10 +33,11 @@ object GameArgumentType : CustomArgumentType.Converted<Game, String> {
         LiteralMessage("Game $arg not found")
     }
 
-    override fun convert(nativeType: String): Game {
-        if (nativeType.length != 4) throw invalidLength.create(nativeType)
-        for (char in nativeType) if (!char.isLetterOrDigit()) throw invalidCodeChars.create(nativeType)
-        return GameManager[nativeType.uppercase()] ?: throw gameNotFound.create(nativeType)
+    override fun parse(reader: StringReader): Game {
+        val input = reader.readUnquotedString()
+        if (input.length != 4) throw invalidLength.createWithContext(reader, input)
+        for (char in input) if (!char.isLetterOrDigit()) throw invalidCodeChars.createWithContext(reader, input)
+        return GameManager[input.uppercase()] ?: throw gameNotFound.createWithContext(reader, input)
     }
 
     override fun getNativeType(): StringArgumentType = StringArgumentType.word()
