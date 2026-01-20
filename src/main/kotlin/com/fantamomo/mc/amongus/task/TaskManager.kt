@@ -10,8 +10,10 @@ import com.fantamomo.mc.amongus.manager.EntityManager
 import com.fantamomo.mc.amongus.manager.WaypointManager
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.sabotage.SabotageType
+import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.task.GuiAssignedTask.Companion.MOVEABLE_ITEM_KEY
 import com.fantamomo.mc.amongus.util.isSameBlockPosition
+import com.fantamomo.mc.amongus.util.randomListDistinct
 import net.kyori.adventure.title.TitlePart
 import org.bukkit.Color
 import org.bukkit.Location
@@ -122,8 +124,30 @@ class TaskManager(val game: Game) {
         assignTask(player, assignedTask)
     }
 
+    private fun assignTasks(player: AmongUsPlayer, tasks: Collection<Task<*, *>>) {
+        tasks.forEach { assignTask(player, it) }
+    }
+
     fun removePlayer(player: AmongUsPlayer) {
         tasks.remove(player)
+    }
+
+    fun start() {
+        val longTasksCount = game.settings[SettingsKey.TASK_LONG]
+        val shortTasksCount = game.settings[SettingsKey.TASK_SHORT]
+        val commonTasksCount = game.settings[SettingsKey.TASK_COMMON]
+
+        val tasks = Task.tasks.filter { it.isAvailable(game) }
+        val longTasks = tasks.filter { it.type == TaskType.LONG }
+        val shortTasks = tasks.filter { it.type == TaskType.SHORT }
+        val commonTasks = tasks.filter { it.type == TaskType.COMMON }
+
+        for (player in game.players) {
+            val long = longTasks.randomListDistinct(longTasksCount)
+            val short = shortTasks.randomListDistinct(shortTasksCount)
+            val common = commonTasks.randomListDistinct(commonTasksCount)
+            assignTasks(player, long + short + common)
+        }
     }
 
     inner class RegisteredTask(
