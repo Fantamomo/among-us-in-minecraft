@@ -19,6 +19,8 @@ internal inline fun paperCommand(literal: String, block: PaperCommand.() -> Unit
     return command(literal, block).build()
 }
 
-fun CommandContext<CommandSourceStack>.sendMessage(block: KTextComponent.() -> Unit) {
+@OptIn(ExperimentalContracts::class)
+inline fun CommandContext<CommandSourceStack>.sendMessage(block: KTextComponent.() -> Unit) {
+    contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
     source.sender.sendMessage(textComponent(block))
 }
