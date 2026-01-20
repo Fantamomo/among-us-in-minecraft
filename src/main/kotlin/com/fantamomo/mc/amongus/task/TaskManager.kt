@@ -58,9 +58,10 @@ class TaskManager(val game: Game) {
         val updateFrequency = game.settings[SettingsKey.TASK_BAR_UPDATE]
         if (updateFrequency == TaskBarUpdateEnum.NONE) return
         if (force || (taskCompleted && updateFrequency != TaskBarUpdateEnum.MEETING) || meeting) {
-            val completedTasks = tasks.values.sumOf { tasks -> tasks.sumOf { if (it.completed) it.weight else 0 } }
-            val totalTasks = tasks.values.sumOf { it.sumOf { task -> task.weight } }
-            bossbar.progress(completedTasks.toFloat() / totalTasks)
+            val completedTasks =
+                tasks.values.sumOf { tasks -> tasks.sumOf { if (it.completed && !it.fake) it.weight else 0 } }
+            val totalTasks = tasks.values.sumOf { it.sumOf { task -> if (task.fake) 0 else task.weight } }
+            bossbar.progress(if (totalTasks == 0) 0f else completedTasks.toFloat() / totalTasks)
         }
     }
 
@@ -107,7 +108,11 @@ class TaskManager(val game: Game) {
     private fun removeMoveableItems(player: AmongUsPlayer) {
         player.player?.run {
             inventory.forEachIndexed { index, stack ->
-                if (stack?.persistentDataContainer?.has(MOVEABLE_ITEM_KEY, PersistentDataType.BYTE) == true) inventory.setItem(index, null)
+                if (stack?.persistentDataContainer?.has(
+                        MOVEABLE_ITEM_KEY,
+                        PersistentDataType.BYTE
+                    ) == true
+                ) inventory.setItem(index, null)
             }
             if (itemOnCursor.persistentDataContainer.has(MOVEABLE_ITEM_KEY, PersistentDataType.BYTE)) {
                 setItemOnCursor(null)
@@ -126,7 +131,8 @@ class TaskManager(val game: Game) {
     fun startTask(player: AmongUsPlayer, location: Location): Boolean {
         val registeredTasks = tasks[player] ?: return false
         val task =
-            registeredTasks.find { !it.completed && it.task.location.isSameBlockPosition(location) } ?: return false
+            registeredTasks.find { !it.completed && it.task.location.isSameBlockPosition(location) && !it.fake }
+                ?: return false
         task.task.start()
         return true
     }
@@ -134,7 +140,7 @@ class TaskManager(val game: Game) {
     fun get(task: AmongUsPlayer): MutableSet<RegisteredTask> = tasks[task] ?: mutableSetOf()
 
     fun assignTask(player: AmongUsPlayer, task: AssignedTask<*, *>) {
-        val registeredTask = RegisteredTask(task)
+        val registeredTask = RegisteredTask(task, fake = !player.canDoTasks)
         tasks.getOrPut(player) { mutableSetOf() }.add(registeredTask)
         updateBossbar()
     }
@@ -175,7 +181,8 @@ class TaskManager(val game: Game) {
     }
 
     inner class RegisteredTask(
-        val task: AssignedTask<*, *>
+        val task: AssignedTask<*, *>,
+        val fake: Boolean = false
     ) {
         val weight: Int = task.task.type.weight
         var completed: Boolean = false
