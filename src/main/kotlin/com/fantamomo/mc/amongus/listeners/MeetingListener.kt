@@ -11,6 +11,7 @@ import org.bukkit.event.Listener
 import org.bukkit.event.block.Action
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.inventory.InventoryClickEvent
+import org.bukkit.event.inventory.InventoryCloseEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerToggleSneakEvent
 import org.bukkit.persistence.PersistentDataType
@@ -45,16 +46,20 @@ object MeetingListener : Listener {
     @EventHandler(priority = EventPriority.NORMAL)
     fun onInventoryClick(event: InventoryClickEvent) {
         if (event.isCancelled) return
-        if (event.slot != 1) return
+        if (event.slot != 0 && event.slot != 1) return
         val player = event.whoClicked as? Player ?: return
         val voter = PlayerManager.getPlayer(player) ?: return
-        val inventory = event.clickedInventory ?: return
-        val holder = inventory.holder as? MeetingManager.VotingInventory ?: return
-        val meeting = holder.meeting
+        val view = event.view
+        val meeting = voter.game.meetingManager.meeting ?: return
+        if (view !in meeting.voteInventories.values) return
         event.isCancelled = true
         val item = event.currentItem ?: return
-        if (item.persistentDataContainer.has(MeetingManager.VotingInventory.VOTING_KEY)) {
-            val target = item.persistentDataContainer.get(MeetingManager.VotingInventory.VOTING_KEY, PersistentDataType.STRING) ?: return
+        if (item.persistentDataContainer.has(MeetingManager.VOTING_KEY)) {
+            val target = item.persistentDataContainer.get(MeetingManager.VOTING_KEY, PersistentDataType.STRING) ?: return
+            if (target == "close") {
+                player.closeInventory()
+                return
+            }
             if (target == "skip") {
                 meeting.voteSkip(voter)
             } else {
@@ -67,11 +72,22 @@ object MeetingListener : Listener {
     }
 
     @EventHandler
+    fun onInventoryClose(event: InventoryCloseEvent) {
+        val inventory = event.player.inventory
+        inventory.forEachIndexed { index, stack ->
+            if (stack?.persistentDataContainer?.has(MeetingManager.VOTING_KEY) == true) {
+                inventory.setItem(index, null)
+            }
+        }
+    }
+
+    @EventHandler
     fun onSneak(event: PlayerToggleSneakEvent) {
+        if (!event.isSneaking) return
         val player = event.player
         val amongUsPlayer = PlayerManager.getPlayer(player) ?: return
         val meetingManager = amongUsPlayer.game.meetingManager
         val meeting = meetingManager.meeting ?: return
-        player.openInventory(meeting.voteInventory.inventory)
+        meeting.openVoteInventory(amongUsPlayer)
     }
 }
