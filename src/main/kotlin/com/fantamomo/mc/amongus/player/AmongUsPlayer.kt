@@ -70,6 +70,7 @@ class AmongUsPlayer internal constructor(
         val assigned = ability.assignTo(this)
         AbilityManager.registerAbility(assigned)
         abilities.add(assigned)
+        if (game.phase == GamePhase.LOBBY) return
         val player = player
         if (player != null) {
             for (item in assigned.items) {
@@ -90,4 +91,15 @@ class AmongUsPlayer internal constructor(
     fun isInCams(): Boolean = game.cameraManager.isInCams(this)
 
     fun canSeeWhenLightsSabotage(): Boolean = false
+
+    fun start() {
+        val player = player
+        if (player != null) {
+            for (ability in abilities) {
+                for (item in ability.items) {
+                    player.inventory.addItem(item.get())
+                }
+            }
+        }
+    }
 }

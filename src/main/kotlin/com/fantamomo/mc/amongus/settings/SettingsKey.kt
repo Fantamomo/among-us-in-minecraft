@@ -5,6 +5,7 @@ import com.fantamomo.mc.amongus.settings.types.DurationSettingsType
 import com.fantamomo.mc.amongus.settings.types.EnumSettingsType
 import com.fantamomo.mc.amongus.settings.types.IntSettingsType
 import com.fantamomo.mc.amongus.util.data.DistanceEnum
+import com.fantamomo.mc.amongus.util.data.TaskBarUpdateEnum
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -50,5 +51,11 @@ data class SettingsKey<T : Any, S : SettingsType<T>>(
         val MEETING_VOTING_TIME = key("meeting.voting.time", DurationSettingsType.range(15.seconds, 3.minutes), 30.seconds)
         val MEETING_BUTTONS = key("meeting.buttons", IntSettingsType.positive, 3)
         val MEETING_BUTTON_COOLDOWN = key("meeting.button.cooldown", DurationSettingsType.range(Duration.ZERO, 1.minutes), 15.seconds)
+
+        val TASK_COMMON = key("task.common", IntSettingsType.positive, 2)
+        val TASK_SHORT = key("task.short", IntSettingsType.min(1), 5)
+        val TASK_LONG = key("task.long", IntSettingsType.positive, 1)
+
+        val TASK_BAR_UPDATE = key("task.bar.update", EnumSettingsType.create<TaskBarUpdateEnum>(), TaskBarUpdateEnum.IMMEDIATELY)
     }
 }

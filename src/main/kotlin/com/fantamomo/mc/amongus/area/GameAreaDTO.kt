@@ -11,6 +11,7 @@ data class GameAreaDTO(
     val minCorner: SerializableLocation?,
     val maxCorner: SerializableLocation?,
     val lobbySpawn: SerializableLocation?,
+    val gameSpawn: SerializableLocation?,
     val meetingBlock: SerializableLocation?,
     val ejectedFallPoint: SerializableLocation?,
     val ejectedViewPoint: SerializableLocation?,

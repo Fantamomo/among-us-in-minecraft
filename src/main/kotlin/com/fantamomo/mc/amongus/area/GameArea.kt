@@ -13,6 +13,7 @@ data class GameArea(
     var maxCorner: Location? = null
 
     var lobbySpawn: Location? = null
+    var gameSpawn: Location? = null
 
     var meetingBlock: Location? = null
         set(value) {
@@ -65,6 +66,7 @@ data class GameArea(
         minCorner ?: return false
         maxCorner ?: return false
         lobbySpawn ?: return false
+        gameSpawn ?: return false
         meetingBlock ?: return false
         ejectedFallPoint ?: return false
         ejectedViewPoint ?: return false
@@ -76,6 +78,7 @@ data class GameArea(
         clone.minCorner = minCorner?.withWorld(world)
         clone.maxCorner = maxCorner?.withWorld(world)
         clone.lobbySpawn = lobbySpawn?.withWorld(world)
+        clone.gameSpawn = gameSpawn?.withWorld(world)
         clone.meetingBlock = meetingBlock?.withWorld(world)
         clone.ejectedFallPoint = ejectedFallPoint?.withWorld(world)
         clone.ejectedViewPoint = ejectedViewPoint?.withWorld(world)
@@ -104,6 +107,7 @@ data class GameArea(
             "minCorner" to GameArea::minCorner,
             "maxCorner" to GameArea::maxCorner,
             "lobbySpawn" to GameArea::lobbySpawn,
+            "gameSpawn" to GameArea::gameSpawn,
             "meetingBlock" to GameArea::meetingBlock,
             "ejectedFallPoint" to GameArea::ejectedFallPoint,
             "ejectedViewPoint" to GameArea::ejectedViewPoint,

@@ -10,8 +10,13 @@ import com.fantamomo.mc.amongus.manager.EntityManager
 import com.fantamomo.mc.amongus.manager.WaypointManager
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.sabotage.SabotageType
+import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.task.GuiAssignedTask.Companion.MOVEABLE_ITEM_KEY
+import com.fantamomo.mc.amongus.util.data.TaskBarUpdateEnum
 import com.fantamomo.mc.amongus.util.isSameBlockPosition
+import com.fantamomo.mc.amongus.util.randomListDistinct
+import net.kyori.adventure.bossbar.BossBar
+import net.kyori.adventure.text.Component
 import net.kyori.adventure.title.TitlePart
 import org.bukkit.Color
 import org.bukkit.Location
@@ -21,6 +26,12 @@ import org.bukkit.persistence.PersistentDataType
 class TaskManager(val game: Game) {
     private val tasks: MutableMap<AmongUsPlayer, MutableSet<RegisteredTask>> = mutableMapOf()
     private var commsSabotage: Boolean = game.sabotageManager.isSabotage(SabotageType.Communications)
+    private val bossbar = BossBar.bossBar(
+        Component.translatable("task.bossbar.title"),
+        0f,
+        BossBar.Color.GREEN,
+        BossBar.Overlay.NOTCHED_20
+    )
 
     fun tick() {
         val sabotage = game.sabotageManager.isSabotage(SabotageType.Communications)
@@ -43,6 +54,16 @@ class TaskManager(val game: Game) {
         commsSabotage = sabotage
     }
 
+    internal fun updateBossbar(taskCompleted: Boolean = false, meeting: Boolean = false, force: Boolean = false) {
+        val updateFrequency = game.settings[SettingsKey.TASK_BAR_UPDATE]
+        if (updateFrequency == TaskBarUpdateEnum.NONE) return
+        if (force || (taskCompleted && updateFrequency != TaskBarUpdateEnum.MEETING) || meeting) {
+            val completedTasks = tasks.values.sumOf { tasks -> tasks.sumOf { if (it.completed) it.weight else 0 } }
+            val totalTasks = tasks.values.sumOf { it.sumOf { task -> task.weight } }
+            bossbar.progress(completedTasks.toFloat() / totalTasks)
+        }
+    }
+
     private fun get(task: AssignedTask<*, *>) = tasks[task.player]?.find { it.task == task }
 
     fun completeTask(task: AssignedTask<*, *>) {
@@ -51,6 +72,7 @@ class TaskManager(val game: Game) {
         registeredTask.completed = true
         registeredTask.hideCompletely()
         registeredTask.task.stop()
+        updateBossbar(taskCompleted = true)
         task.player.player?.apply {
             sendTitlePart(TitlePart.TITLE, textComponent {
                 translatable("task.complete.title")
@@ -114,6 +136,7 @@ class TaskManager(val game: Game) {
     fun assignTask(player: AmongUsPlayer, task: AssignedTask<*, *>) {
         val registeredTask = RegisteredTask(task)
         tasks.getOrPut(player) { mutableSetOf() }.add(registeredTask)
+        updateBossbar()
     }
 
     fun assignTask(player: AmongUsPlayer, task: Task<*, *>) {
@@ -122,13 +145,39 @@ class TaskManager(val game: Game) {
         assignTask(player, assignedTask)
     }
 
+    private fun assignTasks(player: AmongUsPlayer, tasks: Collection<Task<*, *>>) {
+        tasks.forEach { assignTask(player, it) }
+    }
+
     fun removePlayer(player: AmongUsPlayer) {
         tasks.remove(player)
+    }
+
+    fun start() {
+        val longTasksCount = game.settings[SettingsKey.TASK_LONG]
+        val shortTasksCount = game.settings[SettingsKey.TASK_SHORT]
+        val commonTasksCount = game.settings[SettingsKey.TASK_COMMON]
+
+        val tasks = Task.tasks.filter { it.isAvailable(game) }
+        val longTasks = tasks.filter { it.type == TaskType.LONG }
+        val shortTasks = tasks.filter { it.type == TaskType.SHORT }
+        val commonTasks = tasks.filter { it.type == TaskType.COMMON }
+
+        val showBossbar = game.settings[SettingsKey.TASK_BAR_UPDATE] != TaskBarUpdateEnum.NONE
+
+        for (player in game.players) {
+            if (showBossbar) player.player?.showBossBar(bossbar)
+            val long = longTasks.randomListDistinct(longTasksCount)
+            val short = shortTasks.randomListDistinct(shortTasksCount)
+            val common = commonTasks.randomListDistinct(commonTasksCount)
+            assignTasks(player, long + short + common)
+        }
     }
 
     inner class RegisteredTask(
         val task: AssignedTask<*, *>
     ) {
+        val weight: Int = task.task.type.weight
         var completed: Boolean = false
         var isShown: Boolean = false
 

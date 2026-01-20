@@ -53,6 +53,7 @@ class Game(
         if (players.size >= maxPlayers) return false
         if (PlayerManager.exists(player.uniqueId)) return false
         PlayerManager.joinGame(player, this)
+        player.teleportAsync(area.lobbySpawn ?: throw IllegalStateException("Lobby spawn not set"))
         return true
     }
 
@@ -122,7 +123,12 @@ class Game(
 
     fun start() {
         phase = GamePhase.RUNNING
-        // todo
+        taskManager.start()
+        val gameSpawn = area.gameSpawn ?: throw IllegalStateException("Game spawn not set")
+        for (player in players) {
+            player.player?.teleportAsync(gameSpawn)
+            player.start()
+        }
     }
 
     companion object {
