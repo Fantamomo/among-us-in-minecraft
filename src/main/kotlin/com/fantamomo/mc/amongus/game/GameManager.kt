@@ -3,6 +3,7 @@ package com.fantamomo.mc.amongus.game
 import com.fantamomo.mc.amongus.AmongUs
 
 object GameManager {
+    private val gamesByCode = mutableMapOf<String, Game>()
     private val games = mutableListOf<Game>()
     private var taskId = -1
 
@@ -10,7 +11,10 @@ object GameManager {
 
     fun addGame(game: Game): Boolean {
         init()
-        return games.add(game)
+        if (gamesByCode.containsKey(game.code)) return false
+        games.add(game)
+        gamesByCode[game.code] = game
+        return true
     }
 
     fun init() {
@@ -25,4 +29,6 @@ object GameManager {
         }
         games.forEach(Game::tick)
     }
+
+    operator fun get(code: String): Game? = gamesByCode[code]
 }
