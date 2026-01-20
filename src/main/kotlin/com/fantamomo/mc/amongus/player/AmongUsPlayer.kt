@@ -40,7 +40,8 @@ class AmongUsPlayer internal constructor(
         get() = game.taskManager.get(this)
     var isAlive: Boolean = true
     var meetingButtonsPressed: Int = 0
-    var canDoTasks: Boolean = true
+    val canDoTasks: Boolean
+        get() = assignedRole?.definition?.canDoTask != false
 
     private fun checkGameRunning() {
         if (game.phase != GamePhase.RUNNING) throw IllegalStateException("Cannot perform this action in this phase")
