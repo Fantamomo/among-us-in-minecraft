@@ -21,7 +21,7 @@ import kotlin.uuid.Uuid
 class Game(
     area: GameArea,
     val world: World,
-    val maxPlayers: Int = 16
+    val maxPlayers: Int = DEFAULT_MAX_PLAYERS
 ) {
     val area: GameArea
 
@@ -30,7 +30,7 @@ class Game(
         this.area = area.withWorld(world)
     }
 
-    val name: String get() = area.name
+    val code: String = createRandomCode()
     val uuid: Uuid = Uuid.random()
 
     val settings: Settings = Settings()
@@ -118,5 +118,16 @@ class Game(
 
     fun invalidateAbilities() {
         AbilityManager.invalidateAll(this)
+    }
+
+    fun start() {
+        phase = GamePhase.RUNNING
+        // todo
+    }
+
+    companion object {
+        const val DEFAULT_MAX_PLAYERS = 16
+
+        private fun createRandomCode() = (1..4).map { (('A'..'Z') + ('0'..'9')).random() }.joinToString("")
     }
 }

@@ -2,6 +2,7 @@ package com.fantamomo.mc.amongus.area
 
 import com.fantamomo.mc.amongus.AmongUs
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 import org.slf4j.LoggerFactory
 import java.nio.file.Path
 import java.util.*
@@ -16,6 +17,17 @@ object GameAreaManager {
     private val json = Json {
         prettyPrint = true
         ignoreUnknownKeys = true
+    }
+
+    init {
+        // Trigger one serialization to force initialization of all
+        // kotlinx.serialization related classes that are required at runtime.
+        //
+        // This prevents a java.lang.NoClassDefFoundError that can occur when the
+        // plugin JAR is hot-reloaded or replaced while the plugin is still loaded,
+        // because some serialization classes would otherwise be loaded lazily
+        // only on first real use.
+        json.encodeToString(JsonObject(emptyMap()))
     }
 
     fun loadAreas() {
