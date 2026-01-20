@@ -12,6 +12,7 @@ object Permissions {
     val ADMIN = perm("admin", PermissionDefault.OP)
     val AREA = perm("admin.area", PermissionDefault.OP)
     val SETTINGS = perm("admin.settings", PermissionDefault.OP)
+    val SEE_GAME_CODES = perm("join.see_game_codes", PermissionDefault.OP)
 
     private fun perm(
         node: String,
