@@ -99,6 +99,8 @@ class Game(
             }
             else -> {}
         }
+
+        meetingManager.meeting?.voteInventories?.remove(player)
         if (phase.onDisconnectRemove) removePlayer0(player)
     }
 
