@@ -4,6 +4,7 @@ import com.fantamomo.mc.adventure.text.args
 import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.area.GameArea
 import com.fantamomo.mc.amongus.command.arguments.GameAreaArgumentType
+import com.fantamomo.mc.amongus.command.arguments.GameArgumentType
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.game.GameManager
 import com.fantamomo.mc.amongus.game.GamePhase
@@ -88,6 +89,7 @@ private fun PaperCommand.listGameCommand() = literal("list") {
             sendMessage {
                 translatable("command.success.admin.game.list.game") {
                     args {
+                        string("code", game.code)
                         string("area", game.area.name)
                         string("phase", game.phase.name.lowercase().replaceFirstChar(Char::uppercase))
                         numeric("players", game.players.size)
@@ -102,7 +104,7 @@ private fun PaperCommand.listGameCommand() = literal("list") {
 
 private fun PaperCommand.joinGameCommand() = literal("join") {
     requires { executor is Player }
-    argument("game", GameAreaArgumentType) {
+    argument("game", GameArgumentType) {
         execute {
             val sender = source.sender
             val executor = source.executor as Player
