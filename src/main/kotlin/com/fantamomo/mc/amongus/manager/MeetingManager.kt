@@ -82,6 +82,7 @@ class MeetingManager(private val game: Game) : Listener {
             meeting = Meeting(caller, reason)
             return
         }
+        game.taskManager.updateBossbar(meeting = true)
         if (game.sabotageManager.isCurrentlySabotage()) {
             caller.player?.sendMessage(Component.translatable("meeting.sabotage_in_progress"))
             return
