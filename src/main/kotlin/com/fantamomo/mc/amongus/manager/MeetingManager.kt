@@ -12,16 +12,28 @@ import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.util.Cooldown
+import com.fantamomo.mc.amongus.util.textComponent
+import io.papermc.paper.datacomponent.DataComponentTypes
+import io.papermc.paper.datacomponent.item.ResolvableProfile
 import net.kyori.adventure.bossbar.BossBar
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.title.TitlePart
 import org.bukkit.Bukkit
 import org.bukkit.Location
+import org.bukkit.Material
+import org.bukkit.NamespacedKey
 import org.bukkit.craftbukkit.entity.CraftEntity
 import org.bukkit.craftbukkit.entity.CraftPlayer
 import org.bukkit.entity.ArmorStand
 import org.bukkit.event.Listener
 import org.bukkit.event.entity.PlayerDeathEvent
+import org.bukkit.inventory.ItemStack
+import org.bukkit.inventory.MenuType.STONECUTTER
+import org.bukkit.inventory.StonecuttingRecipe
+import org.bukkit.inventory.view.StonecutterView
+import org.bukkit.persistence.PersistentDataType
+import java.util.*
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
 
@@ -92,6 +104,7 @@ class MeetingManager(private val game: Game) : Listener {
         game.invalidateAbilities()
     }
 
+    @Suppress("UnstableApiUsage")
     inner class Meeting(
         private val caller: AmongUsPlayer,
         private val reason: MeetingReason
@@ -99,9 +112,71 @@ class MeetingManager(private val game: Game) : Listener {
         private var timer: Cooldown? = null
         private val votes: MutableMap<AmongUsPlayer, Vote> = mutableMapOf()
         private var ejectedPlayer: AmongUsPlayer? = null
+        val recipes: MutableMap<NamespacedKey, StonecuttingRecipe> = mutableMapOf()
+        val voteInventories: MutableMap<AmongUsPlayer, StonecutterView> = mutableMapOf()
 
         init {
+            registerRecipes()
             startMeeting()
+        }
+
+        private fun registerRecipes() {
+            val server = AmongUs.server
+            for (amongUsPlayer in game.players) {
+                val player = amongUsPlayer.player ?: continue
+                val key = NamespacedKey(AmongUs, "meeting/voting/${amongUsPlayer.uuid}")
+
+                val recipe = server.getRecipe(key)
+                if (recipe != null) {
+                    recipes[key] = recipe as StonecuttingRecipe
+                    continue
+                }
+
+                val result = ItemStack(Material.PLAYER_HEAD).apply {
+                    setData(
+                        DataComponentTypes.PROFILE,
+                        ResolvableProfile.resolvableProfile(player.playerProfile)
+                    )
+                    val value = textComponent(Locale.US) {
+                        translatable("meeting.voting.vote_for") {
+                            args {
+                                string("player", amongUsPlayer.name)
+                            }
+                        }
+                    }
+                    setData(
+                        DataComponentTypes.CUSTOM_NAME,
+                        value.decoration(TextDecoration.ITALIC, false)
+                    )
+                    editPersistentDataContainer {
+                        it.set(VOTING_KEY, PersistentDataType.STRING, amongUsPlayer.uuid.toString())
+                    }
+                }
+
+                val stonecutter = StonecuttingRecipe(key, result, Material.BARRIER)
+                server.addRecipe(stonecutter)
+                recipes[key] = stonecutter
+            }
+            val key = NamespacedKey(AmongUs, "meeting/voting/skip")
+            val recipe = server.getRecipe(key)
+            if (recipe != null) {
+                recipes[key] = recipe as StonecuttingRecipe
+                return
+            }
+            val result = ItemStack(Material.STRUCTURE_VOID).apply {
+                setData(
+                    DataComponentTypes.ITEM_NAME,
+                    textComponent(Locale.US) {
+                        translatable("meeting.voting.vote_skip")
+                    }
+                )
+                editPersistentDataContainer {
+                    it.set(VOTING_KEY, PersistentDataType.STRING, "skip")
+                }
+            }
+            val stonecutter = StonecuttingRecipe(key, result, Material.BARRIER)
+            server.addRecipe(stonecutter)
+            recipes[key] = stonecutter
         }
 
         private fun startMeeting() {
@@ -148,6 +223,12 @@ class MeetingManager(private val game: Game) : Listener {
         }
 
         private fun startVoting() {
+            for (amongUsPlayer in game.players) {
+                val player = amongUsPlayer.player ?: continue
+                for (key in recipes.keys) {
+                    player.discoverRecipe(key)
+                }
+            }
             setPhase(GamePhase.VOTING)
             votes.clear()
             timer = Cooldown(game.settings[SettingsKey.MEETING_VOTING_TIME], true)
@@ -169,6 +250,10 @@ class MeetingManager(private val game: Game) : Listener {
 
             ejectedPlayer = calculateVoteResult()
             showVoteResult(ejectedPlayer)
+
+            for (player in game.players) {
+                player.player?.closeInventory()
+            }
 
             Bukkit.getScheduler().runTaskLater(AmongUs, { ->
                 startEjection(ejectedPlayer)
@@ -248,6 +333,32 @@ class MeetingManager(private val game: Game) : Listener {
             }, 40L)
         }
 
+        fun openVoteInventory(player: AmongUsPlayer) {
+            if (hasVoted(player)) {
+                voteInventories.remove(player)
+                return
+            }
+            val view = STONECUTTER.builder()
+                .title(Component.translatable("meeting.voting.title"))
+                .build(player.player ?: return)
+
+            val item = ItemStack(Material.BARRIER).apply {
+                setData(
+                    DataComponentTypes.ITEM_NAME,
+                    textComponent(player.locale) {
+                        translatable("meeting.voting.close")
+                    }
+                )
+                editPersistentDataContainer {
+                    it.set(VOTING_KEY, PersistentDataType.STRING, "close")
+                }
+            }
+            voteInventories[player] = view
+            view.topInventory.setItem(0, item)
+            view.open()
+            view.topInventory.setItem(0, item)
+        }
+
         fun tick() {
             val timer = timer ?: return
 
@@ -282,13 +393,23 @@ class MeetingManager(private val game: Game) : Listener {
             game.sabotageManager.currentSabotage()?.resume()
 
             game.players.forEach { p ->
-                p.player?.hideBossBar(bossBar)
 
                 if (hasEjected) {
                     p.mannequinController.unfreeze()
                     (p.player as? CraftPlayer)?.handle?.setCamera(null)
                 }
+                val player = p.player
+                if (player != null) {
+                    player.hideBossBar(bossBar)
+
+                    for (key in recipes.keys) {
+                        player.undiscoverRecipe(key)
+                    }
+                }
             }
+
+            recipes.clear()
+            voteInventories.clear()
 
             meeting = null
             buttonCooldown.start()
@@ -302,6 +423,10 @@ class MeetingManager(private val game: Game) : Listener {
             }
             game.phase = phase
         }
+    }
+
+    companion object {
+        val VOTING_KEY = NamespacedKey(AmongUs, "meeting/voting")
     }
 
     sealed interface Vote {
