@@ -20,6 +20,84 @@ import org.bukkit.entity.Player
 fun PaperCommand.gameCommand() = literal("game") {
     createGameCommand()
     joinGameCommand()
+    listGameCommand()
+    startGameCommand()
+}
+
+private fun PaperCommand.startGameCommand() = literal("start") {
+    argument("game", GameAreaArgumentType) {
+        requires { executor is Player }
+        startGameCommandExecute()
+    }
+    startGameCommandExecute()
+}
+
+private fun KtCommandBuilder<CommandSourceStack, *>.startGameCommandExecute() = execute {
+    var game = optionalArg<Game>("game")
+    val sender = source.sender
+
+    if (game == null) {
+        val execute = source.executor as Player
+        val amongUsPlayer = PlayerManager.getPlayer(execute.uniqueId)
+        if (amongUsPlayer == null) {
+            sendMessage {
+                if (sender == execute) {
+                    translatable("command.error.admin.game.start.not_joined")
+                } else {
+                    translatable("command.error.admin.game.start.not_joined_other") {
+                        args {
+                            string("player", execute.name)
+                        }
+                    }
+                }
+            }
+            return@execute 0
+        }
+        game = amongUsPlayer.game
+    }
+    if (game.phase != GamePhase.LOBBY) {
+        sendMessage {
+            translatable("command.error.admin.game.start.already_started")
+        }
+        return@execute 0
+    }
+    game.start()
+    sendMessage {
+        translatable("command.success.admin.game.start")
+    }
+    SINGLE_SUCCESS
+}
+
+private fun PaperCommand.listGameCommand() = literal("list") {
+    execute {
+        val games = GameManager.getGames()
+        if (games.isEmpty()) {
+            sendMessage {
+                translatable("command.error.admin.game.list.no_games")
+            }
+            return@execute 0
+        }
+        sendMessage {
+            translatable("command.success.admin.game.list") {
+                args {
+                    numeric("count", games.size)
+                }
+            }
+        }
+        for (game in games) {
+            sendMessage {
+                translatable("command.success.admin.game.list.game") {
+                    args {
+                        string("area", game.area.name)
+                        string("phase", game.phase.name.lowercase().replaceFirstChar(Char::uppercase))
+                        numeric("players", game.players.size)
+                        numeric("max_players", game.maxPlayers)
+                    }
+                }
+            }
+        }
+        SINGLE_SUCCESS
+    }
 }
 
 private fun PaperCommand.joinGameCommand() = literal("join") {
