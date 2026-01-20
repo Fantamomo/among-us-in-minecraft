@@ -120,6 +120,11 @@ class Game(
         AbilityManager.invalidateAll(this)
     }
 
+    fun start() {
+        phase = GamePhase.RUNNING
+        // todo
+    }
+
     companion object {
         const val DEFAULT_MAX_PLAYERS = 16
 
