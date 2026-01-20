@@ -3,13 +3,18 @@ package com.fantamomo.mc.amongus.listeners
 import com.fantamomo.mc.amongus.manager.MeetingManager
 import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.util.isSameBlockPosition
+import org.bukkit.entity.Player
 import org.bukkit.event.Event
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.block.Action
 import org.bukkit.event.entity.PlayerDeathEvent
+import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.player.PlayerInteractEvent
+import org.bukkit.event.player.PlayerToggleSneakEvent
+import org.bukkit.persistence.PersistentDataType
+import java.util.*
 
 object MeetingListener : Listener {
 
@@ -35,5 +40,38 @@ object MeetingListener : Listener {
         if (meetingManager.isCurrentlyAMeeting()) {
             meetingManager.meeting?.onDeath(event)
         }
+    }
+
+    @EventHandler(priority = EventPriority.NORMAL)
+    fun onInventoryClick(event: InventoryClickEvent) {
+        if (event.isCancelled) return
+        if (event.slot != 1) return
+        val player = event.whoClicked as? Player ?: return
+        val voter = PlayerManager.getPlayer(player) ?: return
+        val inventory = event.clickedInventory ?: return
+        val holder = inventory.holder as? MeetingManager.VotingInventory ?: return
+        val meeting = holder.meeting
+        event.isCancelled = true
+        val item = event.currentItem ?: return
+        if (item.persistentDataContainer.has(MeetingManager.VotingInventory.VOTING_KEY)) {
+            val target = item.persistentDataContainer.get(MeetingManager.VotingInventory.VOTING_KEY, PersistentDataType.STRING) ?: return
+            if (target == "skip") {
+                meeting.voteSkip(voter)
+            } else {
+                val uuid = UUID.fromString(target)
+                val targetPlayer = PlayerManager.getPlayer(uuid) ?: return
+                meeting.voteFor(voter, targetPlayer)
+            }
+            player.closeInventory()
+        }
+    }
+
+    @EventHandler
+    fun onSneak(event: PlayerToggleSneakEvent) {
+        val player = event.player
+        val amongUsPlayer = PlayerManager.getPlayer(player) ?: return
+        val meetingManager = amongUsPlayer.game.meetingManager
+        val meeting = meetingManager.meeting ?: return
+        player.openInventory(meeting.voteInventory.inventory)
     }
 }
