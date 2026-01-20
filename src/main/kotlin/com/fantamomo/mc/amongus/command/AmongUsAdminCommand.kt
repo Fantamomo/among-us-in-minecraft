@@ -29,12 +29,14 @@ import org.bukkit.Location
 import org.bukkit.entity.Player
 
 val AmongUsAdminCommand = paperCommand("amongusadmin") {
+    requires { sender.hasPermission(Permissions.ADMIN) }
     areaCommand()
-    testCommand()
     settingsCommand()
+    gameCommand()
 }
 
 private fun PaperCommand.settingsCommand() = literal("settings") {
+    requires { sender is Player && sender.hasPermission(Permissions.SETTINGS) }
     val keys = SettingsKey.keys()
 
     for (key in keys) {
