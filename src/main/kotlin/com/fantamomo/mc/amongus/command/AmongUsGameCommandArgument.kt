@@ -38,7 +38,13 @@ private fun KtCommandBuilder<CommandSourceStack, *>.startGameCommandExecute() = 
     val sender = source.sender
 
     if (game == null) {
-        val execute = source.executor as Player
+        val execute = source.executor as? Player
+        if (execute == null) {
+            sendMessage {
+                translatable("command.error.admin.game.start.not_a_player")
+            }
+            return@execute 0
+        }
         val amongUsPlayer = PlayerManager.getPlayer(execute.uniqueId)
         if (amongUsPlayer == null) {
             sendMessage {
@@ -107,7 +113,13 @@ private fun PaperCommand.joinGameCommand() = literal("join") {
     argument("game", GameArgumentType) {
         execute {
             val sender = source.sender
-            val executor = source.executor as Player
+            val executor = source.executor as? Player
+            if (executor == null) {
+                sendMessage {
+                    translatable("command.error.admin.game.join.not_a_player")
+                }
+                return@execute 0
+            }
             val game = arg<Game>("game")
 
             if (game.phase != GamePhase.LOBBY) {
