@@ -24,6 +24,7 @@ fun GameArea.toDTO(): GameAreaDTO {
         minCorner = minCorner?.let(::fromBukkit),
         maxCorner = maxCorner?.let(::fromBukkit),
         lobbySpawn = lobbySpawn?.let(::fromBukkit),
+        gameSpawn = gameSpawn?.let(::fromBukkit),
         meetingBlock = meetingBlock?.let(::fromBukkit),
         ejectedFallPoint = ejectedFallPoint?.let(::fromBukkit),
         ejectedViewPoint = ejectedViewPoint?.let(::fromBukkit),
@@ -56,6 +57,7 @@ fun GameAreaDTO.toGameArea(): GameArea {
     area.minCorner = minCorner?.toBukkit()
     area.maxCorner = maxCorner?.toBukkit()
     area.lobbySpawn = lobbySpawn?.toBukkit()
+    area.gameSpawn = gameSpawn?.toBukkit()
     area.meetingBlock = meetingBlock?.toBukkit()
     area.ejectedFallPoint = ejectedFallPoint?.toBukkit()
     area.ejectedViewPoint = ejectedViewPoint?.toBukkit()
