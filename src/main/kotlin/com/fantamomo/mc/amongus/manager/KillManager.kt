@@ -59,6 +59,7 @@ class KillManager(val game: Game) {
         showCorpse(target, location)
         target.mannequinController.hideFromAll()
         target.mannequinController.showToSeeingPlayers()
+        game.checkWin()
     }
 
     fun removeAllCorpses() {
