@@ -102,7 +102,7 @@ class CameraManager(val game: Game) {
         }
     }
 
-    class Camera(val name: String, val location: Location) {
+    inner class Camera(val name: String, val location: Location) {
         val uuid: Uuid = Uuid.random()
 
         val armorStand = location.world.spawn(location, ArmorStand::class.java) { armorStand ->
@@ -111,7 +111,7 @@ class CameraManager(val game: Game) {
             armorStand.setGravity(false)
             armorStand.isMarker = true
             armorStand.isVisibleByDefault = false
-        }.apply(EntityManager::addEntityToRemoveOnStop)
+        }.also { EntityManager.addEntityToRemoveOnEnd(game, it) }
 
         val actionBarMessage = textComponent {
             translatable("camera.action_bar") {

@@ -60,7 +60,7 @@ class MeetingManager(private val game: Game) : Listener {
             it.setGravity(false)
             it.isMarker = true
             it.isVisibleByDefault = false
-            EntityManager.addEntityToRemoveOnStop(it)
+            EntityManager.addEntityToRemoveOnEnd(game, it)
         }
 
     private val bossBar: BossBar = BossBar.bossBar(

@@ -210,8 +210,7 @@ class TaskManager(val game: Game) {
             display.block = task.location.block.blockData
             display.isGlowing = true
             display.glowColorOverride = Color.YELLOW
-            EntityManager.addEntityToRemoveOnStop(display)
-        }
+        }.also { EntityManager.addEntityToRemoveOnEnd(game, it) }
 
         val waypoint: WaypointManager.Waypoint =
             WaypointManager.Waypoint("tasks.${task.task.id}.waypoint", Color.YELLOW, task.location)

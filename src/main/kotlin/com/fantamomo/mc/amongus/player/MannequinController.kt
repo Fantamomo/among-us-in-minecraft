@@ -49,7 +49,7 @@ class MannequinController(
 
         player.hideEntity(AmongUs, mannequin!!)
 
-        EntityManager.addEntityToRemoveOnStop(mannequin!!)
+        EntityManager.addEntityToRemoveOnEnd(owner.game, mannequin!!)
         lastLocation = player.location.clone()
 
         visibleTo.clear()

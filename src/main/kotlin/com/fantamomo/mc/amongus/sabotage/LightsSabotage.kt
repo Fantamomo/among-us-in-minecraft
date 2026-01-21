@@ -39,8 +39,7 @@ class LightsSabotage internal constructor(override val game: Game) :
             display.block = block.blockData
             display.isVisibleByDefault = false
             display.isGlowing = true
-            EntityManager.addEntityToRemoveOnStop(display)
-        }
+        }.also { EntityManager.addEntityToRemoveOnEnd(game, it) }
 
     private val potionEffect = PotionEffect(
         PotionEffectType.BLINDNESS,

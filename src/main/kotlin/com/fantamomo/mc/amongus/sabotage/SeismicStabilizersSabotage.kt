@@ -49,8 +49,7 @@ class SeismicStabilizersSabotage(override val game: Game) :
             display.block = block.blockData
             display.isGlowing = true
             display.glowColorOverride = Color.RED
-            EntityManager.addEntityToRemoveOnStop(display)
-        }
+        }.also { EntityManager.addEntityToRemoveOnEnd(game, it) }
     }
 
     val timer = Cooldown(60.seconds)

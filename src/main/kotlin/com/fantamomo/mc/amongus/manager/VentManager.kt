@@ -129,7 +129,7 @@ class VentManager(val game: Game) {
                 display.isGlowing = true
                 display.glowColorOverride = Color.RED
                 display.isVisibleByDefault = false
-            }.apply(EntityManager::addEntityToRemoveOnStop)
+            }.also { EntityManager.addEntityToRemoveOnEnd(game, it) }
         }
 
         fun dispose() {
@@ -174,7 +174,7 @@ class VentManager(val game: Game) {
                     rightRotation
                 )
             }
-        }.apply(EntityManager::addEntityToRemoveOnStop)
+        }.also { EntityManager.addEntityToRemoveOnEnd(game, it) }
         val displayEntityVisible: MutableSet<UUID> = mutableSetOf()
         val waypoint = WaypointManager.Waypoint("actionbar.vent.next", Color.BLUE, location)
     }

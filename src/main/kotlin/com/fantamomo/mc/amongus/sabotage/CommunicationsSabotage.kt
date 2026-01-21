@@ -55,7 +55,7 @@ class CommunicationsSabotage(
         it.isVisibleByDefault = false
         it.isGlowing = true
         it.glowColorOverride = Color.RED
-        EntityManager.addEntityToRemoveOnStop(it)
+        EntityManager.addEntityToRemoveOnEnd(game, it)
     }
 
     private val bossBarName = textComponent {
