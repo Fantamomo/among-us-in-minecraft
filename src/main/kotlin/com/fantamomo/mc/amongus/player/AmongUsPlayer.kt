@@ -1,16 +1,19 @@
 package com.fantamomo.mc.amongus.player
 
+import com.destroystokyo.paper.profile.PlayerProfile
 import com.fantamomo.mc.adventure.text.args
 import com.fantamomo.mc.adventure.text.textComponent
 import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.ability.Ability
 import com.fantamomo.mc.amongus.ability.AbilityManager
 import com.fantamomo.mc.amongus.ability.AssignedAbility
+import com.fantamomo.mc.amongus.ability.abilities.ReportAbility
 import com.fantamomo.mc.amongus.ability.item.AbilityItem
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.game.GamePhase
 import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.role.AssignedRole
+import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.role.crewmates.CrewmateRole
 import com.fantamomo.mc.amongus.task.TaskManager
 import com.fantamomo.mc.amongus.util.CustomPersistentDataTypes
@@ -30,6 +33,7 @@ class AmongUsPlayer internal constructor(
 ) {
     private var _name: String = name
     private var _locale: Locale = Locale.getDefault()
+    private var _profile: PlayerProfile? = null
     internal val abilities: MutableList<AssignedAbility<*, *>> = mutableListOf()
 
     val mannequinController = MannequinController(this)
@@ -39,9 +43,17 @@ class AmongUsPlayer internal constructor(
     val livingEntity: LivingEntity
         get() = player ?: mannequinController.getEntity() ?: throw IllegalStateException("No living entity available")
     var player: Player? = null
+        set(value) {
+            field = value
+            if (value != null) {
+                _profile = value.playerProfile
+            }
+        }
     var color: DyeColor = game.randomDyeColor()
     val locale: Locale
         get() = player?.locale()?.also { _locale = it } ?: _locale
+    val profile: PlayerProfile
+        get() = player?.playerProfile?.also { _profile = it } ?: _profile ?: throw IllegalStateException("No profile available")
     var assignedRole: AssignedRole<*, *>? = null
     val tasks: MutableSet<TaskManager.RegisteredTask>
         get() = game.taskManager.get(this)
@@ -104,7 +116,7 @@ class AmongUsPlayer internal constructor(
 
     fun isInCams(): Boolean = game.cameraManager.isInCams(this)
 
-    fun canSeeWhenLightsSabotage(): Boolean = false
+    fun canSeeWhenLightsSabotage(): Boolean = assignedRole?.definition?.team == Team.IMPOSTERS
 
     fun start() {
         val player = player
@@ -113,6 +125,7 @@ class AmongUsPlayer internal constructor(
             role = CrewmateRole.assignTo(this)
             assignedRole = role
         }
+        addNewAbility(ReportAbility)
         role.definition.defaultAbilities.forEach { addNewAbility(it) }
         if (player != null) {
             for (ability in abilities) {
