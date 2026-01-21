@@ -60,5 +60,7 @@ data class SettingsKey<T : Any, S : SettingsType<T>>(
 
         val IMPOSTERS = key("imposters", IntSettingsType.range(1, 3), 1)
         val roles = Role.roles.associateWith { key("roles." + it.id, IntSettingsType.range(0, 100), 50) }
+
+        val KILL_DISTANCE = key("kill.distance", EnumSettingsType.create<DistanceEnum>(), DistanceEnum.NORMAL)
     }
 }
