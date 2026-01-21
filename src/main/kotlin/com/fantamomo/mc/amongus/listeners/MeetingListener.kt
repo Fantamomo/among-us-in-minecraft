@@ -1,5 +1,6 @@
 package com.fantamomo.mc.amongus.listeners
 
+import com.fantamomo.mc.amongus.game.GamePhase
 import com.fantamomo.mc.amongus.manager.MeetingManager
 import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.util.isSameBlockPosition
@@ -86,7 +87,9 @@ object MeetingListener : Listener {
         if (!event.isSneaking) return
         val player = event.player
         val amongUsPlayer = PlayerManager.getPlayer(player) ?: return
-        val meetingManager = amongUsPlayer.game.meetingManager
+        val game = amongUsPlayer.game
+        if (game.phase != GamePhase.VOTING) return
+        val meetingManager = game.meetingManager
         val meeting = meetingManager.meeting ?: return
         meeting.openVoteInventory(amongUsPlayer)
     }

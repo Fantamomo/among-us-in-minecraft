@@ -145,7 +145,7 @@ class VentManager(val game: Game) {
             vent.group.vents.forEach { vent ->
                 game.waypointManager.removeWaypoint(player, vent.waypoint)
             }
-            player.mannequinController.showToAll()
+            player.mannequinController.showToSeeingPlayers()
             AbilityManager.invalidatePlayer(this.player)
         }
     }

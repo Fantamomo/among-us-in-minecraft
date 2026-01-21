@@ -7,6 +7,7 @@ import com.fantamomo.mc.amongus.area.GameArea
 import com.fantamomo.mc.amongus.manager.*
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.player.PlayerManager
+import com.fantamomo.mc.amongus.role.RoleManager
 import com.fantamomo.mc.amongus.sabotage.SabotageManager
 import com.fantamomo.mc.amongus.settings.Settings
 import com.fantamomo.mc.amongus.task.TaskManager
@@ -40,8 +41,10 @@ class Game(
     val waypointManager = WaypointManager(this)
     val actionBarManager = ActionBarManager(this)
     val sabotageManager = SabotageManager(this)
+    val roleManager = RoleManager(this)
     val taskManager = TaskManager(this)
     val meetingManager = MeetingManager(this)
+    val killManager = KillManager(this)
 
     internal val players = mutableListOf<AmongUsPlayer>()
     var phase: GamePhase = GamePhase.LOBBY
@@ -123,6 +126,7 @@ class Game(
 
     fun start() {
         phase = GamePhase.RUNNING
+        roleManager.start()
         taskManager.start()
         val gameSpawn = area.gameSpawn ?: throw IllegalStateException("Game spawn not set")
         for (player in players) {

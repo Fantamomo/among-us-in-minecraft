@@ -51,10 +51,6 @@ object SabotageAbility :
                         BlockReason.IN_VENT,
                         "ability.general.disabled.in_vent"
                     )
-                    whenBlocked(
-                        BlockReason.IN_MEETING,
-                        "ability.general.disabled.in_meeting"
-                    )
                 }
             }
 

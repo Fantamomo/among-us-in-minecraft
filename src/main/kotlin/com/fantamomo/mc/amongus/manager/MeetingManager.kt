@@ -78,6 +78,7 @@ class MeetingManager(private val game: Game) : Listener {
 
     fun callMeeting(caller: AmongUsPlayer, reason: MeetingReason, force: Boolean = reason == MeetingReason.BODY) {
         if (meeting != null) return
+        if (!caller.isAlive) return
         if (force) {
             meeting = Meeting(caller, reason)
             return
@@ -189,6 +190,8 @@ class MeetingManager(private val game: Game) : Listener {
 
             game.sabotageManager.currentSabotage()?.pause()
 
+            game.killManager.removeAllCorpses()
+
             val title = Component.translatable("meeting.called.title")
             val subtitle = textComponent {
                 translatable(reason.calledTranslationKey) {
@@ -288,6 +291,7 @@ class MeetingManager(private val game: Game) : Listener {
             }
 
             val highest = counts.maxByOrNull { it.value } ?: return null
+            if (highest.value <= skipVotes) return null
             val sameVotes = counts.values.count { it == highest.value }
 
             return if (sameVotes == 1) highest.key else null
@@ -302,9 +306,7 @@ class MeetingManager(private val game: Game) : Listener {
                 }
             } ?: Component.translatable("meeting.result.skip")
 
-            game.players.forEach {
-                it.player?.sendTitlePart(TitlePart.TITLE, component)
-            }
+            game.sendTitle(TitlePart.TITLE, component)
         }
 
         private fun startEjection(player: AmongUsPlayer?) {
@@ -319,6 +321,7 @@ class MeetingManager(private val game: Game) : Listener {
                 .filter { it != player }
                 .forEach {
                     it.mannequinController.freeze()
+                    it.player?.showEntity(AmongUs, cameraAnchor)
                     (it.player as? CraftPlayer)?.handle?.setCamera(handle)
                 }
 
@@ -396,8 +399,10 @@ class MeetingManager(private val game: Game) : Listener {
             game.players.forEach { p ->
 
                 if (hasEjected) {
-                    p.mannequinController.unfreeze()
                     (p.player as? CraftPlayer)?.handle?.setCamera(null)
+                    p.player?.hideEntity(AmongUs, cameraAnchor)
+                    p.mannequinController.getEntity()?.let { p.player?.teleport(it.location) }
+                    p.mannequinController.unfreeze()
                 }
                 val player = p.player
                 if (player != null) {

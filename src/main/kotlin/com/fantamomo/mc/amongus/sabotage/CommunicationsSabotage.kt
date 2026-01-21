@@ -62,9 +62,13 @@ class CommunicationsSabotage(
         translatable("sabotage.bossbar.communications")
     }
 
-    override fun start() = resume()
+    override fun start() {
+        game.taskManager.updateBossbar()
+        resume()
+    }
 
     override fun stop(cause: SabotageStopCause) {
+        game.taskManager.updateBossbar()
 //        val fixedPlayer = fixedPlayer
 //        if (fixedPlayer != null && outgoingBeam != null) {
 //            val clone = outgoingBeam.clone()

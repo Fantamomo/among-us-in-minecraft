@@ -29,7 +29,9 @@ object SabotageListener : Listener {
         when (sabotage) {
             is LightsSabotage -> {
                 val targetBlock = event.clickedBlock ?: return
-                sabotage.onLightLeverFlip(targetBlock.location, amongUsPlayer)
+                if (!sabotage.onLightLeverFlip(targetBlock.location, amongUsPlayer)) {
+                    event.isCancelled = true
+                }
             }
             is CommunicationsSabotage -> {
                 val targetBlock = event.clickedBlock ?: return
