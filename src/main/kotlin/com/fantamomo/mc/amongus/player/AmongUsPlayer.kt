@@ -1,14 +1,21 @@
 package com.fantamomo.mc.amongus.player
 
+import com.fantamomo.mc.adventure.text.args
+import com.fantamomo.mc.adventure.text.textComponent
+import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.ability.Ability
 import com.fantamomo.mc.amongus.ability.AbilityManager
 import com.fantamomo.mc.amongus.ability.AssignedAbility
 import com.fantamomo.mc.amongus.ability.item.AbilityItem
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.game.GamePhase
+import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.role.AssignedRole
+import com.fantamomo.mc.amongus.role.crewmates.CrewmateRole
 import com.fantamomo.mc.amongus.task.TaskManager
 import com.fantamomo.mc.amongus.util.CustomPersistentDataTypes
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.title.TitlePart
 import org.bukkit.DyeColor
 import org.bukkit.Location
 import org.bukkit.entity.LivingEntity
@@ -63,7 +70,11 @@ class AmongUsPlayer internal constructor(
         for (slot in slots) {
             player.inventory.setItem(slot, new)
         }
-        if (player.itemOnCursor.persistentDataContainer.get(AbilityItem.ABILITY_UUID, CustomPersistentDataTypes.UUID) == uuid) {
+        if (player.itemOnCursor.persistentDataContainer.get(
+                AbilityItem.ABILITY_UUID,
+                CustomPersistentDataTypes.UUID
+            ) == uuid
+        ) {
             player.setItemOnCursor(new)
         }
     }
@@ -86,7 +97,8 @@ class AmongUsPlayer internal constructor(
     fun hasAbility(ability: Ability<*, *>) = abilities.any { it.definition === ability }
 
     @Suppress("UNCHECKED_CAST")
-    fun <A : Ability<A, S>, S : AssignedAbility<A, S>> getAssignedAbility(ability: A) = abilities.firstOrNull { it.definition === ability } as? S
+    fun <A : Ability<A, S>, S : AssignedAbility<A, S>> getAssignedAbility(ability: A) =
+        abilities.firstOrNull { it.definition === ability } as? S
 
     fun isInVent(): Boolean = game.ventManager.isNearVent(this)
 
@@ -96,12 +108,28 @@ class AmongUsPlayer internal constructor(
 
     fun start() {
         val player = player
+        var role = assignedRole
+        if (role == null) {
+            role = CrewmateRole.assignTo(this)
+            assignedRole = role
+        }
+        role.definition.defaultAbilities.forEach { addNewAbility(it) }
         if (player != null) {
             for (ability in abilities) {
                 for (item in ability.items) {
                     player.inventory.addItem(item.get())
                 }
             }
+            player.sendTitlePart(
+                TitlePart.TITLE,
+                textComponent {
+                    translatable("roles.assigned.title") {
+                        args {
+                            component("role", Component.translatable(role.definition.name))
+                        }
+                    }
+                }
+            )
         }
     }
 }
