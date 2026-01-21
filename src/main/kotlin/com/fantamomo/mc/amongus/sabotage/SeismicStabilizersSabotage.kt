@@ -9,6 +9,7 @@ import com.fantamomo.mc.amongus.languages.numeric
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.manager.EntityManager
 import com.fantamomo.mc.amongus.manager.WaypointManager
+import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.sabotage.SabotageType.SeismicStabilizers
 import com.fantamomo.mc.amongus.util.Cooldown
 import org.bukkit.Color
@@ -68,7 +69,7 @@ class SeismicStabilizersSabotage(override val game: Game) :
     override fun tick() {
         if (timer.isFinished()) {
             game.sabotageManager.endSabotage()
-            // todo: let imposter win
+            game.letWin(Team.IMPOSTERS)
             return
         }
 
