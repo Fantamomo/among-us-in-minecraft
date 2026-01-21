@@ -51,6 +51,12 @@ object PlayerManager {
         }
     }
 
+    internal fun gameEnds(amongUsPlayer: AmongUsPlayer) {
+        amongUsPlayer.player = null
+        amongUsPlayer.mannequinController.despawn()
+        players.remove(amongUsPlayer)
+    }
+
     internal fun onPlayerJoin(player: Player) {
         val amongUsPlayer = getPlayer(player.uniqueId) ?: return
         val game = amongUsPlayer.game
