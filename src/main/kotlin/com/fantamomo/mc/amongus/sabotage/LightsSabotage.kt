@@ -120,15 +120,15 @@ class LightsSabotage internal constructor(override val game: Game) :
         }
     }
 
-    fun onLightLeverFlip(location: Location, amongUsPlayer: AmongUsPlayer) {
+    fun onLightLeverFlip(location: Location, amongUsPlayer: AmongUsPlayer): Boolean {
         val block = location.block
-        if (block !in levers) return
+        if (block !in levers) return true
         if (!amongUsPlayer.isAlive) {
             amongUsPlayer.player?.run {
                 sendTitlePart(TitlePart.SUBTITLE, Component.translatable("sabotage.subtitle.dead"))
                 sendTitlePart(TitlePart.TITLE, Component.translatable("sabotage.title.dead"))
             }
-            return
+            return false
         }
         val data = location.block.blockData as Switch
         data.isPowered = !data.isPowered
@@ -137,6 +137,7 @@ class LightsSabotage internal constructor(override val game: Game) :
             display.block = data
             display.glowColorOverride = if (data.isPowered) Color.GREEN else Color.RED
         }
+        return true
     }
 
     private val doesSeeDisplays: MutableSet<UUID> = mutableSetOf()
