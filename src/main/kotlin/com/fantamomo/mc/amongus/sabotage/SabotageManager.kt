@@ -112,9 +112,9 @@ class SabotageManager(private val game: Game) {
             translatable("sabotage.end.${sabotage.sabotageType.id}")
         })
 
-        sabotage.stop(SabotageStopCause.UNKNOWN)
-
         currentSabotage = null
+
+        sabotage.stop(SabotageStopCause.UNKNOWN)
 
         updateBossbarViewerAndWaypoints()
 
