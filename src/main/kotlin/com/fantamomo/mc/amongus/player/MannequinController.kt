@@ -102,6 +102,18 @@ class MannequinController(
         }
     }
 
+    fun showToSeeingPlayers() {
+        if (owner.isAlive) {
+            showToAll()
+            return
+        }
+        for (player in owner.game.players) {
+            if (owner == player) continue
+            if (player.isAlive) continue
+            player.player?.let(::showTo)
+        }
+    }
+
     fun isVisibleTo(player: Player): Boolean =
         visibleTo.contains(player.uniqueId)
 
