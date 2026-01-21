@@ -1,5 +1,6 @@
 package com.fantamomo.mc.amongus.settings
 
+import com.fantamomo.mc.amongus.role.Role
 import com.fantamomo.mc.amongus.settings.types.BooleanSettingsType
 import com.fantamomo.mc.amongus.settings.types.DurationSettingsType
 import com.fantamomo.mc.amongus.settings.types.EnumSettingsType
@@ -52,10 +53,12 @@ data class SettingsKey<T : Any, S : SettingsType<T>>(
         val MEETING_BUTTONS = key("meeting.buttons", IntSettingsType.positive, 3)
         val MEETING_BUTTON_COOLDOWN = key("meeting.button.cooldown", DurationSettingsType.range(Duration.ZERO, 1.minutes), 15.seconds)
 
-        val TASK_COMMON = key("task.common", IntSettingsType.positive, 2)
-        val TASK_SHORT = key("task.short", IntSettingsType.min(1), 5)
-        val TASK_LONG = key("task.long", IntSettingsType.positive, 1)
-
+        val TASK_COMMON = key("task.common", IntSettingsType.positive, 3)
+        val TASK_SHORT = key("task.short", IntSettingsType.min(1), 6)
+        val TASK_LONG = key("task.long", IntSettingsType.positive, 2)
         val TASK_BAR_UPDATE = key("task.bar.update", EnumSettingsType.create<TaskBarUpdateEnum>(), TaskBarUpdateEnum.IMMEDIATELY)
+
+        val IMPOSTERS = key("imposters", IntSettingsType.range(1, 3), 1)
+        val roles = Role.roles.associateWith { key("roles." + it.id, IntSettingsType.range(0, 100), 50) }
     }
 }
