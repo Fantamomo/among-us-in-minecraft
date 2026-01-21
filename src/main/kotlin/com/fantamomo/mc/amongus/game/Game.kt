@@ -206,6 +206,8 @@ class Game(
         for (it in players.toList()) {
             removePlayer0(it)
         }
+
+        EntityManager.dispose(this)
     }
 
     companion object {
