@@ -12,7 +12,6 @@ import com.fantamomo.mc.amongus.role.Team
 object ImposterRole : Role<ImposterRole, ImposterRole.AssignedImposterRole> {
     override val id: String = "imposter"
     override val team: Team = Team.IMPOSTERS
-    override val name: String = "role.imposter.name"
     override val defaultAbilities: Set<Ability<*, *>> = setOf(
         KillAbility,
         VentAbility,
