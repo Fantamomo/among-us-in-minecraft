@@ -4,6 +4,8 @@ import com.fantamomo.mc.adventure.text.args
 import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.ability.Ability
 import com.fantamomo.mc.amongus.ability.AssignedAbility
+import com.fantamomo.mc.amongus.ability.builder.BlockReason
+import com.fantamomo.mc.amongus.ability.builder.abilityItem
 import com.fantamomo.mc.amongus.ability.item.AbilityItem
 import com.fantamomo.mc.amongus.ability.item.CooldownAbilityItem
 import com.fantamomo.mc.amongus.languages.string
@@ -23,7 +25,41 @@ object KillAbility : Ability<KillAbility, KillAbility.AssignedKillAbility> {
 
     class AssignedKillAbility(override val player: AmongUsPlayer) : AssignedAbility<KillAbility, AssignedKillAbility> {
         override val definition = KillAbility
-        override val items: List<AbilityItem> = listOf(KillAbilityItem(this))
+        override val items: List<AbilityItem> = listOf(
+            abilityItem("kill") {
+                material {
+                    active = Material.NETHER_STAR
+                    inactive = Material.BARRIER
+                }
+
+                name {
+                    active("ability.kill.kill.active")
+                    inactive {
+                        whenBlocked(
+                            BlockReason.IN_VENT,
+                            "ability.general.disabled.in_vent"
+                        )
+                        whenBlocked(
+                            BlockReason.IN_MEETING,
+                            "ability.general.disabled.in_meeting"
+                        )
+                        otherwise("ability.kill.kill.deactivate")
+                    }
+                }
+
+                blockWhen {
+                    inMeeting()
+                    inVent()
+                    custom(BlockReason.CUSTOM) {
+                        !game.killManager.canKillAsImposter(player)
+                    }
+                }
+
+                onRightClick {
+                    game.killManager.killNearestAsImposter(player)
+                }
+            }
+        )
     }
 
     @Suppress("UnstableApiUsage")
