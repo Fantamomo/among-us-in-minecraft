@@ -21,6 +21,7 @@ import net.kyori.adventure.title.TitlePart
 import org.bukkit.Color
 import org.bukkit.Location
 import org.bukkit.entity.BlockDisplay
+import org.bukkit.entity.Player
 import org.bukkit.persistence.PersistentDataType
 
 class TaskManager(val game: Game) {
@@ -87,6 +88,7 @@ class TaskManager(val game: Game) {
         AmongUs.server.scheduler.runTask(AmongUs) { ->
             removeMoveableItems(task.player)
         }
+        if (allTaskCompleted()) game.checkWin()
     }
 
     fun <T> completeOneTaskStep(task: T) where T : Steppable, T : AssignedTask<*, *> {
@@ -164,6 +166,8 @@ class TaskManager(val game: Game) {
         tasks.remove(player)
     }
 
+    fun allTaskCompleted(): Boolean = tasks.values.all { tasks -> tasks.all { it.completed || it.fake } }
+
     fun start() {
         val longTasksCount = game.settings[SettingsKey.TASK_LONG]
         val shortTasksCount = game.settings[SettingsKey.TASK_SHORT]
@@ -185,6 +189,14 @@ class TaskManager(val game: Game) {
         }
     }
 
+    internal fun end() {
+        for (viewer in bossbar.viewers().toList()) {
+            viewer as? Player ?: continue
+            viewer.hideBossBar(bossbar)
+        }
+        tasks.clear()
+    }
+
     inner class RegisteredTask(
         val task: AssignedTask<*, *>,
         val fake: Boolean = false
@@ -198,8 +210,7 @@ class TaskManager(val game: Game) {
             display.block = task.location.block.blockData
             display.isGlowing = true
             display.glowColorOverride = Color.YELLOW
-            EntityManager.addEntityToRemoveOnStop(display)
-        }
+        }.also { EntityManager.addEntityToRemoveOnEnd(game, it) }
 
         val waypoint: WaypointManager.Waypoint =
             WaypointManager.Waypoint("tasks.${task.task.id}.waypoint", Color.YELLOW, task.location)

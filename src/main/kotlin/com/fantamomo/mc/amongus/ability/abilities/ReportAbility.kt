@@ -34,6 +34,7 @@ object ReportAbility : Ability<ReportAbility, ReportAbility.AssignedReportAbilit
                             BlockReason.IN_VENT,
                             "ability.general.disabled.in_vent"
                         )
+                        otherwise("ability.report.report.deactivate")
                     }
                 }
 

@@ -215,6 +215,11 @@ class WaypointManager(val game: Game) {
         return if (diff > 180.0) 360.0 - diff else diff
     }
 
+    fun end() {
+        waypointData.forEach { it.removeAll() }
+        waypointData.clear()
+    }
+
     companion object {
         private val constructor = Icon::class.java.getDeclaredConstructor(
             ResourceKey::class.java,

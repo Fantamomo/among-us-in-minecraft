@@ -208,6 +208,12 @@ class ActionBarManager(private val game: Game) {
         return part
     }
 
+    fun end() {
+        bars.values.forEach { it.dispose() }
+        bars.clear()
+        globalParts.clear()
+    }
+
     companion object {
         private val JOIN_CONFIG = JoinConfiguration.builder()
             .separator(Component.text(" | ").color(NamedTextColor.DARK_GRAY))

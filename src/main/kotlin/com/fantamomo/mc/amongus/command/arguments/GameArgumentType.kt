@@ -23,7 +23,7 @@ import java.util.concurrent.CompletableFuture
 object GameArgumentType : CustomArgumentType<Game, String> {
 
     private val invalidLength = DynamicCommandExceptionType { arg ->
-        LiteralMessage("Invalid code length, must be 4 characters long, got $arg")
+        LiteralMessage("Invalid code length, must be ${Game.CODE_LENGTH} characters long, got $arg")
     }
 
     private val invalidCodeChars = DynamicCommandExceptionType { arg ->
