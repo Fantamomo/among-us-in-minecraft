@@ -78,6 +78,7 @@ class MeetingManager(private val game: Game) : Listener {
 
     fun callMeeting(caller: AmongUsPlayer, reason: MeetingReason, force: Boolean = reason == MeetingReason.BODY) {
         if (meeting != null) return
+        if (!caller.isAlive) return
         if (force) {
             meeting = Meeting(caller, reason)
             return
@@ -188,6 +189,8 @@ class MeetingManager(private val game: Game) : Listener {
                 ?.let { game.sabotageManager.endSabotage() }
 
             game.sabotageManager.currentSabotage()?.pause()
+
+            game.killManager.removeAllCorpses()
 
             val title = Component.translatable("meeting.called.title")
             val subtitle = textComponent {
