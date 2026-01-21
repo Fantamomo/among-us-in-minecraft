@@ -2,17 +2,21 @@ package com.fantamomo.mc.amongus.game
 
 import com.fantamomo.mc.adventure.text.content
 import com.fantamomo.mc.adventure.text.textComponent
+import com.fantamomo.mc.adventure.text.translatable
+import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.ability.AbilityManager
 import com.fantamomo.mc.amongus.area.GameArea
 import com.fantamomo.mc.amongus.manager.*
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.role.RoleManager
+import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.sabotage.SabotageManager
 import com.fantamomo.mc.amongus.settings.Settings
 import com.fantamomo.mc.amongus.task.TaskManager
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.title.TitlePart
+import org.bukkit.Bukkit
 import org.bukkit.DyeColor
 import org.bukkit.World
 import org.bukkit.entity.Player
@@ -70,7 +74,14 @@ class Game(
         taskManager.removePlayer(player)
     }
 
+    private var ticks = 0
+
     fun tick() {
+        if (phase == GamePhase.FINISHED || phase == GamePhase.LOBBY) return
+        ticks++
+        if (ticks % 20 == 0) {
+            checkWin()
+        }
         ventManager.tick()
         cameraManager.tick()
         waypointManager.tick()
@@ -135,9 +146,73 @@ class Game(
         }
     }
 
+    fun checkWin() {
+        if (taskManager.allTaskCompleted()) {
+            letWin(Team.CREWMATES)
+            return
+        }
+        val alivePlayers = players.filter { it.isAlive }
+        val imposterCount = alivePlayers.count { it.assignedRole?.definition?.team == Team.IMPOSTERS }
+        if (imposterCount == 0) {
+            letWin(Team.CREWMATES)
+            return
+        }
+        if (alivePlayers.size - imposterCount <= imposterCount) {
+            letWin(Team.IMPOSTERS)
+            return
+        }
+    }
+
+    fun letWin(team: Team) {
+        phase = GamePhase.FINISHED
+
+        sabotageManager.endSabotage()
+        invalidateAbilities()
+
+        sendTitle(
+            TitlePart.TITLE,
+            textComponent {
+                translatable(when (team) {
+                    Team.CREWMATES -> "win.crewmate"
+                    Team.IMPOSTERS -> "win.imposter"
+                })
+            }
+        )
+
+        killManager.removeAllCorpses()
+        taskManager.end()
+
+        waypointManager.end()
+        actionBarManager.end()
+
+        for (player in players) {
+            if (cameraManager.isInCams(player)) cameraManager.leaveCams(player)
+            if (ventManager.isVented(player)) ventManager.ventOut(player)
+
+            val t = player.assignedRole?.definition?.team ?: Team.CREWMATES
+            val subtitle = textComponent {
+                if (t == team) translatable("win.win") else translatable("win.lose")
+            }
+            val p = player.player
+            if (p != null) {
+                p.sendTitlePart(TitlePart.SUBTITLE, subtitle)
+                for (online in Bukkit.getOnlinePlayers()) {
+                    online.showPlayer(AmongUs, p)
+                }
+            }
+            PlayerManager.gameEnds(player)
+        }
+
+        for (it in players.toList()) {
+            removePlayer0(it)
+        }
+    }
+
     companion object {
         const val DEFAULT_MAX_PLAYERS = 16
+        val CODE_CHARS = ('A'..'Z') + ('0'..'9')
+        const val CODE_LENGTH = 4
 
-        private fun createRandomCode() = (1..4).map { (('A'..'Z') + ('0'..'9')).random() }.joinToString("")
+        private fun createRandomCode(): String = (1..CODE_LENGTH).map { CODE_CHARS.random() }.joinToString("")
     }
 }
