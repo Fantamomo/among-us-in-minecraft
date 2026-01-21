@@ -57,6 +57,10 @@ class TaskManager(val game: Game) {
     internal fun updateBossbar(taskCompleted: Boolean = false, meeting: Boolean = false, force: Boolean = false) {
         val updateFrequency = game.settings[SettingsKey.TASK_BAR_UPDATE]
         if (updateFrequency == TaskBarUpdateEnum.NONE) return
+        if (game.sabotageManager.isSabotage(SabotageType.Communications)) {
+            bossbar.progress(0f)
+            return
+        }
         if (force || (taskCompleted && updateFrequency != TaskBarUpdateEnum.MEETING) || meeting) {
             val completedTasks =
                 tasks.values.sumOf { tasks -> tasks.sumOf { if (it.completed && !it.fake) it.weight else 0 } }
@@ -131,8 +135,9 @@ class TaskManager(val game: Game) {
     fun startTask(player: AmongUsPlayer, location: Location): Boolean {
         val registeredTasks = tasks[player] ?: return false
         val task =
-            registeredTasks.find { !it.completed && it.task.location.isSameBlockPosition(location) && !it.fake }
+            registeredTasks.find { !it.completed && it.task.location.isSameBlockPosition(location) }
                 ?: return false
+        if (task.fake) return true
         task.task.start()
         return true
     }
