@@ -77,6 +77,7 @@ object PlayerManager {
         for (otherPlayer in game.players) {
             player.hidePlayer(AmongUs, otherPlayer.player ?: continue)
         }
+        amongUsPlayer.mannequinController.hideFromSelf()
         game.onRejoin(amongUsPlayer)
     }
 
