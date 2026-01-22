@@ -13,6 +13,7 @@ import com.fantamomo.mc.amongus.role.RoleManager
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.sabotage.SabotageManager
 import com.fantamomo.mc.amongus.settings.Settings
+import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.task.TaskManager
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.title.TitlePart
@@ -79,7 +80,7 @@ class Game(
     fun tick() {
         if (phase == GamePhase.FINISHED || phase == GamePhase.LOBBY) return
         ticks++
-        if (ticks % 20 == 0) {
+        if (ticks % 20 == 0 && !settings[SettingsKey.DISABLE_WIN_CHECK_ON_TICK]) {
             checkWin()
         }
         ventManager.tick()
@@ -147,6 +148,7 @@ class Game(
     }
 
     fun checkWin() {
+        if (settings[SettingsKey.DISABLE_WIN_CHECK]) return
         if (taskManager.allTaskCompleted()) {
             letWin(Team.CREWMATES)
             return
