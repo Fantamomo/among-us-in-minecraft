@@ -125,6 +125,7 @@ class MeetingManager(private val game: Game) : Listener {
         private fun registerRecipes() {
             val server = AmongUs.server
             for (amongUsPlayer in game.players) {
+                if (!amongUsPlayer.isAlive) continue
                 val player = amongUsPlayer.player ?: continue
                 val key = NamespacedKey(AmongUs, "meeting/voting/${amongUsPlayer.uuid}")
 

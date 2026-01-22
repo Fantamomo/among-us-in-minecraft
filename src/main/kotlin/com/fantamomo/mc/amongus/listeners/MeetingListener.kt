@@ -87,6 +87,7 @@ object MeetingListener : Listener {
         if (!event.isSneaking) return
         val player = event.player
         val amongUsPlayer = PlayerManager.getPlayer(player) ?: return
+        if (!amongUsPlayer.isAlive) return
         val game = amongUsPlayer.game
         if (game.phase != GamePhase.VOTING) return
         val meetingManager = game.meetingManager
