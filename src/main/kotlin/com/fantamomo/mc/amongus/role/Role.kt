@@ -2,6 +2,7 @@ package com.fantamomo.mc.amongus.role
 
 import com.fantamomo.mc.amongus.ability.Ability
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import com.fantamomo.mc.amongus.role.crewmates.CallerRole
 import com.fantamomo.mc.amongus.role.crewmates.CameraManRole
 import com.fantamomo.mc.amongus.role.crewmates.CrewmateRole
 import com.fantamomo.mc.amongus.role.crewmates.EngineerRole
@@ -26,7 +27,8 @@ interface Role<R : Role<R, A>, A : AssignedRole<R, A>> {
             ImposterRole,
             CrewmateRole,
             CameraManRole,
-            EngineerRole
+            EngineerRole,
+            CallerRole
         )
     }
 }
