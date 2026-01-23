@@ -3,6 +3,7 @@ package com.fantamomo.mc.amongus.listeners
 import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.sabotage.SabotageType
 import com.fantamomo.mc.amongus.util.isSameBlockPosition
+import io.papermc.paper.event.entity.EntityKnockbackEvent
 import org.bukkit.GameMode
 import org.bukkit.entity.Mannequin
 import org.bukkit.event.EventHandler
@@ -28,6 +29,14 @@ object PlayerListener : Listener {
 
     @EventHandler(priority = EventPriority.LOWEST)
     fun onEntityAttack(event: EntityDamageEvent) {
+        val mannequin = event.entity as? Mannequin ?: return
+        val player = PlayerManager.getPlayer(mannequin)
+        if (player != null) event.isCancelled = true
+    }
+
+    @EventHandler
+    fun onEntityKnockback(event: EntityKnockbackEvent) {
+        if (event.cause != EntityKnockbackEvent.Cause.PUSH) return
         val mannequin = event.entity as? Mannequin ?: return
         val player = PlayerManager.getPlayer(mannequin)
         if (player != null) event.isCancelled = true
