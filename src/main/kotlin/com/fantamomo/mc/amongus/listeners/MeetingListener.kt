@@ -74,7 +74,7 @@ object MeetingListener : Listener {
 
     @EventHandler
     fun onInventoryClose(event: InventoryCloseEvent) {
-        val inventory = event.player.inventory
+        val inventory = event.inventory
         inventory.forEachIndexed { index, stack ->
             if (stack?.persistentDataContainer?.has(MeetingManager.VOTING_KEY) == true) {
                 inventory.setItem(index, null)
