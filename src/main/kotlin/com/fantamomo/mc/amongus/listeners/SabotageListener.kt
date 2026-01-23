@@ -78,7 +78,7 @@ object SabotageListener : Listener {
             val location = player.location
             sabotage.mayShowLightDisplayBlocks(amongUsPlayer, location)
         } else if (sabotage is CommunicationsSabotage) {
-            if (event.hasChangedPosition()) {
+            if (!sabotage.canMoveAndDisable(amongUsPlayer) && event.hasChangedPosition()) {
                 sabotage.removePlayer(amongUsPlayer)
             }
         }
