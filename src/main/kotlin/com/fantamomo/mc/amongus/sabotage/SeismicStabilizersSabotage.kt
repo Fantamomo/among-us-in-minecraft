@@ -121,8 +121,8 @@ class SeismicStabilizersSabotage(override val game: Game) :
                 string("time", timer.remaining().toString(DurationUnit.SECONDS, 0))
                 numeric(
                     "count",
-                    ((seismicStabilizers1.blockData as? Switch)?.isPowered
-                        ?: (seismicStabilizers2.blockData as? Switch)?.isPowered)?.let { if (it) 1 else 0 } ?: 0)
+                    if ((seismicStabilizers1.blockData as? Switch)?.isPowered == true
+                            || (seismicStabilizers2.blockData as? Switch)?.isPowered == true) 1 else 0)
             }
         }
     }
