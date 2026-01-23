@@ -61,7 +61,6 @@ class Game(
         if (players.size >= maxPlayers) return false
         if (PlayerManager.exists(player.uniqueId)) return false
         PlayerManager.joinGame(player, this)
-        player.teleportAsync(area.lobbySpawn ?: throw IllegalStateException("Lobby spawn not set"))
         return true
     }
 
