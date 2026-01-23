@@ -10,6 +10,9 @@ import com.fantamomo.mc.amongus.util.CustomPersistentDataTypes
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 
 object AbilityManager {
 
@@ -65,11 +68,13 @@ object AbilityManager {
         return handle(item, player) { it.onLeftClick() }
     }
 
+    @OptIn(ExperimentalContracts::class)
     private inline fun handle(
         item: ItemStack,
         player: Player,
         action: (AbilityItem) -> Unit
     ): Boolean {
+        contract { callsInPlace(action, InvocationKind.AT_MOST_ONCE) }
         val amongUsPlayer = PlayerManager.getPlayer(player) ?: return false
         val pdc = item.persistentDataContainer
 
