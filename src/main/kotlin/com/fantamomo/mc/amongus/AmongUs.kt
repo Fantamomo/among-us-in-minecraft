@@ -7,6 +7,7 @@ import com.fantamomo.mc.amongus.languages.LanguageManager
 import com.fantamomo.mc.amongus.listeners.Listeners
 import com.fantamomo.mc.amongus.manager.EntityManager
 import com.fantamomo.mc.amongus.manager.MeetingManager
+import com.fantamomo.mc.amongus.statistics.StatisticsManager
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
 import org.bukkit.plugin.java.JavaPlugin
 
@@ -29,6 +30,7 @@ object AmongUs : JavaPlugin() {
     override fun onDisable() {
         EntityManager.dispose()
         MeetingManager.dispose()
+        StatisticsManager.saveAll()
         GameAreaManager.saveAll()
     }
 }
