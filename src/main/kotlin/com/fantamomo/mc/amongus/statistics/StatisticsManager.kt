@@ -1,6 +1,7 @@
 package com.fantamomo.mc.amongus.statistics
 
 import com.fantamomo.mc.amongus.AmongUs
+import com.fantamomo.mc.amongus.util.safeCreateDirectories
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 import kotlin.io.path.notExists
@@ -68,7 +69,7 @@ object StatisticsManager {
     }
 
     fun save(statistic: StatisticMap) {
-        val file = directory.resolve(statistic.group).resolve("${statistic.id}.json")
+        val file = directory.resolve(statistic.group).safeCreateDirectories().resolve("${statistic.id}.json")
         try {
             val json = json.encodeToString(statistic)
             file.writeText(json)
