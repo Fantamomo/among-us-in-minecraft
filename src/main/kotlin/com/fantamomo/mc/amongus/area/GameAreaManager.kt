@@ -1,8 +1,8 @@
 package com.fantamomo.mc.amongus.area
 
 import com.fantamomo.mc.amongus.AmongUs
+import com.fantamomo.mc.amongus.util.SerializableLocation
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
 import org.slf4j.LoggerFactory
 import java.nio.file.Path
 import java.util.*
@@ -27,7 +27,19 @@ object GameAreaManager {
         // plugin JAR is hot-reloaded or replaced while the plugin is still loaded,
         // because some serialization classes would otherwise be loaded lazily
         // only on first real use.
-        json.encodeToString(JsonObject(emptyMap()))
+        json.encodeToString(
+            GameAreaDTO(
+                "dummy", "no-uuid",
+                SerializableLocation(0.0, 0.0, 0.0, 0f, 0f),
+                null, null, null,
+                null, null, null,
+                null, null, null,
+                null, null, null,
+                null, null, null,
+                null,
+                mapOf(), listOf(), setOf(), mapOf()
+            )
+        )
     }
 
     fun loadAreas() {
