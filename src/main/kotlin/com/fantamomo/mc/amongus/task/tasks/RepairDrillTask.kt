@@ -1,5 +1,6 @@
 package com.fantamomo.mc.amongus.task.tasks
 
+import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.task.GuiAssignedTask
@@ -11,8 +12,10 @@ import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
+import org.bukkit.NamespacedKey
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.inventory.Inventory
+import org.bukkit.persistence.PersistentDataType
 import kotlin.random.Random
 
 object RepairDrillTask : Task<RepairDrillTask, RepairDrillTask.AssignedRepairDrillTask> {
@@ -37,7 +40,7 @@ object RepairDrillTask : Task<RepairDrillTask, RepairDrillTask.AssignedRepairDri
         private val green = itemStack(Material.LIME_STAINED_GLASS_PANE).hideTooltip()
 
         override fun onInventoryClick(event: InventoryClickEvent) {
-            event.currentItem?.takeIf { it.isMine() } ?: return
+            val item = event.currentItem?.takeIf { it.isMine() } ?: return
             val slot = event.slot
             if (slot !in targets) return
             val amount = targets[slot]!! - 1
@@ -46,7 +49,7 @@ object RepairDrillTask : Task<RepairDrillTask, RepairDrillTask.AssignedRepairDri
                 inv.setItem(slot, green)
             } else {
                 targets[slot] = amount
-                inv.setItem(slot, red.clone().also { it.amount = amount })
+                inv.setItem(slot, item.also { it.amount = amount })
             }
             if (targets.isEmpty()) player.game.taskManager.completeTask(this)
         }
@@ -54,10 +57,17 @@ object RepairDrillTask : Task<RepairDrillTask, RepairDrillTask.AssignedRepairDri
         override fun setupInventory() {
             for (slot in 0 until SIZE)
                 inv.setItem(slot, background)
-            for (slot in targets.keys) inv.setItem(slot, red)
+            for (slot in targets.keys) {
+                val item = red.clone()
+                item.editPersistentDataContainer {
+                    it.set(KEY_UNIQUE, PersistentDataType.BYTE, slot.toByte())
+                }
+                inv.setItem(slot, item)
+            }
         }
 
         companion object {
+            private val KEY_UNIQUE = NamespacedKey(AmongUs, "repair_drill")
             const val SIZE = 45
         }
     }

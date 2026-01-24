@@ -61,7 +61,6 @@ class Game(
         if (players.size >= maxPlayers) return false
         if (PlayerManager.exists(player.uniqueId)) return false
         PlayerManager.joinGame(player, this)
-        player.teleportAsync(area.lobbySpawn ?: throw IllegalStateException("Lobby spawn not set"))
         return true
     }
 
@@ -122,6 +121,14 @@ class Game(
 
     internal fun onRejoin(amongUsPlayer: AmongUsPlayer) {
         amongUsPlayer.mannequinController.getEntity()?.location?.let { amongUsPlayer.player?.teleport(it) }
+        val player = amongUsPlayer.player
+        if (player != null) {
+            for (ability in amongUsPlayer.abilities) {
+                for (item in ability.items) {
+                    player.inventory.addItem(item.get())
+                }
+            }
+        }
     }
 
     fun sendChatMessage(component: Component) {

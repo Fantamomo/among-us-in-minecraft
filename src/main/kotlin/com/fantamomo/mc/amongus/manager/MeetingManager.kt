@@ -125,8 +125,10 @@ class MeetingManager(private val game: Game) : Listener {
         private fun registerRecipes() {
             val server = AmongUs.server
             for (amongUsPlayer in game.players) {
+                if (!amongUsPlayer.isAlive) continue
                 val player = amongUsPlayer.player ?: continue
                 val key = NamespacedKey(AmongUs, "meeting/voting/${amongUsPlayer.uuid}")
+                recipeKeys.add(key)
 
                 val recipe = server.getRecipe(key)
                 if (recipe != null) {
@@ -160,6 +162,7 @@ class MeetingManager(private val game: Game) : Listener {
                 recipes[key] = stonecutter
             }
             val key = NamespacedKey(AmongUs, "meeting/voting/skip")
+            recipeKeys.add(key)
             val recipe = server.getRecipe(key)
             if (recipe != null) {
                 recipes[key] = recipe as StonecuttingRecipe
@@ -432,6 +435,12 @@ class MeetingManager(private val game: Game) : Listener {
     }
 
     companion object {
+        private val recipeKeys: MutableSet<NamespacedKey> = mutableSetOf()
+
+        internal fun dispose() {
+            recipeKeys.forEach { Bukkit.removeRecipe(it) }
+        }
+
         val VOTING_KEY = NamespacedKey(AmongUs, "meeting/voting")
     }
 

@@ -10,6 +10,7 @@ import com.fantamomo.mc.amongus.ability.item.AbilityItem
 import com.fantamomo.mc.amongus.ability.item.CooldownAbilityItem
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.util.Cooldown
 import com.fantamomo.mc.amongus.util.textComponent
 import io.papermc.paper.datacomponent.DataComponentTypes
@@ -25,8 +26,12 @@ object KillAbility : Ability<KillAbility, KillAbility.AssignedKillAbility> {
 
     class AssignedKillAbility(override val player: AmongUsPlayer) : AssignedAbility<KillAbility, AssignedKillAbility> {
         override val definition = KillAbility
+
+        val cooldown = Cooldown(player.game.settings[SettingsKey.KILL_COOLDOWN])
+
         override val items: List<AbilityItem> = listOf(
             abilityItem("kill") {
+                cooldown = this@AssignedKillAbility.cooldown
                 material {
                     active = Material.NETHER_STAR
                     inactive = Material.BARRIER

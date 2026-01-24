@@ -8,6 +8,7 @@ import org.bukkit.Location
 import org.bukkit.entity.Mannequin
 import org.bukkit.entity.Player
 import java.util.*
+import kotlin.math.absoluteValue
 import kotlin.time.Duration
 
 class MannequinController(
@@ -133,6 +134,11 @@ class MannequinController(
         val player = owner.player ?: return
         val mannequin = mannequin ?: return
 
+        val velocity = mannequin.velocity
+        if (velocity.x.absoluteValue <= 0.01 && velocity.y.absoluteValue <= 0.01 && velocity.z.absoluteValue <= 0.01) {
+            mannequin.isImmovable = true
+        }
+
         if (!frozen) {
             syncLocation(player, mannequin, force)
             syncRotation(player, mannequin)
@@ -181,8 +187,20 @@ class MannequinController(
         frozen = true
     }
 
+    fun freezeWithPhysics() {
+        frozen = true
+
+        val mannequin = mannequin ?: return
+
+        val player = owner.player ?: return
+
+        mannequin.isImmovable = false
+        mannequin.velocity = player.velocity.clone()
+    }
+
     fun unfreeze(forceSync: Boolean = true) {
         frozen = false
+        mannequin?.isImmovable = true
         if (forceSync) syncFromPlayer(force = true)
     }
 

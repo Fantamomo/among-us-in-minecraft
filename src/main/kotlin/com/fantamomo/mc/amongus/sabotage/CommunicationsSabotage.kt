@@ -163,6 +163,11 @@ class CommunicationsSabotage(
         fixingPlayers += FixingPlayer(player)
     }
 
+    fun canMoveAndDisable(player: AmongUsPlayer): Boolean {
+        val fixingPlayer = fixingPlayers.firstOrNull { it.player == player } ?: return false
+        return fixingPlayer.canMoveOnce.also { fixingPlayer.canMoveOnce = false }
+    }
+
     fun removePlayer(player: AmongUsPlayer) {
         fixingPlayers.firstOrNull { it.player == player }?.let {
             it.dispose()
@@ -172,6 +177,7 @@ class CommunicationsSabotage(
 
     inner class FixingPlayer(val player: AmongUsPlayer) {
 
+        var canMoveOnce: Boolean = true
         val targetYaw = Random.nextFloat() * 360f
         val targetPitch = Random.nextDouble(-90.0, -15.0).toFloat()
 

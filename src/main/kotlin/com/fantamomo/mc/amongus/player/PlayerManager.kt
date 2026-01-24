@@ -39,6 +39,8 @@ object PlayerManager {
         player.server.onlinePlayers.forEach {
             it.hidePlayer(AmongUs, player)
         }
+        player.teleportAsync(game.area.lobbySpawn ?: throw IllegalStateException("Lobby spawn not set"))
+        player.inventory.clear()
     }
 
     internal fun onPlayerQuit(player: Player) {
@@ -52,6 +54,7 @@ object PlayerManager {
     }
 
     internal fun gameEnds(amongUsPlayer: AmongUsPlayer) {
+        amongUsPlayer.player?.inventory?.clear()
         amongUsPlayer.player = null
         amongUsPlayer.mannequinController.despawn()
         players.remove(amongUsPlayer)
@@ -77,6 +80,7 @@ object PlayerManager {
         for (otherPlayer in game.players) {
             player.hidePlayer(AmongUs, otherPlayer.player ?: continue)
         }
+        amongUsPlayer.mannequinController.hideFromSelf()
         game.onRejoin(amongUsPlayer)
     }
 

@@ -56,12 +56,12 @@ class CameraManager(val game: Game) {
                 player.showEntity(AmongUs, camera.armorStand)
                 player.sendBlockChange(camera.location, Material.BARRIER.createBlockData())
             }
-            setSpectatorTarget(camera.armorStand)
-            actionBar.componentLike = camera.actionBarMessage
             this.player.mannequinController.apply {
                 showToSelf()
-                freeze()
+                freezeWithPhysics()
             }
+            setSpectatorTarget(camera.armorStand)
+            actionBar.componentLike = camera.actionBarMessage
             AbilityManager.invalidatePlayer(this.player)
         }
 

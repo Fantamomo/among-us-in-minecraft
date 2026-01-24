@@ -77,7 +77,7 @@ class KillManager(val game: Game) {
             if (!player.isAlive) continue
             if (game.ventManager.isVented(player)) continue
             if (player.assignedRole?.definition?.team == Team.IMPOSTERS) continue
-            val location = player.livingEntity.location
+            val location = player.mannequinController.getEntity()?.location ?: player.livingEntity.location
             if (loc.distanceSquared(location) < distance * distance) return true
         }
         return false
@@ -92,7 +92,7 @@ class KillManager(val game: Game) {
             if (!player.isAlive) continue
             if (game.ventManager.isVented(player)) continue
             if (player.assignedRole?.definition?.team == Team.IMPOSTERS) continue
-            val location = player.livingEntity.location
+            val location = player.mannequinController.getEntity()?.location ?: player.livingEntity.location
             val distanceSquared = loc.distanceSquared(location)
             if (distanceSquared < nearestDistance && distanceSquared < distance * distance) {
                 nearest = player

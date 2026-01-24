@@ -62,6 +62,7 @@ data class SettingsKey<T : Any, S : SettingsType<T>>(
         val roles = Role.roles.associateWith { key("roles." + it.id, IntSettingsType.range(0, 100), 50) }
 
         val KILL_DISTANCE = key("kill.distance", EnumSettingsType.create<DistanceEnum>(), DistanceEnum.NORMAL)
+        val KILL_COOLDOWN = key("kill.cooldown", DurationSettingsType.min(1.seconds), 45.seconds)
 
         val DISABLE_WIN_CHECK = key("dev.disable.win.check", BooleanSettingsType, false)
         val DISABLE_WIN_CHECK_ON_TICK = key("dev.disable.win.check.on.tick", BooleanSettingsType, false)
