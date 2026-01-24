@@ -24,6 +24,7 @@ import org.bukkit.Location
 import org.bukkit.entity.LivingEntity
 import org.bukkit.entity.Player
 import java.util.*
+import kotlin.uuid.toKotlinUuid
 
 class AmongUsPlayer internal constructor(
     val uuid: UUID,
@@ -61,6 +62,8 @@ class AmongUsPlayer internal constructor(
     var meetingButtonsPressed: Int = 0
     val canDoTasks: Boolean
         get() = assignedRole?.definition?.canDoTask != false
+
+    val statistics = PlayerStatistics(uuid.toKotlinUuid())
 
     private fun checkGameRunning() {
         if (game.phase != GamePhase.RUNNING) throw IllegalStateException("Cannot perform this action in this phase")
