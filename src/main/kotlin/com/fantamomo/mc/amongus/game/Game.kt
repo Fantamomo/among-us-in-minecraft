@@ -9,6 +9,7 @@ import com.fantamomo.mc.amongus.area.GameArea
 import com.fantamomo.mc.amongus.manager.*
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.player.PlayerManager
+import com.fantamomo.mc.amongus.player.editStatistics
 import com.fantamomo.mc.amongus.role.RoleManager
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.sabotage.SabotageManager
@@ -149,6 +150,10 @@ class Game(
         taskManager.start()
         val gameSpawn = area.gameSpawn ?: throw IllegalStateException("Game spawn not set")
         for (player in players) {
+            player.editStatistics {
+                statedGames.increment()
+                playTime.timerStart()
+            }
             player.player?.teleportAsync(gameSpawn)
             player.start()
         }
@@ -199,8 +204,22 @@ class Game(
             if (ventManager.isVented(player)) ventManager.ventOut(player)
 
             val t = player.assignedRole?.definition?.team ?: Team.CREWMATES
+            val hasWon = t == team
+
+            player.editStatistics {
+                val resultCount = when {
+                    hasWon && team == Team.IMPOSTERS -> winsAsImposter
+                    hasWon -> winsAsCrewmate
+                    team == Team.IMPOSTERS -> losesAsImposter
+                    else -> losesAsCrewmate
+                }
+                resultCount.increment()
+                playTime.timerStop()
+                playedGames.increment()
+            }
+
             val subtitle = textComponent {
-                if (t == team) translatable("win.win") else translatable("win.lose")
+                if (hasWon) translatable("win.win") else translatable("win.lose")
             }
             val p = player.player
             if (p != null) {
