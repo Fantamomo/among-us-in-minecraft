@@ -15,7 +15,7 @@ object GameAreaManager {
     private val logger = LoggerFactory.getLogger("GameAreaManager")
 
     private val json = Json {
-        prettyPrint = true
+        prettyPrint = AmongUs.IN_DEVELOPMENT
         ignoreUnknownKeys = true
     }
 

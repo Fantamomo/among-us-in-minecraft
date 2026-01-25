@@ -13,7 +13,7 @@ object StatisticsManager {
     private val directory = AmongUs.dataPath.resolve("statistics")
     private val statistics: MutableList<StatisticMap> = mutableListOf()
     private val json = Json {
-        prettyPrint = true
+        prettyPrint = AmongUs.IN_DEVELOPMENT
         ignoreUnknownKeys = true
     }
     private val logger = LoggerFactory.getLogger("AmongUs-StatisticsManager")
