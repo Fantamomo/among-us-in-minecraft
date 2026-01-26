@@ -1,11 +1,12 @@
 package com.fantamomo.mc.amongus.task.tasks
 
+import com.fantamomo.mc.adventure.text.args
+import com.fantamomo.mc.adventure.text.textComponent
+import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.game.Game
+import com.fantamomo.mc.amongus.languages.numeric
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
-import com.fantamomo.mc.amongus.task.GuiAssignedTask
-import com.fantamomo.mc.amongus.task.Task
-import com.fantamomo.mc.amongus.task.TaskType
-import com.fantamomo.mc.amongus.task.areaLocation
+import com.fantamomo.mc.amongus.task.*
 import com.fantamomo.mc.amongus.util.Cooldown
 import com.fantamomo.mc.amongus.util.hideTooltip
 import io.papermc.paper.datacomponent.DataComponentTypes
@@ -70,7 +71,9 @@ object InspectSampleTask :
         /* ---------------- Inventory Events ---------------- */
 
         init {
-            countdown.onFinish(::setupInventory)
+            countdown.onFinish {
+                if (open) setupInventory()
+            }
         }
 
         override fun onInventoryClick(event: InventoryClickEvent) {
@@ -158,6 +161,16 @@ object InspectSampleTask :
                 ticks % 10 == 0 -> fillBottle(index)
             }
         }
+
+        override fun scoreboardLine(): Component = textComponent {
+            translatable("tasks.$id.scoreboard") {
+                args {
+                    numeric("remaining_time", countdown.remaining().inWholeSeconds)
+                }
+            }
+        }
+
+        override fun state(): TaskState? = TaskState.IN_PROGRESS.takeIf { countdown.isRunning() }
 
         private fun advanceHopper(index: Int) {
             if (index >= MAX_SAMPLES) {
