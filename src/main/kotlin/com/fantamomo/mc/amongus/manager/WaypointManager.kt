@@ -3,6 +3,7 @@ package com.fantamomo.mc.amongus.manager
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.TextColor
 import net.minecraft.core.Vec3i
 import net.minecraft.network.protocol.game.ClientboundTrackedWaypointPacket
 import net.minecraft.network.protocol.game.ClientboundTrackedWaypointPacket.addWaypointPosition
@@ -197,7 +198,7 @@ class WaypointManager(val game: Game) {
 
         if (bestAngle > allowedAngle) return null
 
-        return Component.translatable(waypoint.translationKey)
+        return Component.translatable(waypoint.translationKey).color(TextColor.color(waypoint.color))
     }
 
     private fun allowedAngleForDistance(distance: Double): Double {
