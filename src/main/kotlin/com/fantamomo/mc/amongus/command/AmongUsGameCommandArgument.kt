@@ -40,7 +40,7 @@ private fun PaperCommand.taskGameCommand() = literal("task") {
 
                 if (targets.isEmpty()) {
                     sendMessage {
-                        translatable("command.error.admin.game.task.assign.no_targets")
+                        translatable("command.error.admin.game.task.no_targets")
                     }
                     return@literalExecute 0
                 }
@@ -56,7 +56,7 @@ private fun PaperCommand.taskGameCommand() = literal("task") {
 
                 if (success == 0) {
                     sendMessage {
-                        translatable("command.error.admin.game.task.assign.failed") {
+                        translatable("command.error.admin.game.task.assign.all.failed") {
                             args {
                                 numeric("targets", targets.size)
                             }
@@ -66,7 +66,7 @@ private fun PaperCommand.taskGameCommand() = literal("task") {
                 }
 
                 sendMessage {
-                    translatable("command.success.admin.game.task.assign.multiple") {
+                    translatable("command.success.admin.game.task.assign.all") {
                         args {
                             numeric("targets", success)
                         }
@@ -83,7 +83,7 @@ private fun PaperCommand.taskGameCommand() = literal("task") {
                     when (targets.size) {
                         0 -> {
                             sendMessage {
-                                translatable("command.error.admin.game.task.assign.no_targets")
+                                translatable("command.error.admin.game.task.no_targets")
                             }
                             return@execute 0
                         }
@@ -170,7 +170,7 @@ private fun PaperCommand.taskGameCommand() = literal("task") {
 
                 if (targets.isEmpty()) {
                     sendMessage {
-                        translatable("command.error.admin.game.task.unassign.no_targets")
+                        translatable("command.error.admin.game.task.no_targets")
                     }
                     return@literalExecute 0
                 }
@@ -187,13 +187,17 @@ private fun PaperCommand.taskGameCommand() = literal("task") {
 
                 if (success == 0) {
                     sendMessage {
-                        translatable("command.error.admin.game.task.unassign.failed")
+                        translatable("command.error.admin.game.task.unassign.all.failed") {
+                            args {
+                                numeric("targets", targets.size)
+                            }
+                        }
                     }
                     return@literalExecute 0
                 }
 
                 sendMessage {
-                    translatable("command.success.admin.game.task.unassign.multiple") {
+                    translatable("command.success.admin.game.task.unassign.all") {
                         args {
                             numeric("targets", success)
                         }
@@ -220,6 +224,7 @@ private fun PaperCommand.taskGameCommand() = literal("task") {
                             translatable("command.error.admin.game.task.unassign.failed") {
                                 args {
                                     string("task", task.id)
+                                    numeric("targets", targets.size)
                                 }
                             }
                         }
@@ -262,7 +267,7 @@ private fun PaperCommand.taskGameCommand() = literal("task") {
 
                 if (targets.isEmpty()) {
                     sendMessage {
-                        translatable("command.error.admin.game.task.complete.no_targets")
+                        translatable("command.error.admin.game.task.no_targets")
                     }
                     return@literalExecute 0
                 }
@@ -278,13 +283,17 @@ private fun PaperCommand.taskGameCommand() = literal("task") {
 
                 if (success == 0) {
                     sendMessage {
-                        translatable("command.error.admin.game.task.complete.failed")
+                        translatable("command.error.admin.game.task.complete.all.failed") {
+                            args {
+                                numeric("targets", targets.size)
+                            }
+                        }
                     }
                     return@literalExecute 0
                 }
 
                 sendMessage {
-                    translatable("command.success.admin.game.task.complete.multiple") {
+                    translatable("command.success.admin.game.task.complete.all") {
                         args {
                             numeric("targets", success)
                         }
@@ -314,6 +323,7 @@ private fun PaperCommand.taskGameCommand() = literal("task") {
                             translatable("command.error.admin.game.task.complete.failed") {
                                 args {
                                     string("task", task.id)
+                                    numeric("targets", targets.size)
                                 }
                             }
                         }
