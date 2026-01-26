@@ -51,12 +51,15 @@ class GameArgumentType(val onlyLobbyGames: Boolean = true, val showOnlyLobbyGame
     ): CompletableFuture<Suggestions> {
         val source = context.source as? CommandSourceStack ?: return Suggestions.empty()
         if (!source.sender.hasPermission(Permissions.SEE_GAME_CODES)) return Suggestions.empty()
+        val input = builder.remaining
         for (game in GameManager.getGames()) {
             if (showOnlyLobbyGames && game.phase != GamePhase.LOBBY) continue
-            builder.suggest(game.code, AdventureComponent(textComponent {
+            val code = game.code
+            if (!code.startsWith(input, ignoreCase = true)) continue
+            builder.suggest(code, AdventureComponent(textComponent {
                 translatable("command.success.admin.game.list.game") {
                     args {
-                        string("code", game.code)
+                        string("code", code)
                         string("area", game.area.name)
                         string("phase", game.phase.name.lowercase().replaceFirstChar(Char::uppercase))
                         numeric("players", game.players.size)
