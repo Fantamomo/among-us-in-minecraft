@@ -17,6 +17,8 @@ interface Role<R : Role<R, A>, A : AssignedRole<R, A>> {
     /** A translation Key */
     val name: String
         get() = "role.$id.name"
+    val description: String
+        get() = "role.$id.description"
 
     val defaultAbilities: Set<Ability<*, *>>
 
