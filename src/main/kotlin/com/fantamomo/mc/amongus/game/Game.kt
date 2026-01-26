@@ -92,6 +92,7 @@ class Game(
         sabotageManager.tick()
         taskManager.tick()
         meetingManager.tick()
+        scoreboardManager.tick()
     }
 
     fun getPlayer(uuid: UUID) = players.find { it.uuid == uuid }
