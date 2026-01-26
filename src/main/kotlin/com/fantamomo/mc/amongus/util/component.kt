@@ -5,6 +5,9 @@ import com.fantamomo.mc.adventure.text.textComponent
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.identity.Identity
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.ComponentIteratorType
+import net.kyori.adventure.text.TextComponent
+import net.kyori.adventure.text.format.Style
 import net.kyori.adventure.translation.GlobalTranslator
 import org.bukkit.entity.Player
 import java.util.*
@@ -29,4 +32,82 @@ inline fun textComponent(translateTo: Locale, block: KTextComponent.() -> Unit) 
 inline fun Audience.sendComponent(block: KTextComponent.() -> Unit) {
     contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
     sendMessage(textComponent(block))
+}
+
+// Edit Components
+
+data class ComponentWrapConfig(
+    val maxLineLength: Int = 30,
+    val wordWrap: Boolean = true,
+    val maxLines: Int? = null
+)
+
+fun wrapComponent(
+    component: Component,
+    config: ComponentWrapConfig = ComponentWrapConfig()
+): List<Component> {
+
+    val result = mutableListOf<Component>()
+    var current = Component.empty()
+    var currentLength = 0
+
+    fun flush() {
+        if (currentLength == 0) return
+        result += current
+        current = Component.empty()
+        currentLength = 0
+    }
+
+    fun append(text: String, style: Style) {
+        current = current.append(Component.text(text).style(style))
+        currentLength += text.length
+    }
+
+    component.iterable(ComponentIteratorType.BREADTH_FIRST).forEach { part ->
+        if (part !is TextComponent) return@forEach
+
+        val style = part.style()
+        val text = part.content()
+
+        val tokens = Regex("\\S+|\\s+").findAll(text).map { it.value }
+
+        for (token in tokens) {
+
+            if (token.contains('\n')) {
+                val lines = token.split('\n')
+                lines.forEachIndexed { index, line ->
+                    if (line.isNotEmpty()) {
+                        append(line, style)
+                    }
+                    if (index < lines.lastIndex) {
+                        flush()
+                    }
+                }
+                continue
+            }
+
+            val isWhitespace = token.all { it.isWhitespace() }
+
+            if (isWhitespace) {
+                if (currentLength + token.length <= config.maxLineLength) {
+                    append(token, style)
+                }
+                continue
+            }
+
+            if (currentLength + token.length > config.maxLineLength) {
+                flush()
+            }
+
+            append(token, style)
+
+            if (config.maxLines != null && result.size >= config.maxLines) {
+                return result
+            }
+        }
+    }
+
+    flush()
+
+    return result
 }
