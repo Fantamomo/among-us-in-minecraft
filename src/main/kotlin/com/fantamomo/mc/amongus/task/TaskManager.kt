@@ -107,8 +107,10 @@ class TaskManager(val game: Game) {
         })
         updateTask(task)
         removeMoveableItems(task.player)
+        game.scoreboardManager.refresh(task.player)
         AmongUs.server.scheduler.runTask(AmongUs) { ->
             removeMoveableItems(task.player)
+            game.scoreboardManager.refresh(task.player)
         }
     }
 
