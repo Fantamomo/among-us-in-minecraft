@@ -5,24 +5,351 @@ import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.area.GameArea
 import com.fantamomo.mc.amongus.command.arguments.GameAreaArgumentType
 import com.fantamomo.mc.amongus.command.arguments.GameArgumentType
+import com.fantamomo.mc.amongus.command.arguments.TaskIdArgumentType
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.game.GameManager
 import com.fantamomo.mc.amongus.game.GamePhase
 import com.fantamomo.mc.amongus.languages.numeric
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.PlayerManager
+import com.fantamomo.mc.amongus.task.Task
 import com.fantamomo.mc.brigadier.*
 import com.mojang.brigadier.arguments.IntegerArgumentType
 import io.papermc.paper.command.brigadier.CommandSourceStack
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes
+import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver
 import org.bukkit.World
 import org.bukkit.entity.Player
+
 
 fun PaperCommand.gameCommand() = literal("game") {
     createGameCommand()
     joinGameCommand()
     listGameCommand()
     startGameCommand()
+    taskGameCommand()
+}
+
+private fun PaperCommand.taskGameCommand() = literal("task") {
+    argument("players", ArgumentTypes.players()) {
+        literal("assign") {
+            literalExecute("all") {
+                val targetResolver: PlayerSelectorArgumentResolver =
+                    arg<PlayerSelectorArgumentResolver>("players")
+                val targets = targetResolver.resolve(source)
+
+                if (targets.isEmpty()) {
+                    sendMessage {
+                        translatable("command.error.admin.game.task.assign.no_targets")
+                    }
+                    return@literalExecute 0
+                }
+
+                var success = 0
+                for (target in targets) {
+                    val auPlayer = PlayerManager.getPlayer(target) ?: continue
+                    for (task in Task.tasks) {
+                        auPlayer.game.taskManager.assignTask(auPlayer, task)
+                        success++
+                    }
+                }
+
+                if (success == 0) {
+                    sendMessage {
+                        translatable("command.error.admin.game.task.assign.failed") {
+                            args {
+                                numeric("targets", targets.size)
+                            }
+                        }
+                    }
+                    return@literalExecute 0
+                }
+
+                sendMessage {
+                    translatable("command.success.admin.game.task.assign.multiple") {
+                        args {
+                            numeric("targets", success)
+                        }
+                    }
+                }
+                SINGLE_SUCCESS
+            }
+            argument("task", TaskIdArgumentType) {
+                execute {
+                    val targetResolver: PlayerSelectorArgumentResolver =
+                        arg<PlayerSelectorArgumentResolver>("players")
+                    val targets = targetResolver.resolve(source)
+
+                    when (targets.size) {
+                        0 -> {
+                            sendMessage {
+                                translatable("command.error.admin.game.task.assign.no_targets")
+                            }
+                            return@execute 0
+                        }
+
+                        1 -> {
+                            val player = targets.first()
+                            val auPlayer = PlayerManager.getPlayer(player)
+                            val task = arg<Task<*, *>>("task")
+
+                            if (auPlayer == null) {
+                                sendMessage {
+                                    translatable("command.error.admin.game.task.assign.not_in_game") {
+                                        args {
+                                            string("player", player.name)
+                                        }
+                                    }
+                                }
+                                return@execute 0
+                            }
+
+                            if (!task.isAvailable(auPlayer.game)) {
+                                sendMessage {
+                                    translatable("command.error.admin.game.task.assign.not_available") {
+                                        args {
+                                            string("task", task.id)
+                                        }
+                                    }
+                                }
+                                return@execute 0
+                            }
+
+                            auPlayer.game.taskManager.assignTask(auPlayer, task)
+                            sendMessage {
+                                translatable("command.success.admin.game.task.assign") {
+                                    args {
+                                        string("task", task.id)
+                                        string("player", player.name)
+                                    }
+                                }
+                            }
+                            SINGLE_SUCCESS
+                        }
+
+                        else -> {
+                            var success = 0
+                            val task = arg<Task<*, *>>("task")
+                            for (target in targets) {
+                                val auPlayer = PlayerManager.getPlayer(target) ?: continue
+
+                                if (!task.isAvailable(auPlayer.game)) continue
+                                auPlayer.game.taskManager.assignTask(auPlayer, task)
+                                success++
+                            }
+                            if (success == 0) {
+                                sendMessage {
+                                    translatable("command.error.admin.game.task.assign.failed") {
+                                        args {
+                                            string("task", task.id)
+                                            numeric("targets", targets.size)
+                                        }
+                                    }
+                                }
+                                return@execute 0
+                            }
+                            sendMessage {
+                                translatable("command.success.admin.game.task.assign.multiple") {
+                                    args {
+                                        string("task", task.id)
+                                        numeric("targets", success)
+                                    }
+                                }
+                            }
+                            SINGLE_SUCCESS
+                        }
+                    }
+                }
+            }
+        }
+        literal("unassign") {
+            literalExecute("all") {
+                val targetResolver: PlayerSelectorArgumentResolver =
+                    arg<PlayerSelectorArgumentResolver>("players")
+                val targets = targetResolver.resolve(source)
+
+                if (targets.isEmpty()) {
+                    sendMessage {
+                        translatable("command.error.admin.game.task.unassign.no_targets")
+                    }
+                    return@literalExecute 0
+                }
+
+                var success = 0
+                for (target in targets) {
+                    val auPlayer = PlayerManager.getPlayer(target) ?: continue
+                    val tasks = auPlayer.tasks.toList()
+                    for (task in tasks) {
+                        auPlayer.game.taskManager.unassignTask(auPlayer, task.task.task)
+                        success++
+                    }
+                }
+
+                if (success == 0) {
+                    sendMessage {
+                        translatable("command.error.admin.game.task.unassign.failed")
+                    }
+                    return@literalExecute 0
+                }
+
+                sendMessage {
+                    translatable("command.success.admin.game.task.unassign.multiple") {
+                        args {
+                            numeric("targets", success)
+                        }
+                    }
+                }
+                SINGLE_SUCCESS
+            }
+            argument("task", TaskIdArgumentType) {
+                execute {
+                    val targetResolver: PlayerSelectorArgumentResolver =
+                        arg<PlayerSelectorArgumentResolver>("players")
+                    val targets = targetResolver.resolve(source)
+                    val task = arg<Task<*, *>>("task")
+
+                    var success = 0
+                    for (target in targets) {
+                        val auPlayer = PlayerManager.getPlayer(target) ?: continue
+                        auPlayer.game.taskManager.unassignTask(auPlayer, task)
+                        success++
+                    }
+
+                    if (success == 0) {
+                        sendMessage {
+                            translatable("command.error.admin.game.task.unassign.failed") {
+                                args {
+                                    string("task", task.id)
+                                }
+                            }
+                        }
+                        return@execute 0
+                    }
+
+                    sendMessage {
+                        translatable("command.success.admin.game.task.unassign") {
+                            args {
+                                string("task", task.id)
+                                numeric("targets", success)
+                            }
+                        }
+                    }
+                    SINGLE_SUCCESS
+                }
+                suggests {
+                    val targetResolver: PlayerSelectorArgumentResolver =
+                        context.arg<PlayerSelectorArgumentResolver>("players")
+                    val targets = targetResolver.resolve(context.source)
+
+                    val input = builder.remaining
+
+                    targets
+                        .asSequence()
+                        .mapNotNull { PlayerManager.getPlayer(it) }
+                        .flatMap { it.tasks }
+                        .map { it.task.task.id }
+                        .filter { it.startsWith(input, ignoreCase = true) }
+                        .toSet()
+                        .forEach(::suggest)
+                }
+            }
+        }
+        literal("complete") {
+            literalExecute("all") {
+                val targetResolver: PlayerSelectorArgumentResolver =
+                    arg<PlayerSelectorArgumentResolver>("players")
+                val targets = targetResolver.resolve(source)
+
+                if (targets.isEmpty()) {
+                    sendMessage {
+                        translatable("command.error.admin.game.task.complete.no_targets")
+                    }
+                    return@literalExecute 0
+                }
+
+                var success = 0
+                for (target in targets) {
+                    val auPlayer = PlayerManager.getPlayer(target) ?: continue
+                    for (task in auPlayer.tasks) {
+                        auPlayer.game.taskManager.completeTask(task.task)
+                        success++
+                    }
+                }
+
+                if (success == 0) {
+                    sendMessage {
+                        translatable("command.error.admin.game.task.complete.failed")
+                    }
+                    return@literalExecute 0
+                }
+
+                sendMessage {
+                    translatable("command.success.admin.game.task.complete.multiple") {
+                        args {
+                            numeric("targets", success)
+                        }
+                    }
+                }
+                SINGLE_SUCCESS
+            }
+            argument("task", TaskIdArgumentType) {
+                execute {
+                    val targetResolver: PlayerSelectorArgumentResolver =
+                        arg<PlayerSelectorArgumentResolver>("players")
+                    val targets = targetResolver.resolve(source)
+                    val task = arg<Task<*, *>>("task")
+
+                    var success = 0
+                    for (target in targets) {
+                        val auPlayer = PlayerManager.getPlayer(target) ?: continue
+                        auPlayer.tasks.forEach {
+                            if (it.task.task != task) return@forEach
+                            auPlayer.game.taskManager.completeTask(it.task)
+                        }
+                        success++
+                    }
+
+                    if (success == 0) {
+                        sendMessage {
+                            translatable("command.error.admin.game.task.complete.failed") {
+                                args {
+                                    string("task", task.id)
+                                }
+                            }
+                        }
+                        return@execute 0
+                    }
+
+                    sendMessage {
+                        translatable("command.success.admin.game.task.complete") {
+                            args {
+                                string("task", task.id)
+                                numeric("targets", success)
+                            }
+                        }
+                    }
+                    SINGLE_SUCCESS
+                }
+                suggests {
+                    val targetResolver: PlayerSelectorArgumentResolver =
+                        context.arg<PlayerSelectorArgumentResolver>("players")
+                    val targets = targetResolver.resolve(context.source)
+
+                    val input = builder.remaining
+
+                    targets
+                        .asSequence()
+                        .mapNotNull { PlayerManager.getPlayer(it) }
+                        .flatMap { it.tasks }
+                        .filter { !it.completed }
+                        .map { it.task.task.id }
+                        .filter { it.startsWith(input, ignoreCase = true) }
+                        .toSet()
+                        .forEach(::suggest)
+                }
+            }
+        }
+    }
 }
 
 private fun PaperCommand.startGameCommand() = literal("start") {
