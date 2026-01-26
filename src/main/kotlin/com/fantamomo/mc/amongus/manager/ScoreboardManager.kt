@@ -8,6 +8,8 @@ import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.task.TaskManager
+import com.fantamomo.mc.amongus.util.translateTo
+import com.fantamomo.mc.amongus.util.wrapComponent
 import io.papermc.paper.scoreboard.numbers.NumberFormat
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
@@ -47,114 +49,136 @@ class ScoreboardManager(private val game: Game) {
         scoreboards.values.forEach { it.update() }
     }
 
-    inner class AmongUsScoreboard(private val player: AmongUsPlayer) {
+    inner class AmongUsScoreboard(private val amongUsPlayer: AmongUsPlayer) {
 
         private val scoreboard = Bukkit.getScoreboardManager().newScoreboard
         private val objective = scoreboard.registerNewObjective(
-            "amongus_${player.uuid}",
+            "amongus_${amongUsPlayer.uuid}",
             Criteria.DUMMY,
             textComponent { translatable("scoreboard.title") }
-        )
-
-        private val previous = player.player?.scoreboard
-        private val usedEntries = mutableSetOf<String>()
-
-        init {
-            objective.displaySlot = DisplaySlot.SIDEBAR
+        ).apply {
+            displaySlot = DisplaySlot.SIDEBAR
         }
 
+        private val previousScoreboard = amongUsPlayer.player?.scoreboard
+        private val usedEntries = mutableSetOf<String>()
+
         fun show() {
-            player.player?.scoreboard = scoreboard
+            amongUsPlayer.player?.scoreboard = scoreboard
             update()
         }
 
         fun hide() {
-            player.player?.scoreboard = previous ?: Bukkit.getScoreboardManager().mainScoreboard
+            amongUsPlayer.player?.scoreboard =
+                previousScoreboard ?: Bukkit.getScoreboardManager().mainScoreboard
         }
 
         fun update() {
             usedEntries.clear()
 
             renderRole()
-            renderSpacer(0)
+            renderSpacer(SPACER_ROLE)
             renderTasks()
 
             cleanupUnusedScores()
         }
 
         private fun renderRole() {
-            score("role", 1000) {
-                customName(textComponent {
-                    translatable("scoreboard.role") {
-                        args {
-                            component("role") {
-                                translatable(
-                                    this@AmongUsScoreboard.player.assignedRole?.definition?.name
-                                        ?: "scoreboard.role.none"
-                                )
+            score(ENTRY_ROLE, SCORE_ROLE_HEADER) {
+                customName(
+                    textComponent {
+                        translatable("scoreboard.role") {
+                            args {
+                                component("role") {
+                                    translatable(
+                                        amongUsPlayer.assignedRole?.definition?.name
+                                            ?: "scoreboard.role.none"
+                                    )
+                                }
                             }
                         }
                     }
-                })
+                )
                 numberFormat(NumberFormat.blank())
+            }
+
+            val description = amongUsPlayer.assignedRole
+                ?.definition
+                ?.description
+                ?.let(Component::translatable)
+                ?.translateTo(amongUsPlayer.locale)
+                ?: return
+
+            wrapComponent(description).forEachIndexed { index, line ->
+                score("$ENTRY_ROLE_DESC#$index", SCORE_ROLE_DESC_START - index) {
+                    customName(line)
+                    numberFormat(NumberFormat.blank())
+                }
             }
         }
 
-        private fun renderSpacer(index: Int) {
-            score("empty#$index", 900 - index) {
+        private fun renderTasks() {
+            amongUsPlayer.tasks
+                .sortedBy { it.completed }
+                .forEachIndexed { index, task ->
+                    val (numberFormat, color) = getScheme(task)
+
+                    score("$ENTRY_TASK#$index", SCORE_TASK_START - index) {
+                        customName(
+                            textComponent {
+                                translatable("tasks.${task.task.task.id}.title") {
+                                    color(color)
+                                }
+                            }
+                        )
+                        numberFormat(numberFormat)
+                    }
+                }
+        }
+
+        private fun renderSpacer(score: Int) {
+            score("$ENTRY_SPACER#$score", score) {
                 customName(Component.empty())
                 numberFormat(NumberFormat.blank())
             }
         }
 
-        private fun renderTasks() {
-            val tasks = player.tasks.sortedBy { it.completed }
-            val baseScore = 500
-
-            tasks.forEachIndexed { index, task ->
-                score("task#$index", baseScore - index) {
-                    val format = getScheme(task)
-                    customName(textComponent {
-                        translatable("tasks.${task.task.task.id}.title") {
-                            color(format.second)
-                        }
-                    })
-                    numberFormat(format.first)
-                }
-            }
-        }
-
         private fun cleanupUnusedScores() {
             scoreboard.entries
-                .filter { entry ->
-                    scoreboard.getObjective(DisplaySlot.SIDEBAR)
-                        ?.getScore(entry)
-                        ?.objective == objective &&
-                            entry !in usedEntries
-                }
-                .forEach { entry ->
-                    scoreboard.resetScores(entry)
-                }
+                .filterNot { it in usedEntries }
+                .forEach(scoreboard::resetScores)
         }
-
 
         @OptIn(ExperimentalContracts::class)
         private inline fun score(id: String, value: Int, block: Score.() -> Unit) {
             contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
 
             usedEntries += id
-            val score = objective.getScore(id)
-            score.score = value
-            score.block()
+            objective.getScore(id).apply {
+                score = value
+                block()
+            }
         }
     }
 
     companion object {
-        private fun getScheme(task: TaskManager.RegisteredTask): Pair<NumberFormat, TextColor> = when {
-            task.completed -> COMPLETED to NamedTextColor.GREEN
-            task.started -> IN_PROGRESS to NamedTextColor.YELLOW
-            else -> INCOMPLETE to NamedTextColor.RED
-        }
+
+        private const val ENTRY_ROLE = "role"
+        private const val ENTRY_ROLE_DESC = "role_desc"
+        private const val ENTRY_TASK = "task"
+        private const val ENTRY_SPACER = "spacer"
+
+        private const val SCORE_ROLE_HEADER = 1000
+        private const val SCORE_ROLE_DESC_START = 900
+        private const val SCORE_TASK_START = 500
+        private const val SPACER_ROLE = 700
+
+        private fun getScheme(task: TaskManager.RegisteredTask): Pair<NumberFormat, TextColor> =
+            when {
+                task.completed -> COMPLETED to NamedTextColor.GREEN
+                task.started -> IN_PROGRESS to NamedTextColor.YELLOW
+                else -> INCOMPLETE to NamedTextColor.RED
+            }
 
         private val COMPLETED =
             NumberFormat.fixed(Component.translatable("scoreboard.task.completed"))
