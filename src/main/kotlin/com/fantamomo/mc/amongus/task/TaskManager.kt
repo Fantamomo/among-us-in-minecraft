@@ -250,5 +250,11 @@ class TaskManager(val game: Game) {
         fun waypointVisible(sabotage: Boolean) {
             waypoint.isVisible = !sabotage
         }
+
+        fun state() = task.state() ?: when {
+            completed -> TaskState.COMPLETED
+            started -> TaskState.IN_PROGRESS
+            else -> TaskState.INCOMPLETE
+        }
     }
 }
