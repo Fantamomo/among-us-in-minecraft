@@ -8,6 +8,9 @@ interface Task<T : Task<T, A>, A : AssignedTask<T, A>> {
     val id: String
     val type: TaskType
 
+    val title: String
+        get() = "tasks.$id.title"
+
     fun isAvailable(game: Game): Boolean
 
     fun assignTo(player: AmongUsPlayer): A

@@ -88,6 +88,7 @@ class TaskManager(val game: Game) {
         AmongUs.server.scheduler.runTask(AmongUs) { ->
             removeMoveableItems(task.player)
         }
+        game.scoreboardManager.refresh(task.player)
         if (allTaskCompleted()) game.checkWin()
     }
 
@@ -106,8 +107,10 @@ class TaskManager(val game: Game) {
         })
         updateTask(task)
         removeMoveableItems(task.player)
+        game.scoreboardManager.refresh(task.player)
         AmongUs.server.scheduler.runTask(AmongUs) { ->
             removeMoveableItems(task.player)
+            game.scoreboardManager.refresh(task.player)
         }
     }
 
@@ -204,6 +207,8 @@ class TaskManager(val game: Game) {
         val weight: Int = task.task.type.weight
         var completed: Boolean = false
         var isShown: Boolean = false
+        val started: Boolean
+            get() = completed || (task as? Steppable)?.step.let { it != null && it > 0 }
 
         val display: BlockDisplay = task.location.world.spawn(task.location, BlockDisplay::class.java) { display ->
             display.isVisibleByDefault = false
@@ -244,6 +249,12 @@ class TaskManager(val game: Game) {
 
         fun waypointVisible(sabotage: Boolean) {
             waypoint.isVisible = !sabotage
+        }
+
+        fun state() = task.state() ?: when {
+            completed -> TaskState.COMPLETED
+            started -> TaskState.IN_PROGRESS
+            else -> TaskState.INCOMPLETE
         }
     }
 }

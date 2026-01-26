@@ -1,6 +1,7 @@
 package com.fantamomo.mc.amongus.task
 
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import net.kyori.adventure.text.Component
 import org.bukkit.Location
 
 interface AssignedTask<T : Task<T, A>, A : AssignedTask<T, A>> {
@@ -14,4 +15,8 @@ interface AssignedTask<T : Task<T, A>, A : AssignedTask<T, A>> {
     fun stop()
 
     fun tick() {}
+
+    fun scoreboardLine(): Component = Component.translatable(task.title)
+
+    fun state(): TaskState? = null
 }

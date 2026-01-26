@@ -51,6 +51,7 @@ class Game(
     val taskManager = TaskManager(this)
     val meetingManager = MeetingManager(this)
     val killManager = KillManager(this)
+    val scoreboardManager = ScoreboardManager(this)
 
     internal val players = mutableListOf<AmongUsPlayer>()
     var phase: GamePhase = GamePhase.LOBBY
@@ -73,6 +74,7 @@ class Game(
         actionBarManager.removeAll(player)
         sabotageManager.removePlayer(player)
         taskManager.removePlayer(player)
+        scoreboardManager.removePlayer(player)
     }
 
     private var ticks = 0
@@ -90,6 +92,7 @@ class Game(
         sabotageManager.tick()
         taskManager.tick()
         meetingManager.tick()
+        scoreboardManager.tick()
     }
 
     fun getPlayer(uuid: UUID) = players.find { it.uuid == uuid }
@@ -157,6 +160,7 @@ class Game(
             player.player?.teleportAsync(gameSpawn)
             player.start()
         }
+        scoreboardManager.start()
     }
 
     fun checkWin() {
@@ -198,6 +202,7 @@ class Game(
 
         waypointManager.end()
         actionBarManager.end()
+        scoreboardManager.end()
 
         for (player in players) {
             if (cameraManager.isInCams(player)) cameraManager.leaveCams(player)
