@@ -110,7 +110,7 @@ private fun PaperCommand.listGameCommand() = literal("list") {
 
 private fun PaperCommand.joinGameCommand() = literal("join") {
     requires { executor is Player }
-    argument("game", GameArgumentType) {
+    argument("game", GameArgumentType.INSTANCE) {
         execute {
             val sender = source.sender
             val executor = source.executor as? Player
@@ -122,12 +122,6 @@ private fun PaperCommand.joinGameCommand() = literal("join") {
             }
             val game = arg<Game>("game")
 
-            if (game.phase != GamePhase.LOBBY) {
-                sendMessage {
-                    translatable("command.error.admin.game.join.already_started")
-                }
-                return@execute 0
-            }
             if (game.players.size >= game.maxPlayers) {
                 sendMessage {
                     translatable("command.error.admin.game.join.full")
