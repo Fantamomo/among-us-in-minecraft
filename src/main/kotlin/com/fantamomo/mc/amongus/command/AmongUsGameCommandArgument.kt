@@ -12,6 +12,7 @@ import com.fantamomo.mc.amongus.game.GamePhase
 import com.fantamomo.mc.amongus.languages.numeric
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.PlayerManager
+import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.task.Task
 import com.fantamomo.mc.brigadier.*
 import com.mojang.brigadier.arguments.IntegerArgumentType
@@ -28,6 +29,78 @@ fun PaperCommand.gameCommand() = literal("game") {
     listGameCommand()
     startGameCommand()
     taskGameCommand()
+    letWinGameCommand()
+}
+
+private fun PaperCommand.letWinGameCommand() = literal("letwin") {
+    Team.entries.forEach(::letWinGameCommandArgument)
+}
+
+private fun PaperCommand.letWinGameCommandArgument(team: Team) = literal(team.name.lowercase()) {
+    argument("game", GameArgumentType(false)) {
+        letWinGameCommandExecute(team)
+    }
+    letWinGameCommandExecute(team)
+}
+
+private fun KtCommandBuilder<CommandSourceStack, *>.letWinGameCommandExecute(team: Team) = execute {
+    var game = optionalArg<Game>("game")
+
+    if (game == null) {
+        val execute = source.executor as? Player
+        if (execute == null) {
+            sendMessage {
+                translatable("command.error.admin.game.letwin.not_a_player")
+            }
+            return@execute 0
+        }
+        val amongUsPlayer = PlayerManager.getPlayer(execute.uniqueId)
+        if (amongUsPlayer == null) {
+            sendMessage {
+                translatable("command.error.admin.game.letwin.not_joined")
+            }
+            return@execute 0
+        }
+        game = amongUsPlayer.game
+    }
+
+    when (game.phase) {
+        GamePhase.LOBBY, GamePhase.STARTING -> {
+            sendMessage {
+                translatable("command.error.admin.game.letwin.not_started") {
+                    args {
+                        string("game", game.code)
+                    }
+                }
+            }
+            return@execute 0
+        }
+
+        GamePhase.FINISHED -> {
+            sendMessage {
+                translatable("command.error.admin.game.letwin.already_finished") {
+                    args {
+                        string("game", game.code)
+                    }
+                }
+            }
+            return@execute 0
+        }
+
+        else -> {}
+    }
+
+    game.letWin(team)
+
+    sendMessage {
+        translatable("command.success.admin.game.letwin") {
+            args {
+                string("team", team.name)
+            }
+        }
+    }
+
+    SINGLE_SUCCESS
 }
 
 private fun PaperCommand.taskGameCommand() = literal("task") {
