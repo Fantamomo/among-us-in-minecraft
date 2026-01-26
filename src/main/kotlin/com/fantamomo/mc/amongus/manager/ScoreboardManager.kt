@@ -1,19 +1,15 @@
 package com.fantamomo.mc.amongus.manager
 
 import com.fantamomo.mc.adventure.text.args
-import com.fantamomo.mc.adventure.text.color
 import com.fantamomo.mc.adventure.text.textComponent
 import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
-import com.fantamomo.mc.amongus.task.TaskManager
 import com.fantamomo.mc.amongus.util.translateTo
 import com.fantamomo.mc.amongus.util.wrapComponent
 import io.papermc.paper.scoreboard.numbers.NumberFormat
 import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.format.NamedTextColor
-import net.kyori.adventure.text.format.TextColor
 import org.bukkit.Bukkit
 import org.bukkit.scoreboard.Criteria
 import org.bukkit.scoreboard.DisplaySlot
@@ -25,6 +21,13 @@ import kotlin.contracts.contract
 class ScoreboardManager(private val game: Game) {
 
     private val scoreboards = mutableMapOf<AmongUsPlayer, AmongUsScoreboard>()
+    private var ticks: Int = 0
+
+    fun tick() {
+        if (scoreboards.isEmpty()) return
+        ticks++
+        if (ticks % 20 == 0) refreshAll()
+    }
 
     fun start() {
         game.players.forEach { player ->
@@ -121,16 +124,10 @@ class ScoreboardManager(private val game: Game) {
             amongUsPlayer.tasks
                 .sortedBy { it.completed }
                 .forEachIndexed { index, task ->
-                    val (numberFormat, color) = getScheme(task)
+                    val (color, numberFormat) = task.state()
 
                     score("$ENTRY_TASK#$index", SCORE_TASK_START - index) {
-                        customName(
-                            textComponent {
-                                translatable("tasks.${task.task.task.id}.title") {
-                                    color(color)
-                                }
-                            }
-                        )
+                        customName(task.task.scoreboardLine().translateTo(amongUsPlayer.locale).color(color))
                         numberFormat(numberFormat)
                     }
                 }
@@ -172,19 +169,5 @@ class ScoreboardManager(private val game: Game) {
         private const val SCORE_ROLE_DESC_START = 900
         private const val SCORE_TASK_START = 500
         private const val SPACER_ROLE = 700
-
-        private fun getScheme(task: TaskManager.RegisteredTask): Pair<NumberFormat, TextColor> =
-            when {
-                task.completed -> COMPLETED to NamedTextColor.GREEN
-                task.started -> IN_PROGRESS to NamedTextColor.YELLOW
-                else -> INCOMPLETE to NamedTextColor.RED
-            }
-
-        private val COMPLETED =
-            NumberFormat.fixed(Component.translatable("scoreboard.task.completed"))
-        private val IN_PROGRESS =
-            NumberFormat.fixed(Component.translatable("scoreboard.task.in_progress"))
-        private val INCOMPLETE =
-            NumberFormat.fixed(Component.translatable("scoreboard.task.incomplete"))
     }
 }
