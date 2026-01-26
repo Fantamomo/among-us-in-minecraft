@@ -436,7 +436,7 @@ private fun PaperCommand.taskGameCommand() = literal("task") {
 }
 
 private fun PaperCommand.startGameCommand() = literal("start") {
-    argument("game", GameAreaArgumentType) {
+    argument("game", GameArgumentType.INSTANCE) {
         requires { executor is Player }
         startGameCommandExecute()
     }
