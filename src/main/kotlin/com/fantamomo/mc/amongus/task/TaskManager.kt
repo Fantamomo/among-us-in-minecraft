@@ -152,7 +152,7 @@ class TaskManager(val game: Game) {
     fun assignTask(player: AmongUsPlayer, task: AssignedTask<*, *>) {
         val registeredTask = RegisteredTask(task, fake = !player.canDoTasks)
         tasks.getOrPut(player) { mutableSetOf() }.add(registeredTask)
-        updateBossbar()
+        updateBossbar(true)
     }
 
     fun assignTask(player: AmongUsPlayer, task: Task<*, *>) {
@@ -161,8 +161,17 @@ class TaskManager(val game: Game) {
         assignTask(player, assignedTask)
     }
 
-    private fun assignTasks(player: AmongUsPlayer, tasks: Collection<Task<*, *>>) {
+    fun assignTasks(player: AmongUsPlayer, tasks: Collection<Task<*, *>>) {
         tasks.forEach { assignTask(player, it) }
+    }
+
+    fun unassignTask(player: AmongUsPlayer, task: Task<*, *>) {
+        tasks[player]?.removeIf { t ->
+            if (t.task.task != task) return@removeIf false
+            t.hideCompletely()
+            true
+        }
+        updateBossbar(true)
     }
 
     fun removePlayer(player: AmongUsPlayer) {
