@@ -9,13 +9,19 @@ import net.kyori.adventure.text.format.TextDecoration
 
 enum class TaskState(
     val color: TextColor,
-    numberFormat: String
+    scoreboardIcon: String,
+    iconColor: TextColor = color
 ) {
-    INCOMPLETE(NamedTextColor.RED, "scoreboard.task.incomplete"),
+    INCOMPLETE(NamedTextColor.GRAY, "scoreboard.task.incomplete", NamedTextColor.RED),
     IN_PROGRESS(NamedTextColor.YELLOW, "scoreboard.task.in_progress"),
     COMPLETED(NamedTextColor.GREEN, "scoreboard.task.completed");
 
-    val numberFormat: NumberFormat = NumberFormat.fixed(Component.translatable(numberFormat, Style.style(color, TextDecoration.BOLD)))
+    val numberFormat: NumberFormat = NumberFormat.fixed(
+        Component.translatable(
+            scoreboardIcon,
+            Style.style(iconColor, TextDecoration.BOLD)
+        )
+    )
 
     operator fun component1() = color
     operator fun component2() = numberFormat
