@@ -3,6 +3,7 @@ package com.fantamomo.mc.amongus.listeners
 import com.fantamomo.mc.amongus.game.GamePhase
 import com.fantamomo.mc.amongus.manager.MeetingManager
 import com.fantamomo.mc.amongus.player.PlayerManager
+import com.fantamomo.mc.amongus.util.isBetween
 import com.fantamomo.mc.amongus.util.isSameBlockPosition
 import org.bukkit.entity.Player
 import org.bukkit.event.Event
@@ -44,6 +45,10 @@ object MeetingListener : Listener {
         if (meeting.currentlyEjecting) {
             if (meeting.ejectedPlayer == amongUsPlayer) return
             event.isCancelled = true
+        } else {
+            val min = game.area.meetingRoomMin ?: return
+            val max = game.area.meetingRoomMax ?: return
+            if (!event.to.isBetween(min, max)) event.isCancelled = true
         }
     }
 

@@ -18,6 +18,7 @@ fun GameArea.toDTO(): GameAreaDTO {
     val (minCorner, maxCorner) = minAndMaxNullable(minCorner, maxCorner)
     val (cameraJoinPointMin, cameraJoinPointMax) = minAndMaxNullable(cameraJoinPointMin, cameraJoinPointMax)
     val (lightPosMin, lightPosMax) = minAndMaxNullable(lightPosMin, lightPosMax)
+    val (meetingRoomMin, meetingRoomMax) = minAndMaxNullable(meetingRoomMin, meetingRoomMax)
     return GameAreaDTO(
         name = name,
         uuid = uuid.toString(),
@@ -25,6 +26,8 @@ fun GameArea.toDTO(): GameAreaDTO {
         maxCorner = maxCorner?.let(::fromBukkit),
         lobbySpawn = lobbySpawn?.let(::fromBukkit),
         gameSpawn = gameSpawn?.let(::fromBukkit),
+        meetingRoomMin = meetingRoomMin?.let(::fromBukkit),
+        meetingRoomMax = meetingRoomMax?.let(::fromBukkit),
         meetingBlock = meetingBlock?.let(::fromBukkit),
         ejectedFallPoint = ejectedFallPoint?.let(::fromBukkit),
         ejectedViewPoint = ejectedViewPoint?.let(::fromBukkit),
@@ -58,6 +61,8 @@ fun GameAreaDTO.toGameArea(): GameArea {
     area.maxCorner = maxCorner?.toBukkit()
     area.lobbySpawn = lobbySpawn?.toBukkit()
     area.gameSpawn = gameSpawn?.toBukkit()
+    area.meetingRoomMin = meetingRoomMin?.toBukkit()
+    area.meetingRoomMax = meetingRoomMax?.toBukkit()
     area.meetingBlock = meetingBlock?.toBukkit()
     area.ejectedFallPoint = ejectedFallPoint?.toBukkit()
     area.ejectedViewPoint = ejectedViewPoint?.toBukkit()
