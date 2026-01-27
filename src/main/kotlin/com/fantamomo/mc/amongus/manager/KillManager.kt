@@ -71,6 +71,7 @@ class KillManager(val game: Game) {
         target.player?.also { p ->
             p.addPotionEffect(blindnessEffect)
             p.closeInventory()
+            p.sendHurtAnimation(0f)
         }
         target.mannequinController.hideFromAll()
         target.mannequinController.showToSeeingPlayers()
