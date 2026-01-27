@@ -51,7 +51,7 @@ class LightsSabotage internal constructor(override val game: Game) :
     )
 
     override fun tick() {
-        if (progress() == 1.0f) {
+        if (progress() >= 1.0f) {
             game.sabotageManager.endSabotage()
         }
         for (player in game.players) {
@@ -72,7 +72,7 @@ class LightsSabotage internal constructor(override val game: Game) :
             display.glowColorOverride = if (value) Color.GREEN else Color.RED
         }
 
-        if (progress() == 1f) {
+        if (progress() >= 1.0f) {
             val (lever, display) = levers.entries.random()
             val data = lever.blockData as Switch
             data.isPowered = false
