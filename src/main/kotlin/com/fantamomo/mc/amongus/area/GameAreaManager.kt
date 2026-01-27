@@ -36,7 +36,7 @@ object GameAreaManager {
                 null, null, null,
                 null, null, null,
                 null, null, null,
-                null,
+                null, null, null,
                 mapOf(), listOf(), setOf(), mapOf()
             )
         )
