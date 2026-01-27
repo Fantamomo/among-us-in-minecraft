@@ -318,6 +318,8 @@ class MeetingManager(private val game: Game) : Listener {
                 return
             }
 
+            game.killManager.kill(player, false)
+
             val handle = (cameraAnchor as CraftEntity).handle
 
             game.players
@@ -411,11 +413,17 @@ class MeetingManager(private val game: Game) : Listener {
                 if (player != null) {
                     player.hideBossBar(bossBar)
 
-                    for (key in recipes.keys) {
-                        player.undiscoverRecipe(key)
-                    }
+//                    for (key in recipes.keys) {
+//                        player.undiscoverRecipe(key)
+//                    }
                 }
             }
+
+            for (key in recipes.keys) {
+                Bukkit.removeRecipe(key)
+            }
+
+            Bukkit.updateRecipes()
 
             recipes.clear()
             voteInventories.clear()
