@@ -16,7 +16,7 @@ data class SettingsKey<T : Any, S : SettingsType<T>>(
     val type: S,
     val defaultValue: T,
     val settingsDisplayName: String = LANGUAGE_NAME_PREFIX + key,
-    val settingsDescription: String? = null
+    val settingsDescription: String? = LANGUAGE_DESCRIPTION_PREFIX + key
 ) {
     init {
         keys.add(this)
@@ -32,13 +32,11 @@ data class SettingsKey<T : Any, S : SettingsType<T>>(
         fun <T : Any, S : SettingsType<T>> key(
             key: String,
             type: S,
-            defaultValue: T,
-            hasDescription: Boolean = false
+            defaultValue: T
         ) = SettingsKey(
             key,
             type,
-            defaultValue,
-            settingsDescription = if (hasDescription) LANGUAGE_DESCRIPTION_PREFIX + key else null
+            defaultValue
         )
 
         val VENT_DISTANCE = key("vent.distance", EnumSettingsType.create<DistanceEnum>(), DistanceEnum.NORMAL)
