@@ -62,17 +62,30 @@ class WaypointManager(val game: Game) {
         fun maySendUpdate() {
             for (waypoint in waypoints) {
                 if (waypoint.dirty) {
-                    val visible = waypoint.isVisible
-                    if (visible != waypoint.lastVisible) {
-                        if (visible) sendPacket(waypoint.createAddPacket())
-                        else sendPacket(waypoint.createRemovePacket())
-                        waypoint.lastVisible = visible
-                    }
-                    if (!visible) continue
-                    sendPacket(waypoint.createUpdatePacket())
-                    waypoint.dirty = false
+                    updateWaypoint(waypoint)
                 }
             }
+        }
+
+        private fun updateWaypoint(waypoint: Waypoint, playerRejoined: Boolean = false) {
+            val visible = waypoint.isVisible
+            if (playerRejoined) {
+                if (visible) sendPacket(waypoint.createAddPacket())
+                waypoint.lastVisible = visible
+                return
+            }
+            if (visible != waypoint.lastVisible) {
+                if (visible) sendPacket(waypoint.createAddPacket())
+                else sendPacket(waypoint.createRemovePacket())
+                waypoint.lastVisible = visible
+            }
+            if (!visible) return
+            sendPacket(waypoint.createUpdatePacket())
+            waypoint.dirty = false
+        }
+
+        fun resendAll() {
+            waypoints.forEach { updateWaypoint(it, true) }
         }
     }
 
@@ -142,7 +155,10 @@ class WaypointManager(val game: Game) {
         waypointData.remove(data)
     }
 
-//    private var ticks = 2
+    fun onPlayerRejoin(player: AmongUsPlayer) {
+        val data = waypointData.find { it.player == player } ?: return
+        data.resendAll()
+    }
 
     fun tick() {
         waypointData.forEach { data ->

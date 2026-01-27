@@ -137,6 +137,7 @@ class Game(
                 }
             }
         }
+        waypointManager.onPlayerRejoin(amongUsPlayer)
     }
 
     fun sendChatMessage(component: Component) {
