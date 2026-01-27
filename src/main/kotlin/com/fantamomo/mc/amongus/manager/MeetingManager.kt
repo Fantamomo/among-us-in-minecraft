@@ -19,6 +19,7 @@ import net.kyori.adventure.bossbar.BossBar
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.title.TitlePart
+import net.kyori.adventure.util.TriState
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
@@ -425,6 +426,8 @@ class MeetingManager(private val game: Game) : Listener {
                 val player = p.player
                 if (player != null) {
                     player.hideBossBar(bossBar)
+                    player.fireTicks = 0
+                    player.visualFire = TriState.FALSE
 
 //                    for (key in recipes.keys) {
 //                        player.undiscoverRecipe(key)
