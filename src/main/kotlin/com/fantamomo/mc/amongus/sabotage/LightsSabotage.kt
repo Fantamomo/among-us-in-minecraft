@@ -54,6 +54,10 @@ class LightsSabotage internal constructor(override val game: Game) :
         if (progress() == 1.0f) {
             game.sabotageManager.endSabotage()
         }
+        for (player in game.players) {
+            val p = player.player ?: continue
+            if (p.isSprinting) p.isSprinting = false
+        }
     }
 
     override fun start() {
@@ -78,6 +82,7 @@ class LightsSabotage internal constructor(override val game: Game) :
         }
 
         game.players.forEach {
+            it.player?.isSprinting = false
             if (!it.canSeeWhenLightsSabotage()) {
                 it.player?.addPotionEffect(potionEffect)
             }
