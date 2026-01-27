@@ -61,6 +61,9 @@ object PlayerManager {
     }
 
     internal fun onPlayerJoin(player: Player) {
+        for (playingPlayer in players) {
+            player.hidePlayer(AmongUs, playingPlayer.player ?: continue)
+        }
         val amongUsPlayer = getPlayer(player.uniqueId) ?: return
         val game = amongUsPlayer.game
         if (game.phase == GamePhase.FINISHED) {
@@ -76,9 +79,6 @@ object PlayerManager {
         amongUsPlayer.player = player
         for (onlinePlayer in player.server.onlinePlayers) {
             onlinePlayer.hidePlayer(AmongUs, player)
-        }
-        for (otherPlayer in game.players) {
-            player.hidePlayer(AmongUs, otherPlayer.player ?: continue)
         }
         amongUsPlayer.mannequinController.hideFromSelf()
         game.onRejoin(amongUsPlayer)
