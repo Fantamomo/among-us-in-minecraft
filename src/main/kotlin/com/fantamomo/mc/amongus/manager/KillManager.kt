@@ -16,6 +16,8 @@ import org.bukkit.NamespacedKey
 import org.bukkit.entity.Mannequin
 import org.bukkit.entity.Pose
 import org.bukkit.persistence.PersistentDataType
+import org.bukkit.potion.PotionEffect
+import org.bukkit.potion.PotionEffectType
 
 class KillManager(val game: Game) {
     private val corpses: MutableList<Corpse> = mutableListOf()
@@ -56,7 +58,19 @@ class KillManager(val game: Game) {
         }
         target.isAlive = false
         val location = target.livingEntity.location
+
+        imposter.player?.also { p ->
+            val clone = location.clone()
+            clone.rotation = p.location.rotation
+            p.teleport(location)
+            p.addPotionEffect(slownessEffect)
+        }
+
         showCorpse(target, location)
+        target.player?.also { p ->
+            p.addPotionEffect(blindnessEffect)
+            p.closeInventory()
+        }
         target.mannequinController.hideFromAll()
         target.mannequinController.showToSeeingPlayers()
         game.checkWin()
@@ -123,5 +137,7 @@ class KillManager(val game: Game) {
 
     companion object {
         val CORPSE_KEY = NamespacedKey(AmongUs, "corpse")
+        val slownessEffect = PotionEffect(PotionEffectType.SLOWNESS, 5, 5, false, false, false)
+        val blindnessEffect = PotionEffect(PotionEffectType.BLINDNESS, 40, 5, false, false, false)
     }
 }
