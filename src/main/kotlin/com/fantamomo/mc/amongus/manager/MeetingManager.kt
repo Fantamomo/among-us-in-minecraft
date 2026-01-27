@@ -277,12 +277,21 @@ class MeetingManager(private val game: Game) : Listener {
         fun voteFor(voter: AmongUsPlayer, target: AmongUsPlayer): Boolean {
             if (game.phase != GamePhase.VOTING || voter in votes) return false
             votes[voter] = Vote.For(target)
+            mayEndVoting()
             return true
+        }
+
+        private fun mayEndVoting() {
+            val end = game.players.all { !it.isAlive || hasVoted(it) }
+            if (end) {
+                endVoting()
+            }
         }
 
         fun voteSkip(voter: AmongUsPlayer): Boolean {
             if (game.phase != GamePhase.VOTING || voter in votes) return false
             votes[voter] = Vote.Skip
+            mayEndVoting()
             return true
         }
 
@@ -330,6 +339,7 @@ class MeetingManager(private val game: Game) : Listener {
             game.players
                 .filter { it != player }
                 .forEach {
+                    it.player?.visualFire = TriState.FALSE
                     it.mannequinController.freeze()
                     it.player?.showEntity(AmongUs, cameraAnchor)
                     (it.player as? CraftPlayer)?.handle?.setCamera(handle)
@@ -348,6 +358,8 @@ class MeetingManager(private val game: Game) : Listener {
             val player = dead.player
             if (player != null) {
                 player.health = 20.0
+                player.fireTicks = 0
+                player.visualFire = TriState.FALSE
                 respawnLocation?.let { player.teleport(it) }
             }
 
@@ -427,7 +439,7 @@ class MeetingManager(private val game: Game) : Listener {
                 if (player != null) {
                     player.hideBossBar(bossBar)
                     player.fireTicks = 0
-                    player.visualFire = TriState.FALSE
+                    player.visualFire = TriState.NOT_SET
 
 //                    for (key in recipes.keys) {
 //                        player.undiscoverRecipe(key)
