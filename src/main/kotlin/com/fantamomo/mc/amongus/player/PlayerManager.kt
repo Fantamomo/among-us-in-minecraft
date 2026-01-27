@@ -71,7 +71,7 @@ object PlayerManager {
                 content("The game where you were playing has ended.")
                 append(game.resultMessage ?: textComponent { content("No result") })
             })
-            player.teleport(player.world.spawnLocation)
+            player.teleportAsync(player.world.spawnLocation)
             amongUsPlayer.mannequinController.despawn()
             players.remove(amongUsPlayer)
             return
