@@ -81,6 +81,8 @@ data class GameArea(
         clone.maxCorner = maxCorner?.withWorld(world)
         clone.lobbySpawn = lobbySpawn?.withWorld(world)
         clone.gameSpawn = gameSpawn?.withWorld(world)
+        clone.meetingRoomMin = meetingRoomMin?.withWorld(world)
+        clone.meetingRoomMax = meetingRoomMax?.withWorld(world)
         clone.meetingBlock = meetingBlock?.withWorld(world)
         clone.ejectedFallPoint = ejectedFallPoint?.withWorld(world)
         clone.ejectedViewPoint = ejectedViewPoint?.withWorld(world)
