@@ -64,6 +64,7 @@ object InspectSampleTask :
         private val greenItem = item(Material.LIME_STAINED_GLASS_PANE)
         private val grayItem = item(Material.GRAY_STAINED_GLASS_PANE)
 
+        private var completed: Boolean = false
         private val countdown = Cooldown(1.minutes)
         private var ticks = 0
         private var hopperIndex: Int? = null
@@ -82,6 +83,7 @@ object InspectSampleTask :
             if (countdown.isFinished()) {
                 if (item.isMarkedWith("target")) {
                     player.game.taskManager.completeTask(this)
+                    completed = true
                 } else if (item.isMarkedWith("wrong")) {
                     resetState()
                     setupInventory()
@@ -170,7 +172,11 @@ object InspectSampleTask :
             }
         }
 
-        override fun state(): TaskState? = TaskState.IN_PROGRESS.takeIf { countdown.isRunning() }
+        override fun state(): TaskState? = when {
+            completed -> TaskState.COMPLETED
+            countdown.isRunning() -> TaskState.IN_PROGRESS
+            else -> null
+        }
 
         private fun advanceHopper(index: Int) {
             if (index >= MAX_SAMPLES) {

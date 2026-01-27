@@ -6,6 +6,7 @@ import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.command.Permissions
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.game.GameManager
+import com.fantamomo.mc.amongus.game.GamePhase
 import com.fantamomo.mc.amongus.languages.numeric
 import com.fantamomo.mc.amongus.languages.string
 import com.mojang.brigadier.LiteralMessage
@@ -20,7 +21,7 @@ import io.papermc.paper.command.brigadier.CommandSourceStack
 import io.papermc.paper.command.brigadier.argument.CustomArgumentType
 import java.util.concurrent.CompletableFuture
 
-object GameArgumentType : CustomArgumentType<Game, String> {
+class GameArgumentType(val onlyLobbyGames: Boolean = true, val showOnlyLobbyGames: Boolean = onlyLobbyGames) : CustomArgumentType<Game, String> {
 
     private val invalidLength = DynamicCommandExceptionType { arg ->
         LiteralMessage("Invalid code length, must be ${Game.CODE_LENGTH} characters long, got $arg")
@@ -37,7 +38,9 @@ object GameArgumentType : CustomArgumentType<Game, String> {
         val input = reader.readUnquotedString()
         if (input.length != 4) throw invalidLength.createWithContext(reader, input)
         for (char in input) if (!char.isLetterOrDigit()) throw invalidCodeChars.createWithContext(reader, input)
-        return GameManager[input.uppercase()] ?: throw gameNotFound.createWithContext(reader, input)
+        val game = GameManager[input.uppercase()] ?: throw gameNotFound.createWithContext(reader, input)
+        if (onlyLobbyGames && game.phase != GamePhase.LOBBY) throw gameNotFound.createWithContext(reader, input)
+        return game
     }
 
     override fun getNativeType(): StringArgumentType = StringArgumentType.word()
@@ -48,11 +51,15 @@ object GameArgumentType : CustomArgumentType<Game, String> {
     ): CompletableFuture<Suggestions> {
         val source = context.source as? CommandSourceStack ?: return Suggestions.empty()
         if (!source.sender.hasPermission(Permissions.SEE_GAME_CODES)) return Suggestions.empty()
+        val input = builder.remaining
         for (game in GameManager.getGames()) {
-            builder.suggest(game.code, AdventureComponent(textComponent {
+            if (showOnlyLobbyGames && game.phase != GamePhase.LOBBY) continue
+            val code = game.code
+            if (!code.startsWith(input, ignoreCase = true)) continue
+            builder.suggest(code, AdventureComponent(textComponent {
                 translatable("command.success.admin.game.list.game") {
                     args {
-                        string("code", game.code)
+                        string("code", code)
                         string("area", game.area.name)
                         string("phase", game.phase.name.lowercase().replaceFirstChar(Char::uppercase))
                         numeric("players", game.players.size)
@@ -62,5 +69,9 @@ object GameArgumentType : CustomArgumentType<Game, String> {
             }))
         }
         return builder.buildFuture()
+    }
+
+    companion object {
+        val INSTANCE = GameArgumentType()
     }
 }
