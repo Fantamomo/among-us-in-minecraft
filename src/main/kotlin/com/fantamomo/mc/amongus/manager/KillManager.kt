@@ -29,6 +29,7 @@ class KillManager(val game: Game) {
             it.pose = Pose.SLEEPING
             it.isImmovable = true
             it.persistentDataContainer.set(CORPSE_KEY, PersistentDataType.BYTE, 1)
+            EntityManager.addEntityToRemoveOnEnd(game, it)
         }
         val corpse = Corpse(mannequin, owner)
         corpses.add(corpse)
@@ -62,7 +63,7 @@ class KillManager(val game: Game) {
         imposter.player?.also { p ->
             val clone = location.clone()
             clone.rotation = p.location.rotation
-            p.teleport(location)
+            p.teleport(clone)
             p.addPotionEffect(slownessEffect)
         }
 
@@ -137,7 +138,7 @@ class KillManager(val game: Game) {
 
     companion object {
         val CORPSE_KEY = NamespacedKey(AmongUs, "corpse")
-        val slownessEffect = PotionEffect(PotionEffectType.SLOWNESS, 5, 5, false, false, false)
-        val blindnessEffect = PotionEffect(PotionEffectType.BLINDNESS, 40, 5, false, false, false)
+        val slownessEffect = PotionEffect(PotionEffectType.SLOWNESS, 10, 5, false, false, false)
+        val blindnessEffect = PotionEffect(PotionEffectType.BLINDNESS, 60, 5, false, false, false)
     }
 }
