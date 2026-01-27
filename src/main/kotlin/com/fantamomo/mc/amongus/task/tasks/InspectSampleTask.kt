@@ -174,7 +174,7 @@ object InspectSampleTask :
 
         override fun state(): TaskState? = when {
             completed -> TaskState.COMPLETED
-            countdown.isRunning() -> TaskState.IN_PROGRESS
+            countdown.isRunning() || countdown.isFinished() -> TaskState.IN_PROGRESS
             else -> null
         }
 
