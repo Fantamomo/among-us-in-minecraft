@@ -324,8 +324,6 @@ class MeetingManager(private val game: Game) : Listener {
                 return
             }
 
-            game.killManager.kill(player, false)
-
             val handle = (cameraAnchor as CraftEntity).handle
 
             game.players
@@ -434,6 +432,8 @@ class MeetingManager(private val game: Game) : Listener {
             }
 
             Bukkit.updateRecipes()
+
+            ejectedPlayer?.let { game.killManager.kill(it, false) }
 
             currentlyEjecting = false
 
