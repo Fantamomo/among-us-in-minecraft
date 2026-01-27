@@ -48,8 +48,8 @@ data class SettingsKey<T : Any, S : SettingsType<T>>(
 
         val SABOTAGE_CRISIS_COOLDOWN = key("sabotage.crisis.cooldown", IntSettingsType.range(10, 300), 60)
         val MEETING_DISCUSSION_TIME =
-            key("meeting.discussion.time", DurationSettingsType.range(Duration.ZERO, 3.minutes), 1.minutes)
-        val MEETING_VOTING_TIME = key("meeting.voting.time", DurationSettingsType.range(15.seconds, 3.minutes), 30.seconds)
+            key("meeting.discussion.time", DurationSettingsType.range(Duration.ZERO, 3.minutes), 10.seconds)
+        val MEETING_VOTING_TIME = key("meeting.voting.time", DurationSettingsType.range(15.seconds, 3.minutes), 60.seconds)
         val MEETING_BUTTONS = key("meeting.buttons", IntSettingsType.positive, 3)
         val MEETING_BUTTON_COOLDOWN = key("meeting.button.cooldown", DurationSettingsType.range(Duration.ZERO, 1.minutes), 15.seconds)
 
