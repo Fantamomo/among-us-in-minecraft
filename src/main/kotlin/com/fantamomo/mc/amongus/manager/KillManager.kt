@@ -102,6 +102,20 @@ class KillManager(val game: Game) {
         if (nearest != null) killByImposter(imposter, nearest)
     }
 
+    fun kill(target: AmongUsPlayer, corpse: Boolean = false) {
+        if (target.isInCams()) {
+            game.cameraManager.leaveCams(target)
+        }
+        target.isAlive = false
+        if (corpse) {
+            val location = target.livingEntity.location
+            showCorpse(target, location)
+        }
+        target.mannequinController.hideFromAll()
+        target.mannequinController.showToSeeingPlayers()
+        game.checkWin()
+    }
+
     class Corpse(
         val mannequin: Mannequin,
         val owner: AmongUsPlayer

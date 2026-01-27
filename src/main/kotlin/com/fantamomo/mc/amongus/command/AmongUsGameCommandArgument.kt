@@ -15,6 +15,7 @@ import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.task.Task
 import com.fantamomo.mc.brigadier.*
+import com.mojang.brigadier.arguments.BoolArgumentType
 import com.mojang.brigadier.arguments.IntegerArgumentType
 import io.papermc.paper.command.brigadier.CommandSourceStack
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes
@@ -30,6 +31,96 @@ fun PaperCommand.gameCommand() = literal("game") {
     startGameCommand()
     taskGameCommand()
     letWinGameCommand()
+    killPlayerGameCommand()
+}
+
+private fun PaperCommand.killPlayerGameCommand() = literal("kill") {
+    argument("target", ArgumentTypes.player()) {
+        argument("corpse", BoolArgumentType.bool()) {
+            killPlayerGamCommandExecute()
+        }
+        killPlayerGamCommandExecute()
+    }
+}
+
+private fun KtCommandBuilder<CommandSourceStack, *>.killPlayerGamCommandExecute() = execute {
+    val targetResolver: PlayerSelectorArgumentResolver =
+        arg<PlayerSelectorArgumentResolver>("target")
+    val target = targetResolver.resolve(source).first()
+
+    val corpse = optionalArg<Boolean>("corpse") == true
+
+    val amongUsPlayer = PlayerManager.getPlayer(target)
+
+    if (amongUsPlayer == null) {
+        sendMessage {
+            translatable("command.error.admin.game.letwin.not_joined")
+        }
+        return@execute 0
+    }
+
+    val game = amongUsPlayer.game
+
+    when (game.phase) {
+        GamePhase.LOBBY, GamePhase.STARTING -> {
+            sendMessage {
+                translatable("command.error.admin.game.kill.not_started") {
+                    args {
+                        string("game", game.code)
+                    }
+                }
+            }
+            return@execute 0
+        }
+
+        GamePhase.FINISHED -> {
+            sendMessage {
+                translatable("command.error.admin.game.kill.already_finished") {
+                    args {
+                        string("game", game.code)
+                    }
+                }
+            }
+            return@execute 0
+        }
+
+        else -> {}
+    }
+
+    if (!amongUsPlayer.isAlive) {
+        sendMessage {
+            translatable("command.error.admin.game.kill.not_alive") {
+                args {
+                    string("player", target.name)
+                }
+            }
+        }
+        return@execute 0
+    }
+
+    game.killManager.kill(amongUsPlayer, corpse)
+
+    val loc = target.location
+    sendMessage {
+        if (corpse) {
+            translatable("command.success.admin.game.kill.corpse") {
+                args {
+                    string("player", target.name)
+                    numeric("x", loc.blockX)
+                    numeric("y", loc.blockY)
+                    numeric("z", loc.blockZ)
+                }
+            }
+        } else {
+            translatable("command.success.admin.game.kill") {
+                args {
+                    string("player", target.name)
+                }
+            }
+        }
+    }
+
+    SINGLE_SUCCESS
 }
 
 private fun PaperCommand.letWinGameCommand() = literal("letwin") {
