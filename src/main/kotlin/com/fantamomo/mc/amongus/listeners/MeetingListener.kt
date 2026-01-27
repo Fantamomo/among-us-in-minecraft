@@ -14,6 +14,7 @@ import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryCloseEvent
 import org.bukkit.event.player.PlayerInteractEvent
+import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.event.player.PlayerToggleSneakEvent
 import org.bukkit.persistence.PersistentDataType
 import java.util.*
@@ -31,6 +32,18 @@ object MeetingListener : Listener {
         if (meetingManager.isCurrentlyAMeeting()) return
         if (meetingManager.meetingBlock.isSameBlockPosition(clickedBlock)) {
             meetingManager.callMeeting(amongUsPlayer, MeetingManager.MeetingReason.BUTTON)
+        }
+    }
+
+    @EventHandler
+    fun onPlayerMove(event: PlayerMoveEvent) {
+        val player = event.player
+        val amongUsPlayer = PlayerManager.getPlayer(player) ?: return
+        val game = amongUsPlayer.game
+        val meeting = game.meetingManager.meeting ?: return
+        if (meeting.currentlyEjecting) {
+            if (meeting.ejectedPlayer == amongUsPlayer) return
+            event.isCancelled = true
         }
     }
 

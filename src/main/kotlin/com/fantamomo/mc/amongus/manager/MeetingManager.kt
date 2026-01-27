@@ -113,9 +113,12 @@ class MeetingManager(private val game: Game) : Listener {
     ) {
         private var timer: Cooldown? = null
         private val votes: MutableMap<AmongUsPlayer, Vote> = mutableMapOf()
-        private var ejectedPlayer: AmongUsPlayer? = null
+        var ejectedPlayer: AmongUsPlayer? = null
+            private set
         val recipes: MutableMap<NamespacedKey, StonecuttingRecipe> = mutableMapOf()
         val voteInventories: MutableMap<AmongUsPlayer, StonecutterView> = mutableMapOf()
+        var currentlyEjecting: Boolean = false
+            private set
 
         init {
             registerRecipes()
@@ -331,6 +334,7 @@ class MeetingManager(private val game: Game) : Listener {
                 }
 
             player.livingEntity.teleport(ejectionFallPoint)
+            currentlyEjecting = true
         }
 
         fun onDeath(event: PlayerDeathEvent) {
@@ -424,6 +428,8 @@ class MeetingManager(private val game: Game) : Listener {
             }
 
             Bukkit.updateRecipes()
+
+            currentlyEjecting = false
 
             recipes.clear()
             voteInventories.clear()
