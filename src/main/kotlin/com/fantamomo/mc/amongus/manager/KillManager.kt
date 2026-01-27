@@ -71,7 +71,7 @@ class KillManager(val game: Game) {
         corpses.any { it.mannequin.location.distanceSquared(location) <= 2 * 2 }
 
     fun canKillAsImposter(player: AmongUsPlayer): Boolean {
-        val loc = player.livingEntity.location
+        val loc = player.livingEntityOrNull?.location ?: return false
         val distance = game.settings[SettingsKey.KILL_DISTANCE].distance
         for (player in game.players) {
             if (!player.isAlive) continue
