@@ -16,6 +16,7 @@ import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryCloseEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerMoveEvent
+import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.event.player.PlayerToggleSneakEvent
 import org.bukkit.persistence.PersistentDataType
 import java.util.*
@@ -59,6 +60,20 @@ object MeetingListener : Listener {
         val meetingManager = amongUsPlayer.game.meetingManager
         if (meetingManager.isCurrentlyAMeeting()) {
             meetingManager.meeting?.onDeath(event)
+        }
+    }
+
+    @EventHandler
+    fun onPlayerRespawn(event: PlayerRespawnEvent) {
+        if (event.respawnReason != PlayerRespawnEvent.RespawnReason.DEATH) return
+        val player = event.player
+        val amongUsPlayer = PlayerManager.getPlayer(player) ?: return
+        val meeting = amongUsPlayer.game.meetingManager.meeting
+        if (meeting != null) {
+            if (meeting.ejectedPlayer == amongUsPlayer) {
+                val loc = meeting.respawnLocation ?: return
+                event.respawnLocation = loc
+            }
         }
     }
 

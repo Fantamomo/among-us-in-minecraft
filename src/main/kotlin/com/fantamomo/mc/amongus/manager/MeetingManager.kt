@@ -113,6 +113,8 @@ class MeetingManager(private val game: Game) : Listener {
     ) {
         private var timer: Cooldown? = null
         private val votes: MutableMap<AmongUsPlayer, Vote> = mutableMapOf()
+        var respawnLocation: Location? = null
+            private set
         var ejectedPlayer: AmongUsPlayer? = null
             private set
         val recipes: MutableMap<NamespacedKey, StonecuttingRecipe> = mutableMapOf()
@@ -259,6 +261,7 @@ class MeetingManager(private val game: Game) : Listener {
             timer = null
 
             ejectedPlayer = calculateVoteResult()
+            respawnLocation = ejectedPlayer?.livingEntity?.location
             showVoteResult(ejectedPlayer)
 
             for (player in game.players) {
@@ -340,6 +343,9 @@ class MeetingManager(private val game: Game) : Listener {
         fun onDeath(event: PlayerDeathEvent) {
             val dead = PlayerManager.getPlayer(event.player) ?: return
             if (dead != ejectedPlayer) return
+
+            event.showDeathMessages = false
+            event.deathMessage(null)
 
             Bukkit.getScheduler().runTaskLater(AmongUs, { ->
                 finishMeeting(true)
