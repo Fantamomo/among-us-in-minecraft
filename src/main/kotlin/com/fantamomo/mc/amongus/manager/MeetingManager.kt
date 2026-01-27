@@ -343,7 +343,12 @@ class MeetingManager(private val game: Game) : Listener {
             if (dead != ejectedPlayer) return
 
             event.showDeathMessages = false
-            event.deathMessage(null)
+            event.isCancelled = true
+            val player = dead.player
+            if (player != null) {
+                player.health = 20.0
+                respawnLocation?.let { player.teleport(it) }
+            }
 
             Bukkit.getScheduler().runTaskLater(AmongUs, { ->
                 finishMeeting(true)
