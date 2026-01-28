@@ -137,7 +137,7 @@ class ScoreboardManager(private val game: Game) {
                     val (color, numberFormat) = task.state()
 
                     score("$ENTRY_TASK#$index", SCORE_TASK_START - index) {
-                        customName(task.task.scoreboardLine().translateTo(amongUsPlayer.locale).color(color))
+                        customName(task.task.scoreboardLine().color(color))
                         numberFormat(numberFormat)
                     }
                 }
@@ -152,6 +152,7 @@ class ScoreboardManager(private val game: Game) {
 
         private fun cleanupUnusedScores() {
             scoreboard.entries
+                .asSequence()
                 .filterNot { it in usedEntries }
                 .forEach(scoreboard::resetScores)
         }
