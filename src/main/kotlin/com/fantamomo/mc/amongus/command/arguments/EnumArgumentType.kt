@@ -43,12 +43,18 @@ class EnumArgumentType<E : Enum<E>> @PublishedApi internal constructor(
     ): CompletableFuture<Suggestions> {
         values
             .map(suggestionMapper)
+            .filter { it.startsWith(builder.remaining, ignoreCase) }
             .forEach(builder::suggest)
         return builder.buildFuture()
     }
 
     companion object {
         private val NATIVE_TYPE = StringArgumentType.word()
+        private val DEFAULT_PARSER: (String, List<Enum<*>>) -> Enum<*>? =
+            { input, values -> values.firstOrNull { it.name.equals(input, ignoreCase = true) } }
+
+        @Suppress("UNCHECKED_CAST")
+        fun <E : Enum<E>> defaultParser(): (String, List<E>) -> E? = DEFAULT_PARSER as (String, List<E>) -> E?
 
         /**
          * Cache ONLY for default instances.
@@ -71,14 +77,13 @@ class EnumArgumentType<E : Enum<E>> @PublishedApi internal constructor(
 
             val values = enumEntries<E>()
 
+            @Suppress("UNCHECKED_CAST")
             val instance = EnumArgumentType(
                 enumClass = enumClass,
                 values = values,
                 ignoreCase = true,
                 suggestionMapper = { it.name.lowercase() },
-                parser = { input, vals ->
-                    vals.firstOrNull { it.name.equals(input, ignoreCase = true) }
-                }
+                parser = defaultParser()
             )
 
             defaultCache[enumClass] = WeakReference(instance)
@@ -88,7 +93,8 @@ class EnumArgumentType<E : Enum<E>> @PublishedApi internal constructor(
         inline fun <reified E : Enum<E>> builder(): Builder<E> =
             Builder(E::class, enumEntries<E>())
 
-        fun <E : Enum<E>> builder(enumClass: KClass<E>): Builder<E> = Builder(enumClass, enumClass.java.enumConstants.toList())
+        fun <E : Enum<E>> builder(enumClass: KClass<E>): Builder<E> =
+            Builder(enumClass, enumClass.java.enumConstants.toList())
     }
 
     enum class SuggestionFormat {
@@ -108,10 +114,7 @@ class EnumArgumentType<E : Enum<E>> @PublishedApi internal constructor(
 
         private var suggestionMapper: (E) -> String = { it.name.lowercase() }
 
-        private var parser: (String, List<E>) -> E? =
-            { input, vals ->
-                vals.firstOrNull { it.name.equals(input, ignoreCase = ignoreCase) }
-            }
+        private var parser: (String, List<E>) -> E? = defaultParser()
 
         fun ignoreCase(value: Boolean) = apply {
             ignoreCase = value
