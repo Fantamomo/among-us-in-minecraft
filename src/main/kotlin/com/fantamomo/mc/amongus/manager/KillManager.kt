@@ -93,7 +93,7 @@ class KillManager(val game: Game) {
             if (!player.isAlive) continue
             if (game.ventManager.isVented(player)) continue
             if (player.assignedRole?.definition?.team == Team.IMPOSTERS) continue
-            val location = player.mannequinController.getEntity()?.location ?: player.livingEntity.location
+            val location = player.mannequinController.getEntity()?.location ?: player.livingEntityOrNull?.location ?: continue
             if (loc.distanceSquared(location) < distance * distance) return true
         }
         return false
