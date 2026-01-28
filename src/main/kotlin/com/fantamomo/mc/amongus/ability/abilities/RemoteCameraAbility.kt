@@ -37,30 +37,33 @@ object RemoteCameraAbility :
 
                     inactive {
                         whenBlocked(
-                            BlockReason.SABOTAGE,
+                            BlockReason.Sabotage,
                             "ability.general.disabled.sabotage"
                         )
                         whenBlocked(
-                            BlockReason.IN_VENT,
+                            BlockReason.InVent,
                             "ability.general.disabled.in_vent"
                         )
                         whenBlocked(
-                            BlockReason.IN_MEETING,
+                            BlockReason.InMeeting,
                             "ability.general.disabled.in_meeting"
                         )
-                        otherwise("ability.remote_camera.camera.already_in_cams")
+                        whenBlocked(
+                            "inCams",
+                            "ability.remote_camera.camera.already_in_cams"
+                        )
                     }
                 }
 
                 blockWhen {
-                    custom(BlockReason.SABOTAGE) {
+                    custom(BlockReason.Sabotage) {
                         game.sabotageManager.isSabotage(SabotageType.Communications)
                     }
 
                     inVent()
                     inMeeting()
 
-                    custom(BlockReason.CUSTOM) {
+                    custom("inCams") {
                         game.cameraManager.isInCams(player)
                     }
                 }

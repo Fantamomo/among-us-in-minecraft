@@ -27,24 +27,33 @@ object ReportAbility : Ability<ReportAbility, ReportAbility.AssignedReportAbilit
                     active("ability.report.report.active")
                     inactive {
                         whenBlocked(
-                            BlockReason.IN_MEETING,
+                            BlockReason.InMeeting,
                             "ability.general.disabled.in_meeting"
                         )
                         whenBlocked(
-                            BlockReason.IN_VENT,
+                            BlockReason.InVent,
                             "ability.general.disabled.in_vent"
                         )
-                        otherwise("ability.report.report.deactivate")
+                        whenBlocked(
+                            "notNearCorpse",
+                            "ability.report.report.deactivate"
+                        )
+                        whenBlocked(
+                            "notAlive",
+                            "ability.report.report.deactivate.dead"
+                        )
                     }
                 }
 
                 blockWhen {
                     inMeeting()
                     inVent()
-                    custom(BlockReason.CUSTOM) {
-                        if (!player.isAlive) return@custom true
+                    custom("notNearCorpse") {
                         val location = player.livingEntity.location
                         !game.killManager.isNearCorpse(location)
+                    }
+                    custom("notAlive") {
+                        player.isAlive
                     }
                 }
 

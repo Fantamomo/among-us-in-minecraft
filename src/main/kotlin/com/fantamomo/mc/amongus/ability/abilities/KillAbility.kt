@@ -41,21 +41,24 @@ object KillAbility : Ability<KillAbility, KillAbility.AssignedKillAbility> {
                     active("ability.kill.kill.active")
                     inactive {
                         whenBlocked(
-                            BlockReason.IN_VENT,
+                            BlockReason.InVent,
                             "ability.general.disabled.in_vent"
                         )
                         whenBlocked(
-                            BlockReason.IN_MEETING,
+                            BlockReason.InMeeting,
                             "ability.general.disabled.in_meeting"
                         )
-                        otherwise("ability.kill.kill.deactivate")
+                        whenBlocked(
+                            "notNearVictim",
+                            "ability.kill.kill.deactivate"
+                        )
                     }
                 }
 
                 blockWhen {
                     inMeeting()
                     inVent()
-                    custom(BlockReason.CUSTOM) {
+                    custom("notNearVictim") {
                         !game.killManager.canKillAsImposter(player)
                     }
                 }

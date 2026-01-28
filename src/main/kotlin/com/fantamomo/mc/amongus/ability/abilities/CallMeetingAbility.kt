@@ -37,19 +37,19 @@ object CallMeetingAbility :
 
                     inactive {
                         whenBlocked(
-                            BlockReason.IN_MEETING,
+                            BlockReason.InMeeting,
                             "ability.call_meeting.call_meeting.already_in_meeting"
                         )
                         whenBlocked(
-                            BlockReason.SABOTAGE,
+                            BlockReason.Sabotage,
                             "ability.general.disabled.sabotage"
                         )
                         whenBlocked(
-                            BlockReason.IN_VENT,
+                            BlockReason.InVent,
                             "ability.general.disabled.in_vent"
                         )
                         whenBlocked(
-                            BlockReason.LIMIT_REACHED,
+                            BlockReason.LimitReached,
                             "ability.call_meeting.call_meeting.button_limit_reached"
                         )
                         otherwise("ability.call_meeting.call_meeting.error")
@@ -63,7 +63,7 @@ object CallMeetingAbility :
 
                     inVent()
 
-                    custom(BlockReason.LIMIT_REACHED) {
+                    custom(BlockReason.LimitReached) {
                         player.meetingButtonsPressed >=
                                 game.settings[SettingsKey.MEETING_BUTTONS]
                     }

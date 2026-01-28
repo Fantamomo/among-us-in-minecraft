@@ -44,15 +44,15 @@ object SabotageAbility :
                 active("ability.sabotage.${sabotage.sabotageType.id}.active")
                 inactive {
                     whenBlocked(
-                        BlockReason.IN_MEETING,
+                        BlockReason.InMeeting,
                         "ability.general.disabled.in_meeting"
                     )
                     whenBlocked(
-                        BlockReason.IN_VENT,
+                        BlockReason.InVent,
                         "ability.general.disabled.in_vent"
                     )
                     whenBlocked(
-                        BlockReason.SABOTAGE,
+                        BlockReason.Sabotage,
                         "ability.sabotage.disabled"
                     )
                 }

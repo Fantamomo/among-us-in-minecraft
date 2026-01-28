@@ -45,15 +45,18 @@ object VentAbility :
                     }
                     inactive {
                         whenBlocked(
-                            BlockReason.IN_VENT,
+                            BlockReason.InVent,
                             "ability.general.disabled.in_vent"
                         )
-                        otherwise("ability.vent.vent.deactivate")
+                        whenBlocked(
+                            "notNearVent",
+                            "ability.vent.vent.deactivate"
+                        )
                     }
                 }
 
                 blockWhen {
-                    custom(BlockReason.CUSTOM) {
+                    custom("notNearVent") {
                         game.ventManager.run {
                             if (isVented(player)) false
                             else !isNearVent(player)
