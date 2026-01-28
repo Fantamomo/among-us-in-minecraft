@@ -1,5 +1,6 @@
 package com.fantamomo.mc.amongus.listeners
 
+import com.destroystokyo.paper.event.player.PlayerStopSpectatingEntityEvent
 import com.fantamomo.mc.amongus.game.GamePhase
 import com.fantamomo.mc.amongus.manager.MeetingManager
 import com.fantamomo.mc.amongus.player.PlayerManager
@@ -98,6 +99,17 @@ object MeetingListener : Listener {
             if (stack?.persistentDataContainer?.has(MeetingManager.VOTING_KEY) == true) {
                 inventory.setItem(index, null)
             }
+        }
+    }
+
+    @EventHandler
+    fun onPlayerStopSpectatingEntity(event: PlayerStopSpectatingEntityEvent) {
+        val player = event.player
+        val amongUsPlayer = PlayerManager.getPlayer(player) ?: return
+        val spectatorTarget = event.spectatorTarget
+        val meetingManager = amongUsPlayer.game.meetingManager
+        if (spectatorTarget === meetingManager.cameraAnchor) {
+            event.isCancelled = true
         }
     }
 

@@ -54,7 +54,7 @@ class MeetingManager(private val game: Game) : Listener {
 
     private val buttonCooldown = Cooldown(game.settings[SettingsKey.MEETING_BUTTON_COOLDOWN], true)
 
-    private val cameraAnchor: ArmorStand =
+    internal val cameraAnchor: ArmorStand =
         ejectionViewPoint.world.spawn(ejectionViewPoint, ArmorStand::class.java) {
             it.isVisible = false
             it.setCanMove(false)
@@ -276,6 +276,7 @@ class MeetingManager(private val game: Game) : Listener {
 
         fun voteFor(voter: AmongUsPlayer, target: AmongUsPlayer): Boolean {
             if (game.phase != GamePhase.VOTING || voter in votes) return false
+            if (!target.isAlive) return false
             votes[voter] = Vote.For(target)
             mayEndVoting()
             return true
