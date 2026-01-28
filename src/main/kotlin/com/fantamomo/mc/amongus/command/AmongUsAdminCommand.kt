@@ -43,7 +43,13 @@ private fun PaperCommand.settingsCommand() = literal("settings") {
         literal(key.key) {
             literalExecute("get") {
                 val player = source.sender as Player
-                val amongUsPlayer = PlayerManager.getPlayer(player) ?: return@literalExecute 0
+                val amongUsPlayer = PlayerManager.getPlayer(player)
+                if (amongUsPlayer == null) {
+                    sendMessage {
+                        translatable("command.error.admin.settings.not_joined")
+                    }
+                    return@literalExecute 0
+                }
                 val value = amongUsPlayer.game.settings[key]
                 @Suppress("UNCHECKED_CAST")
                 val type = key.type as SettingsType<Any>
@@ -71,7 +77,13 @@ private fun PaperCommand.settingsCommand() = literal("settings") {
                 argument("value", key.type.argumentType) {
                     execute {
                         val player = source.sender as Player
-                        val amongUsPlayer = PlayerManager.getPlayer(player) ?: return@execute 0
+                        val amongUsPlayer = PlayerManager.getPlayer(player)
+                        if (amongUsPlayer == null) {
+                            sendMessage {
+                                translatable("command.error.admin.settings.not_joined")
+                            }
+                            return@execute 0
+                        }
 
                         val value = arg<Any>("value")
 
@@ -102,7 +114,13 @@ private fun PaperCommand.settingsCommand() = literal("settings") {
             }
             literalExecute("reset") {
                 val player = source.sender as Player
-                val amongUsPlayer = PlayerManager.getPlayer(player) ?: return@literalExecute 0
+                val amongUsPlayer = PlayerManager.getPlayer(player)
+                if (amongUsPlayer == null) {
+                    sendMessage {
+                        translatable("command.error.admin.settings.not_joined")
+                    }
+                    return@literalExecute 0
+                }
                 amongUsPlayer.game.settings.remove(key)
                 player.sendComponent {
                     translatable("command.success.admin.settings.reset") {
