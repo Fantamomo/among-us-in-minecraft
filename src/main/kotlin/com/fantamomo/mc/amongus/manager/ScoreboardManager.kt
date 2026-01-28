@@ -80,6 +80,7 @@ class ScoreboardManager(private val game: Game) {
             usedEntries.clear()
 
             renderRole()
+            renderDeath()
             renderSpacer(SPACER_ROLE)
             renderTasks()
 
@@ -117,6 +118,15 @@ class ScoreboardManager(private val game: Game) {
                     customName(line)
                     numberFormat(NumberFormat.blank())
                 }
+            }
+        }
+
+        private fun renderDeath() {
+            if (amongUsPlayer.isAlive) return
+
+            score("$ENTRY_DEATH#0", SCORE_DEATH) {
+                customName(textComponent { translatable("scoreboard.death") })
+                numberFormat(NumberFormat.blank())
             }
         }
 
@@ -162,11 +172,13 @@ class ScoreboardManager(private val game: Game) {
 
         private const val ENTRY_ROLE = "role"
         private const val ENTRY_ROLE_DESC = "role_desc"
+        private const val ENTRY_DEATH = "death"
         private const val ENTRY_TASK = "task"
         private const val ENTRY_SPACER = "spacer"
 
         private const val SCORE_ROLE_HEADER = 1000
         private const val SCORE_ROLE_DESC_START = 900
+        private const val SCORE_DEATH = 800
         private const val SCORE_TASK_START = 500
         private const val SPACER_ROLE = 700
     }
