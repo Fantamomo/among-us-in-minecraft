@@ -44,7 +44,7 @@ class AmongUsPlayer internal constructor(
     val livingEntityOrNull: LivingEntity?
         get() = player ?: mannequinController.getEntity()
     val livingEntity: LivingEntity
-        get() = livingEntityOrNull ?: throw IllegalStateException("No living entity available")
+        get() = livingEntityOrNull ?: throw IllegalStateException("No living entity available for $name ($uuid)")
     var player: Player? = null
         set(value) {
             field = value
