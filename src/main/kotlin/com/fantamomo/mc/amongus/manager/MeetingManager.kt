@@ -348,6 +348,10 @@ class MeetingManager(private val game: Game) : Listener {
 
             player.livingEntity.teleport(ejectionFallPoint)
             currentlyEjecting = true
+
+            Bukkit.getScheduler().runTaskLater(AmongUs, { ->
+                if (currentlyEjecting) finishMeeting(true)
+            }, 200L)
         }
 
         fun onDeath(event: PlayerDeathEvent) {
@@ -365,7 +369,7 @@ class MeetingManager(private val game: Game) : Listener {
             }
 
             Bukkit.getScheduler().runTaskLater(AmongUs, { ->
-                finishMeeting(true)
+                if (currentlyEjecting) finishMeeting(true)
             }, 40L)
         }
 
