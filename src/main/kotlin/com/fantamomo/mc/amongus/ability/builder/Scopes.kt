@@ -1,7 +1,10 @@
 package com.fantamomo.mc.amongus.ability.builder
 
-class BlockScope {
-    val conditions = mutableListOf<(AbilityContext) -> BlockReason?>()
+import com.fantamomo.mc.amongus.ability.Ability
+import com.fantamomo.mc.amongus.ability.AssignedAbility
+
+class BlockScope<A : Ability<A, S>, S : AssignedAbility<A, S>> {
+    val conditions = mutableListOf<(AbilityContext<A, S>) -> BlockReason?>()
 
     fun inMeeting() =
         conditions.add { if (it.game.meetingManager.isCurrentlyAMeeting()) BlockReason.IN_MEETING else null }
@@ -15,12 +18,12 @@ class BlockScope {
     fun dead() =
         conditions.add { if (!it.player.isAlive) BlockReason.DEAD else null }
 
-    fun custom(reason: BlockReason = BlockReason.CUSTOM, check: AbilityContext.() -> Boolean) =
+    fun custom(reason: BlockReason = BlockReason.CUSTOM, check: AbilityContext<A, S>.() -> Boolean) =
         conditions.add { if (it.check()) reason else null }
 }
 
-class RequireScope {
-    val conditions = mutableListOf<(AbilityContext) -> BlockReason?>()
+class RequireScope<A : Ability<A, S>, S : AssignedAbility<A, S>> {
+    val conditions = mutableListOf<(AbilityContext<A, S>) -> BlockReason?>()
 
     fun sneaking() =
         conditions.add { if (it.player.player?.isSneaking != true) BlockReason.NOT_SNEAKING else null }

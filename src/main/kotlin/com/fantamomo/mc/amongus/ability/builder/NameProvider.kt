@@ -1,15 +1,18 @@
 package com.fantamomo.mc.amongus.ability.builder
 
-class NameProvider {
-    private var active: (AbilityContext) -> String = { "" }
-    private var inactive: (AbilityContext, BlockReason?) -> String = { _, _ -> "" }
+import com.fantamomo.mc.amongus.ability.Ability
+import com.fantamomo.mc.amongus.ability.AssignedAbility
+
+class NameProvider<A : Ability<A, S>, S : AssignedAbility<A, S>> {
+    private var active: (AbilityContext<A, S>) -> String = { "" }
+    private var inactive: (AbilityContext<A, S>, BlockReason?) -> String = { _, _ -> "" }
     var cooldown: String = "ability.general.disabled.cooldown"
 
     fun active(key: String) {
         active = { key }
     }
 
-    fun active(block: AbilityContext.() -> String) {
+    fun active(block: AbilityContext<A, S>.() -> String) {
         active = block
     }
 
@@ -17,17 +20,17 @@ class NameProvider {
         inactive = { _, _ -> key }
     }
 
-    fun inactive(block: InactiveNameScope.() -> Unit) {
-        val scope = InactiveNameScope()
+    fun inactive(block: InactiveNameScope<A, S>.() -> Unit) {
+        val scope = InactiveNameScope<A, S>()
         scope.block()
         inactive = scope::resolve
     }
 
-    internal fun active(ctx: AbilityContext) = active.invoke(ctx)
-    internal fun inactive(ctx: AbilityContext, reason: BlockReason?) = inactive.invoke(ctx, reason)
+    internal fun active(ctx: AbilityContext<A, S>) = active.invoke(ctx)
+    internal fun inactive(ctx: AbilityContext<A, S>, reason: BlockReason?) = inactive.invoke(ctx, reason)
 }
 
-class InactiveNameScope {
+class InactiveNameScope<A : Ability<A, S>, S : AssignedAbility<A, S>> {
     private val map = mutableMapOf<BlockReason, String>()
     private var fallback: String = ""
 
@@ -39,6 +42,6 @@ class InactiveNameScope {
         fallback = key
     }
 
-    fun resolve(ctx: AbilityContext, reason: BlockReason?) =
+    fun resolve(ctx: AbilityContext<A, S>, reason: BlockReason?) =
         map[reason] ?: fallback
 }
