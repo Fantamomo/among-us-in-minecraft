@@ -1,12 +1,13 @@
 package com.fantamomo.mc.amongus.ability.builder
 
+import com.fantamomo.mc.amongus.ability.Ability
 import com.fantamomo.mc.amongus.ability.AssignedAbility
 import com.fantamomo.mc.amongus.ability.item.AbilityItem
 import com.fantamomo.mc.amongus.util.Cooldown
 import org.bukkit.Material
 
-class AbilityItemBuilder(
-    val ability: AssignedAbility<*, *>,
+class AbilityItemBuilder<A : Ability<A, S>, S : AssignedAbility<A, S>>(
+    val ability: S,
     val id: String
 ) {
     val ctx = AbilityContext(ability)
@@ -16,14 +17,14 @@ class AbilityItemBuilder(
 
     var cooldown: Cooldown? = null
 
-    internal val blockers = mutableListOf<(AbilityContext) -> BlockReason?>()
+    internal val blockers = mutableListOf<(AbilityContext<A, S>) -> BlockReason?>()
 
-    internal var rightClick: (AbilityContext) -> Unit = {}
-    internal var leftClick: (AbilityContext) -> Unit = {}
+    internal var rightClick: (AbilityContext<A, S>) -> Unit = {}
+    internal var leftClick: (AbilityContext<A, S>) -> Unit = {}
 
-    internal val nameProvider = NameProvider()
+    internal val nameProvider = NameProvider<A, S>()
 
-    fun material(block: MaterialScope.() -> Unit) {
+    fun material(block: MaterialScope<A, S>.() -> Unit) {
         MaterialScope(this).apply(block)
     }
 
@@ -31,31 +32,31 @@ class AbilityItemBuilder(
         this.cooldown = duration
     }
 
-    fun cooldown(block: AbilityContext.() -> Cooldown) {
+    fun cooldown(block: AbilityContext<A, S>.() -> Cooldown) {
         cooldown = ctx.block()
     }
 
-    fun name(block: NameProvider.() -> Unit) {
+    fun name(block: NameProvider<A, S>.() -> Unit) {
         nameProvider.apply(block)
     }
 
-    fun blockWhen(block: BlockScope.() -> Unit) {
-        val scope = BlockScope()
+    fun blockWhen(block: BlockScope<A, S>.() -> Unit) {
+        val scope = BlockScope<A, S>()
         scope.block()
         blockers += scope.conditions
     }
 
-    fun require(block: RequireScope.() -> Unit) {
-        val scope = RequireScope()
+    fun require(block: RequireScope<A, S>.() -> Unit) {
+        val scope = RequireScope<A, S>()
         scope.block()
         blockers += scope.conditions
     }
 
-    fun onRightClick(block: AbilityContext.() -> Unit) {
+    fun onRightClick(block: AbilityContext<A, S>.() -> Unit) {
         rightClick = block
     }
 
-    fun onLeftClick(block: AbilityContext.() -> Unit) {
+    fun onLeftClick(block: AbilityContext<A, S>.() -> Unit) {
         leftClick = block
     }
 
