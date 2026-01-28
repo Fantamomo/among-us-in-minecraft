@@ -330,7 +330,7 @@ class MeetingManager(private val game: Game) : Listener {
         }
 
         private fun startEjection(player: AmongUsPlayer?) {
-            if (player == null) {
+            if (player == null || !player.isAlive) {
                 finishMeeting()
                 return
             }
