@@ -85,6 +85,10 @@ class Game(
         if (ticks % 20 == 0 && settings[SettingsKey.DO_WIN_CHECK_ON_TICK]) {
             checkWin()
         }
+        for (player in players) {
+            player.player?.saturation = 5.0f
+            player.player?.foodLevel = 20
+        }
         ventManager.tick()
         cameraManager.tick()
         waypointManager.tick()
@@ -133,6 +137,7 @@ class Game(
                 }
             }
         }
+        waypointManager.onPlayerRejoin(amongUsPlayer)
     }
 
     fun sendChatMessage(component: Component) {

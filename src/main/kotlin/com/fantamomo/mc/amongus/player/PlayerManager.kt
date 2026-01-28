@@ -6,6 +6,8 @@ import com.fantamomo.mc.adventure.text.textComponent
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.game.GamePhase
+import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket
+import org.bukkit.craftbukkit.entity.CraftPlayer
 import org.bukkit.entity.Mannequin
 import org.bukkit.entity.Player
 import java.util.*
@@ -36,8 +38,11 @@ object PlayerManager {
         players.add(auPlayer)
         game.players.add(auPlayer)
 
+        val nmsPlayer = (player as CraftPlayer).handle
+
         player.server.onlinePlayers.forEach {
             it.hidePlayer(AmongUs, player)
+            (it as CraftPlayer).handle.connection?.send(ClientboundPlayerInfoUpdatePacket.createSinglePlayerInitializing(nmsPlayer, true))
         }
         player.teleportAsync(game.area.lobbySpawn ?: throw IllegalStateException("Lobby spawn not set"))
         player.inventory.clear()
@@ -61,6 +66,17 @@ object PlayerManager {
     }
 
     internal fun onPlayerJoin(player: Player) {
+        val connection = (player as CraftPlayer).handle.connection
+        for (playingPlayer in players) {
+            val bukkitPlayer = playingPlayer.player ?: continue
+            player.hidePlayer(AmongUs, bukkitPlayer)
+            connection?.send(
+                ClientboundPlayerInfoUpdatePacket.createSinglePlayerInitializing(
+                    (bukkitPlayer as CraftPlayer).handle,
+                    true
+                )
+            )
+        }
         val amongUsPlayer = getPlayer(player.uniqueId) ?: return
         val game = amongUsPlayer.game
         if (game.phase == GamePhase.FINISHED) {
@@ -68,7 +84,7 @@ object PlayerManager {
                 content("The game where you were playing has ended.")
                 append(game.resultMessage ?: textComponent { content("No result") })
             })
-            player.teleport(player.world.spawnLocation)
+            player.teleportAsync(player.world.spawnLocation)
             amongUsPlayer.mannequinController.despawn()
             players.remove(amongUsPlayer)
             return
@@ -76,9 +92,11 @@ object PlayerManager {
         amongUsPlayer.player = player
         for (onlinePlayer in player.server.onlinePlayers) {
             onlinePlayer.hidePlayer(AmongUs, player)
-        }
-        for (otherPlayer in game.players) {
-            player.hidePlayer(AmongUs, otherPlayer.player ?: continue)
+            (onlinePlayer as CraftPlayer).handle.connection?.send(
+                ClientboundPlayerInfoUpdatePacket.createSinglePlayerInitializing(
+                    player.handle, true
+                )
+            )
         }
         amongUsPlayer.mannequinController.hideFromSelf()
         game.onRejoin(amongUsPlayer)

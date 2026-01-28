@@ -137,7 +137,15 @@ class CommunicationsSabotage(
         fixingPlayers.forEach(FixingPlayer::tick)
     }
 
-    override fun progress(): Float = 1.0f
+    override fun progress(): Float {
+        var max = 0.0f
+        for (fixingPlayer in fixingPlayers) {
+            val accuracy = fixingPlayer.lastAccuracy
+            if (accuracy >= LOCK_THRESHOLD) return 1.0f
+            if (accuracy > max) max = accuracy
+        }
+        return max
+    }
 
     override fun bossbarName(): Component = bossBarName
 
@@ -181,6 +189,9 @@ class CommunicationsSabotage(
         val targetYaw = Random.nextFloat() * 360f
         val targetPitch = Random.nextDouble(-90.0, -15.0).toFloat()
 
+        var lastAccuracy: Float = 0.0f
+            private set
+
         private var lockProgress = 0f
         private var tickCounter = 0
         private var lastBeamLocation: Pair<Pair<Float, Float>, Location>? = null
@@ -200,7 +211,7 @@ class CommunicationsSabotage(
                 targetYaw,
                 targetPitch,
                 AIM_TOLERANCE
-            )
+            ).also { lastAccuracy = it }
         }
 
         fun tick() {

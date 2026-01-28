@@ -1,5 +1,6 @@
 package com.fantamomo.mc.amongus.sabotage
 
+import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.manager.EntityManager
@@ -7,6 +8,7 @@ import com.fantamomo.mc.amongus.manager.WaypointManager
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.util.centerLocationOf
 import com.fantamomo.mc.amongus.util.isBetween
+import com.fantamomo.mc.amongus.util.sendComponent
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.title.TitlePart
 import org.bukkit.Color
@@ -51,7 +53,7 @@ class LightsSabotage internal constructor(override val game: Game) :
     )
 
     override fun tick() {
-        if (progress() == 1.0f) {
+        if (progress() >= 1.0f) {
             game.sabotageManager.endSabotage()
         }
     }
@@ -68,7 +70,7 @@ class LightsSabotage internal constructor(override val game: Game) :
             display.glowColorOverride = if (value) Color.GREEN else Color.RED
         }
 
-        if (progress() == 1f) {
+        if (progress() >= 1.0f) {
             val (lever, display) = levers.entries.random()
             val data = lever.blockData as Switch
             data.isPowered = false
@@ -78,8 +80,13 @@ class LightsSabotage internal constructor(override val game: Game) :
         }
 
         game.players.forEach {
+            it.player?.isSprinting = false
             if (!it.canSeeWhenLightsSabotage()) {
                 it.player?.addPotionEffect(potionEffect)
+            } else {
+                it.player?.sendComponent {
+                    translatable("sabotage.lights.imposter.info")
+                }
             }
             for (waypoint in waypoints) {
                 game.waypointManager.assignWaypoint(it, waypoint)

@@ -23,17 +23,6 @@ import java.util.concurrent.CompletableFuture
 
 class GameArgumentType(val onlyLobbyGames: Boolean = true, val showOnlyLobbyGames: Boolean = onlyLobbyGames) : CustomArgumentType<Game, String> {
 
-    private val invalidLength = DynamicCommandExceptionType { arg ->
-        LiteralMessage("Invalid code length, must be ${Game.CODE_LENGTH} characters long, got $arg")
-    }
-
-    private val invalidCodeChars = DynamicCommandExceptionType { arg ->
-        LiteralMessage("Invalid code characters, must only contains A-Z and 0-9, got $arg")
-    }
-    private val gameNotFound = DynamicCommandExceptionType { arg ->
-        LiteralMessage("Game $arg not found")
-    }
-
     override fun parse(reader: StringReader): Game {
         val input = reader.readUnquotedString()
         if (input.length != 4) throw invalidLength.createWithContext(reader, input)
@@ -73,5 +62,16 @@ class GameArgumentType(val onlyLobbyGames: Boolean = true, val showOnlyLobbyGame
 
     companion object {
         val INSTANCE = GameArgumentType()
+
+        private val invalidLength = DynamicCommandExceptionType { arg ->
+            LiteralMessage("Invalid code length, must be ${Game.CODE_LENGTH} characters long, got $arg")
+        }
+
+        private val invalidCodeChars = DynamicCommandExceptionType { arg ->
+            LiteralMessage("Invalid code characters, must only contains A-Z and 0-9, got $arg")
+        }
+        private val gameNotFound = DynamicCommandExceptionType { arg ->
+            LiteralMessage("Game $arg not found")
+        }
     }
 }

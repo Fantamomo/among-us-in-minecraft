@@ -85,7 +85,8 @@ class CameraManager(val game: Game) {
 
             val player = player.player
             if (player != null) {
-                lastPosition?.let { player.teleport(it) }
+                val loc = this.player.mannequinController.getEntity()?.location ?: lastPosition
+                if (loc != null) player.teleport(loc)
                 setSpectatorTarget(null)
                 player.hideEntity(AmongUs, camera.armorStand)
                 player.sendBlockChange(camera.location, Material.AIR.createBlockData())

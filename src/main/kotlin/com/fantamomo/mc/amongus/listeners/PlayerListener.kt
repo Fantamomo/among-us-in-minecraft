@@ -6,11 +6,13 @@ import com.fantamomo.mc.amongus.util.isSameBlockPosition
 import io.papermc.paper.event.entity.EntityKnockbackEvent
 import org.bukkit.GameMode
 import org.bukkit.entity.Mannequin
+import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.block.Action
 import org.bukkit.event.entity.EntityDamageEvent
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
@@ -25,6 +27,16 @@ object PlayerListener : Listener {
     @EventHandler
     fun onPlayerQuit(event: PlayerQuitEvent) {
         PlayerManager.onPlayerQuit(event.player)
+    }
+
+    @EventHandler
+    fun onDamage(event: EntityDamageEvent) {
+        val player = event.entity as? Player ?: return
+        val amongUsPlayer = PlayerManager.getPlayer(player) ?: return
+        val cause = event.cause
+        if (cause == DamageCause.FALL || cause == DamageCause.ENTITY_ATTACK) {
+            event.isCancelled = true
+        }
     }
 
     @EventHandler(priority = EventPriority.LOWEST)

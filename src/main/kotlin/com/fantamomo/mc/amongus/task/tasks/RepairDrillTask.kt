@@ -3,10 +3,7 @@ package com.fantamomo.mc.amongus.task.tasks
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
-import com.fantamomo.mc.amongus.task.GuiAssignedTask
-import com.fantamomo.mc.amongus.task.Task
-import com.fantamomo.mc.amongus.task.TaskType
-import com.fantamomo.mc.amongus.task.areaLocation
+import com.fantamomo.mc.amongus.task.*
 import com.fantamomo.mc.amongus.util.hideTooltip
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
@@ -34,6 +31,7 @@ object RepairDrillTask : Task<RepairDrillTask, RepairDrillTask.AssignedRepairDri
         private val availableTargets = MutableList(SIZE) { it }.apply { shuffle() }
 
         private val targets = List(Random.nextInt(SIZE / 4, (SIZE / 4) * 3)) { availableTargets[it] }.also { availableTargets.clear() }.associateWithTo(mutableMapOf()) { 4 }
+        private var started = false
 
         private val background = itemStack(Material.BLACK_STAINED_GLASS_PANE).hideTooltip()
         private val red = itemStack(Material.RED_STAINED_GLASS_PANE).hideTooltip().apply { amount = 4 }
@@ -51,8 +49,11 @@ object RepairDrillTask : Task<RepairDrillTask, RepairDrillTask.AssignedRepairDri
                 targets[slot] = amount
                 inv.setItem(slot, item.also { it.amount = amount })
             }
+            started = true
             if (targets.isEmpty()) player.game.taskManager.completeTask(this)
         }
+
+        override fun state(): TaskState? = TaskState.IN_PROGRESS.takeIf { started }
 
         override fun setupInventory() {
             for (slot in 0 until SIZE)

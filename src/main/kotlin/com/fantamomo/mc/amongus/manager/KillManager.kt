@@ -16,6 +16,8 @@ import org.bukkit.NamespacedKey
 import org.bukkit.entity.Mannequin
 import org.bukkit.entity.Pose
 import org.bukkit.persistence.PersistentDataType
+import org.bukkit.potion.PotionEffect
+import org.bukkit.potion.PotionEffectType
 
 class KillManager(val game: Game) {
     private val corpses: MutableList<Corpse> = mutableListOf()
@@ -27,6 +29,7 @@ class KillManager(val game: Game) {
             it.pose = Pose.SLEEPING
             it.isImmovable = true
             it.persistentDataContainer.set(CORPSE_KEY, PersistentDataType.BYTE, 1)
+            EntityManager.addEntityToRemoveOnEnd(game, it)
         }
         val corpse = Corpse(mannequin, owner)
         corpses.add(corpse)
@@ -56,7 +59,20 @@ class KillManager(val game: Game) {
         }
         target.isAlive = false
         val location = target.livingEntity.location
+
+        imposter.player?.also { p ->
+            val clone = location.clone()
+            clone.rotation = p.location.rotation
+            p.teleport(clone)
+            p.addPotionEffect(slownessEffect)
+        }
+
         showCorpse(target, location)
+        target.player?.also { p ->
+            p.addPotionEffect(blindnessEffect)
+            p.closeInventory()
+            p.sendHurtAnimation(0f)
+        }
         target.mannequinController.hideFromAll()
         target.mannequinController.showToSeeingPlayers()
         game.checkWin()
@@ -71,13 +87,13 @@ class KillManager(val game: Game) {
         corpses.any { it.mannequin.location.distanceSquared(location) <= 2 * 2 }
 
     fun canKillAsImposter(player: AmongUsPlayer): Boolean {
-        val loc = player.livingEntity.location
+        val loc = player.livingEntityOrNull?.location ?: return false
         val distance = game.settings[SettingsKey.KILL_DISTANCE].distance
         for (player in game.players) {
             if (!player.isAlive) continue
             if (game.ventManager.isVented(player)) continue
             if (player.assignedRole?.definition?.team == Team.IMPOSTERS) continue
-            val location = player.mannequinController.getEntity()?.location ?: player.livingEntity.location
+            val location = player.mannequinController.getEntity()?.location ?: player.livingEntityOrNull?.location ?: continue
             if (loc.distanceSquared(location) < distance * distance) return true
         }
         return false
@@ -123,5 +139,7 @@ class KillManager(val game: Game) {
 
     companion object {
         val CORPSE_KEY = NamespacedKey(AmongUs, "corpse")
+        val slownessEffect = PotionEffect(PotionEffectType.SLOWNESS, 10, 5, false, false, false)
+        val blindnessEffect = PotionEffect(PotionEffectType.BLINDNESS, 60, 5, false, false, false)
     }
 }

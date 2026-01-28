@@ -15,6 +15,8 @@ data class GameArea(
     var lobbySpawn: Location? = null
     var gameSpawn: Location? = null
 
+    var meetingRoomMin: Location? = null
+    var meetingRoomMax: Location? = null
     var meetingBlock: Location? = null
         set(value) {
             field = value?.toBlockLocation()
@@ -79,6 +81,8 @@ data class GameArea(
         clone.maxCorner = maxCorner?.withWorld(world)
         clone.lobbySpawn = lobbySpawn?.withWorld(world)
         clone.gameSpawn = gameSpawn?.withWorld(world)
+        clone.meetingRoomMin = meetingRoomMin?.withWorld(world)
+        clone.meetingRoomMax = meetingRoomMax?.withWorld(world)
         clone.meetingBlock = meetingBlock?.withWorld(world)
         clone.ejectedFallPoint = ejectedFallPoint?.withWorld(world)
         clone.ejectedViewPoint = ejectedViewPoint?.withWorld(world)
@@ -108,6 +112,8 @@ data class GameArea(
             "maxCorner" to GameArea::maxCorner,
             "lobbySpawn" to GameArea::lobbySpawn,
             "gameSpawn" to GameArea::gameSpawn,
+            "meetingRoomMin" to GameArea::meetingRoomMin,
+            "meetingRoomMax" to GameArea::meetingRoomMax,
             "meetingBlock" to GameArea::meetingBlock,
             "ejectedFallPoint" to GameArea::ejectedFallPoint,
             "ejectedViewPoint" to GameArea::ejectedViewPoint,

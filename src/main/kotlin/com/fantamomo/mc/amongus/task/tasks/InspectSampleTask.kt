@@ -134,7 +134,10 @@ object InspectSampleTask :
             }
             if (countdown.isFinished()) {
                 for (bottle in 0 until MAX_SAMPLES) {
-                    inv.setItem(BOTTLE_BASE_SLOT + bottle, if (bottle == targetBottle) targetBottle() else waterBottle())
+                    inv.setItem(
+                        BOTTLE_BASE_SLOT + bottle,
+                        if (bottle == targetBottle) targetBottle() else waterBottle()
+                    )
                 }
             }
         }
@@ -172,11 +175,8 @@ object InspectSampleTask :
             }
         }
 
-        override fun state(): TaskState? = when {
-            completed -> TaskState.COMPLETED
-            countdown.isRunning() -> TaskState.IN_PROGRESS
-            else -> null
-        }
+        override fun state(): TaskState? =
+            TaskState.IN_PROGRESS.takeIf { countdown.isRunning() || countdown.isFinished() }
 
         private fun advanceHopper(index: Int) {
             if (index >= MAX_SAMPLES) {
@@ -255,6 +255,7 @@ object InspectSampleTask :
                     PotionContents.potionContents().potion(PotionType.WATER)
                 )
             }
+
         private fun targetBottle(): ItemStack = itemStack(Material.POTION).hideTooltip().markWith("target").apply {
             @Suppress("UnstableApiUsage")
             setData(

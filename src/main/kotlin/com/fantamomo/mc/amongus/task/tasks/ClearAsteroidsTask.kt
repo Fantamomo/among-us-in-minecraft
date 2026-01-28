@@ -2,10 +2,7 @@ package com.fantamomo.mc.amongus.task.tasks
 
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
-import com.fantamomo.mc.amongus.task.GuiAssignedTask
-import com.fantamomo.mc.amongus.task.Task
-import com.fantamomo.mc.amongus.task.TaskType
-import com.fantamomo.mc.amongus.task.areaLocation
+import com.fantamomo.mc.amongus.task.*
 import com.fantamomo.mc.amongus.util.hideTooltip
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
@@ -69,6 +66,8 @@ object ClearAsteroidsTask : Task<ClearAsteroidsTask, ClearAsteroidsTask.Assigned
             ticks = 0
             asteroids.clear()
         }
+
+        override fun state(): TaskState? = TaskState.IN_PROGRESS.takeIf { shootAsteroids > 0 }
 
         override fun tick() {
             if (!open) return

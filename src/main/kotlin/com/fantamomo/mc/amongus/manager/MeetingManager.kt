@@ -19,6 +19,7 @@ import net.kyori.adventure.bossbar.BossBar
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.title.TitlePart
+import net.kyori.adventure.util.TriState
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
@@ -53,7 +54,7 @@ class MeetingManager(private val game: Game) : Listener {
 
     private val buttonCooldown = Cooldown(game.settings[SettingsKey.MEETING_BUTTON_COOLDOWN], true)
 
-    private val cameraAnchor: ArmorStand =
+    internal val cameraAnchor: ArmorStand =
         ejectionViewPoint.world.spawn(ejectionViewPoint, ArmorStand::class.java) {
             it.isVisible = false
             it.setCanMove(false)
@@ -113,9 +114,14 @@ class MeetingManager(private val game: Game) : Listener {
     ) {
         private var timer: Cooldown? = null
         private val votes: MutableMap<AmongUsPlayer, Vote> = mutableMapOf()
-        private var ejectedPlayer: AmongUsPlayer? = null
+        var respawnLocation: Location? = null
+            private set
+        var ejectedPlayer: AmongUsPlayer? = null
+            private set
         val recipes: MutableMap<NamespacedKey, StonecuttingRecipe> = mutableMapOf()
         val voteInventories: MutableMap<AmongUsPlayer, StonecutterView> = mutableMapOf()
+        var currentlyEjecting: Boolean = false
+            private set
 
         init {
             registerRecipes()
@@ -240,14 +246,18 @@ class MeetingManager(private val game: Game) : Listener {
             votes.clear()
             timer = Cooldown(game.settings[SettingsKey.MEETING_VOTING_TIME], true)
             if (game.settings[SettingsKey.MEETING_DISCUSSION_TIME] >= Duration.ZERO) {
-                for (player in game.players) {
-                    player.player?.sendTitlePart(
-                        TitlePart.TITLE,
-                        textComponent {
-                            translatable("meeting.voting.start")
-                        }
-                    )
-                }
+                game.sendTitle(
+                    TitlePart.TITLE,
+                    textComponent {
+                        translatable("meeting.voting.start")
+                    }
+                )
+                game.sendTitle(
+                    TitlePart.SUBTITLE,
+                    textComponent {
+                        translatable("meeting.voting.start.subtitle")
+                    }
+                )
             }
         }
 
@@ -256,6 +266,7 @@ class MeetingManager(private val game: Game) : Listener {
             timer = null
 
             ejectedPlayer = calculateVoteResult()
+            respawnLocation = ejectedPlayer?.livingEntity?.location
             showVoteResult(ejectedPlayer)
 
             for (player in game.players) {
@@ -269,13 +280,23 @@ class MeetingManager(private val game: Game) : Listener {
 
         fun voteFor(voter: AmongUsPlayer, target: AmongUsPlayer): Boolean {
             if (game.phase != GamePhase.VOTING || voter in votes) return false
+            if (!target.isAlive) return false
             votes[voter] = Vote.For(target)
+            mayEndVoting()
             return true
+        }
+
+        private fun mayEndVoting() {
+            val end = game.players.all { !it.isAlive || hasVoted(it) }
+            if (end) {
+                endVoting()
+            }
         }
 
         fun voteSkip(voter: AmongUsPlayer): Boolean {
             if (game.phase != GamePhase.VOTING || voter in votes) return false
             votes[voter] = Vote.Skip
+            mayEndVoting()
             return true
         }
 
@@ -313,7 +334,7 @@ class MeetingManager(private val game: Game) : Listener {
         }
 
         private fun startEjection(player: AmongUsPlayer?) {
-            if (player == null) {
+            if (player == null || !player.isAlive) {
                 finishMeeting()
                 return
             }
@@ -323,20 +344,36 @@ class MeetingManager(private val game: Game) : Listener {
             game.players
                 .filter { it != player }
                 .forEach {
+                    it.player?.visualFire = TriState.FALSE
                     it.mannequinController.freeze()
                     it.player?.showEntity(AmongUs, cameraAnchor)
                     (it.player as? CraftPlayer)?.handle?.setCamera(handle)
                 }
 
             player.livingEntity.teleport(ejectionFallPoint)
+            currentlyEjecting = true
+
+            Bukkit.getScheduler().runTaskLater(AmongUs, { ->
+                if (currentlyEjecting) finishMeeting(true)
+            }, 200L)
         }
 
         fun onDeath(event: PlayerDeathEvent) {
             val dead = PlayerManager.getPlayer(event.player) ?: return
             if (dead != ejectedPlayer) return
 
+            event.showDeathMessages = false
+            event.isCancelled = true
+            val player = dead.player
+            if (player != null) {
+                player.health = 20.0
+                player.fireTicks = 0
+                player.visualFire = TriState.FALSE
+                respawnLocation?.let { player.teleport(it) }
+            }
+
             Bukkit.getScheduler().runTaskLater(AmongUs, { ->
-                finishMeeting(true)
+                if (currentlyEjecting) finishMeeting(true)
             }, 40L)
         }
 
@@ -410,12 +447,24 @@ class MeetingManager(private val game: Game) : Listener {
                 val player = p.player
                 if (player != null) {
                     player.hideBossBar(bossBar)
+                    player.fireTicks = 0
+                    player.visualFire = TriState.NOT_SET
 
-                    for (key in recipes.keys) {
-                        player.undiscoverRecipe(key)
-                    }
+//                    for (key in recipes.keys) {
+//                        player.undiscoverRecipe(key)
+//                    }
                 }
             }
+
+            for (key in recipes.keys) {
+                Bukkit.removeRecipe(key)
+            }
+
+            Bukkit.updateRecipes()
+
+            ejectedPlayer?.let { game.killManager.kill(it, false) }
+
+            currentlyEjecting = false
 
             recipes.clear()
             voteInventories.clear()

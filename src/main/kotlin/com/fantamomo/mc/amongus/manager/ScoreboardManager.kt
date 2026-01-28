@@ -80,6 +80,7 @@ class ScoreboardManager(private val game: Game) {
             usedEntries.clear()
 
             renderRole()
+            renderDeath()
             renderSpacer(SPACER_ROLE)
             renderTasks()
 
@@ -120,6 +121,15 @@ class ScoreboardManager(private val game: Game) {
             }
         }
 
+        private fun renderDeath() {
+            if (amongUsPlayer.isAlive) return
+
+            score("$ENTRY_DEATH#0", SCORE_DEATH) {
+                customName(textComponent { translatable("scoreboard.death") })
+                numberFormat(NumberFormat.blank())
+            }
+        }
+
         private fun renderTasks() {
             amongUsPlayer.tasks
                 .sortedBy { it.completed }
@@ -127,7 +137,7 @@ class ScoreboardManager(private val game: Game) {
                     val (color, numberFormat) = task.state()
 
                     score("$ENTRY_TASK#$index", SCORE_TASK_START - index) {
-                        customName(task.task.scoreboardLine().translateTo(amongUsPlayer.locale).color(color))
+                        customName(task.task.scoreboardLine().color(color))
                         numberFormat(numberFormat)
                     }
                 }
@@ -142,6 +152,7 @@ class ScoreboardManager(private val game: Game) {
 
         private fun cleanupUnusedScores() {
             scoreboard.entries
+                .asSequence()
                 .filterNot { it in usedEntries }
                 .forEach(scoreboard::resetScores)
         }
@@ -162,11 +173,13 @@ class ScoreboardManager(private val game: Game) {
 
         private const val ENTRY_ROLE = "role"
         private const val ENTRY_ROLE_DESC = "role_desc"
+        private const val ENTRY_DEATH = "death"
         private const val ENTRY_TASK = "task"
         private const val ENTRY_SPACER = "spacer"
 
         private const val SCORE_ROLE_HEADER = 1000
         private const val SCORE_ROLE_DESC_START = 900
+        private const val SCORE_DEATH = 800
         private const val SCORE_TASK_START = 500
         private const val SPACER_ROLE = 700
     }

@@ -42,6 +42,7 @@ object ReportAbility : Ability<ReportAbility, ReportAbility.AssignedReportAbilit
                     inMeeting()
                     inVent()
                     custom(BlockReason.CUSTOM) {
+                        if (!player.isAlive) return@custom true
                         val location = player.livingEntity.location
                         !game.killManager.isNearCorpse(location)
                     }
