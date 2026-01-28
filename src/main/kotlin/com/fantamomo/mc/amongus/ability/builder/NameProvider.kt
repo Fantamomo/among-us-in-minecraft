@@ -38,6 +38,10 @@ class InactiveNameScope<A : Ability<A, S>, S : AssignedAbility<A, S>> {
         map[reason] = key
     }
 
+    fun whenBlocked(id: String, key: String) {
+        map[BlockReason.Custom(id)] = key
+    }
+
     fun otherwise(key: String) {
         fallback = key
     }
