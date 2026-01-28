@@ -2,6 +2,8 @@ package com.fantamomo.mc.amongus.ability.builder
 
 import com.fantamomo.mc.adventure.text.args
 import com.fantamomo.mc.adventure.text.translatable
+import com.fantamomo.mc.amongus.ability.Ability
+import com.fantamomo.mc.amongus.ability.AssignedAbility
 import com.fantamomo.mc.amongus.ability.item.AbilityItem
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.util.textComponent
@@ -10,8 +12,8 @@ import org.bukkit.inventory.ItemStack
 import kotlin.time.DurationUnit
 
 @Suppress("UnstableApiUsage")
-class DSLAbilityItem(
-    private val builder: AbilityItemBuilder
+class DSLAbilityItem<A : Ability<A, S>, S : AssignedAbility<A, S>>(
+    private val builder: AbilityItemBuilder<A, S>
 ) : AbilityItem(builder.ability, builder.id) {
 
     private var lastState: AbilityItemState? = null
@@ -21,7 +23,7 @@ class DSLAbilityItem(
         notifyItemChange()
     }
 
-    private fun computeState(): Triple<AbilityItemState, BlockReason?, AbilityContext> {
+    private fun computeState(): Triple<AbilityItemState, BlockReason?, AbilityContext<A, S>> {
         val cooldown = builder.cooldown
         if (cooldown?.isRunning() == false && !cooldown.isFinished()) {
             cooldown.start()
