@@ -1,13 +1,11 @@
 package com.fantamomo.mc.amongus.ability.builder
 
-import com.fantamomo.mc.adventure.text.args
-import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.ability.Ability
 import com.fantamomo.mc.amongus.ability.AssignedAbility
 import com.fantamomo.mc.amongus.ability.item.AbilityItem
-import com.fantamomo.mc.amongus.languages.string
-import com.fantamomo.mc.amongus.util.textComponent
 import io.papermc.paper.datacomponent.DataComponentTypes
+import net.kyori.adventure.text.TranslatableComponent
+import net.kyori.adventure.text.minimessage.translation.Argument
 import org.bukkit.inventory.ItemStack
 import kotlin.time.DurationUnit
 
@@ -63,16 +61,14 @@ class DSLAbilityItem<A : Ability<A, S>, S : AssignedAbility<A, S>>(
 
         item.setData(
             DataComponentTypes.ITEM_NAME,
-            textComponent(ctx.player.locale) {
-                if (state == AbilityItemState.ACTIVE) translatable(key)
-                else translatable(key) {
-                    args {
-                        string("ability", id)
-                        this@DSLAbilityItem.builder.cooldown?.remaining()?.toString(DurationUnit.SECONDS, 0)
-                            ?.let { string("cooldown", it) }
-                    }
-                }
-            }
+            (key as? TranslatableComponent)?.run {
+                val args = listOfNotNull(
+                    Argument.string("ability", id),
+                    this@DSLAbilityItem.builder.cooldown?.remaining()?.toString(DurationUnit.SECONDS, 0)
+                        ?.let { Argument.string("cooldown", it) }
+                )
+                key.arguments(args)
+            } ?: key
         )
 
         return item
