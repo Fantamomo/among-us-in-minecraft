@@ -50,7 +50,7 @@ object AbilityManager {
     }
 
     fun invalidateAbility(ability: AssignedAbility<*, *>) {
-        ability.items.asSequence().filterIsInstance<DSLAbilityItem>()
+        ability.items.asSequence().filterIsInstance<DSLAbilityItem<*, *>>()
             .forEach { it.invalidate() }
     }
 
