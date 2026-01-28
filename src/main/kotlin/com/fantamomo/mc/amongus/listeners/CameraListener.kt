@@ -48,7 +48,7 @@ object CameraListener : Listener {
 
     @EventHandler
     fun onKick(event: PlayerKickEvent) {
-        if (event.cause != PlayerKickEvent.Cause.SELF_INTERACTION) return
+        if (event.cause != PlayerKickEvent.Cause.SELF_INTERACTION && event.cause != PlayerKickEvent.Cause.FLYING_PLAYER) return
         val player = event.player
         val amongUsPlayer = PlayerManager.getPlayer(player) ?: return
         if (amongUsPlayer.isInCams()) {

@@ -15,6 +15,7 @@ import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryCloseEvent
 import org.bukkit.event.player.PlayerInteractEvent
+import org.bukkit.event.player.PlayerKickEvent
 import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.event.player.PlayerToggleSneakEvent
 import org.bukkit.persistence.PersistentDataType
@@ -97,6 +98,17 @@ object MeetingListener : Listener {
             if (stack?.persistentDataContainer?.has(MeetingManager.VOTING_KEY) == true) {
                 inventory.setItem(index, null)
             }
+        }
+    }
+
+    @EventHandler
+    fun onKick(event: PlayerKickEvent) {
+        if (event.cause != PlayerKickEvent.Cause.FLYING_PLAYER) return
+        val player = event.player
+        val amongUsPlayer = PlayerManager.getPlayer(player) ?: return
+        val meeting = amongUsPlayer.game.meetingManager.meeting ?: return
+        if (meeting.currentlyEjecting) {
+            event.isCancelled = true
         }
     }
 
