@@ -246,14 +246,18 @@ class MeetingManager(private val game: Game) : Listener {
             votes.clear()
             timer = Cooldown(game.settings[SettingsKey.MEETING_VOTING_TIME], true)
             if (game.settings[SettingsKey.MEETING_DISCUSSION_TIME] >= Duration.ZERO) {
-                for (player in game.players) {
-                    player.player?.sendTitlePart(
-                        TitlePart.TITLE,
-                        textComponent {
-                            translatable("meeting.voting.start")
-                        }
-                    )
-                }
+                game.sendTitle(
+                    TitlePart.TITLE,
+                    textComponent {
+                        translatable("meeting.voting.start")
+                    }
+                )
+                game.sendTitle(
+                    TitlePart.SUBTITLE,
+                    textComponent {
+                        translatable("meeting.voting.start.subtitle")
+                    }
+                )
             }
         }
 
