@@ -3,6 +3,7 @@ package com.fantamomo.mc.amongus.ability.builder
 import com.fantamomo.mc.amongus.ability.Ability
 import com.fantamomo.mc.amongus.ability.AssignedAbility
 import com.fantamomo.mc.amongus.ability.item.AbilityItem
+import com.fantamomo.mc.amongus.util.translateTo
 import io.papermc.paper.datacomponent.DataComponentTypes
 import net.kyori.adventure.text.TranslatableComponent
 import net.kyori.adventure.text.minimessage.translation.Argument
@@ -61,14 +62,14 @@ class DSLAbilityItem<A : Ability<A, S>, S : AssignedAbility<A, S>>(
 
         item.setData(
             DataComponentTypes.ITEM_NAME,
-            (key as? TranslatableComponent)?.run {
+            ((key as? TranslatableComponent)?.run {
                 val args = listOfNotNull(
                     Argument.string("ability", id),
                     this@DSLAbilityItem.builder.cooldown?.remaining()?.toString(DurationUnit.SECONDS, 0)
                         ?.let { Argument.string("cooldown", it) }
                 )
                 key.arguments(args)
-            } ?: key
+            } ?: key).translateTo(ability.player.locale)
         )
 
         return item
