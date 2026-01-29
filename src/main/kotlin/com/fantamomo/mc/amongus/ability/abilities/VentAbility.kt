@@ -2,19 +2,21 @@ package com.fantamomo.mc.amongus.ability.abilities
 
 import com.fantamomo.mc.amongus.ability.Ability
 import com.fantamomo.mc.amongus.ability.AssignedAbility
+import com.fantamomo.mc.amongus.ability.builder.AbilityItemState
 import com.fantamomo.mc.amongus.ability.builder.BlockReason
 import com.fantamomo.mc.amongus.ability.builder.abilityItem
-import com.fantamomo.mc.amongus.ability.item.AbilityItem
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.settings.SettingsKey
-import com.fantamomo.mc.amongus.util.Cooldown
+import io.papermc.paper.datacomponent.DataComponentTypes
+import net.kyori.adventure.text.Component
 import org.bukkit.Material
+import org.bukkit.inventory.ItemStack
 import kotlin.time.Duration.Companion.seconds
 
 object VentAbility :
     Ability<VentAbility, VentAbility.AssignedVentAbility> {
 
-    override val id: String = "vent"
+    override val id = "vent"
 
     override fun assignTo(player: AmongUsPlayer) =
         AssignedVentAbility(player)
@@ -25,53 +27,110 @@ object VentAbility :
 
         override val definition = VentAbility
 
-        override val items: List<AbilityItem> = listOf(
+        @Suppress("UnstableApiUsage")
+        override val items = listOf(
             abilityItem("vent") {
-                cooldown {
-                    Cooldown(game.settings[SettingsKey.VENT_COOLDOWN].seconds)
+
+                // ---------- MODULAR TIMER ----------
+
+                timer("cooldown", player.game.settings[SettingsKey.VENT_COOLDOWN].seconds)
+
+                // ---------- CONDITIONS ----------
+
+                condition {
+                    if (game.meetingManager.isCurrentlyAMeeting())
+                        BlockReason.InMeeting
+                    else null
                 }
 
-                material {
-                    active = Material.TRIPWIRE_HOOK
-                    inactive = Material.BARRIER
+                condition {
+                    val ventManager = game.ventManager
+
+                    if (!ventManager.isVented(player) &&
+                        !ventManager.isNearVent(player)
+                    )
+                        BlockReason.custom("notNearVent")
+                    else null
                 }
 
-                name {
-                    active {
-                        if (player.isVented())
-                            "ability.vent.vent.out"
-                        else
-                            "ability.vent.vent.in"
-                    }
-                    inactive {
-                        whenBlocked(
-                            BlockReason.InVent,
-                            "ability.general.disabled.in_vent"
-                        )
-                        whenBlocked(
-                            "notNearVent",
-                            "ability.vent.vent.deactivate"
-                        )
-                    }
-                }
+                // ---------- ACTIVE ----------
 
-                blockWhen {
-                    custom("notNearVent") {
-                        game.ventManager.run {
-                            if (isVented(player)) false
-                            else !isNearVent(player)
+                state(AbilityItemState.ACTIVE) {
+
+                    render {
+
+                        val key =
+                            if (player.isVented())
+                                "ability.vent.vent.out"
+                            else
+                                "ability.vent.vent.in"
+
+                        ItemStack(Material.TRIPWIRE_HOOK).apply {
+                            setData(
+                                DataComponentTypes.ITEM_NAME,
+                                Component.translatable(key)
+                            )
                         }
                     }
-                    inMeeting()
+
+                    onRightClick {
+
+                        game.ventManager.doVent(player)
+
+                        // Start cooldown when toggling vent
+                        getTimer("cooldown")?.start()
+                    }
+
+                    onLeftClick {
+
+                        if (!player.isVented()) return@onLeftClick
+
+                        game.ventManager.nextVent(player)
+                    }
                 }
 
-                onRightClick {
-                    game.ventManager.doVent(player)
+                // ---------- BLOCKED ----------
+
+                state(AbilityItemState.BLOCKED) {
+
+                    render {
+
+                        val reason = conditions
+                            .firstNotNullOfOrNull { it() }
+
+                        val key = when (reason) {
+
+                            BlockReason.InMeeting ->
+                                "ability.general.disabled.in_meeting"
+
+                            is BlockReason.Custom ->
+                                "ability.vent.vent.deactivate"
+
+                            else ->
+                                "ability.vent.vent.deactivate"
+                        }
+
+                        ItemStack(Material.BARRIER).apply {
+                            setData(
+                                DataComponentTypes.ITEM_NAME,
+                                Component.translatable(key)
+                            )
+                        }
+                    }
                 }
 
-                onLeftClick {
-                    if (!player.isVented()) return@onLeftClick
-                    game.ventManager.nextVent(player)
+                // ---------- COOLDOWN ----------
+
+                state(AbilityItemState.COOLDOWN) {
+
+                    render {
+                        ItemStack(Material.BARRIER).apply {
+                            setData(
+                                DataComponentTypes.ITEM_NAME,
+                                Component.translatable("ability.general.disabled.cooldown")
+                            )
+                        }
+                    }
                 }
             }
         )
