@@ -10,10 +10,10 @@ import kotlin.contracts.contract
 @OptIn(ExperimentalContracts::class)
 fun <A : Ability<A, S>, S : AssignedAbility<A, S>> S.abilityItem(
     id: String,
-    block: AbilityItemBuilder<A, S>.() -> Unit
+    block: AbilityItemBuilder.() -> Unit
 ): AbilityItem {
     contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
-    val builder = AbilityItemBuilder<A, S>(this, id)
+    val builder = AbilityItemBuilder(this, id)
     builder.block()
     return builder.build()
 }

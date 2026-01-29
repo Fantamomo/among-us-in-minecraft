@@ -10,5 +10,6 @@ sealed interface BlockReason {
 
     companion object {
         operator fun invoke(id: String) = Custom(id)
+        fun custom(id: String) = Custom(id)
     }
 }
