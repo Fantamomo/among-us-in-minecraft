@@ -14,7 +14,17 @@ enum class TaskState(
 ) {
     INCOMPLETE(NamedTextColor.GRAY, "scoreboard.task.incomplete", NamedTextColor.RED),
     IN_PROGRESS(NamedTextColor.YELLOW, "scoreboard.task.in_progress"),
-    COMPLETED(NamedTextColor.GREEN, "scoreboard.task.completed");
+    COMPLETED(NamedTextColor.GREEN, "scoreboard.task.completed"),
+
+    /**
+     * This enum content should never be return by
+     * - [TaskManager.RegisteredTask.state]
+     * - [AssignedTask.state]
+     *
+     * Its only purpose is to be used in [com.fantamomo.mc.amongus.manager.ScoreboardManager]
+     * when communications are sabotaged
+     */
+    COMMUNICATIONS_SABOTAGED(NamedTextColor.DARK_RED, "scoreboard.task.communications_sabotaged");
 
     val numberFormat: NumberFormat = NumberFormat.fixed(
         Component.translatable(
