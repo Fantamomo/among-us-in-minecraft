@@ -49,7 +49,7 @@ abstract class GuiAssignedTask<T : Task<T, A>, A : GuiAssignedTask<T, A>> : Assi
         }
     }
 
-    protected fun itemStack(material: Material): ItemStack = ItemStack(material).apply {
+    protected fun itemStack(material: Material, amount: Int = 1): ItemStack = ItemStack(material, amount).apply {
         editPersistentDataContainer {
             it.set(TASK_UUID, CustomPersistentDataTypes.UUID, uuid)
         }
