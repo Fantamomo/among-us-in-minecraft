@@ -28,7 +28,8 @@ interface Task<T : Task<T, A>, A : AssignedTask<T, A>> {
             TransferDataTask,
             FixWeatherNodeTask,
             RepairDrillTask,
-            ClearAsteroidsTask
+            ClearAsteroidsTask,
+            VerifyIdTask
         )
     }
 }
