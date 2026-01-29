@@ -10,6 +10,10 @@ import com.fantamomo.mc.amongus.util.translateTo
 import com.fantamomo.mc.amongus.util.wrapComponent
 import io.papermc.paper.scoreboard.numbers.NumberFormat
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.ComponentIteratorType
+import net.kyori.adventure.text.TextComponent
+import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Bukkit
 import org.bukkit.scoreboard.Criteria
 import org.bukkit.scoreboard.DisplaySlot
@@ -21,17 +25,15 @@ import kotlin.contracts.contract
 class ScoreboardManager(private val game: Game) {
 
     private val scoreboards = mutableMapOf<AmongUsPlayer, AmongUsScoreboard>()
-    private var ticks: Int = 0
 
     fun tick() {
         if (scoreboards.isEmpty()) return
-        ticks++
-        if (ticks % 20 == 0) refreshAll()
+        scoreboards.values.forEach { it.update() }
     }
 
     fun start() {
-        game.players.forEach { player ->
-            scoreboards[player] = AmongUsScoreboard(player).also { it.show() }
+        game.players.forEach {
+            scoreboards[it] = AmongUsScoreboard(it).also { sb -> sb.show() }
         }
     }
 
@@ -40,133 +42,283 @@ class ScoreboardManager(private val game: Game) {
         scoreboards.clear()
     }
 
-    fun removePlayer(player: AmongUsPlayer) {
-        scoreboards.remove(player)?.hide()
-    }
-
     fun refresh(player: AmongUsPlayer) {
         scoreboards[player]?.update()
     }
 
-    fun refreshAll() {
-        scoreboards.values.forEach { it.update() }
+    internal fun removePlayer(player: AmongUsPlayer) {
+        scoreboards.remove(player)?.hide()
     }
 
-    inner class AmongUsScoreboard(private val amongUsPlayer: AmongUsPlayer) {
+    // =======================================================
+
+    inner class AmongUsScoreboard(private val player: AmongUsPlayer) {
 
         private val scoreboard = Bukkit.getScoreboardManager().newScoreboard
+
         private val objective = scoreboard.registerNewObjective(
-            "amongus_${amongUsPlayer.uuid}",
+            "amongus_${player.uuid}",
             Criteria.DUMMY,
             textComponent { translatable("scoreboard.title") }
-        ).apply {
-            displaySlot = DisplaySlot.SIDEBAR
-        }
+        ).apply { displaySlot = DisplaySlot.SIDEBAR }
 
-        private val previousScoreboard = amongUsPlayer.player?.scoreboard
+        private val previous = player.player?.scoreboard
+
         private val usedEntries = mutableSetOf<String>()
+        private val animatedLines = mutableMapOf<String, AnimatedLine>()
+        private val renderOrder = mutableListOf<String>()
+
+        private var initialRender = true
+        private var initialIndex = 0
+        private var lineDelay = 0
 
         fun show() {
-            amongUsPlayer.player?.scoreboard = scoreboard
+            player.player?.scoreboard = scoreboard
             update()
         }
 
         fun hide() {
-            amongUsPlayer.player?.scoreboard =
-                previousScoreboard ?: Bukkit.getScoreboardManager().mainScoreboard
+            player.player?.scoreboard =
+                previous ?: Bukkit.getScoreboardManager().mainScoreboard
         }
 
         fun update() {
             usedEntries.clear()
+            renderOrder.clear()
 
             renderRole()
             renderDeath()
             renderSpacer(SPACER_ROLE)
             renderTasks()
 
-            cleanupUnusedScores()
+            animateInitialSequence()
+            cleanup()
         }
 
         private fun renderRole() {
-            score(ENTRY_ROLE, SCORE_ROLE_HEADER) {
-                customName(
-                    textComponent {
-                        translatable("scoreboard.role") {
-                            args {
-                                component("role") {
-                                    translatable(
-                                        amongUsPlayer.assignedRole?.definition?.name
-                                            ?: "scoreboard.role.none"
-                                    )
-                                }
+
+            register(ENTRY_ROLE)
+
+            score(
+                ENTRY_ROLE,
+                SCORE_ROLE_HEADER,
+                textComponent {
+                    translatable("scoreboard.role") {
+                        args {
+                            component("role") {
+                                translatable(
+                                    player.assignedRole?.definition?.name
+                                        ?: "scoreboard.role.none"
+                                )
                             }
                         }
                     }
-                )
-                numberFormat(NumberFormat.blank())
-            }
+                }
+            )
 
-            val description = amongUsPlayer.assignedRole
+            val desc = player.assignedRole
                 ?.definition
                 ?.description
                 ?.let(Component::translatable)
-                ?.translateTo(amongUsPlayer.locale)
                 ?: return
 
-            wrapComponent(description).forEachIndexed { index, line ->
-                score("$ENTRY_ROLE_DESC#$index", SCORE_ROLE_DESC_START - index) {
-                    customName(line)
-                    numberFormat(NumberFormat.blank())
+            wrapComponent(desc.translateTo(player.locale))
+                .forEachIndexed { index, line ->
+
+                    val id = "$ENTRY_ROLE_DESC#$index"
+
+                    register(id)
+
+                    score(
+                        id,
+                        SCORE_ROLE_DESC_START - index,
+                        line
+                    )
                 }
-            }
         }
 
         private fun renderDeath() {
-            if (amongUsPlayer.isAlive) return
+            if (!player.isAlive) {
 
-            score("$ENTRY_DEATH#0", SCORE_DEATH) {
-                customName(textComponent { translatable("scoreboard.death") })
-                numberFormat(NumberFormat.blank())
+                val id = "$ENTRY_DEATH#0"
+
+                register(id)
+
+                score(
+                    id,
+                    SCORE_DEATH,
+                    textComponent { translatable("scoreboard.death") }
+                        .color(NamedTextColor.RED)
+                        .decorate(TextDecoration.BOLD)
+                )
             }
         }
 
         private fun renderTasks() {
-            amongUsPlayer.tasks
+            player.tasks
                 .sortedBy { it.completed }
                 .forEachIndexed { index, task ->
-                    val (color, numberFormat) = task.state()
 
-                    score("$ENTRY_TASK#$index", SCORE_TASK_START - index) {
-                        customName(task.task.scoreboardLine().color(color))
-                        numberFormat(numberFormat)
+                    val id = "$ENTRY_TASK#$index"
+
+                    register(id)
+
+                    val (color, format) = task.state()
+
+                    val line = if (task.completed) {
+                        task.task.scoreboardLine()
+                            .color(NamedTextColor.GREEN)
+                            .decorate(TextDecoration.STRIKETHROUGH)
+                    } else {
+                        task.task.scoreboardLine().color(color)
+                    }
+
+                    score(
+                        id,
+                        SCORE_TASK_START - index,
+                        line
+                    ) {
+                        numberFormat(format)
                     }
                 }
         }
 
         private fun renderSpacer(score: Int) {
-            score("$ENTRY_SPACER#$score", score) {
-                customName(Component.empty())
-                numberFormat(NumberFormat.blank())
-            }
+
+            val id = "$ENTRY_SPACER#$score"
+
+            register(id)
+
+            score(
+                id,
+                score,
+                Component.empty()
+            )
         }
 
-        private fun cleanupUnusedScores() {
-            scoreboard.entries
-                .asSequence()
-                .filterNot { it in usedEntries }
-                .forEach(scoreboard::resetScores)
+        private fun register(id: String) {
+            if (initialRender && id !in renderOrder) {
+                renderOrder += id
+            }
         }
 
         @OptIn(ExperimentalContracts::class)
-        private inline fun score(id: String, value: Int, block: Score.() -> Unit) {
+        private inline fun score(
+            id: String,
+            value: Int,
+            component: Component,
+            block: Score.() -> Unit = {}
+        ) {
             contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
 
             usedEntries += id
+
+            val translated = component.translateTo(player.locale)
+
+            val line = animatedLines.getOrPut(id) {
+                val chars = splitToChars(translated)
+                AnimatedLine(
+                    full = translated,
+                    chars = chars,
+                    progress = if (initialRender) 0f else chars.size.toFloat()
+                )
+            }
+
+            if (line.full != translated) {
+                animatedLines[id] = AnimatedLine(
+                    full = translated,
+                    chars = splitToChars(translated),
+                    progress = 0f
+                )
+            }
+
+            val canAnimate =
+                !initialRender || renderOrder.getOrNull(initialIndex) == id
+
+            if (canAnimate) {
+                animatedLines[id]?.advance(ANIMATION_SPEED)
+            }
+
+            val shown = animatedLines[id]?.shown() ?: Component.empty()
+
             objective.getScore(id).apply {
                 score = value
+                customName(shown)
+                numberFormat(NumberFormat.blank())
                 block()
             }
         }
+
+        private fun animateInitialSequence() {
+            if (!initialRender) return
+
+            val currentId = renderOrder.getOrNull(initialIndex) ?: run {
+                initialRender = false
+                return
+            }
+
+            val line = animatedLines[currentId] ?: return
+
+            if (line.isFinished()) {
+                lineDelay++
+
+                if (lineDelay >= 3) {
+                    lineDelay = 0
+                    initialIndex++
+                }
+            }
+        }
+
+        private fun cleanup() {
+            scoreboard.entries
+                .filterNot { it in usedEntries }
+                .forEach {
+                    scoreboard.resetScores(it)
+                    animatedLines.remove(it)
+                }
+        }
+    }
+
+    private data class AnimatedLine(
+        val full: Component,
+        val chars: List<Component>,
+        var progress: Float = 0f
+    ) {
+
+        fun isFinished() = progress >= chars.size
+
+        fun advance(speed: Float) {
+            if (isFinished()) return
+
+            val remaining = chars.size - progress
+            val step = (remaining * speed).coerceAtLeast(0.15f)
+
+            progress += step
+            if (progress > chars.size) progress = chars.size.toFloat()
+        }
+
+        fun shown(): Component {
+            val count = progress.toInt().coerceAtMost(chars.size)
+            if (count == 0) return Component.empty()
+            if (count == chars.size) return full
+            return chars.take(count).joinToComponent()
+        }
+    }
+
+    private fun splitToChars(component: Component): List<Component> {
+        val result = mutableListOf<Component>()
+
+        component.iterable(ComponentIteratorType.BREADTH_FIRST).forEach { part ->
+            if (part !is TextComponent) return@forEach
+
+            val style = part.style()
+
+            part.content().forEach { c ->
+                result += Component.text(c.toString()).style(style)
+            }
+        }
+
+        return result
     }
 
     companion object {
@@ -182,5 +334,13 @@ class ScoreboardManager(private val game: Game) {
         private const val SCORE_DEATH = 800
         private const val SCORE_TASK_START = 500
         private const val SPACER_ROLE = 700
+
+        private const val ANIMATION_SPEED = 0.18f
+
+        private fun List<Component>.joinToComponent(): Component {
+            var current = Component.empty()
+            forEach { current = current.append(it) }
+            return current
+        }
     }
 }
