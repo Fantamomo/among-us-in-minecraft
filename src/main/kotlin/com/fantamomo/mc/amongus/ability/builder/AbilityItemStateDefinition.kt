@@ -16,8 +16,12 @@ class AbilityItemStateDefinition {
 
     var onExit: AbilityContext.() -> Unit = {}
 
-    fun render(block: AbilityContext.() -> ItemStack) {
+    fun renderOverride(block: AbilityContext.() -> ItemStack) {
         render = block
+    }
+
+    fun render(block: AbilityItemRender.() -> Unit) {
+        render = block::toItemStack
     }
 
     fun onRightClick(block: AbilityContext.() -> Unit) {

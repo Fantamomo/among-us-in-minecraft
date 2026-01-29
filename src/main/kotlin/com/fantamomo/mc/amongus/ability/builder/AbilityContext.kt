@@ -3,12 +3,14 @@ package com.fantamomo.mc.amongus.ability.builder
 import com.fantamomo.mc.amongus.ability.AssignedAbility
 import com.fantamomo.mc.amongus.ability.item.AbilityItem
 import com.fantamomo.mc.amongus.util.Cooldown
+import net.kyori.adventure.key.Key
 import kotlin.time.Duration
 
 class AbilityContext(
     private val builder: AbilityItemBuilder,
     val ability: AssignedAbility<*, *>
 ) {
+    internal val cooldownKey = Key.key("amongus:ability_cooldown/${ability.definition.id}/${builder.id}")
 
     val player = ability.player
     val game = player.game
