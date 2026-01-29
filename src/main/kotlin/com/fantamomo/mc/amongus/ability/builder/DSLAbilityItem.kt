@@ -1,92 +1,72 @@
 package com.fantamomo.mc.amongus.ability.builder
 
-import com.fantamomo.mc.adventure.text.args
-import com.fantamomo.mc.adventure.text.translatable
+import com.fantamomo.mc.amongus.ability.AssignedAbility
 import com.fantamomo.mc.amongus.ability.item.AbilityItem
-import com.fantamomo.mc.amongus.languages.string
-import com.fantamomo.mc.amongus.util.textComponent
-import io.papermc.paper.datacomponent.DataComponentTypes
 import org.bukkit.inventory.ItemStack
-import kotlin.time.DurationUnit
 
-@Suppress("UnstableApiUsage")
 class DSLAbilityItem(
-    private val builder: AbilityItemBuilder
-) : AbilityItem(builder.ability, builder.id) {
+    ability: AssignedAbility<*, *>,
+    id: String,
+    private val ctx: AbilityContext,
+    private val states: Map<AbilityItemState, AbilityItemStateDefinition>,
+    private val conditions: List<AbilityCondition>
+) : AbilityItem(ability, id) {
 
     private var lastState: AbilityItemState? = null
-    private var lastBlockReason: BlockReason? = null
 
-    fun invalidate() {
-        notifyItemChange()
+    init {
+        ctx.abilityItem = this
     }
 
-    private fun computeState(): Triple<AbilityItemState, BlockReason?, AbilityContext> {
-        val cooldown = builder.cooldown
-        if (cooldown?.isRunning() == false && !cooldown.isFinished()) {
-            cooldown.start()
-        }
+    private fun computeState(): Pair<AbilityItemState, BlockReason?> {
 
-        val ctx = builder.ctx
+        val reason = conditions.firstNotNullOfOrNull { ctx.it() }
 
-        val blockReason = builder.blockers.firstNotNullOfOrNull { it(ctx) }
+        if (reason != null)
+            return AbilityItemState.BLOCKED to reason
 
-        if (blockReason != null)
-            return Triple(AbilityItemState.BLOCKED, blockReason, ctx)
+        val cooldownTimer = ctx.getTimer("cooldown")
 
-        if (cooldown?.isFinished() == false)
-            return Triple(AbilityItemState.COOLDOWN, null, ctx)
+        if (cooldownTimer != null && !cooldownTimer.isFinished())
+            return AbilityItemState.COOLDOWN to null
 
-        return Triple(AbilityItemState.ACTIVE, null, ctx)
+        return AbilityItemState.ACTIVE to null
     }
 
     override fun getItemStack(): ItemStack {
-        val (state, blockReason, ctx) = computeState()
+        val (state, _) = computeState()
 
-        lastState = state
-        lastBlockReason = blockReason
-
-        val material = when (state) {
-            AbilityItemState.ACTIVE -> builder.activeMaterial
-            else -> builder.inactiveMaterial
+        if (state != lastState) {
+            lastState?.let { states[it]?.onExit?.invoke(ctx) }
+            states[state]?.onEnter?.invoke(ctx)
+            lastState = state
         }
 
-        val item = ItemStack(material)
-
-        val key = when (state) {
-            AbilityItemState.ACTIVE -> builder.nameProvider.active(ctx)
-            AbilityItemState.BLOCKED -> builder.nameProvider.inactive(ctx, blockReason)
-            AbilityItemState.COOLDOWN -> builder.nameProvider.cooldown
-        }
-
-        item.setData(
-            DataComponentTypes.ITEM_NAME,
-            textComponent(ctx.player.locale) {
-                if (state == AbilityItemState.ACTIVE) translatable(key)
-                else translatable(key) {
-                    args {
-                        string("ability", id)
-                        this@DSLAbilityItem.builder.cooldown?.remaining()?.toString(DurationUnit.SECONDS, 0)
-                            ?.let { string("cooldown", it) }
-                    }
-                }
-            }
-        )
-
-        return item
+        return states[state]!!.render(ctx)
     }
 
     override fun onRightClick() {
-        val (state, _, ctx) = computeState()
-        if (state != AbilityItemState.ACTIVE) return
+        val (state, _) = computeState()
 
-        builder.rightClick(ctx)
-        builder.cooldown?.reset(start = true)
-        invalidate()
+        states[state]!!.onRightClick(ctx)
+
+        if (state == AbilityItemState.ACTIVE) {
+            ctx.getTimer("cooldown")?.start()
+        }
+
+        notifyItemChange()
     }
 
     override fun onLeftClick() {
-        builder.leftClick(builder.ctx)
-        invalidate()
+
+        val (state, _) = computeState()
+
+        states[state]!!.onLeftClick(ctx)
+
+        notifyItemChange()
+    }
+
+    override fun startCooldown() {
+        ctx.startTimers()
     }
 }

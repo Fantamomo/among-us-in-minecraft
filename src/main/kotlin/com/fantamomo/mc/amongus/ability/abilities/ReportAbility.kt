@@ -2,54 +2,113 @@ package com.fantamomo.mc.amongus.ability.abilities
 
 import com.fantamomo.mc.amongus.ability.Ability
 import com.fantamomo.mc.amongus.ability.AssignedAbility
+import com.fantamomo.mc.amongus.ability.builder.AbilityItemState
 import com.fantamomo.mc.amongus.ability.builder.BlockReason
 import com.fantamomo.mc.amongus.ability.builder.abilityItem
-import com.fantamomo.mc.amongus.ability.item.AbilityItem
 import com.fantamomo.mc.amongus.manager.MeetingManager
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import org.bukkit.Material
 
-object ReportAbility : Ability<ReportAbility, ReportAbility.AssignedReportAbility> {
-    override val id: String = "report"
+object ReportAbility :
+    Ability<ReportAbility, ReportAbility.AssignedReportAbility> {
 
-    override fun assignTo(player: AmongUsPlayer) = AssignedReportAbility(player)
+    override val id = "report"
 
-    class AssignedReportAbility(override val player: AmongUsPlayer) : AssignedAbility<ReportAbility, AssignedReportAbility> {
+    override fun assignTo(player: AmongUsPlayer) =
+        AssignedReportAbility(player)
+
+    class AssignedReportAbility(
+        override val player: AmongUsPlayer
+    ) : AssignedAbility<ReportAbility, AssignedReportAbility> {
+
         override val definition = ReportAbility
-        override val items: List<AbilityItem> = listOf(
+
+        @Suppress("UnstableApiUsage")
+        override val items = listOf(
             abilityItem("report") {
-                material {
-                    active = Material.FIREWORK_ROCKET
-                    inactive = Material.BARRIER
+
+                // ---------- CONDITIONS ----------
+
+                condition {
+                    if (game.meetingManager.isCurrentlyAMeeting())
+                        BlockReason.InMeeting
+                    else null
                 }
 
-                name {
-                    active("ability.report.report.active")
-                    inactive {
-                        whenBlocked(
-                            BlockReason.IN_MEETING,
-                            "ability.general.disabled.in_meeting"
+                condition {
+                    if (player.isVented())
+                        BlockReason.InVent
+                    else null
+                }
+
+                condition {
+                    val loc = player.livingEntity.location
+                    if (!game.killManager.isNearCorpse(loc))
+                        BlockReason.custom("notNearCorpse")
+                    else null
+                }
+
+                condition {
+                    if (!player.isAlive)
+                        BlockReason.custom("notAlive")
+                    else null
+                }
+
+                // ---------- ACTIVE ----------
+
+                state(AbilityItemState.ACTIVE) {
+
+                    render {
+                        material = Material.FIREWORK_ROCKET
+                        translationKey = "ability.report.report.active"
+                    }
+
+                    onRightClick {
+                        game.meetingManager.callMeeting(
+                            player,
+                            MeetingManager.MeetingReason.BODY
                         )
-                        whenBlocked(
-                            BlockReason.IN_VENT,
-                            "ability.general.disabled.in_vent"
-                        )
-                        otherwise("ability.report.report.deactivate")
                     }
                 }
 
-                blockWhen {
-                    inMeeting()
-                    inVent()
-                    custom(BlockReason.CUSTOM) {
-                        if (!player.isAlive) return@custom true
-                        val location = player.livingEntity.location
-                        !game.killManager.isNearCorpse(location)
+                // ---------- BLOCKED ----------
+
+                state(AbilityItemState.BLOCKED) {
+
+                    render {
+                        material = Material.BARRIER
+                        translationKey = when (val reason = ctx.getBlockReason()) {
+
+                            BlockReason.InMeeting ->
+                                "ability.general.disabled.in_meeting"
+
+                            BlockReason.InVent ->
+                                "ability.general.disabled.in_vent"
+
+                            is BlockReason.Custom -> when (reason.id) {
+                                "notNearCorpse" ->
+                                    "ability.report.report.deactivate"
+
+                                "notAlive" ->
+                                    "ability.report.report.deactivate.dead"
+
+                                else ->
+                                    "ability.report.report.deactivate"
+                            }
+
+                            else ->
+                                "ability.report.report.deactivate"
+                        }
                     }
                 }
 
-                onRightClick {
-                    game.meetingManager.callMeeting(player, MeetingManager.MeetingReason.BODY)
+                // ---------- COOLDOWN ----------
+
+                state(AbilityItemState.COOLDOWN) {
+                    render {
+                        material = Material.BARRIER
+                        translationKey = "ability.general.disabled.cooldown"
+                    }
                 }
             }
         )

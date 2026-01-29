@@ -2,16 +2,18 @@ package com.fantamomo.mc.amongus.ability.abilities
 
 import com.fantamomo.mc.amongus.ability.Ability
 import com.fantamomo.mc.amongus.ability.AssignedAbility
+import com.fantamomo.mc.amongus.ability.builder.AbilityItemState
 import com.fantamomo.mc.amongus.ability.builder.BlockReason
 import com.fantamomo.mc.amongus.ability.builder.abilityItem
 import com.fantamomo.mc.amongus.ability.item.AbilityItem
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.sabotage.Sabotage
+import org.bukkit.Material
 
 object SabotageAbility :
     Ability<SabotageAbility, SabotageAbility.AssignedSabotageAbility> {
 
-    override val id: String = "sabotage"
+    override val id = "sabotage"
 
     override fun assignTo(player: AmongUsPlayer) =
         AssignedSabotageAbility(player)
@@ -23,49 +25,85 @@ object SabotageAbility :
         override val definition = SabotageAbility
 
         override val items: List<AbilityItem> =
-            player.game.sabotageManager.supportedSabotages.values.map { sabotage ->
-                sabotageItem(sabotage)
-            }
+            player.game.sabotageManager.supportedSabotages.values
+                .map(::createItem)
 
-        private fun sabotageItem(
+        @Suppress("UnstableApiUsage")
+        private fun createItem(
             sabotage: Sabotage<*, *>
         ): AbilityItem = abilityItem(sabotage.sabotageType.id) {
 
-            cooldown {
-                game.sabotageManager.cooldown(sabotage)
+            // ---------- COOLDOWN (MODULAR TIMER) ----------
+
+            setTimer("cooldown", player.game.sabotageManager.cooldown(sabotage))
+
+            // ---------- CONDITIONS ----------
+
+            condition {
+                if (game.sabotageManager.isCurrentlySabotage())
+                    BlockReason.Sabotage
+                else null
             }
 
-            material {
-                active = sabotage.sabotageType.activeMaterial
-                inactive = sabotage.sabotageType.deactivateMaterial
+            condition {
+                if (game.meetingManager.isCurrentlyAMeeting())
+                    BlockReason.InMeeting
+                else null
             }
 
-            name {
-                active("ability.sabotage.${sabotage.sabotageType.id}.active")
-                inactive {
-                    whenBlocked(
-                        BlockReason.IN_MEETING,
-                        "ability.general.disabled.in_meeting"
-                    )
-                    whenBlocked(
-                        BlockReason.IN_VENT,
-                        "ability.general.disabled.in_vent"
-                    )
-                    whenBlocked(
-                        BlockReason.SABOTAGE,
-                        "ability.sabotage.disabled"
-                    )
+            condition {
+                if (player.isVented())
+                    BlockReason.InVent
+                else null
+            }
+
+            // ---------- ACTIVE ----------
+
+            state(AbilityItemState.ACTIVE) {
+
+                render {
+                    material = sabotage.sabotageType.activeMaterial
+                    translationKey = "ability.sabotage.${sabotage.sabotageType.id}.active"
+
+                }
+
+                onRightClick {
+                    game.sabotageManager.sabotage(sabotage)
+
+                    // Start cooldown after activation
+                    getTimer("cooldown")?.start()
                 }
             }
 
-            blockWhen {
-                sabotage()
-                inMeeting()
-                inVent()
+            // ---------- BLOCKED ----------
+
+            state(AbilityItemState.BLOCKED) {
+                render {
+                    material = sabotage.sabotageType.deactivateMaterial
+                    translationKey = when (ctx.getBlockReason()) {
+
+                        BlockReason.Sabotage ->
+                            "ability.sabotage.disabled"
+
+                        BlockReason.InMeeting ->
+                            "ability.general.disabled.in_meeting"
+
+                        BlockReason.InVent ->
+                            "ability.general.disabled.in_vent"
+
+                        else ->
+                            "ability.sabotage.disabled"
+                    }
+                }
             }
 
-            onRightClick {
-                game.sabotageManager.sabotage(sabotage)
+            // ---------- COOLDOWN ----------
+
+            state(AbilityItemState.COOLDOWN) {
+                render {
+                    material = Material.BARRIER
+                    translationKey = "ability.general.disabled.cooldown"
+                }
             }
         }
     }

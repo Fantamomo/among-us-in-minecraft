@@ -51,7 +51,7 @@ object AbilityManager {
 
     fun invalidateAbility(ability: AssignedAbility<*, *>) {
         ability.items.asSequence().filterIsInstance<DSLAbilityItem>()
-            .forEach { it.invalidate() }
+            .forEach { it.notifyItemChange() }
     }
 
     fun invalidatePlayer(player: AmongUsPlayer) {

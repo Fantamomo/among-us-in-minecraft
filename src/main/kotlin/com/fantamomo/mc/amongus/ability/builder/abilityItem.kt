@@ -1,5 +1,6 @@
 package com.fantamomo.mc.amongus.ability.builder
 
+import com.fantamomo.mc.amongus.ability.Ability
 import com.fantamomo.mc.amongus.ability.AssignedAbility
 import com.fantamomo.mc.amongus.ability.item.AbilityItem
 import kotlin.contracts.ExperimentalContracts
@@ -7,7 +8,7 @@ import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 
 @OptIn(ExperimentalContracts::class)
-fun AssignedAbility<*, *>.abilityItem(
+fun <A : Ability<A, S>, S : AssignedAbility<A, S>> S.abilityItem(
     id: String,
     block: AbilityItemBuilder.() -> Unit
 ): AbilityItem {

@@ -47,9 +47,11 @@ abstract class AbilityItem(val ability: AssignedAbility<*, *>, val id: String) {
 
     open fun onLeftClick() {}
 
-    protected fun notifyItemChange() {
+    fun notifyItemChange() {
         ability.player.notifyAbilityItemChange(this)
     }
+
+    open fun startCooldown() {}
 
     companion object {
         val ABILITY_UUID = NamespacedKey(AmongUs, "ability/uuid")

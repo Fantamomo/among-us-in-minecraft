@@ -2,9 +2,9 @@ package com.fantamomo.mc.amongus.ability.abilities
 
 import com.fantamomo.mc.amongus.ability.Ability
 import com.fantamomo.mc.amongus.ability.AssignedAbility
+import com.fantamomo.mc.amongus.ability.builder.AbilityItemState
 import com.fantamomo.mc.amongus.ability.builder.BlockReason
 import com.fantamomo.mc.amongus.ability.builder.abilityItem
-import com.fantamomo.mc.amongus.ability.item.AbilityItem
 import com.fantamomo.mc.amongus.manager.CameraManager
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.sabotage.SabotageType
@@ -13,66 +13,102 @@ import org.bukkit.Material
 object RemoteCameraAbility :
     Ability<RemoteCameraAbility, RemoteCameraAbility.AssignedCameraAbility> {
 
-    override val id: String = "remote_camera"
+    override val id = "remote_camera"
 
-    override fun assignTo(player: AmongUsPlayer) = AssignedCameraAbility(player)
+    override fun assignTo(player: AmongUsPlayer) =
+        AssignedCameraAbility(player)
 
     class AssignedCameraAbility(
         override val player: AmongUsPlayer
     ) : AssignedAbility<RemoteCameraAbility, AssignedCameraAbility> {
+
         var lastCamera: CameraManager.Camera? = null
 
         override val definition = RemoteCameraAbility
 
-        override val items: List<AbilityItem> = listOf(
+        @Suppress("UnstableApiUsage")
+        override val items = listOf(
             abilityItem("camera") {
 
-                material {
-                    active = Material.ENDER_EYE
-                    inactive = Material.BARRIER
+                // ---------- CONDITIONS ----------
+
+                condition {
+                    if (game.sabotageManager.isSabotage(SabotageType.Communications))
+                        BlockReason.Sabotage
+                    else null
                 }
 
-                name {
-                    active("ability.remote_camera.camera.active")
+                condition {
+                    if (player.isVented())
+                        BlockReason.InVent
+                    else null
+                }
 
-                    inactive {
-                        whenBlocked(
-                            BlockReason.SABOTAGE,
-                            "ability.general.disabled.sabotage"
-                        )
-                        whenBlocked(
-                            BlockReason.IN_VENT,
-                            "ability.general.disabled.in_vent"
-                        )
-                        whenBlocked(
-                            BlockReason.IN_MEETING,
-                            "ability.general.disabled.in_meeting"
-                        )
-                        otherwise("ability.remote_camera.camera.already_in_cams")
+                condition {
+                    if (game.meetingManager.isCurrentlyAMeeting())
+                        BlockReason.InMeeting
+                    else null
+                }
+
+                condition {
+                    if (game.cameraManager.isInCams(player))
+                        BlockReason.custom("inCams")
+                    else null
+                }
+
+                // ---------- ACTIVE ----------
+
+                state(AbilityItemState.ACTIVE) {
+
+                    render {
+                        material = Material.ENDER_EYE
+                        translationKey = "ability.remote_camera.camera.active"
+                    }
+
+                    onRightClick {
+                        val assigned = ability as AssignedCameraAbility
+                        val last = assigned.lastCamera
+
+                        if (last != null) {
+                            game.cameraManager.joinCamera(player, last)
+                        } else {
+                            game.cameraManager.joinCamera(player)
+                        }
                     }
                 }
 
-                blockWhen {
-                    custom(BlockReason.SABOTAGE) {
-                        game.sabotageManager.isSabotage(SabotageType.Communications)
-                    }
+                // ---------- BLOCKED ----------
 
-                    inVent()
-                    inMeeting()
+                state(AbilityItemState.BLOCKED) {
 
-                    custom(BlockReason.CUSTOM) {
-                        game.cameraManager.isInCams(player)
+                    render {
+                        material = Material.BARRIER
+                        translationKey = when (ctx.getBlockReason()) {
+
+                            BlockReason.Sabotage ->
+                                "ability.general.disabled.sabotage"
+
+                            BlockReason.InVent ->
+                                "ability.general.disabled.in_vent"
+
+                            BlockReason.InMeeting ->
+                                "ability.general.disabled.in_meeting"
+
+                            is BlockReason.Custom ->
+                                "ability.remote_camera.camera.already_in_cams"
+
+                            else ->
+                                "ability.remote_camera.camera.already_in_cams"
+                        }
                     }
                 }
 
-                onRightClick {
-                    val assigned = ability as AssignedCameraAbility
-                    val last = assigned.lastCamera
+                // ---------- COOLDOWN (unused but present) ----------
 
-                    if (last != null) {
-                        game.cameraManager.joinCamera(player, last)
-                    } else {
-                        game.cameraManager.joinCamera(player)
+                state(AbilityItemState.COOLDOWN) {
+                    render {
+                        material = Material.BARRIER
+                        translationKey = "ability.general.disabled.cooldown"
                     }
                 }
             }
