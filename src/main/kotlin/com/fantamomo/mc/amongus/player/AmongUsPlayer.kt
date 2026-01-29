@@ -104,6 +104,7 @@ class AmongUsPlayer internal constructor(
         val player = player
         if (player != null) {
             for (item in assigned.items) {
+                item.startCooldown()
                 player.inventory.addItem(item.get())
             }
         }
@@ -133,11 +134,6 @@ class AmongUsPlayer internal constructor(
         addNewAbility(ReportAbility)
         role.definition.defaultAbilities.forEach { addNewAbility(it) }
         if (player != null) {
-            for (ability in abilities) {
-                for (item in ability.items) {
-                    player.inventory.addItem(item.get())
-                }
-            }
             player.sendTitlePart(
                 TitlePart.TITLE,
                 textComponent {

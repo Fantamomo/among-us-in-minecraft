@@ -29,6 +29,10 @@ abstract class CooldownAbilityItem(ability: AssignedAbility<*, *>, id: String, v
         else -> deactivatedItem()
     }
 
+    override fun startCooldown() {
+        cooldown.start()
+    }
+
     protected open fun getCooldownItem(): ItemStack {
         val item = cooldownItem()
         val key = Key.key("amongus:ability_cooldown/${ability.definition.id}/$id")

@@ -7,13 +7,9 @@ import org.bukkit.inventory.ItemStack
 class DSLAbilityItem(
     ability: AssignedAbility<*, *>,
     id: String,
-
     private val ctx: AbilityContext,
-
     private val states: Map<AbilityItemState, AbilityItemStateDefinition>,
-
     private val conditions: List<AbilityCondition>
-
 ) : AbilityItem(ability, id) {
 
     private var lastState: AbilityItemState? = null
@@ -68,5 +64,9 @@ class DSLAbilityItem(
         states[state]!!.onLeftClick(ctx)
 
         notifyItemChange()
+    }
+
+    override fun startCooldown() {
+        ctx.startTimers()
     }
 }

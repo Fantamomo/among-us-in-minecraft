@@ -37,4 +37,8 @@ class AbilityContext(
 
     fun setTimer(id: String, cooldown: Cooldown): AbilityTimer =
         timers.getOrPut(id) { AbilityTimer(id, cooldown) }
+
+    fun startTimers() {
+        timers.values.forEach(AbilityTimer::start)
+    }
 }

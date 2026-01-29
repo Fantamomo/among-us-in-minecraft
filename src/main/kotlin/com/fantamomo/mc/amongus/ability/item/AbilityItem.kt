@@ -51,6 +51,8 @@ abstract class AbilityItem(val ability: AssignedAbility<*, *>, val id: String) {
         ability.player.notifyAbilityItemChange(this)
     }
 
+    open fun startCooldown() {}
+
     companion object {
         val ABILITY_UUID = NamespacedKey(AmongUs, "ability/uuid")
         val ABILITY_ID = NamespacedKey(AmongUs, "ability/id")
