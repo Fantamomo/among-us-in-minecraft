@@ -198,7 +198,7 @@ class CommunicationsSabotage(
 
         private val actionBar = game.actionBarManager.part(
             player,
-            "sabotage/communications",
+            "sabotage/communications/${player.uuid}",
             ActionBarManager.ActionBarPartType.CENTER,
             200
         )
