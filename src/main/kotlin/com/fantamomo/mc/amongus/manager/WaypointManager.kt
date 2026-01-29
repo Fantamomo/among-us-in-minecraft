@@ -186,24 +186,22 @@ class WaypointManager(val game: Game) {
 
         for (waypoint in data.waypoints) {
             if (!waypoint.isVisible) continue
+
             val v = waypoint.vector
             val dx = v.x + 0.5 - px
             val dy = v.y + 0.5 - py
             val dz = v.z + 0.5 - pz
 
             val distSq = dx * dx + dy * dy + dz * dz
-
-            if (distSq > bestDistSq) continue
-
             val angleTo = Math.toDegrees(kotlin.math.atan2(-dx, dz))
             val diff = yawDifference(playerYaw, angleTo)
 
-            if (diff < bestAngle) {
+            if (diff < bestAngle - 0.5 ||
+                (abs(diff - bestAngle) < 0.5 && distSq < bestDistSq)
+            ) {
                 bestAngle = diff
                 bestWaypoint = waypoint
                 bestDistSq = distSq
-
-                if (diff == 0.0) break
             }
         }
 
@@ -218,8 +216,12 @@ class WaypointManager(val game: Game) {
     }
 
     private fun allowedAngleForDistance(distance: Double): Double {
-        val t = ((distance - 5.0) / 45.0).coerceIn(0.0, 1.0)
-        return 30.0 - 27.0 * t
+        return when {
+            distance < 10 -> 45.0
+            distance < 30 -> 30.0
+            distance < 60 -> 20.0
+            else -> 15.0
+        }
     }
 
     private fun normalizeYaw(yaw: Float): Double {
