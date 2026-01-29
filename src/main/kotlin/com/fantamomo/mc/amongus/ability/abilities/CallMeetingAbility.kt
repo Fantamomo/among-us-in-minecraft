@@ -8,10 +8,7 @@ import com.fantamomo.mc.amongus.ability.builder.abilityItem
 import com.fantamomo.mc.amongus.manager.MeetingManager
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.settings.SettingsKey
-import io.papermc.paper.datacomponent.DataComponentTypes
-import net.kyori.adventure.text.Component
 import org.bukkit.Material
-import org.bukkit.inventory.ItemStack
 
 object CallMeetingAbility :
     Ability<CallMeetingAbility, CallMeetingAbility.AssignedCallMeetingAbility> {
@@ -59,14 +56,8 @@ object CallMeetingAbility :
                 state(AbilityItemState.ACTIVE) {
 
                     render {
-                        ItemStack(Material.BELL).apply {
-                            setData(
-                                DataComponentTypes.ITEM_NAME,
-                                Component.translatable(
-                                    "ability.call_meeting.call_meeting.active"
-                                )
-                            )
-                        }
+                        material = Material.BELL
+                        translationKey = "ability.call_meeting.call_meeting.active"
                     }
 
                     onRightClick {
@@ -80,10 +71,8 @@ object CallMeetingAbility :
                 state(AbilityItemState.BLOCKED) {
 
                     render {
-
-                        val reason = getBlockReason()
-
-                        val key = when (reason) {
+                        material = Material.BARRIER
+                        translationKey = when (ctx.getBlockReason()) {
                             BlockReason.InMeeting ->
                                 "ability.call_meeting.call_meeting.already_in_meeting"
 
@@ -99,20 +88,13 @@ object CallMeetingAbility :
                             else ->
                                 "ability.call_meeting.call_meeting.error"
                         }
-
-                        ItemStack(Material.BARRIER).apply {
-                            setData(
-                                DataComponentTypes.ITEM_NAME,
-                                Component.translatable(key)
-                            )
-                        }
                     }
                 }
 
                 state(AbilityItemState.COOLDOWN) {
-
                     render {
-                        ItemStack(Material.BARRIER)
+                        material = Material.BARRIER
+                        translationKey = "ability.general.disabled.cooldown"
                     }
                 }
             }

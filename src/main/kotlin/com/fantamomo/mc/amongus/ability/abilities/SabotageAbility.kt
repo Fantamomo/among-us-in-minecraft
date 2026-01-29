@@ -8,10 +8,7 @@ import com.fantamomo.mc.amongus.ability.builder.abilityItem
 import com.fantamomo.mc.amongus.ability.item.AbilityItem
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.sabotage.Sabotage
-import io.papermc.paper.datacomponent.DataComponentTypes
-import net.kyori.adventure.text.Component
 import org.bukkit.Material
-import org.bukkit.inventory.ItemStack
 
 object SabotageAbility :
     Ability<SabotageAbility, SabotageAbility.AssignedSabotageAbility> {
@@ -65,14 +62,9 @@ object SabotageAbility :
             state(AbilityItemState.ACTIVE) {
 
                 render {
-                    ItemStack(sabotage.sabotageType.activeMaterial).apply {
-                        setData(
-                            DataComponentTypes.ITEM_NAME,
-                            Component.translatable(
-                                "ability.sabotage.${sabotage.sabotageType.id}.active"
-                            )
-                        )
-                    }
+                    material = sabotage.sabotageType.activeMaterial
+                    translationKey = "ability.sabotage.${sabotage.sabotageType.id}.active"
+
                 }
 
                 onRightClick {
@@ -86,12 +78,9 @@ object SabotageAbility :
             // ---------- BLOCKED ----------
 
             state(AbilityItemState.BLOCKED) {
-
                 render {
-
-                    val reason = getBlockReason()
-
-                    val key = when (reason) {
+                    material = sabotage.sabotageType.deactivateMaterial
+                    translationKey = when (ctx.getBlockReason()) {
 
                         BlockReason.Sabotage ->
                             "ability.sabotage.disabled"
@@ -105,27 +94,15 @@ object SabotageAbility :
                         else ->
                             "ability.sabotage.disabled"
                     }
-
-                    ItemStack(sabotage.sabotageType.deactivateMaterial).apply {
-                        setData(
-                            DataComponentTypes.ITEM_NAME,
-                            Component.translatable(key)
-                        )
-                    }
                 }
             }
 
             // ---------- COOLDOWN ----------
 
             state(AbilityItemState.COOLDOWN) {
-
                 render {
-                    ItemStack(Material.BARRIER).apply {
-                        setData(
-                            DataComponentTypes.ITEM_NAME,
-                            Component.translatable("ability.general.disabled.cooldown")
-                        )
-                    }
+                    material = Material.BARRIER
+                    translationKey = "ability.general.disabled.cooldown"
                 }
             }
         }

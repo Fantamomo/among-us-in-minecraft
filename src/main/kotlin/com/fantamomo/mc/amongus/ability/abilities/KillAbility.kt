@@ -7,11 +7,7 @@ import com.fantamomo.mc.amongus.ability.builder.BlockReason
 import com.fantamomo.mc.amongus.ability.builder.abilityItem
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.settings.SettingsKey
-import io.papermc.paper.datacomponent.DataComponentTypes
-import net.kyori.adventure.text.Component
 import org.bukkit.Material
-import org.bukkit.inventory.ItemStack
-import kotlin.time.DurationUnit
 
 object KillAbility :
     Ability<KillAbility, KillAbility.AssignedKillAbility> {
@@ -27,7 +23,6 @@ object KillAbility :
 
         override val definition = KillAbility
 
-        @Suppress("UnstableApiUsage")
         override val items = listOf(
             abilityItem("kill") {
 
@@ -63,14 +58,8 @@ object KillAbility :
                 state(AbilityItemState.ACTIVE) {
 
                     render {
-                        ItemStack(Material.NETHER_STAR).apply {
-                            setData(
-                                DataComponentTypes.ITEM_NAME,
-                                Component.translatable(
-                                    "ability.kill.kill.active"
-                                )
-                            )
-                        }
+                        material = Material.NETHER_STAR
+                        translationKey = "ability.kill.kill.active"
                     }
 
                     onRightClick {
@@ -85,11 +74,8 @@ object KillAbility :
                 state(AbilityItemState.BLOCKED) {
 
                     render {
-
-                        val reason = getBlockReason()
-
-                        val key = when (reason) {
-
+                        material = Material.BARRIER
+                        translationKey = when (ctx.getBlockReason()) {
                             BlockReason.InVent ->
                                 "ability.general.disabled.in_vent"
 
@@ -102,13 +88,6 @@ object KillAbility :
                             else ->
                                 "ability.kill.kill.deactivate"
                         }
-
-                        ItemStack(Material.BARRIER).apply {
-                            setData(
-                                DataComponentTypes.ITEM_NAME,
-                                Component.translatable(key)
-                            )
-                        }
                     }
                 }
 
@@ -117,20 +96,8 @@ object KillAbility :
                 state(AbilityItemState.COOLDOWN) {
 
                     render {
-
-                        val seconds =
-                            killCooldown.remaining()
-                                .toInt(DurationUnit.SECONDS)
-
-                        ItemStack(Material.BARRIER).apply {
-                            amount = seconds.coerceAtLeast(1)
-                            setData(
-                                DataComponentTypes.ITEM_NAME,
-                                Component.translatable(
-                                    "ability.kill.kill.cooldown"
-                                )
-                            )
-                        }
+                        material = Material.BARRIER
+                        translationKey = "ability.general.disabled.cooldown"
                     }
                 }
             }

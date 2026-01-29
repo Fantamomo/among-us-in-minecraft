@@ -8,10 +8,7 @@ import com.fantamomo.mc.amongus.ability.builder.abilityItem
 import com.fantamomo.mc.amongus.manager.CameraManager
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.sabotage.SabotageType
-import io.papermc.paper.datacomponent.DataComponentTypes
-import net.kyori.adventure.text.Component
 import org.bukkit.Material
-import org.bukkit.inventory.ItemStack
 
 object RemoteCameraAbility :
     Ability<RemoteCameraAbility, RemoteCameraAbility.AssignedCameraAbility> {
@@ -64,14 +61,8 @@ object RemoteCameraAbility :
                 state(AbilityItemState.ACTIVE) {
 
                     render {
-                        ItemStack(Material.ENDER_EYE).apply {
-                            setData(
-                                DataComponentTypes.ITEM_NAME,
-                                Component.translatable(
-                                    "ability.remote_camera.camera.active"
-                                )
-                            )
-                        }
+                        material = Material.ENDER_EYE
+                        translationKey = "ability.remote_camera.camera.active"
                     }
 
                     onRightClick {
@@ -91,10 +82,8 @@ object RemoteCameraAbility :
                 state(AbilityItemState.BLOCKED) {
 
                     render {
-
-                        val reason = getBlockReason()
-
-                        val key = when (reason) {
+                        material = Material.BARRIER
+                        translationKey = when (ctx.getBlockReason()) {
 
                             BlockReason.Sabotage ->
                                 "ability.general.disabled.sabotage"
@@ -111,20 +100,16 @@ object RemoteCameraAbility :
                             else ->
                                 "ability.remote_camera.camera.already_in_cams"
                         }
-
-                        ItemStack(Material.BARRIER).apply {
-                            setData(
-                                DataComponentTypes.ITEM_NAME,
-                                Component.translatable(key)
-                            )
-                        }
                     }
                 }
 
                 // ---------- COOLDOWN (unused but present) ----------
 
                 state(AbilityItemState.COOLDOWN) {
-                    render { ItemStack(Material.BARRIER) }
+                    render {
+                        material = Material.BARRIER
+                        translationKey = "ability.general.disabled.cooldown"
+                    }
                 }
             }
         )
