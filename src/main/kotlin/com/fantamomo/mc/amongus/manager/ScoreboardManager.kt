@@ -6,6 +6,8 @@ import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import com.fantamomo.mc.amongus.sabotage.SabotageType
+import com.fantamomo.mc.amongus.task.TaskState
 import com.fantamomo.mc.amongus.util.translateTo
 import com.fantamomo.mc.amongus.util.wrapComponent
 import io.papermc.paper.scoreboard.numbers.NumberFormat
@@ -148,13 +150,23 @@ class ScoreboardManager(private val game: Game) {
                     id,
                     SCORE_DEATH,
                     textComponent { translatable("scoreboard.death") }
-                        .color(NamedTextColor.RED)
-                        .decorate(TextDecoration.BOLD)
                 )
             }
         }
 
         private fun renderTasks() {
+            val commsSabotaged = game.sabotageManager.isSabotage(SabotageType.Communications)
+
+            if (commsSabotaged) {
+                val id = "$ENTRY_TASK#sabotage"
+                register(id)
+                score(
+                    id,
+                    SCORE_TASK_START + 1,
+                    COMMUNICATIONS_SABOTAGED_SCOREBOARD_LINE
+                )
+            }
+
             player.tasks
                 .sortedBy { it.completed }
                 .forEachIndexed { index, task ->
@@ -162,6 +174,17 @@ class ScoreboardManager(private val game: Game) {
                     val id = "$ENTRY_TASK#$index"
 
                     register(id)
+
+                    if (commsSabotaged) {
+                        score(
+                            id,
+                            SCORE_TASK_START - index,
+                            COMMUNICATIONS_SABOTAGED_SCOREBOARD_LINE_REPLACEMENT
+                        ) {
+                            numberFormat(TaskState.COMMUNICATIONS_SABOTAGED.numberFormat)
+                        }
+                        return@forEachIndexed
+                    }
 
                     val (color, format) = task.state()
 
@@ -342,5 +365,8 @@ class ScoreboardManager(private val game: Game) {
             forEach { current = current.append(it) }
             return current
         }
+
+        private val COMMUNICATIONS_SABOTAGED_SCOREBOARD_LINE = textComponent { translatable("scoreboard.communications_sabotaged.info") }
+        private val COMMUNICATIONS_SABOTAGED_SCOREBOARD_LINE_REPLACEMENT = textComponent { translatable("scoreboard.communications_sabotaged") }
     }
 }
