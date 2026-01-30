@@ -1,6 +1,7 @@
 package com.fantamomo.mc.amongus.task.tasks
 
 import com.fantamomo.mc.adventure.text.args
+import com.fantamomo.mc.adventure.text.style
 import com.fantamomo.mc.adventure.text.textComponent
 import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.game.Game
@@ -12,6 +13,7 @@ import com.fantamomo.mc.amongus.util.hideTooltip
 import io.papermc.paper.datacomponent.DataComponentTypes
 import io.papermc.paper.datacomponent.item.PotionContents
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.Style
 import org.bukkit.Bukkit
 import org.bukkit.Color
 import org.bukkit.Location
@@ -172,6 +174,15 @@ object InspectSampleTask :
                 args {
                     numeric("remaining_time", countdown.remaining().inWholeSeconds)
                 }
+            }
+        }
+
+        override fun scoreboardLine(style: Style): Component = textComponent {
+            translatable("tasks.$id.scoreboard") {
+                args {
+                    numeric("remaining_time", countdown.remaining().inWholeSeconds)
+                }
+                style(style)
             }
         }
 
