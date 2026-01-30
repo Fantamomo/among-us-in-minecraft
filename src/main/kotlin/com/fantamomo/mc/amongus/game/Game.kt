@@ -138,6 +138,7 @@ class Game(
             }
         }
         waypointManager.onPlayerRejoin(amongUsPlayer)
+        scoreboardManager.onPlayerRejoin(amongUsPlayer)
     }
 
     fun sendChatMessage(component: Component) {
