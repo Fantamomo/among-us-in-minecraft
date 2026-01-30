@@ -261,7 +261,7 @@ class TaskManager(val game: Game) {
         }
 
         fun state(): TaskState {
-            val provided = task.state()
+            val provided = task.state()?.takeUnless { it == TaskState.COMMUNICATIONS_SABOTAGED }
             if (provided == TaskState.COMPLETED) return provided
             val evaluatedState = when {
                 completed -> TaskState.COMPLETED
