@@ -15,6 +15,7 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.ComponentIteratorType
 import net.kyori.adventure.text.TextComponent
 import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.Style
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Bukkit
 import org.bukkit.scoreboard.Criteria
@@ -184,15 +185,11 @@ class ScoreboardManager(private val game: Game) {
                         return@forEachIndexed
                     }
 
-                    val (color, format) = task.state()
+                    val (defaultStyle, format) = task.state()
 
-                    val line = if (task.completed) {
-                        task.task.scoreboardLine()
-                            .color(NamedTextColor.GREEN)
-                            .decorate(TextDecoration.STRIKETHROUGH)
-                    } else {
-                        task.task.scoreboardLine().color(color)
-                    }
+                    val style = if (task.completed) COMPLETED_TASK_STYLE else defaultStyle
+
+                    val line = task.task.scoreboardLine(style)
 
                     score(
                         id,
@@ -228,13 +225,14 @@ class ScoreboardManager(private val game: Game) {
             id: String,
             value: Int,
             component: Component,
+            translate: Boolean = true,
             block: Score.() -> Unit = {}
         ) {
             contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
 
             usedEntries += id
 
-            val translated = component.translateTo(player.locale)
+            val translated = if (translate) component.translateTo(player.locale) else component
 
             val chars = splitToChars(translated)
 
@@ -249,7 +247,8 @@ class ScoreboardManager(private val game: Game) {
 
             if (line.full != translated) {
                 if (line.chars.size != chars.size) {
-                    animatedLines[id] = AnimatedLine.createInitial(translated, chars, initialRender, forceAnimate = true)
+                    animatedLines[id] =
+                        AnimatedLine.createInitial(translated, chars, initialRender, forceAnimate = true)
                 } else {
                     line.prepareCursorReplace(translated, chars)
                 }
@@ -315,7 +314,12 @@ class ScoreboardManager(private val game: Game) {
     ) {
 
         companion object {
-            fun createInitial(full: Component, chars: List<Component>, initialRender: Boolean, forceAnimate: Boolean = false): AnimatedLine {
+            fun createInitial(
+                full: Component,
+                chars: List<Component>,
+                initialRender: Boolean,
+                forceAnimate: Boolean = false
+            ): AnimatedLine {
                 val startProgress = when {
                     forceAnimate -> 0f
                     initialRender -> 0f
@@ -538,7 +542,11 @@ class ScoreboardManager(private val game: Game) {
 
         private const val ANIMATION_SPEED = 0.18f
 
-        private val COMMUNICATIONS_SABOTAGED_SCOREBOARD_LINE = textComponent { translatable("scoreboard.communications_sabotaged.info") }
-        private val COMMUNICATIONS_SABOTAGED_SCOREBOARD_LINE_REPLACEMENT = textComponent { translatable("scoreboard.communications_sabotaged") }
+        private val COMMUNICATIONS_SABOTAGED_SCOREBOARD_LINE =
+            textComponent { translatable("scoreboard.communications_sabotaged.info") }
+        private val COMMUNICATIONS_SABOTAGED_SCOREBOARD_LINE_REPLACEMENT =
+            textComponent { translatable("scoreboard.communications_sabotaged") }
+
+        private val COMPLETED_TASK_STYLE = Style.style(NamedTextColor.GREEN, TextDecoration.STRIKETHROUGH)
     }
 }
