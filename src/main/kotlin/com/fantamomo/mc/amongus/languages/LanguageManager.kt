@@ -19,9 +19,11 @@ object LanguageManager {
     private val externDirectory: Path = AmongUs.dataPath.resolve("languages")
     private const val INNER_DIRECTORY = "lang"
     private const val LANGUAGES_LIST_FILE = "$INNER_DIRECTORY/languages.txt"
+    val ROOT_LOCALE: Locale = Locale.US
 
     private var languagesList: List<Locale> = emptyList()
     private val loadedLanguages: MutableMap<Locale, Language> = mutableMapOf()
+    private var englishLanguage: Language? = null
 
     const val VERSION_KEY = "version"
 
@@ -39,10 +41,16 @@ object LanguageManager {
     }
 
     private fun registerLanguagesToGlobalTranslator() {
+        val englishLanguage = englishLanguage
         loadedLanguages.forEach { (locale, language) ->
+            if (language == englishLanguage) return@forEach
             GlobalTranslator.translator().addSource(language)
             logger.debug("Registered language {} to GlobalTranslator", locale)
         }
+
+        if (englishLanguage == null) return
+        GlobalTranslator.translator().addSource(englishLanguage)
+        logger.debug("Registered english language to GlobalTranslator")
     }
 
     private fun loadLanguageList() {
@@ -64,7 +72,7 @@ object LanguageManager {
 
         when {
             languagesList.isEmpty() -> logger.error("No valid locales found in {}", LANGUAGES_LIST_FILE)
-            Locale.US !in languagesList -> logger.warn("en_US is missing in {}, it is the default language", LANGUAGES_LIST_FILE)
+            ROOT_LOCALE !in languagesList -> logger.warn("{} is missing in {}, it is the default language", ROOT_LOCALE.toLanguageTag(), LANGUAGES_LIST_FILE)
         }
 
         logger.info("Found {} supported locales", languagesList.size)
@@ -145,7 +153,9 @@ object LanguageManager {
 
     private fun loadLanguage(locale: Locale, reader: Reader) {
         val properties = Properties().apply { load(reader) }
-        loadedLanguages[locale] = Language(locale, properties, MiniMessage.miniMessage())
+        val language = Language(locale, properties, MiniMessage.miniMessage())
+        if (locale == ROOT_LOCALE) englishLanguage = language
+        loadedLanguages[locale] = language
     }
 
     private fun Properties.getVersion() =

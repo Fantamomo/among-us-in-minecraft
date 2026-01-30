@@ -12,7 +12,7 @@ class Language(
 ) : MiniMessageTranslator(miniMessage) {
     override fun getMiniMessageString(key: String, locale: Locale): String? {
         if (key == LanguageManager.VERSION_KEY) return null
-        if (locale != this.locale) return null
+        if (locale != this.locale && this.locale != LanguageManager.ROOT_LOCALE) return null
         return properties.getProperty(key)
     }
 

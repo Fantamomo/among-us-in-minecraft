@@ -6,6 +6,7 @@ import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.game.GamePhase
+import com.fantamomo.mc.amongus.languages.LanguageManager
 import com.fantamomo.mc.amongus.languages.numeric
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
@@ -147,7 +148,7 @@ class MeetingManager(private val game: Game) : Listener {
                         DataComponentTypes.PROFILE,
                         ResolvableProfile.resolvableProfile(player.playerProfile)
                     )
-                    val value = textComponent(Locale.US) {
+                    val value = textComponent(LanguageManager.ROOT_LOCALE) {
                         translatable("meeting.voting.vote_for") {
                             args {
                                 string("player", amongUsPlayer.name)
@@ -177,7 +178,7 @@ class MeetingManager(private val game: Game) : Listener {
             val result = ItemStack(Material.STRUCTURE_VOID).apply {
                 setData(
                     DataComponentTypes.ITEM_NAME,
-                    textComponent(Locale.US) {
+                    textComponent(LanguageManager.ROOT_LOCALE) {
                         translatable("meeting.voting.vote_skip")
                     }
                 )
