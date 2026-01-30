@@ -526,6 +526,10 @@ class ScoreboardManager(private val game: Game) {
         return result
     }
 
+    internal fun onPlayerRejoin(amongUsPlayer: AmongUsPlayer) {
+        scoreboards[amongUsPlayer]?.show()
+    }
+
     companion object {
 
         private const val ENTRY_ROLE = "role"
