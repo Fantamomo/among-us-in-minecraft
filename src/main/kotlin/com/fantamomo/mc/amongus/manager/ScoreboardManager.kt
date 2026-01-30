@@ -52,8 +52,6 @@ class ScoreboardManager(private val game: Game) {
         scoreboards.remove(player)?.hide()
     }
 
-    // =======================================================
-
     inner class AmongUsScoreboard(private val player: AmongUsPlayer) {
 
         private val scoreboard = Bukkit.getScoreboardManager().newScoreboard
@@ -238,21 +236,23 @@ class ScoreboardManager(private val game: Game) {
 
             val translated = component.translateTo(player.locale)
 
-            val line = animatedLines.getOrPut(id) {
-                val chars = splitToChars(translated)
-                AnimatedLine(
-                    full = translated,
-                    chars = chars,
-                    progress = if (initialRender) 0f else chars.size.toFloat()
-                )
+            val chars = splitToChars(translated)
+
+            val existing = animatedLines[id]
+            val line = if (existing == null) {
+                AnimatedLine.createInitial(translated, chars, initialRender, forceAnimate = true).also {
+                    animatedLines[id] = it
+                }
+            } else {
+                existing
             }
 
             if (line.full != translated) {
-                animatedLines[id] = AnimatedLine(
-                    full = translated,
-                    chars = splitToChars(translated),
-                    progress = 0f
-                )
+                if (line.chars.size != chars.size) {
+                    animatedLines[id] = AnimatedLine.createInitial(translated, chars, initialRender, forceAnimate = true)
+                } else {
+                    line.prepareCursorReplace(translated, chars)
+                }
             }
 
             val canAnimate =
@@ -303,28 +303,206 @@ class ScoreboardManager(private val game: Game) {
     }
 
     private data class AnimatedLine(
-        val full: Component,
-        val chars: List<Component>,
-        var progress: Float = 0f
+        var full: Component,
+        var chars: List<Component>,
+        var progress: Float = 0f,
+        var cursorMode: Boolean = false,
+        var cursorStart: Int = 0,
+        var cursorEnd: Int = 0,
+        var cursorPhase: Int = 0,
+        var cursorProgress: Int = 0,
+        var targetChars: List<Component> = emptyList()
     ) {
 
-        fun isFinished() = progress >= chars.size
+        companion object {
+            fun createInitial(full: Component, chars: List<Component>, initialRender: Boolean, forceAnimate: Boolean = false): AnimatedLine {
+                val startProgress = when {
+                    forceAnimate -> 0f
+                    initialRender -> 0f
+                    else -> chars.size.toFloat()
+                }
+                return AnimatedLine(
+                    full = full,
+                    chars = chars,
+                    progress = startProgress,
+                    cursorMode = false,
+                    targetChars = chars
+                )
+            }
+        }
+
+        fun isFinished(): Boolean {
+            if (cursorMode) {
+                return cursorPhase == 1 && cursorProgress >= (cursorEnd - cursorStart)
+            }
+            return progress >= chars.size
+        }
 
         fun advance(speed: Float) {
+            if (cursorMode) {
+                advanceCursorMode(speed)
+                return
+            }
+
             if (isFinished()) return
 
             val remaining = chars.size - progress
             val step = (remaining * speed).coerceAtLeast(0.15f)
-
             progress += step
             if (progress > chars.size) progress = chars.size.toFloat()
         }
 
+        private fun advanceCursorMode(speed: Float) {
+            val totalChanged = cursorEnd - cursorStart
+            if (totalChanged <= 0) {
+                cursorMode = false
+                progress = chars.size.toFloat()
+                return
+            }
+
+            if (cursorPhase == 0) {
+                val step = (1 + (totalChanged * speed).toInt()).coerceAtLeast(1)
+                cursorProgress += step
+                if (cursorProgress >= totalChanged) {
+                    cursorPhase = 1
+                    cursorProgress = 0
+                }
+            } else {
+                val step = (1 + (totalChanged * speed).toInt()).coerceAtLeast(1)
+                cursorProgress += step
+                if (cursorProgress >= totalChanged) {
+                    val mutable = chars.toMutableList()
+                    for (i in cursorStart until cursorEnd) {
+                        mutable[i] = targetChars[i]
+                    }
+                    chars = mutable.toList()
+                    cursorMode = false
+                    progress = chars.size.toFloat()
+                }
+            }
+        }
+
+        fun prepareCursorReplace(newFull: Component, newChars: List<Component>) {
+            val size = chars.size
+            var firstDiff = -1
+            var lastDiff = -1
+            for (i in 0 until size) {
+                val a = chars[i].toString()
+                val b = newChars[i].toString()
+                if (a != b) {
+                    if (firstDiff == -1) firstDiff = i
+                    lastDiff = i
+                }
+            }
+
+            if (firstDiff == -1) {
+                full = newFull
+                targetChars = newChars
+                return
+            }
+
+            val diffLength = lastDiff - firstDiff + 1
+            val threshold = (size * 0.8).toInt().coerceAtLeast(1)
+            if (diffLength >= threshold) {
+                full = newFull
+                chars = newChars
+                progress = 0f
+                cursorMode = false
+                targetChars = newChars
+                return
+            }
+
+            full = newFull
+            targetChars = newChars
+            cursorMode = true
+            cursorStart = firstDiff
+            cursorEnd = lastDiff + 1
+            cursorPhase = 0
+            cursorProgress = 0
+        }
+
         fun shown(): Component {
+            if (cursorMode) {
+                return buildCursorShown()
+            }
+
             val count = progress.toInt().coerceAtMost(chars.size)
-            if (count == 0) return Component.empty()
-            if (count == chars.size) return full
-            return chars.take(count).joinToComponent()
+            if (chars.isEmpty()) return Component.empty()
+
+            val revealed = chars.take(count)
+            val unrevealed = chars.drop(count)
+
+            var current = Component.empty()
+            revealed.forEach { current = current.append(it) }
+
+            unrevealed.forEach { part ->
+                val style = part.style()
+                current = current.append(Component.space().style(style))
+            }
+
+            return current
+        }
+
+        private fun buildCursorShown(): Component {
+            val prefix = chars.subList(0, cursorStart)
+            val suffix = chars.subList(cursorEnd, chars.size)
+
+            var current = Component.empty()
+            prefix.forEach { current = current.append(it) }
+
+            val totalChanged = cursorEnd - cursorStart
+
+            if (cursorPhase == 0) {
+                for (i in 0 until totalChanged) {
+                    val pos = cursorStart + i
+                    val original = chars[pos]
+                    val style = original.style()
+                    val erased = i < cursorProgress
+                    val part = if (erased) {
+                        Component.space().style(style)
+                    } else {
+                        original
+                    }
+                    current = current.append(part)
+                }
+            } else {
+                for (i in 0 until totalChanged) {
+                    val pos = cursorStart + i
+                    val target = targetChars[pos]
+                    val style = target.style()
+                    val showTyped = i < cursorProgress
+                    val part = if (showTyped) {
+                        target
+                    } else {
+                        Component.space().style(style)
+                    }
+                    current = current.append(part)
+                }
+            }
+
+            suffix.forEach { current = current.append(it) }
+
+            val currentCount = countCharsInComponent(current)
+            val targetCount = chars.size
+            if (currentCount < targetCount) {
+                val padCount = targetCount - currentCount
+                val padStyle = if (chars.isNotEmpty()) chars.last().style() else Component.empty().style()
+                repeat(padCount) {
+                    current = current.append(Component.space().style(padStyle))
+                }
+            }
+
+            return current
+        }
+
+        private fun countCharsInComponent(component: Component): Int {
+            var count = 0
+            component.iterable(ComponentIteratorType.BREADTH_FIRST).forEach { part ->
+                if (part is TextComponent) {
+                    count += part.content().length
+                }
+            }
+            return count
         }
     }
 
@@ -359,12 +537,6 @@ class ScoreboardManager(private val game: Game) {
         private const val SPACER_ROLE = 700
 
         private const val ANIMATION_SPEED = 0.18f
-
-        private fun List<Component>.joinToComponent(): Component {
-            var current = Component.empty()
-            forEach { current = current.append(it) }
-            return current
-        }
 
         private val COMMUNICATIONS_SABOTAGED_SCOREBOARD_LINE = textComponent { translatable("scoreboard.communications_sabotaged.info") }
         private val COMMUNICATIONS_SABOTAGED_SCOREBOARD_LINE_REPLACEMENT = textComponent { translatable("scoreboard.communications_sabotaged") }
