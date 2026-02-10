@@ -5,13 +5,14 @@ import org.bukkit.event.Listener
 
 object Listeners {
     private val listeners: MutableList<Listener> = mutableListOf(
-        PlayerListener,
         AbilityListener,
-        VentListener,
         CameraListener,
+        ChatListener,
+        MeetingListener,
+        PlayerListener,
         SabotageListener,
         TaskListener,
-        MeetingListener
+        VentListener
     )
 
     fun registerAll() {
