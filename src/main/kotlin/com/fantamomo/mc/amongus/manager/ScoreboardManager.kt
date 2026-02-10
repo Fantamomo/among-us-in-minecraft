@@ -4,9 +4,13 @@ import com.fantamomo.mc.adventure.text.args
 import com.fantamomo.mc.adventure.text.textComponent
 import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.game.Game
+import com.fantamomo.mc.amongus.game.GamePhase
 import com.fantamomo.mc.amongus.languages.component
+import com.fantamomo.mc.amongus.languages.numeric
+import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.sabotage.SabotageType
+import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.task.TaskState
 import com.fantamomo.mc.amongus.util.translateTo
 import com.fantamomo.mc.amongus.util.wrapComponent
@@ -35,8 +39,12 @@ class ScoreboardManager(private val game: Game) {
     }
 
     fun start() {
-        game.players.forEach {
-            scoreboards[it] = AmongUsScoreboard(it).also { sb -> sb.show() }
+        if (scoreboards.isNotEmpty()) {
+            scoreboards.values.forEach { it.update() }
+        } else {
+            game.players.forEach {
+                scoreboards[it] = AmongUsScoreboard(it).also { sb -> sb.show() }
+            }
         }
     }
 
@@ -51,6 +59,12 @@ class ScoreboardManager(private val game: Game) {
 
     internal fun removePlayer(player: AmongUsPlayer) {
         scoreboards.remove(player)?.hide()
+    }
+
+    internal fun addLobbyPlayer(player: AmongUsPlayer) {
+        if (game.phase == GamePhase.LOBBY) {
+            scoreboards[player] = AmongUsScoreboard(player).also { sb -> sb.show() }
+        }
     }
 
     inner class AmongUsScoreboard(private val player: AmongUsPlayer) {
@@ -87,13 +101,113 @@ class ScoreboardManager(private val game: Game) {
             usedEntries.clear()
             renderOrder.clear()
 
+            if (game.phase == GamePhase.LOBBY) renderLobby()
+            else renderGame()
+
+            animateInitialSequence()
+            cleanup()
+        }
+
+        private fun renderLobby() {
+            renderGameCode()
+            renderSpacer(SCORE_LOBBY_SPACER_1)
+
+            renderLobbyInfo()
+            renderSpacer(SCORE_LOBBY_SPACER_2)
+
+            renderRecentSettings()
+        }
+
+        private fun renderGame() {
             renderRole()
             renderDeath()
             renderSpacer(SPACER_ROLE)
             renderTasks()
+        }
 
-            animateInitialSequence()
-            cleanup()
+        private fun renderGameCode() {
+            val id = ENTRY_LOBBY_CODE
+            register(id)
+
+            score(
+                id,
+                SCORE_LOBBY_CODE,
+                textComponent {
+                    translatable("scoreboard.lobby.code") {
+                        args {
+                            string("code", game.code)
+                        }
+                    }
+                }
+            )
+        }
+
+        private fun renderLobbyInfo() {
+            val playersId = "$ENTRY_LOBBY_INFO#players"
+            register(playersId)
+            score(
+                playersId,
+                SCORE_LOBBY_INFO_START,
+                textComponent {
+                    translatable("scoreboard.lobby.players") {
+                        args {
+                            numeric("current", game.players.size)
+                            numeric("max", game.maxPlayers)
+                        }
+                    }
+                }
+            )
+
+            val statusId = "$ENTRY_LOBBY_INFO#status"
+            register(statusId)
+            score(
+                statusId,
+                SCORE_LOBBY_INFO_START - 1,
+                textComponent {
+                    if (game.phase == GamePhase.LOBBY) {
+                        translatable("scoreboard.lobby.status.waiting")
+                    } else {
+                        translatable("scoreboard.lobby.status.starting") {
+                            args {
+                                numeric("time", -1) // todo
+                            }
+                        }
+                    }
+                }
+            )
+        }
+
+        private fun renderRecentSettings() {
+            val recentSettings = game.settings.getRecentlyChanged()
+
+            recentSettings.forEachIndexed { index, key ->
+                @Suppress("UNCHECKED_CAST")
+                key as SettingsKey<Any, *>
+                val id = "$ENTRY_LOBBY_SETTING#$index"
+                register(id)
+
+                score(
+                    id,
+                    SCORE_LOBBY_SETTINGS_START - index,
+                    textComponent {
+                        translatable("scoreboard.lobby.settings.name") {
+                            args {
+                                component("name", Component.translatable(key.settingsDisplayName))
+                            }
+                        }
+                    }
+                ) {
+                    val representation = key.type.stringRepresentation(game.settings[key])
+                    val numberFormat = NumberFormat.fixed(textComponent {
+                        translatable("scoreboard.lobby.settings.value") {
+                            args {
+                                string("value", representation)
+                            }
+                        }
+                    })
+                    numberFormat(numberFormat)
+                }
+            }
         }
 
         private fun renderRole() {
@@ -230,6 +344,21 @@ class ScoreboardManager(private val game: Game) {
         ) {
             contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
 
+            val shown = score0(id, translate, component)
+
+            objective.getScore(id).apply {
+                score = value
+                customName(shown)
+                numberFormat(NumberFormat.blank())
+                block()
+            }
+        }
+
+        private fun score0(
+            id: String,
+            translate: Boolean,
+            component: Component
+        ): Component {
             usedEntries += id
 
             val translated = if (translate) component.translateTo(player.locale) else component
@@ -262,13 +391,7 @@ class ScoreboardManager(private val game: Game) {
             }
 
             val shown = animatedLines[id]?.shown() ?: Component.empty()
-
-            objective.getScore(id).apply {
-                score = value
-                customName(shown)
-                numberFormat(NumberFormat.blank())
-                block()
-            }
+            return shown
         }
 
         private fun animateInitialSequence() {
@@ -537,12 +660,21 @@ class ScoreboardManager(private val game: Game) {
         private const val ENTRY_DEATH = "death"
         private const val ENTRY_TASK = "task"
         private const val ENTRY_SPACER = "spacer"
+        private const val ENTRY_LOBBY_CODE = "lobby_code"
+        private const val ENTRY_LOBBY_INFO = "lobby_info"
+        private const val ENTRY_LOBBY_SETTING = "lobby_setting"
 
         private const val SCORE_ROLE_HEADER = 1000
         private const val SCORE_ROLE_DESC_START = 900
         private const val SCORE_DEATH = 800
         private const val SCORE_TASK_START = 500
         private const val SPACER_ROLE = 700
+
+        private const val SCORE_LOBBY_CODE = 1000
+        private const val SCORE_LOBBY_SPACER_1 = 900
+        private const val SCORE_LOBBY_INFO_START = 800
+        private const val SCORE_LOBBY_SPACER_2 = 700
+        private const val SCORE_LOBBY_SETTINGS_START = 600
 
         private const val ANIMATION_SPEED = 0.18f
 
