@@ -129,7 +129,16 @@ class KillManager(val game: Game) {
         }
         target.mannequinController.hideFromAll()
         target.mannequinController.showToSeeingPlayers()
+        showGhosts(target)
         game.checkWin()
+    }
+
+    private fun showGhosts(target: AmongUsPlayer) {
+        val player = target.player ?: return
+        for (auPlayer in game.players) {
+            if (auPlayer.isAlive || target === auPlayer) continue
+            auPlayer.mannequinController.showTo(player)
+        }
     }
 
     class Corpse(
