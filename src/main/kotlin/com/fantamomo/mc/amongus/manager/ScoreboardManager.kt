@@ -197,11 +197,11 @@ class ScoreboardManager(private val game: Game) {
                         }
                     }
                 ) {
-                    val representation = key.type.stringRepresentation(game.settings[key])
+                    val representation = key.type.componentRepresentation(game.settings[key])
                     val numberFormat = NumberFormat.fixed(textComponent {
                         translatable("scoreboard.lobby.settings.value") {
                             args {
-                                string("value", representation)
+                                component("value", representation)
                             }
                         }
                     })
