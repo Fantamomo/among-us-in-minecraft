@@ -28,7 +28,7 @@ object PlayerManager {
 
     fun getPlayer(mannequin: Mannequin) = players.find { it.mannequinController.getEntity() == mannequin }
 
-    internal fun joinGame(player: Player, game: Game) {
+    internal fun joinGame(player: Player, game: Game): AmongUsPlayer {
         if (exists(player.uniqueId)) throw IllegalStateException("Player already in a game")
         val auPlayer = AmongUsPlayer(player.uniqueId, player.name, game, player.location)
         auPlayer.player = player
@@ -46,6 +46,7 @@ object PlayerManager {
         }
         player.teleportAsync(game.area.lobbySpawn ?: throw IllegalStateException("Lobby spawn not set"))
         player.inventory.clear()
+        return auPlayer
     }
 
     internal fun onPlayerQuit(player: Player) {

@@ -63,7 +63,8 @@ class Game(
         if (phase != GamePhase.LOBBY) return false
         if (players.size >= maxPlayers) return false
         if (PlayerManager.exists(player.uniqueId)) return false
-        PlayerManager.joinGame(player, this)
+        val newPlayer = PlayerManager.joinGame(player, this)
+        scoreboardManager.addLobbyPlayer(newPlayer)
         return true
     }
 
@@ -81,7 +82,11 @@ class Game(
     private var ticks = 0
 
     fun tick() {
-        if (phase == GamePhase.FINISHED || phase == GamePhase.LOBBY) return
+        if (phase == GamePhase.LOBBY) {
+            scoreboardManager.tick()
+            return
+        }
+        if (phase == GamePhase.FINISHED) return
         ticks++
         if (ticks % 20 == 0 && settings[SettingsKey.DO_WIN_CHECK_ON_TICK]) {
             checkWin()
