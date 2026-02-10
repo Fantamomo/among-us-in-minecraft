@@ -1,10 +1,9 @@
 package com.fantamomo.mc.amongus.statistics
 
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import kotlinx.serialization.json.*
 import kotlin.time.Duration.Companion.milliseconds
 
-@Serializable
 class TimerStatistic(
     override val id: String
 ) : Statistic {
@@ -31,5 +30,18 @@ class TimerStatistic(
     fun reset() {
         totalMillis = 0
         runningSince = null
+    }
+
+    override fun toJson() = buildJsonObject {
+        put("type", JsonPrimitive("timer"))
+        put("value", JsonPrimitive(totalMillis))
+    }
+
+    companion object {
+        fun fromJson(id: String, json: JsonObject): TimerStatistic {
+            val statistic = TimerStatistic(id)
+            json["value"]?.jsonPrimitive?.long?.let { statistic.totalMillis = it }
+            return statistic
+        }
     }
 }

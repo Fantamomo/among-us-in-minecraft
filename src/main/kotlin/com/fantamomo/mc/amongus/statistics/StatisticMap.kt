@@ -1,9 +1,9 @@
 package com.fantamomo.mc.amongus.statistics
 
-import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 import kotlin.uuid.Uuid
 
-@Serializable
 class StatisticMap(val group: String, val id: Uuid) {
 
     private val statistics: MutableMap<String, Statistic> = mutableMapOf()
@@ -31,5 +31,31 @@ class StatisticMap(val group: String, val id: Uuid) {
         fun checkGroup(group: String) {
             if (!groupRegex.matches(group)) throw IllegalArgumentException("Group name must match regex $groupRegex")
         }
+
+        fun fromJson(group: String, id: Uuid, json: JsonObject): StatisticMap {
+            val map = StatisticMap(group, id)
+
+            for ((key, value) in json) {
+                if (value !is JsonObject) {
+                    StatisticsManager.logger.warn("Invalid statistic data for $key of $group/$id: $value")
+                    continue
+                }
+                try {
+                    map.statistics[key] = Statistic.fromJson(key, value)
+                } catch (e: Exception) {
+                    StatisticsManager.logger.warn("Failed to load statistic $key of $group/$id", e)
+                }
+            }
+
+            return map
+        }
+    }
+
+    fun toJson(): JsonObject {
+        val data: MutableMap<String, JsonElement> = mutableMapOf()
+        for (entry in statistics) {
+            data[entry.key] = entry.value.toJson()
+        }
+        return JsonObject(data)
     }
 }

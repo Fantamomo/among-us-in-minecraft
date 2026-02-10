@@ -3,6 +3,7 @@ package com.fantamomo.mc.amongus.statistics
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.util.safeCreateDirectories
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
 import org.slf4j.LoggerFactory
 import kotlin.io.path.notExists
 import kotlin.io.path.readText
@@ -16,7 +17,7 @@ object StatisticsManager {
         prettyPrint = AmongUs.IN_DEVELOPMENT
         ignoreUnknownKeys = true
     }
-    private val logger = LoggerFactory.getLogger("AmongUs-StatisticsManager")
+    internal val logger = LoggerFactory.getLogger("AmongUs-StatisticsManager")
 
     init {
         // Trigger one serialization to force initialization of all
@@ -26,13 +27,7 @@ object StatisticsManager {
         // plugin JAR is hot-reloaded or replaced while the plugin is still loaded,
         // because some serialization classes would otherwise be loaded lazily
         // only on first real use.
-        val value = StatisticMap("dummy-group", Uuid.random()).apply {
-            average("average")
-            counter("counter")
-            list("list")
-            timer("timer")
-        }
-        json.encodeToString(value)
+        StatisticMap("dummy-group", Uuid.random()).toJson()
     }
 
     fun register(statistic: StatisticMap) {
@@ -57,7 +52,8 @@ object StatisticsManager {
         if (file.notExists()) return null
         try {
             val text = file.readText()
-            return json.decodeFromString<StatisticMap>(text)
+            val jsonObject = json.parseToJsonElement(text).jsonObject
+            return StatisticMap.fromJson(group, id, jsonObject)
         } catch (e: Exception) {
             logger.error("Failed to load statistic map from file {}", file, e)
             return null
@@ -71,8 +67,8 @@ object StatisticsManager {
     fun save(statistic: StatisticMap) {
         val file = directory.resolve(statistic.group).safeCreateDirectories().resolve("${statistic.id}.json")
         try {
-            val json = json.encodeToString(statistic)
-            file.writeText(json)
+            val jsonObject = statistic.toJson()
+            file.writeText(json.encodeToString(jsonObject))
         } catch (e: Exception) {
             logger.error("Failed to save statistic map to file {}", file, e)
         }

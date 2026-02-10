@@ -32,10 +32,37 @@ object AmongUs : JavaPlugin() {
         Permissions.registerAll()
     }
 
+    private var classNotFoundException: NoClassDefFoundError? = null
+
     override fun onDisable() {
-        EntityManager.dispose()
-        MeetingManager.dispose()
-        StatisticsManager.saveAll()
-        GameAreaManager.saveAll()
+        saveRun(EntityManager::dispose)
+        saveRun(MeetingManager::dispose)
+        saveRun(StatisticsManager::saveAll)
+        saveRun(GameAreaManager::saveAll)
+
+        val ex = classNotFoundException
+        if (ex != null) {
+            with(slF4JLogger) {
+                error("A NoClassDefFoundError occurred during plugin shutdown.")
+                error("The plugin was most likely hot-reloaded or the JAR was replaced while the server was running.")
+                error("")
+                error("This is NOT supported and breaks the plugin's classloader.")
+                error("As a result, data was VERY LIKELY not saved correctly and may be permanently lost.")
+                error("")
+                error("We do NOT provide support for any issues or data loss caused by hot-reloading.")
+                error("")
+                error("Exception details:", ex)
+            }
+        }
+    }
+
+    private inline fun saveRun(block: () -> Unit) {
+        try {
+            block()
+        } catch (e: NoClassDefFoundError) {
+            if (classNotFoundException == null) classNotFoundException = e
+        } catch (e: Exception) {
+            slF4JLogger.error("An unexpected error occurred while saving data", e)
+        }
     }
 }

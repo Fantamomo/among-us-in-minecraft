@@ -1,9 +1,8 @@
 package com.fantamomo.mc.amongus.statistics
 
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import kotlinx.serialization.json.*
 
-@Serializable
 class ListStatistic(
     override val id: String
 ) : Statistic {
@@ -32,4 +31,16 @@ class ListStatistic(
         return true
     }
 
+    override fun toJson() = buildJsonObject {
+        put("type", JsonPrimitive("list"))
+        put("data", JsonArray(data.map { JsonPrimitive(it) }))
+    }
+
+    companion object {
+        fun fromJson(id: String, json: JsonObject): ListStatistic {
+            val statistic = ListStatistic(id)
+            json["data"]?.jsonArray?.forEach { statistic.add(it.jsonPrimitive.long) }
+            return statistic
+        }
+    }
 }
