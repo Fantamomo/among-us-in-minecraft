@@ -51,6 +51,7 @@ private fun PaperCommand.settingsCommand() = literal("settings") {
                     return@literalExecute 0
                 }
                 val value = amongUsPlayer.game.settings[key]
+
                 @Suppress("UNCHECKED_CAST")
                 val type = key.type as SettingsType<Any>
                 source.sender.sendComponent {
@@ -187,11 +188,33 @@ private fun PaperCommand.testCommand() {
 private fun PaperCommand.areaCommand() {
     literal("area") {
         argument("area", StringArgumentType.word()) {
+            val areaRef = argRef()
+
             suggests {
                 for (area in GameAreaManager.getAreas()) {
                     suggest(area.name)
                 }
             }
+
+            guard {
+                val name = areaRef.get()
+                val area = GameAreaManager.getArea(name)
+
+                if (area == null) {
+                    source.sender.sendMessage(textComponent {
+                        translatable("command.error.admin.area.not_found") {
+                            args {
+                                string("area", name)
+                            }
+                        }
+                    })
+                    return@guard abort(NO_SUCCESS)
+                }
+
+                setArgument("area", area)
+                continueCommand()
+            }
+
             areaCreateCommand()
             areaSetLocationCommand()
             areaAddLocationCommand()
@@ -199,27 +222,12 @@ private fun PaperCommand.areaCommand() {
     }
 }
 
-private typealias AreaCommand = KtArgumentCommandBuilder<CommandSourceStack, String>
-
-private fun AreaCommand.areaAddLocationCommand() = literal("add") {
+private fun KtArgumentCommandBuilder<CommandSourceStack, String>.areaAddLocationCommand() = literal("add") {
     literal("vents") {
         argument("id", IntegerArgumentType.integer()) {
             argument("location", ArgumentTypes.blockPosition()) {
                 execute {
-                    val name = arg<String>("area")
-
-                    val area = GameAreaManager.getArea(name)
-                    if (area == null) {
-                        source.sender.sendMessage(textComponent {
-                            translatable("command.error.admin.area.not_found") {
-                                args {
-                                    string("area", name)
-                                }
-                            }
-                        })
-                        return@execute 0
-                    }
-
+                    val area = arg<GameArea>("area")
                     val id = arg<Int>("id")
 
                     val positionResolver = arg<BlockPositionResolver>("location")
@@ -245,19 +253,7 @@ private fun AreaCommand.areaAddLocationCommand() = literal("add") {
     literal("cams") {
         argument("name", StringArgumentType.string()) {
             literalExecute("@s") {
-                val areaName = arg<String>("area")
-
-                val area = GameAreaManager.getArea(areaName)
-                if (area == null) {
-                    source.sender.sendMessage(textComponent {
-                        translatable("command.error.admin.area.not_found") {
-                            args {
-                                string("area", areaName)
-                            }
-                        }
-                    })
-                    return@literalExecute 0
-                }
+                val area = arg<GameArea>("area")
                 val name = arg<String>("name")
 
                 area.cams[name] = (source.sender as Player).eyeLocation
@@ -269,19 +265,7 @@ private fun AreaCommand.areaAddLocationCommand() = literal("add") {
     literal("lights_levers") {
         argument("block", ArgumentTypes.blockPosition()) {
             execute {
-                val areaName = arg<String>("area")
-
-                val area = GameAreaManager.getArea(areaName)
-                if (area == null) {
-                    source.sender.sendMessage(textComponent {
-                        translatable("command.error.admin.area.not_found") {
-                            args {
-                                string("area", areaName)
-                            }
-                        }
-                    })
-                    return@execute 0
-                }
+                val area = arg<GameArea>("area")
 
                 val positionResolver = arg<BlockPositionResolver>("block")
                 val position = positionResolver.resolve(source)
@@ -298,20 +282,7 @@ private fun AreaCommand.areaAddLocationCommand() = literal("add") {
         argument("task", StringArgumentType.word()) {
             argument("block", ArgumentTypes.blockPosition()) {
                 execute {
-                    val areaName = arg<String>("area")
-
-                    val area = GameAreaManager.getArea(areaName)
-                    if (area == null) {
-                        source.sender.sendMessage(textComponent {
-                            translatable("command.error.admin.area.not_found") {
-                                args {
-                                    string("area", areaName)
-                                }
-                            }
-                        })
-                        return@execute 0
-                    }
-
+                    val area = arg<GameArea>("area")
                     val taskName = arg<String>("task")
 
                     val positionResolver = arg<BlockPositionResolver>("block")
@@ -328,7 +299,7 @@ private fun AreaCommand.areaAddLocationCommand() = literal("add") {
     }
 }
 
-private fun AreaCommand.areaSetLocationCommand() = literal("set") {
+private fun KtArgumentCommandBuilder<CommandSourceStack, String>.areaSetLocationCommand() = literal("set") {
     val locationProperties = GameArea.properties
     argument("location_name", StringArgumentType.word()) {
         suggests {
@@ -339,32 +310,8 @@ private fun AreaCommand.areaSetLocationCommand() = literal("set") {
         argument("location", ArgumentTypes.finePosition(true)) {
             argument("rotation", ArgumentTypes.rotation()) {
                 execute {
-                    val name = arg<String>("area")
-
-                    val area = GameAreaManager.getArea(name)
-                    if (area == null) {
-                        source.sender.sendMessage(textComponent {
-                            translatable("command.error.admin.area.not_found") {
-                                args {
-                                    string("area", name)
-                                }
-                            }
-                        })
-                        return@execute 0
-                    }
-
+                    val area = arg<GameArea>("area")
                     val locationName = arg<String>("location_name")
-
-                    if (locationName !in locationProperties) {
-                        source.sender.sendComponent {
-                            translatable("command.error.admin.area.location_property_not_found") {
-                                args {
-                                    string("location_name", locationName)
-                                }
-                            }
-                        }
-                        return@execute 0
-                    }
 
                     val positionResolver = arg<FinePositionResolver>("location")
                     val finePosition = positionResolver.resolve(source)
@@ -386,7 +333,7 @@ private fun AreaCommand.areaSetLocationCommand() = literal("set") {
                     source.sender.sendComponent {
                         translatable("command.success.admin.area.location_set") {
                             args {
-                                string("area", name)
+                                string("area", area.name)
                             }
                         }
                     }
@@ -395,32 +342,8 @@ private fun AreaCommand.areaSetLocationCommand() = literal("set") {
                 }
             }
             execute {
-                val name = arg<String>("area")
-
-                val area = GameAreaManager.getArea(name)
-                if (area == null) {
-                    source.sender.sendMessage(textComponent {
-                        translatable("command.error.admin.area.not_found") {
-                            args {
-                                string("area", name)
-                            }
-                        }
-                    })
-                    return@execute 0
-                }
-
+                val area = arg<GameArea>("area")
                 val locationName = arg<String>("location_name")
-
-                if (locationName !in locationProperties) {
-                    source.sender.sendComponent {
-                        translatable("command.error.admin.area.location_property_not_found") {
-                            args {
-                                string("location_name", locationName)
-                            }
-                        }
-                    }
-                    return@execute 0
-                }
 
                 val resolver: FinePositionResolver = arg<FinePositionResolver>("location")
                 val finePosition = resolver.resolve(source)
@@ -431,7 +354,7 @@ private fun AreaCommand.areaSetLocationCommand() = literal("set") {
                 source.sender.sendComponent {
                     translatable("command.success.admin.area.location_set") {
                         args {
-                            string("area", name)
+                            string("area", area.name)
                         }
                     }
                 }
@@ -439,20 +362,10 @@ private fun AreaCommand.areaSetLocationCommand() = literal("set") {
                 SINGLE_SUCCESS
             }
         }
-        literalExecute("@s") {
-            val name = arg<String>("area")
-            val area = GameAreaManager.getArea(name)
-            if (area == null) {
-                source.sender.sendMessage(textComponent {
-                    translatable("command.error.admin.area.not_found") {
-                        args {
-                            string("area", name)
-                        }
-                    }
-                })
-                return@literalExecute 0
-            }
+
+        guard {
             val locationName = arg<String>("location_name")
+
             if (locationName !in locationProperties) {
                 source.sender.sendComponent {
                     translatable("command.error.admin.area.location_property_not_found") {
@@ -461,14 +374,21 @@ private fun AreaCommand.areaSetLocationCommand() = literal("set") {
                         }
                     }
                 }
-                return@literalExecute 0
+                return@guard abort(NO_SUCCESS)
             }
+
+            continueCommand()
+        }
+        literalExecute("@s") {
+            val area = arg<GameArea>("area")
+            val locationName = arg<String>("location_name")
             val location = source.location
+
             locationProperties[locationName]?.set(area, location)
             source.sender.sendComponent {
                 translatable("command.success.admin.area.location_set_sender") {
                     args {
-                        string("area", name)
+                        string("area", area.name)
                     }
                 }
             }
@@ -478,7 +398,7 @@ private fun AreaCommand.areaSetLocationCommand() = literal("set") {
     }
 }
 
-private fun AreaCommand.areaCreateCommand() = literalExecute("create") {
+private fun KtArgumentCommandBuilder<CommandSourceStack, String>.areaCreateCommand() = literalExecute("create") {
     val name = arg<String>("area")
 
     val success = GameAreaManager.createNewArea(name)
