@@ -1,13 +1,25 @@
 package com.fantamomo.mc.amongus.statistics
 
-import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.*
 
-@Serializable
 class CounterStatistic(override val id: String) : Statistic {
     var value: Int = 0
         private set
 
     fun increment() {
         value++
+    }
+
+    override fun toJson() = buildJsonObject {
+        put("type", JsonPrimitive("counter"))
+        put("value", JsonPrimitive(value))
+    }
+
+    companion object {
+        fun fromJson(id: String, json: JsonObject): CounterStatistic {
+            val statistic = CounterStatistic(id)
+            json["value"]?.jsonPrimitive?.int?.let { statistic.value = it }
+            return statistic
+        }
     }
 }
