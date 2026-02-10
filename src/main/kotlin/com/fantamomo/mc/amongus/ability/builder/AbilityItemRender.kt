@@ -34,6 +34,7 @@ class AbilityItemRender(
 
         val timer = cooldownName?.let { ctx.getTimer(it) }
         val remaining = timer?.remaining()
+        val remainingSeconds = remaining?.toInt(DurationUnit.SECONDS)
 
         item.setData(
             DataComponentTypes.ITEM_NAME,
@@ -43,15 +44,15 @@ class AbilityItemRender(
                         args?.invoke(this)
                         if (initialDefaultArgs) {
                             string("ability", ctx.ability.definition.id)
-                            remaining?.let { string("cooldown", it.toString(DurationUnit.SECONDS, 0))}
+                            remainingSeconds?.let { string("cooldown", "${it}s")}
                         }
                     }
                 }
             }
         )
 
-        if (remaining != null && remaining.inWholeSeconds > 0) {
-            item.amount = remaining.toInt(DurationUnit.SECONDS).coerceAtLeast(1)
+        if (remainingSeconds != null && remainingSeconds > 0) {
+            item.amount = remainingSeconds.coerceAtLeast(1)
             item.setData(
                 DataComponentTypes.USE_COOLDOWN,
                 UseCooldown.useCooldown(Float.MAX_VALUE / 2).cooldownGroup(ctx.cooldownKey)
