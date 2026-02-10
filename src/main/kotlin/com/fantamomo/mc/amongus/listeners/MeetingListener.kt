@@ -108,7 +108,8 @@ object MeetingListener : Listener {
         val amongUsPlayer = PlayerManager.getPlayer(player) ?: return
         val spectatorTarget = event.spectatorTarget
         val meetingManager = amongUsPlayer.game.meetingManager
-        if (spectatorTarget === meetingManager.cameraAnchor) {
+        val meeting = meetingManager.meeting ?: return
+        if (!meeting.disableEventHandler && spectatorTarget === meetingManager.cameraAnchor) {
             event.isCancelled = true
         }
     }
