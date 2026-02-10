@@ -52,6 +52,7 @@ class Game(
     val meetingManager = MeetingManager(this)
     val killManager = KillManager(this)
     val scoreboardManager = ScoreboardManager(this)
+    val chatManager = ChatManager(this)
 
     internal val players = mutableListOf<AmongUsPlayer>()
     var phase: GamePhase = GamePhase.LOBBY
