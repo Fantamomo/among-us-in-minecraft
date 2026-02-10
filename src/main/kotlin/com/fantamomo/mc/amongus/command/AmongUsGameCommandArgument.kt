@@ -239,90 +239,48 @@ private fun PaperCommand.taskGameCommand() = literal("task") {
                 SINGLE_SUCCESS
             }
             argument("task", TaskIdArgumentType) {
+                val taskRef = argRef()
                 execute {
                     val targetResolver: PlayerSelectorArgumentResolver =
                         arg<PlayerSelectorArgumentResolver>("players")
                     val targets = targetResolver.resolve(source)
+                    val task = taskRef.get()
 
-                    when (targets.size) {
-                        0 -> {
-                            sendMessage {
-                                translatable("command.error.admin.game.task.no_targets")
-                            }
-                            return@execute 0
+                    if (targets.isEmpty()) {
+                        sendMessage {
+                            translatable("command.error.admin.game.task.no_targets")
                         }
+                        return@execute 0
+                    }
 
-                        1 -> {
-                            val player = targets.first()
-                            val auPlayer = PlayerManager.getPlayer(player)
-                            val task = arg<Task<*, *>>("task")
+                    var success = 0
+                    for (target in targets) {
+                        val auPlayer = PlayerManager.getPlayer(target) ?: continue
+                        auPlayer.game.taskManager.assignTask(auPlayer, task)
+                        success++
+                    }
 
-                            if (auPlayer == null) {
-                                sendMessage {
-                                    translatable("command.error.admin.game.task.assign.not_in_game") {
-                                        args {
-                                            string("player", player.name)
-                                        }
-                                    }
-                                }
-                                return@execute 0
-                            }
-
-                            if (!task.isAvailable(auPlayer.game)) {
-                                sendMessage {
-                                    translatable("command.error.admin.game.task.assign.not_available") {
-                                        args {
-                                            string("task", task.id)
-                                        }
-                                    }
-                                }
-                                return@execute 0
-                            }
-
-                            auPlayer.game.taskManager.assignTask(auPlayer, task)
-                            sendMessage {
-                                translatable("command.success.admin.game.task.assign") {
-                                    args {
-                                        string("task", task.id)
-                                        string("player", player.name)
-                                    }
+                    if (success == 0) {
+                        sendMessage {
+                            translatable("command.error.admin.game.task.assign.failed") {
+                                args {
+                                    string("task", task.id)
+                                    numeric("targets", targets.size)
                                 }
                             }
-                            SINGLE_SUCCESS
                         }
+                        return@execute 0
+                    }
 
-                        else -> {
-                            var success = 0
-                            val task = arg<Task<*, *>>("task")
-                            for (target in targets) {
-                                val auPlayer = PlayerManager.getPlayer(target) ?: continue
-
-                                if (!task.isAvailable(auPlayer.game)) continue
-                                auPlayer.game.taskManager.assignTask(auPlayer, task)
-                                success++
+                    sendMessage {
+                        translatable("command.success.admin.game.task.assign") {
+                            args {
+                                string("task", task.id)
+                                numeric("targets", success)
                             }
-                            if (success == 0) {
-                                sendMessage {
-                                    translatable("command.error.admin.game.task.assign.failed") {
-                                        args {
-                                            string("task", task.id)
-                                            numeric("targets", targets.size)
-                                        }
-                                    }
-                                }
-                                return@execute 0
-                            }
-                            sendMessage {
-                                translatable("command.success.admin.game.task.assign.multiple") {
-                                    args {
-                                        string("task", task.id)
-                                        numeric("targets", success)
-                                    }
-                                }
-                            }
-                            SINGLE_SUCCESS
                         }
                     }
+                    SINGLE_SUCCESS
                 }
             }
         }
@@ -370,11 +328,20 @@ private fun PaperCommand.taskGameCommand() = literal("task") {
                 SINGLE_SUCCESS
             }
             argument("task", TaskIdArgumentType) {
+                val taskRef = argRef()
+
                 execute {
                     val targetResolver: PlayerSelectorArgumentResolver =
                         arg<PlayerSelectorArgumentResolver>("players")
                     val targets = targetResolver.resolve(source)
-                    val task = arg<Task<*, *>>("task")
+                    val task = taskRef.get()
+
+                    if (targets.isEmpty()) {
+                        sendMessage {
+                            translatable("command.error.admin.game.task.no_targets")
+                        }
+                        return@execute 0
+                    }
 
                     var success = 0
                     for (target in targets) {
@@ -439,8 +406,9 @@ private fun PaperCommand.taskGameCommand() = literal("task") {
                 var success = 0
                 for (target in targets) {
                     val auPlayer = PlayerManager.getPlayer(target) ?: continue
-                    for (task in auPlayer.tasks) {
-                        auPlayer.game.taskManager.completeTask(task.task)
+                    auPlayer.tasks.forEach {
+                        if (it.completed) return@forEach
+                        auPlayer.game.taskManager.completeTask(it.task)
                         success++
                     }
                 }
@@ -457,20 +425,17 @@ private fun PaperCommand.taskGameCommand() = literal("task") {
                 }
 
                 sendMessage {
-                    translatable("command.success.admin.game.task.complete.all") {
-                        args {
-                            numeric("targets", success)
-                        }
-                    }
+                    translatable("command.success.admin.game.task.complete.all")
                 }
                 SINGLE_SUCCESS
             }
             argument("task", TaskIdArgumentType) {
+                val taskRef = argRef()
                 execute {
                     val targetResolver: PlayerSelectorArgumentResolver =
                         arg<PlayerSelectorArgumentResolver>("players")
                     val targets = targetResolver.resolve(source)
-                    val task = arg<Task<*, *>>("task")
+                    val task = taskRef.get()
 
                     var success = 0
                     for (target in targets) {
@@ -565,7 +530,11 @@ private fun KtCommandBuilder<CommandSourceStack, *>.startGameCommandExecute() = 
     }
     if (game.phase != GamePhase.LOBBY) {
         sendMessage {
-            translatable("command.error.admin.game.start.already_started")
+            translatable("command.error.admin.game.start.already_started") {
+                args {
+                    string("game", game.code)
+                }
+            }
         }
         return@execute 0
     }
@@ -612,6 +581,56 @@ private fun PaperCommand.listGameCommand() = literal("list") {
 private fun PaperCommand.joinGameCommand() = literal("join") {
     requires { executor is Player }
     argument("game", GameArgumentType.INSTANCE) {
+        val gameRef = argRef()
+        argument("targets", ArgumentTypes.players()) {
+            val targetRef = argRef()
+
+            execute {
+                val game = gameRef.get()
+                val target = targetRef.get().resolve(source)
+
+                if (target.isEmpty()) {
+                    sendMessage {
+                        translatable("command.error.admin.game.join.many.no_targets")
+                    }
+                    return@execute NO_SUCCESS
+                }
+
+                var success = 0
+
+                for (player in target) {
+                    if (game.addPlayer(player)) {
+                        success++
+                    }
+                }
+
+                if (success == 0) {
+                    sendMessage {
+                        translatable("command.error.admin.game.join.many.failed") {
+                            args {
+                                string("game", game.code)
+                            }
+                        }
+                    }
+                    return@execute NO_SUCCESS
+                }
+                if (success == target.size) {
+                    sendMessage {
+                        translatable("command.success.admin.game.join.many.all")
+                    }
+                    return@execute SINGLE_SUCCESS
+                }
+                sendMessage {
+                    translatable("command.success.admin.game.join.many") {
+                        args {
+                            numeric("players", success)
+                        }
+                    }
+                }
+
+                SINGLE_SUCCESS
+            }
+        }
         execute {
             val sender = source.sender
             val executor = source.executor as? Player
@@ -621,7 +640,7 @@ private fun PaperCommand.joinGameCommand() = literal("join") {
                 }
                 return@execute 0
             }
-            val game = arg<Game>("game")
+            val game = gameRef.get()
 
             if (game.players.size >= game.maxPlayers) {
                 sendMessage {
@@ -703,4 +722,3 @@ private fun KtArgumentCommandBuilder<CommandSourceStack, *>.createGameCommandExe
 
     SINGLE_SUCCESS
 }
-
