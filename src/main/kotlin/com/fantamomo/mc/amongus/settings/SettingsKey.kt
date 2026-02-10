@@ -62,6 +62,9 @@ data class SettingsKey<T : Any, S : SettingsType<T>>(
         val KILL_DISTANCE = key("kill.distance", EnumSettingsType.create<DistanceEnum>(), DistanceEnum.NORMAL)
         val KILL_COOLDOWN = key("kill.cooldown", DurationSettingsType.min(1.seconds), 45.seconds)
 
+        val ALLOW_GHOST_MESSAGE_IN_GAME = key("allow.ghost.message.in.game", BooleanSettingsType, true)
+
+        // DEV
         val DO_WIN_CHECK = key("dev.do.win.check", BooleanSettingsType, true)
         val DO_WIN_CHECK_ON_TICK = key("dev.do.win.check.on.tick", BooleanSettingsType, true)
     }
