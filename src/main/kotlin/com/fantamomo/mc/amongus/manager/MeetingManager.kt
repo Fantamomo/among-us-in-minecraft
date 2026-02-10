@@ -35,7 +35,6 @@ import org.bukkit.inventory.MenuType.STONECUTTER
 import org.bukkit.inventory.StonecuttingRecipe
 import org.bukkit.inventory.view.StonecutterView
 import org.bukkit.persistence.PersistentDataType
-import java.util.*
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
 
@@ -122,6 +121,8 @@ class MeetingManager(private val game: Game) : Listener {
         val recipes: MutableMap<NamespacedKey, StonecuttingRecipe> = mutableMapOf()
         val voteInventories: MutableMap<AmongUsPlayer, StonecutterView> = mutableMapOf()
         var currentlyEjecting: Boolean = false
+            private set
+        var disableEventHandler: Boolean = false
             private set
 
         init {
@@ -437,9 +438,12 @@ class MeetingManager(private val game: Game) : Listener {
         private fun finishMeeting(hasEjected: Boolean = false) {
             game.sabotageManager.currentSabotage()?.resume()
 
+            currentlyEjecting = false
+
+            disableEventHandler = true
             game.players.forEach { p ->
 
-                if (hasEjected) {
+                if (hasEjected && p != ejectedPlayer) {
                     (p.player as? CraftPlayer)?.handle?.setCamera(null)
                     p.player?.hideEntity(AmongUs, cameraAnchor)
                     p.mannequinController.getEntity()?.let { p.player?.teleport(it.location) }
@@ -456,6 +460,7 @@ class MeetingManager(private val game: Game) : Listener {
 //                    }
                 }
             }
+            disableEventHandler = false
 
             for (key in recipes.keys) {
                 Bukkit.removeRecipe(key)
@@ -463,9 +468,10 @@ class MeetingManager(private val game: Game) : Listener {
 
             Bukkit.updateRecipes()
 
-            ejectedPlayer?.let { game.killManager.kill(it, false) }
-
-            currentlyEjecting = false
+            ejectedPlayer?.let {
+                respawnLocation?.let { p0 -> it.player?.teleport(p0) }
+                game.killManager.kill(it, false)
+            }
 
             recipes.clear()
             voteInventories.clear()
