@@ -62,6 +62,10 @@ class KillManager(val game: Game) {
 
         imposter.statistics.killsAsImposter.increment()
         target.statistics.killedByImposter.increment()
+        if (game.sabotageManager.isCurrentlySabotage()) {
+            imposter.statistics.killsAsImposterWhileSabotage.increment()
+            target.statistics.killedByImposterWhileSabotage.increment()
+        }
 
         imposter.player?.also { p ->
             val clone = location.clone()
