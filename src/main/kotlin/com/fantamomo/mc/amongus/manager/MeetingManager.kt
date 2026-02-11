@@ -290,10 +290,13 @@ class MeetingManager(private val game: Game) : Listener {
                 when (vote) {
                     is Vote.For -> {
                         val target = vote.target
+                        target.statistics.accused.increment()
                         if (target.assignedRole?.definition?.team == Team.IMPOSTERS) {
                             player.statistics.votedCorrect.increment()
+                            target.statistics.accusedCorrect.increment()
                         } else {
                             player.statistics.votedWrong.increment()
+                            target.statistics.accusedWrong.increment()
                         }
                     }
 

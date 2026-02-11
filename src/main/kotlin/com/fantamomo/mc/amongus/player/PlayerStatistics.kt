@@ -36,6 +36,10 @@ class PlayerStatistics(uuid: Uuid) {
     val votedCorrect = statistics.counter("votedCorrect")
     val votedWrong = statistics.counter("votedWrong")
 
+    val accused = statistics.counter("accused")
+    val accusedCorrect = statistics.counter("accusedCorrect")
+    val accusedWrong = statistics.counter("accusedWrong")
+
     val calledEmergency = statistics.counter("calledEmergency")
     val foundBodies = statistics.counter("foundBodies")
     val buttonPressed = statistics.counter("buttonPressed")
