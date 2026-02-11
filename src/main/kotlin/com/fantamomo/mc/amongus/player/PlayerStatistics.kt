@@ -19,4 +19,7 @@ class PlayerStatistics(uuid: Uuid) {
     val losesAsCrewmate = statistics.counter("losesAsCrewmate")
 
     val tasksDone = statistics.counter("tasksDone")
+
+    val killsAsImposter = statistics.counter("killsAsImposter")
+    val killedByImposter = statistics.counter("killedByImposter")
 }

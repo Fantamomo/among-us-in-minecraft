@@ -60,6 +60,9 @@ class KillManager(val game: Game) {
         target.isAlive = false
         val location = target.livingEntity.location
 
+        imposter.statistics.killsAsImposter.increment()
+        target.statistics.killedByImposter.increment()
+
         imposter.player?.also { p ->
             val clone = location.clone()
             clone.rotation = p.location.rotation
