@@ -272,11 +272,22 @@ private fun PaperCommand.taskGameCommand() = literal("task") {
                         return@execute 0
                     }
 
-                    sendMessage {
-                        translatable("command.success.admin.game.task.assign") {
-                            args {
-                                string("task", task.id)
-                                numeric("targets", success)
+                    if (targets.size == 1) {
+                        sendMessage {
+                            translatable("command.success.admin.game.task.assign") {
+                                args {
+                                    string("task", task.id)
+                                    string("player", targets.first().name)
+                                }
+                            }
+                        }
+                    } else {
+                        sendMessage {
+                            translatable("command.success.admin.game.task.assign.multiple") {
+                                args {
+                                    string("task", task.id)
+                                    numeric("targets", success)
+                                }
                             }
                         }
                     }
@@ -366,7 +377,7 @@ private fun PaperCommand.taskGameCommand() = literal("task") {
                         translatable("command.success.admin.game.task.unassign") {
                             args {
                                 string("task", task.id)
-                                numeric("targets", success)
+                                numeric("target", success)
                             }
                         }
                     }
