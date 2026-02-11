@@ -323,8 +323,11 @@ private fun KtArgumentCommandBuilder<CommandSourceStack, String>.areaSetLocation
     val locationProperties = GameArea.properties
     argument("location_name", StringArgumentType.word()) {
         suggests {
+            val remaining = builder.remaining
             for ((name, _) in locationProperties) {
-                suggest(name)
+                if (name.startsWith(remaining, ignoreCase = true)) {
+                    suggest(name)
+                }
             }
         }
         argument("location", ArgumentTypes.finePosition(true)) {
