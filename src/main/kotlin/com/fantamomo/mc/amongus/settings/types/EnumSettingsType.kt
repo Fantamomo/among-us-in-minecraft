@@ -7,6 +7,7 @@ import com.fantamomo.mc.amongus.util.MaterialProvider
 import com.mojang.brigadier.arguments.ArgumentType
 import net.kyori.adventure.text.Component
 import org.bukkit.Material
+import org.bukkit.event.inventory.ClickType
 import org.bukkit.inventory.ItemStack
 import kotlin.reflect.KClass
 
@@ -24,10 +25,19 @@ class EnumSettingsType<E : Enum<E>> private constructor(override val type: KClas
 
     override fun itemRepresentation(value: E) = ItemStack((value as? MaterialProvider)?.material() ?: Material.STONE)
 
-    override fun onItemClick(current: E): E {
-        val enumArgument = argumentType as EnumArgumentType<E>
-        val values = enumArgument.values
-        val index = values.indexOf(current) + 1
-        return values[index % values.size]
+    override fun onItemClick(current: E, action: ClickType): E {
+        val values = (argumentType as EnumArgumentType<E>).values
+        if (values.size == 1) return values.first()
+        val index = values.indexOf(current)
+        val target = when (action) {
+            ClickType.LEFT -> index + 1
+            ClickType.SHIFT_LEFT -> values.size-1
+            ClickType.RIGHT -> index - 1
+            ClickType.SHIFT_RIGHT -> 0
+            else -> index + 1
+        }
+        var i = target % values.size
+        if (i < 0) i += values.size
+        return values[i]
     }
 }
