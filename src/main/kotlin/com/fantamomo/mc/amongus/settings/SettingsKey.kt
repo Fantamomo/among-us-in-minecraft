@@ -27,6 +27,8 @@ data class SettingsKey<T : Any, S : SettingsType<T>>(
         private const val LANGUAGE_DESCRIPTION_PREFIX = "settings.description."
         private val keys: MutableSet<SettingsKey<*, *>> = mutableSetOf()
 
+        fun fromKey(key: String): SettingsKey<*, *>? = keys.find { it.key == key }
+
         fun keys(): Set<SettingsKey<*, *>> = keys
 
         fun <T : Any, S : SettingsType<T>> key(

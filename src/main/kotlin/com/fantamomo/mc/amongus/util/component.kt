@@ -111,3 +111,42 @@ fun wrapComponent(
 
     return result
 }
+
+fun splitLinesPreserveStyles(component: Component): List<Component> {
+    val lines = mutableListOf<Component>()
+    var currentLine = Component.empty()
+
+    fun pushLine() {
+        lines += currentLine
+        currentLine = Component.empty()
+    }
+
+    fun appendComponentKeepingNewlines(c: Component) {
+        when (c) {
+            is TextComponent -> {
+                val style = c.style()
+                val parts = c.content().split('\n')
+
+                parts.forEachIndexed { i, part ->
+                    if (part.isNotEmpty()) {
+                        currentLine = currentLine.append(Component.text(part).style(style))
+                    }
+                    if (i != parts.lastIndex) {
+                        pushLine()
+                    }
+                }
+
+                c.children().forEach(::appendComponentKeepingNewlines)
+            }
+
+            else -> {
+                c.children().forEach(::appendComponentKeepingNewlines)
+            }
+        }
+    }
+
+    appendComponentKeepingNewlines(component)
+    pushLine()
+
+    return lines
+}

@@ -20,7 +20,7 @@ import kotlin.reflect.KClass
  */
 class EnumArgumentType<E : Enum<E>> @PublishedApi internal constructor(
     private val enumClass: KClass<E>,
-    private val values: List<E>,
+    internal val values: List<E>,
     private val ignoreCase: Boolean,
     private val suggestionMapper: (E) -> String,
     private val parser: (String, List<E>) -> E?
