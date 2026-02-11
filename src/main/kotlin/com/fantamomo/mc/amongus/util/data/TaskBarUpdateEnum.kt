@@ -7,9 +7,9 @@ import net.kyori.adventure.text.format.TextColor
 import org.bukkit.Material
 
 enum class TaskBarUpdateEnum(private val color: TextColor, private val material: Material) : Colored, MaterialProvider {
-    IMMEDIATELY(NamedTextColor.GREEN, Material.GREEN_WOOL),
+    NONE(NamedTextColor.RED, Material.RED_WOOL),
     MEETING(NamedTextColor.YELLOW, Material.YELLOW_WOOL),
-    NONE(NamedTextColor.RED, Material.RED_WOOL);
+    IMMEDIATELY(NamedTextColor.GREEN, Material.GREEN_WOOL);
 
     override fun color() = color
     override fun material() = material
