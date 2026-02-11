@@ -20,6 +20,12 @@ object StatisticsManager {
     internal val logger = LoggerFactory.getLogger("AmongUs-StatisticsManager")
 
     init {
+        // Register built-in statistic types
+        StatisticRegistry.register("average", AverageStatistic.Companion::fromJson)
+        StatisticRegistry.register("list", ListStatistic.Companion::fromJson)
+        StatisticRegistry.register("timer", TimerStatistic.Companion::fromJson)
+        StatisticRegistry.register("counter", CounterStatistic.Companion::fromJson)
+
         // Trigger one serialization to force initialization of all
         // kotlinx.serialization related classes that are required at runtime.
         //
