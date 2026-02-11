@@ -31,10 +31,7 @@ class ListStatistic(
         return true
     }
 
-    override fun toJson() = buildJsonObject {
-        put("type", JsonPrimitive("list"))
-        put("data", JsonArray(data.map { JsonPrimitive(it) }))
-    }
+    override fun toData(): MutableMap<String, JsonElement> = mutableMapOf("data" to JsonArray(data.map { JsonPrimitive(it) }))
 
     companion object {
         fun fromJson(id: String, json: JsonObject): ListStatistic {

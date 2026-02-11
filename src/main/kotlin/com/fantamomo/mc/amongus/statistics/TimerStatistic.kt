@@ -32,10 +32,7 @@ class TimerStatistic(
         runningSince = null
     }
 
-    override fun toJson() = buildJsonObject {
-        put("type", JsonPrimitive("timer"))
-        put("value", JsonPrimitive(totalMillis))
-    }
+    override fun toData(): MutableMap<String, JsonElement> = mutableMapOf("value" to JsonPrimitive(totalMillis))
 
     companion object {
         fun fromJson(id: String, json: JsonObject): TimerStatistic {
