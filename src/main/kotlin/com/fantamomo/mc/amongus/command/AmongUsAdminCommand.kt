@@ -12,6 +12,7 @@ import com.fantamomo.mc.amongus.game.GameManager
 import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.PlayerManager
+import com.fantamomo.mc.amongus.settings.SettingsInventory
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.settings.SettingsType
 import com.fantamomo.mc.amongus.task.Task
@@ -37,6 +38,25 @@ val AmongUsAdminCommand = paperCommand("amongusadmin") {
 
 private fun PaperCommand.settingsCommand() = literal("settings") {
     requires { sender is Player && sender.hasPermission(Permissions.SETTINGS) }
+
+    execute {
+        val sender = source.sender as Player
+
+        val auPlayer = PlayerManager.getPlayer(sender)
+
+        if (auPlayer == null) {
+            sendMessage {
+                translatable("command.error.admin.settings.not_joined")
+            }
+            return@execute NO_SUCCESS
+        }
+
+        val settingsInventory = SettingsInventory(auPlayer)
+        sender.openInventory(settingsInventory.inventory)
+
+        SINGLE_SUCCESS
+    }
+
     val keys = SettingsKey.keys()
 
     for (key in keys) {
