@@ -11,6 +11,7 @@ import com.fantamomo.mc.amongus.languages.numeric
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.player.PlayerManager
+import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.util.Cooldown
 import com.fantamomo.mc.amongus.util.textComponent
@@ -354,6 +355,16 @@ class MeetingManager(private val game: Game) : Listener {
 
             player.livingEntity.teleport(ejectionFallPoint)
             currentlyEjecting = true
+
+            val statistics = player.statistics
+
+            statistics.ejected.increment()
+
+            if (player.assignedRole?.definition?.team == Team.IMPOSTERS) {
+                statistics.ejectedCorrect.increment()
+            } else {
+                statistics.ejectedWrong.increment()
+            }
 
             Bukkit.getScheduler().runTaskLater(AmongUs, { ->
                 if (currentlyEjecting) finishMeeting(true)
