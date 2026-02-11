@@ -408,7 +408,7 @@ private fun PaperCommand.taskGameCommand() = literal("task") {
                     val auPlayer = PlayerManager.getPlayer(target) ?: continue
                     auPlayer.tasks.forEach {
                         if (it.completed) return@forEach
-                        auPlayer.game.taskManager.completeTask(it.task)
+                        auPlayer.game.taskManager.completeTask(it.task, modifyStatistics = false)
                         success++
                     }
                 }
@@ -442,7 +442,7 @@ private fun PaperCommand.taskGameCommand() = literal("task") {
                         val auPlayer = PlayerManager.getPlayer(target) ?: continue
                         auPlayer.tasks.forEach {
                             if (it.task.task != task) return@forEach
-                            auPlayer.game.taskManager.completeTask(it.task)
+                            auPlayer.game.taskManager.completeTask(it.task, modifyStatistics = false)
                         }
                         success++
                     }

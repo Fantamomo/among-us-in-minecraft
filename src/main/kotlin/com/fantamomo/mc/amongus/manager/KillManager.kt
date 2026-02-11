@@ -60,6 +60,15 @@ class KillManager(val game: Game) {
         target.isAlive = false
         val location = target.livingEntity.location
 
+        imposter.statistics.killsAsImposter.increment()
+        target.statistics.killedByImposter.increment()
+        target.statistics.timeUntilDead.timerStop()
+        target.statistics.timeUntilKilled.timerStop()
+        if (game.sabotageManager.isCurrentlySabotage()) {
+            imposter.statistics.killsAsImposterWhileSabotage.increment()
+            target.statistics.killedByImposterWhileSabotage.increment()
+        }
+
         imposter.player?.also { p ->
             val clone = location.clone()
             clone.rotation = p.location.rotation
@@ -129,6 +138,7 @@ class KillManager(val game: Game) {
         }
         target.mannequinController.hideFromAll()
         target.mannequinController.showToSeeingPlayers()
+        target.statistics.timeUntilDead.timerStop()
         showGhosts(target)
         game.checkWin()
     }

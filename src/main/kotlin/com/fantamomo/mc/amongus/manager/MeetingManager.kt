@@ -11,6 +11,7 @@ import com.fantamomo.mc.amongus.languages.numeric
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.player.PlayerManager
+import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.util.Cooldown
 import com.fantamomo.mc.amongus.util.textComponent
@@ -77,7 +78,12 @@ class MeetingManager(private val game: Game) : Listener {
 
     fun isCurrentlyAMeeting(): Boolean = meeting != null
 
-    fun callMeeting(caller: AmongUsPlayer, reason: MeetingReason, force: Boolean = reason == MeetingReason.BODY) {
+    fun callMeeting(
+        caller: AmongUsPlayer,
+        reason: MeetingReason,
+        force: Boolean = reason == MeetingReason.BODY,
+        updateStatistics: Boolean = true
+    ) {
         if (meeting != null) return
         if (!caller.isAlive) return
         if (force) {
@@ -104,6 +110,14 @@ class MeetingManager(private val game: Game) : Listener {
         caller.meetingButtonsPressed++
         buttonCooldown.reset()
         meeting = Meeting(caller, reason)
+        if (updateStatistics) {
+            val statistics = caller.statistics
+            statistics.calledEmergency.increment()
+            when (reason) {
+                MeetingReason.BUTTON -> statistics.buttonPressed.increment()
+                MeetingReason.BODY -> statistics.foundBodies.increment()
+            }
+        }
         game.invalidateAbilities()
     }
 
@@ -271,6 +285,25 @@ class MeetingManager(private val game: Game) : Listener {
             respawnLocation = ejectedPlayer?.livingEntity?.location
             showVoteResult(ejectedPlayer)
 
+            votes.entries.forEach { (player, vote) ->
+                player.statistics.voted.increment()
+                when (vote) {
+                    is Vote.For -> {
+                        val target = vote.target
+                        target.statistics.accused.increment()
+                        if (target.assignedRole?.definition?.team == Team.IMPOSTERS) {
+                            player.statistics.votedCorrect.increment()
+                            target.statistics.accusedCorrect.increment()
+                        } else {
+                            player.statistics.votedWrong.increment()
+                            target.statistics.accusedWrong.increment()
+                        }
+                    }
+
+                    Vote.Skip -> player.statistics.votedSkip.increment()
+                }
+            }
+
             for (player in game.players) {
                 player.player?.closeInventory()
             }
@@ -354,6 +387,16 @@ class MeetingManager(private val game: Game) : Listener {
 
             player.livingEntity.teleport(ejectionFallPoint)
             currentlyEjecting = true
+
+            val statistics = player.statistics
+
+            statistics.ejected.increment()
+
+            if (player.assignedRole?.definition?.team == Team.IMPOSTERS) {
+                statistics.ejectedCorrect.increment()
+            } else {
+                statistics.ejectedWrong.increment()
+            }
 
             Bukkit.getScheduler().runTaskLater(AmongUs, { ->
                 if (currentlyEjecting) finishMeeting(true)
@@ -469,6 +512,8 @@ class MeetingManager(private val game: Game) : Listener {
             Bukkit.updateRecipes()
 
             ejectedPlayer?.let {
+                it.statistics.timeUntilDead.timerStop()
+                it.statistics.timeUntilVotedOut.timerStop()
                 respawnLocation?.let { p0 -> it.player?.teleport(p0) }
                 game.killManager.kill(it, false)
             }

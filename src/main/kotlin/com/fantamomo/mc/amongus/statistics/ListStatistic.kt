@@ -1,6 +1,5 @@
 package com.fantamomo.mc.amongus.statistics
 
-import kotlinx.serialization.Transient
 import kotlinx.serialization.json.*
 
 class ListStatistic(
@@ -17,7 +16,6 @@ class ListStatistic(
 
     fun add(element: Long) = data.add(element)
 
-    @Transient
     private var startTime: Long? = null
 
     fun timerStart(time: Long = System.currentTimeMillis()) {
@@ -29,6 +27,10 @@ class ListStatistic(
         add(time - start)
         startTime = null
         return true
+    }
+
+    fun timerReset() {
+        startTime = null
     }
 
     override fun toData(): MutableMap<String, JsonElement> = mutableMapOf("data" to JsonArray(data.map { JsonPrimitive(it) }))
