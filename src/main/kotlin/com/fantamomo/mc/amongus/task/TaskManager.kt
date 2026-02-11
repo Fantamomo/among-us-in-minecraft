@@ -75,6 +75,7 @@ class TaskManager(val game: Game) {
     fun completeTask(task: AssignedTask<*, *>, modifyStatistics: Boolean = true) {
         val registeredTask = get(task) ?: return
         if (registeredTask.completed) return
+        val allTasksCompleted = tasks[task.player]?.all { it.completed } ?: true
         registeredTask.completed = true
         registeredTask.hideCompletely()
         registeredTask.task.stop()
@@ -90,7 +91,10 @@ class TaskManager(val game: Game) {
         }
         game.scoreboardManager.refresh(task.player)
         if (modifyStatistics) {
-            task.player.statistics.tasksDone.increment()
+            val statistics = task.player.statistics
+            statistics.tasksCompleted.increment()
+            val playerHasCompletedAllTasks = tasks[task.player]?.all { it.completed } ?: false
+            if (!allTasksCompleted && playerHasCompletedAllTasks) statistics.fullyCompleteTasks.increment()
         }
         if (allTaskCompleted()) game.checkWin()
     }
