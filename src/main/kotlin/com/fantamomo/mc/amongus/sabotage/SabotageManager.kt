@@ -5,6 +5,7 @@ import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.util.Cooldown
 import net.kyori.adventure.bossbar.BossBar
@@ -123,6 +124,18 @@ class SabotageManager(private val game: Game) {
         AmongUs.server.scheduler.runTask(AmongUs) { ->
             sendWorldBorder(true)
         }
+    }
+
+    fun criticallySabotageNotFixed() {
+        endSabotage()
+        for (player in game.players) {
+            if (player.assignedRole?.definition?.team == Team.IMPOSTERS) {
+                player.statistics.winBySabotage.increment()
+            } else {
+                player.statistics.loseBySabotage.increment()
+            }
+        }
+        game.letWin(Team.IMPOSTERS)
     }
 
     fun updateBossbar() {

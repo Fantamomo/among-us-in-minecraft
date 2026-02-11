@@ -67,8 +67,7 @@ class SeismicStabilizersSabotage(override val game: Game) :
 
     override fun tick() {
         if (timer.isFinished()) {
-            game.sabotageManager.endSabotage()
-            game.letWin(Team.IMPOSTERS)
+            game.sabotageManager.criticallySabotageNotFixed()
             return
         }
 
