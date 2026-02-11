@@ -37,7 +37,10 @@ object GameAreaManager {
                 null, null, null,
                 null, null, null,
                 null, null, null,
-                mapOf(), listOf(), setOf(), mapOf()
+                mapOf(),
+                listOf(VentGroupDTO(0, listOf())),
+                setOf(),
+                mapOf()
             )
         )
     }

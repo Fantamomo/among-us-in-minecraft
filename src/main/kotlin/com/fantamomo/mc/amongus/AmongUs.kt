@@ -35,10 +35,15 @@ object AmongUs : JavaPlugin() {
     private var classNotFoundException: NoClassDefFoundError? = null
 
     override fun onDisable() {
-        saveRun(EntityManager::dispose)
-        saveRun(MeetingManager::dispose)
-        saveRun(StatisticsManager::saveAll)
-        saveRun(GameAreaManager::saveAll)
+        // Lambda expressions are used instead of method references to defer class loading.
+        // This prevents NoClassDefFoundError from being thrown outside the try-catch block
+        // in saveRun when classes like EntityManager haven't been loaded yet.
+        // Method references (e.g., EntityManager::dispose) would trigger class loading
+        // at the call site before entering the saveRun function.
+        saveRun { EntityManager.dispose() }
+        saveRun { MeetingManager.dispose() }
+        saveRun { StatisticsManager.saveAll() }
+        saveRun { GameAreaManager.saveAll() }
 
         val ex = classNotFoundException
         if (ex != null) {

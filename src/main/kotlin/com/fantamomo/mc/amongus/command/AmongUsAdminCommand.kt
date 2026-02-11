@@ -323,8 +323,11 @@ private fun KtArgumentCommandBuilder<CommandSourceStack, String>.areaSetLocation
     val locationProperties = GameArea.properties
     argument("location_name", StringArgumentType.word()) {
         suggests {
+            val remaining = builder.remaining
             for ((name, _) in locationProperties) {
-                suggest(name)
+                if (name.startsWith(remaining, ignoreCase = true)) {
+                    suggest(name)
+                }
             }
         }
         argument("location", ArgumentTypes.finePosition(true)) {
@@ -418,7 +421,10 @@ private fun KtArgumentCommandBuilder<CommandSourceStack, String>.areaSetLocation
     }
 }
 
-private fun KtArgumentCommandBuilder<CommandSourceStack, String>.areaCreateCommand() = literalExecute("create") {
+private fun KtArgumentCommandBuilder<CommandSourceStack, String>.areaCreateCommand() = literalExecute(
+    "create",
+    runGuards = false // We don't want the guards to run because it would abort since the area doesn't exist at that point
+) {
     val name = arg<String>("area")
 
     val success = GameAreaManager.createNewArea(name)

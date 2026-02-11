@@ -64,8 +64,11 @@ class PlayerStatistics(uuid: Uuid) {
     }
 
     companion object {
+        // Create a temporary PlayerStatistics instance to extract statistic metadata
+        // (statistic keys mapped to their types) without persisting to disk
         val statistics = PlayerStatistics(Uuid.random()).statistics.run {
-            getKeys().map { it to get(it)!!::class }
+            StatisticsManager.unregister(this) // so it doesn't get saved'
+            getKeys().associateWith { get(it)!!::class }
         }
     }
 }
