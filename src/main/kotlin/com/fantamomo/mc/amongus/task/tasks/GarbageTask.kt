@@ -65,10 +65,12 @@ object GarbageTask : Task<GarbageTask, GarbageTask.AssignedGarbageTask> {
             val garbage: List<Material> = listOf(
                 Material.DIRT,
                 Material.DIAMOND,
-                Material.COAL_ORE,
+                Material.COAL,
+                Material.GUNPOWDER,
                 Material.DEAD_BUSH,
                 Material.STRING,
-                Material.GUNPOWDER
+                Material.DEAD_FIRE_CORAL_FAN,
+                Material.GOLD_INGOT
             )
         }
     }
