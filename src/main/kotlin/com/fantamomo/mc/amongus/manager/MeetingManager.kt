@@ -115,7 +115,7 @@ class MeetingManager(private val game: Game) : Listener {
             statistics.calledEmergency.increment()
             when (reason) {
                 MeetingReason.BUTTON -> statistics.buttonPressed.increment()
-                MeetingReason.BODY -> statistics.calledEmergency.increment()
+                MeetingReason.BODY -> statistics.foundBodies.increment()
             }
         }
         game.invalidateAbilities()
