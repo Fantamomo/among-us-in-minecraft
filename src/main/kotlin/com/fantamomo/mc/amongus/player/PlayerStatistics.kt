@@ -26,4 +26,9 @@ class PlayerStatistics(uuid: Uuid) {
     val ejected = statistics.counter("ejected")
     val ejectedWrong = statistics.counter("ejectedWrong")
     val ejectedCorrect = statistics.counter("ejectedCorrect")
+
+    val voted = statistics.counter("voted")
+    val votedSkip = statistics.counter("votedSkip")
+    val votedCorrect = statistics.counter("votedCorrect")
+    val votedWrong = statistics.counter("votedWrong")
 }

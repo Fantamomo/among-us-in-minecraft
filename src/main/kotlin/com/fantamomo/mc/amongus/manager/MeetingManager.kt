@@ -272,6 +272,21 @@ class MeetingManager(private val game: Game) : Listener {
             respawnLocation = ejectedPlayer?.livingEntity?.location
             showVoteResult(ejectedPlayer)
 
+            votes.entries.forEach { (player, vote) ->
+                player.statistics.voted.increment()
+                when (vote) {
+                    is Vote.For -> {
+                        val target = vote.target
+                        if (target.assignedRole?.definition?.team == Team.IMPOSTERS) {
+                            player.statistics.votedCorrect.increment()
+                        } else {
+                            player.statistics.votedWrong.increment()
+                        }
+                    }
+                    Vote.Skip -> player.statistics.votedSkip.increment()
+                }
+            }
+
             for (player in game.players) {
                 player.player?.closeInventory()
             }
