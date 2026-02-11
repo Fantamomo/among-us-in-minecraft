@@ -5,7 +5,6 @@ import com.fantamomo.mc.adventure.text.args
 import com.fantamomo.mc.adventure.text.text
 import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.AmongUs
-import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.task.GuiAssignedTask
@@ -68,20 +67,16 @@ class SettingsInventory(val owner: AmongUsPlayer) : InventoryHolder {
             }
         )
         val lore = item.getData(DataComponentTypes.LORE)?.lines()?.toMutableList() ?: mutableListOf()
+        val empty = lore.isEmpty()
         key.settingsDescription?.let {
-            if (lore.isNotEmpty()) lore.addFirst(Component.empty())
+            if (!empty) lore.addFirst(Component.empty())
             lore.addFirst(Component.translatable(it).translateTo(owner.locale))
         }
+        if (empty) lore.add(Component.empty())
         lore.add(com.fantamomo.mc.adventure.text.textComponent {
             translatable("setting.ui.default") {
                 args {
-                    val stringRepresentation = key.type.stringRepresentation(key.defaultValue)
-                    val componentRepresentation = key.type.componentRepresentation(key.defaultValue)
-                    if (componentRepresentation == Component.text(stringRepresentation)) {
-                        string("value", stringRepresentation)
-                    } else {
-                        component("value", componentRepresentation)
-                    }
+                    string("value", key.type.stringRepresentation(key.defaultValue))
                 }
             }
         })
