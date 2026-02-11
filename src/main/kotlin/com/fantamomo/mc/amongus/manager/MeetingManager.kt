@@ -78,7 +78,12 @@ class MeetingManager(private val game: Game) : Listener {
 
     fun isCurrentlyAMeeting(): Boolean = meeting != null
 
-    fun callMeeting(caller: AmongUsPlayer, reason: MeetingReason, force: Boolean = reason == MeetingReason.BODY) {
+    fun callMeeting(
+        caller: AmongUsPlayer,
+        reason: MeetingReason,
+        force: Boolean = reason == MeetingReason.BODY,
+        updateStatistics: Boolean = true
+    ) {
         if (meeting != null) return
         if (!caller.isAlive) return
         if (force) {
@@ -105,6 +110,14 @@ class MeetingManager(private val game: Game) : Listener {
         caller.meetingButtonsPressed++
         buttonCooldown.reset()
         meeting = Meeting(caller, reason)
+        if (updateStatistics) {
+            val statistics = caller.statistics
+            statistics.calledEmergency.increment()
+            when (reason) {
+                MeetingReason.BUTTON -> statistics.buttonPressed.increment()
+                MeetingReason.BODY -> statistics.calledEmergency.increment()
+            }
+        }
         game.invalidateAbilities()
     }
 
@@ -283,6 +296,7 @@ class MeetingManager(private val game: Game) : Listener {
                             player.statistics.votedWrong.increment()
                         }
                     }
+
                     Vote.Skip -> player.statistics.votedSkip.increment()
                 }
             }
