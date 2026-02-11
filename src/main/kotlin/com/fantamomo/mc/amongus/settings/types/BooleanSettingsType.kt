@@ -7,6 +7,7 @@ import io.papermc.paper.datacomponent.DataComponentTypes
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Material
+import org.bukkit.event.inventory.ClickType
 import org.bukkit.inventory.ItemStack
 import kotlin.reflect.KClass
 
@@ -29,5 +30,5 @@ object BooleanSettingsType : SettingsType<Boolean> {
 
     override fun itemRepresentation(value: Boolean) = (if (value) TRUE_ITEM else FALSE_ITEM).clone()
 
-    override fun onItemClick(current: Boolean) = !current
+    override fun onItemClick(current: Boolean, action: ClickType) = !current
 }
