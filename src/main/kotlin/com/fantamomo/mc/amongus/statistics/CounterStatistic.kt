@@ -10,10 +10,7 @@ class CounterStatistic(override val id: String) : Statistic {
         value++
     }
 
-    override fun toJson() = buildJsonObject {
-        put("type", JsonPrimitive("counter"))
-        put("value", JsonPrimitive(value))
-    }
+    override fun toData(): MutableMap<String, JsonElement> = mutableMapOf("value" to JsonPrimitive(value))
 
     companion object {
         fun fromJson(id: String, json: JsonObject): CounterStatistic {
