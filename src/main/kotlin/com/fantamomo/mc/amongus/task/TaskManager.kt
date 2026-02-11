@@ -72,7 +72,7 @@ class TaskManager(val game: Game) {
 
     private fun get(task: AssignedTask<*, *>) = tasks[task.player]?.find { it.task == task }
 
-    fun completeTask(task: AssignedTask<*, *>) {
+    fun completeTask(task: AssignedTask<*, *>, modifyStatistics: Boolean = true) {
         val registeredTask = get(task) ?: return
         if (registeredTask.completed) return
         registeredTask.completed = true
@@ -89,6 +89,9 @@ class TaskManager(val game: Game) {
             removeMoveableItems(task.player)
         }
         game.scoreboardManager.refresh(task.player)
+        if (modifyStatistics) {
+            task.player.statistics.tasksDone.increment()
+        }
         if (allTaskCompleted()) game.checkWin()
     }
 
