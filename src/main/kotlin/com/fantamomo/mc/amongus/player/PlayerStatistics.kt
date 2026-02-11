@@ -62,4 +62,10 @@ class PlayerStatistics(uuid: Uuid) {
         timeUntilVotedOut.timerReset()
         timeUntilKilled.timerReset()
     }
+
+    companion object {
+        val statistics = PlayerStatistics(Uuid.random()).statistics.run {
+            getKeys().map { it to get(it)!!::class }
+        }
+    }
 }

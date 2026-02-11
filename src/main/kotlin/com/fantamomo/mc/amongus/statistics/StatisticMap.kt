@@ -12,6 +12,8 @@ class StatisticMap(val group: String, val id: Uuid) {
         checkGroup(group)
     }
 
+    fun getKeys(): Set<String> = statistics.keys
+
     fun get(key: String): Statistic? = statistics[key]
 
     @Suppress("UNCHECKED_CAST")
