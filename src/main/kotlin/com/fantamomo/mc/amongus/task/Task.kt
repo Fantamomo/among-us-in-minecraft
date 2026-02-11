@@ -29,7 +29,11 @@ interface Task<T : Task<T, A>, A : AssignedTask<T, A>> {
             FixWeatherNodeTask,
             RepairDrillTask,
             ClearAsteroidsTask,
-            VerifyIdTask
+            VerifyIdTask,
+            OpenWaterwaysTask,
+            RecordTemperature,
+            FillCanister,
+            RebootWifi
         )
     }
 }
