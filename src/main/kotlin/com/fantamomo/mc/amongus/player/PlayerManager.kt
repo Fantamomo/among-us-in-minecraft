@@ -63,6 +63,7 @@ object PlayerManager {
         amongUsPlayer.player?.inventory?.clear()
         amongUsPlayer.player = null
         amongUsPlayer.mannequinController.despawn()
+        amongUsPlayer.statistics.onGameStop()
         players.remove(amongUsPlayer)
     }
 

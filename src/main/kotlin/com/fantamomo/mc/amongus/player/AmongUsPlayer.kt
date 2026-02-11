@@ -145,5 +145,6 @@ class AmongUsPlayer internal constructor(
                 }
             )
         }
+        statistics.onGameStart()
     }
 }

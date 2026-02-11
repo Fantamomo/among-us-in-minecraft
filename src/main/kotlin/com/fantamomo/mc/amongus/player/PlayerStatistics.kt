@@ -38,6 +38,10 @@ class PlayerStatistics(uuid: Uuid) {
     val votedCorrect = statistics.counter("votedCorrect")
     val votedWrong = statistics.counter("votedWrong")
 
+    val timeUntilDead = statistics.list("timeUntilDead")
+    val timeUntilVotedOut = statistics.list("timeUntilVotedOut")
+    val timeUntilKilled = statistics.list("timeUntilKilled")
+
     val accused = statistics.counter("accused")
     val accusedCorrect = statistics.counter("accusedCorrect")
     val accusedWrong = statistics.counter("accusedWrong")
@@ -45,4 +49,17 @@ class PlayerStatistics(uuid: Uuid) {
     val calledEmergency = statistics.counter("calledEmergency")
     val foundBodies = statistics.counter("foundBodies")
     val buttonPressed = statistics.counter("buttonPressed")
+
+
+    internal fun onGameStart() {
+        timeUntilDead.timerStart()
+        timeUntilVotedOut.timerStart()
+        timeUntilKilled.timerStart()
+    }
+
+    internal fun onGameStop() {
+        timeUntilDead.timerReset()
+        timeUntilVotedOut.timerReset()
+        timeUntilKilled.timerReset()
+    }
 }

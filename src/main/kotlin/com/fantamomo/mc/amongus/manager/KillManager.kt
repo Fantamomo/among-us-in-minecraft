@@ -62,6 +62,8 @@ class KillManager(val game: Game) {
 
         imposter.statistics.killsAsImposter.increment()
         target.statistics.killedByImposter.increment()
+        target.statistics.timeUntilDead.timerStop()
+        target.statistics.timeUntilKilled.timerStop()
         if (game.sabotageManager.isCurrentlySabotage()) {
             imposter.statistics.killsAsImposterWhileSabotage.increment()
             target.statistics.killedByImposterWhileSabotage.increment()
@@ -136,6 +138,7 @@ class KillManager(val game: Game) {
         }
         target.mannequinController.hideFromAll()
         target.mannequinController.showToSeeingPlayers()
+        target.statistics.timeUntilDead.timerStop()
         showGhosts(target)
         game.checkWin()
     }
