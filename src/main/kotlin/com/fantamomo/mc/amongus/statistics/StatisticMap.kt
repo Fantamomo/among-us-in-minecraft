@@ -41,7 +41,7 @@ class StatisticMap(val group: String, val id: Uuid) {
                     continue
                 }
                 try {
-                    map.statistics[key] = Statistic.fromJson(key, value)
+                    map.statistics[key] = StatisticRegistry.fromJson(key, value)
                 } catch (e: Exception) {
                     StatisticsManager.logger.warn("Failed to load statistic $key of $group/$id", e)
                 }
@@ -54,7 +54,7 @@ class StatisticMap(val group: String, val id: Uuid) {
     fun toJson(): JsonObject {
         val data: MutableMap<String, JsonElement> = mutableMapOf()
         for (entry in statistics) {
-            data[entry.key] = entry.value.toJson()
+            data[entry.key] = StatisticRegistry.toJson(entry.value)
         }
         return JsonObject(data)
     }
