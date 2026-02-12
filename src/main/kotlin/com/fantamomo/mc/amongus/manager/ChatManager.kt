@@ -9,6 +9,7 @@ import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.game.GamePhase
 import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import io.papermc.paper.event.player.ChatEvent
 import net.kyori.adventure.text.Component
@@ -59,6 +60,14 @@ class ChatManager(val game: Game) {
                 component("player", player.player?.displayName() ?: Component.text(player.name))
                 component("message", message)
             }
+        }
+    }
+
+    fun sendImposterMessage(player: AmongUsPlayer, message: String) {
+        val component = getMessage("chat.message.imposter", player, Component.text(message))
+        for (auPlayer in game.players) {
+            if (auPlayer.assignedRole?.definition?.team != Team.IMPOSTERS) continue
+            auPlayer.player?.sendMessage(component)
         }
     }
 
