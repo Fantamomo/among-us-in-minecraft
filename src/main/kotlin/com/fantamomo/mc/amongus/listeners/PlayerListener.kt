@@ -13,6 +13,8 @@ import org.bukkit.event.Listener
 import org.bukkit.event.block.Action
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause
+import org.bukkit.event.inventory.InventoryClickEvent
+import org.bukkit.event.inventory.InventoryType
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
@@ -78,6 +80,14 @@ object PlayerListener : Listener {
             ) == true
         ) return
         if (!game.meetingManager.isCurrentlyAMeeting() && area.meetingBlock?.isSameBlockPosition(target) == true) return
+        event.isCancelled = true
+    }
+
+    @EventHandler
+    fun onEquipmentChange(event: InventoryClickEvent) {
+        val player = event.whoClicked as? Player ?: return
+        PlayerManager.getPlayer(player) ?: return
+        if (event.slotType != InventoryType.SlotType.ARMOR) return
         event.isCancelled = true
     }
 }
