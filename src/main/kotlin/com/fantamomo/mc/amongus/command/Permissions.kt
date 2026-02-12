@@ -14,6 +14,9 @@ object Permissions {
     val SETTINGS = perm("admin.settings", PermissionDefault.OP)
     val SEE_GAME_CODES = perm("join.see_game_codes", PermissionDefault.OP)
 
+    val SET_PLAYER_COLOR_OTHER = perm("admin.set_player_color_other", PermissionDefault.OP)
+    val SET_PLAYER_COLOR_FORCE = perm("admin.set_player_color_force", PermissionDefault.OP)
+
     private fun perm(
         node: String,
         default: PermissionDefault
