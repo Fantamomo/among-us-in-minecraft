@@ -68,8 +68,11 @@ class ScoreboardManager(private val game: Game) {
     }
 
     inner class AmongUsScoreboard(private val player: AmongUsPlayer) {
-
         private val scoreboard = Bukkit.getScoreboardManager().newScoreboard
+
+        val ghostTeam = (scoreboard.getTeam(TEAM_GHOST) ?: scoreboard.registerNewTeam(TEAM_GHOST)).apply {
+            setCanSeeFriendlyInvisibles(true)
+        }
 
         private val objective = scoreboard.registerNewObjective(
             "amongus_${player.uuid}",
@@ -653,7 +656,10 @@ class ScoreboardManager(private val game: Game) {
         scoreboards[amongUsPlayer]?.show()
     }
 
+    fun get(target: AmongUsPlayer): AmongUsScoreboard? = scoreboards[target]
+
     companion object {
+        private const val TEAM_GHOST: String = "ghost"
 
         private const val ENTRY_ROLE = "role"
         private const val ENTRY_ROLE_DESC = "role_desc"

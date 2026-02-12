@@ -57,12 +57,10 @@ class KillManager(val game: Game) {
                 }
             )
         }
-        target.isAlive = false
         val location = target.livingEntity.location
 
         imposter.statistics.killsAsImposter.increment()
         target.statistics.killedByImposter.increment()
-        target.statistics.timeUntilDead.timerStop()
         target.statistics.timeUntilKilled.timerStop()
         if (game.sabotageManager.isCurrentlySabotage()) {
             imposter.statistics.killsAsImposterWhileSabotage.increment()
@@ -82,8 +80,7 @@ class KillManager(val game: Game) {
             p.closeInventory()
             p.sendHurtAnimation(0f)
         }
-        target.mannequinController.hideFromAll()
-        target.mannequinController.showToSeeingPlayers()
+        markAsDead(target)
         game.checkWin()
     }
 
@@ -131,16 +128,34 @@ class KillManager(val game: Game) {
         if (target.isInCams()) {
             game.cameraManager.leaveCams(target)
         }
-        target.isAlive = false
         if (corpse) {
             val location = target.livingEntity.location
             showCorpse(target, location)
         }
-        target.mannequinController.hideFromAll()
-        target.mannequinController.showToSeeingPlayers()
-        target.statistics.timeUntilDead.timerStop()
+        markAsDead(target)
         showGhosts(target)
         game.checkWin()
+    }
+
+    private fun markAsDead(target: AmongUsPlayer) {
+        target.isAlive = false
+        target.statistics.timeUntilDead.timerStop()
+        target.mannequinController.hideFromAll()
+        target.mannequinController.showToSeeingPlayers()
+        val mannequin = target.mannequinController.getEntity()
+        mannequin?.isInvisible = true
+        showGhosts(target)
+        val scoreboard = game.scoreboardManager.get(target)
+        if (scoreboard != null) {
+            val team = scoreboard.ghostTeam
+            target.player?.let { team.addPlayer(it) }
+            for (player in game.players) {
+                if (player.isAlive) continue
+                val entity = player.mannequinController.getEntity()
+                entity?.let(team::addEntity)
+                mannequin?.let { game.scoreboardManager.get(player)?.ghostTeam?.addEntity(it) }
+            }
+        }
     }
 
     private fun showGhosts(target: AmongUsPlayer) {
@@ -149,6 +164,11 @@ class KillManager(val game: Game) {
             if (auPlayer.isAlive || target === auPlayer) continue
             auPlayer.mannequinController.showTo(player)
         }
+    }
+
+    internal fun onPlayerRejoin(amongUsPlayer: AmongUsPlayer) {
+        val scoreboard = game.scoreboardManager.get(amongUsPlayer)
+        amongUsPlayer.player?.let { scoreboard?.ghostTeam?.addPlayer(it) }
     }
 
     class Corpse(
