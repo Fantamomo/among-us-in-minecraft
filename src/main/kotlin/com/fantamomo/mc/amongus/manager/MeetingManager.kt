@@ -1,6 +1,7 @@
 package com.fantamomo.mc.amongus.manager
 
 import com.fantamomo.mc.adventure.text.args
+import com.fantamomo.mc.adventure.text.content
 import com.fantamomo.mc.adventure.text.textComponent
 import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.AmongUs
@@ -54,6 +55,28 @@ class MeetingManager(private val game: Game) : Listener {
         game.area.ejectedViewPoint ?: error("Ejection view point not found")
 
     private val buttonCooldown = Cooldown(game.settings[SettingsKey.MEETING_BUTTON_COOLDOWN], true)
+
+    private val actionBar = game.actionBarManager.ActionBarPart(
+        "meeting",
+        ActionBarManager.ActionBarPartType.CENTER,
+        500,
+        false,
+        null
+    ).apply {
+        componentProvider = {
+            val meeting = meeting
+            if (meeting == null) null
+            else textComponent {
+                when (game.phase) {
+                    GamePhase.CALLING_MEETING -> translatable("meeting.actionbar.calling")
+                    GamePhase.DISCUSSION -> translatable("meeting.actionbar.discussing")
+                    GamePhase.VOTING -> translatable("meeting.actionbar.voting")
+                    GamePhase.ENDING_MEETING -> translatable("meeting.actionbar.ending")
+                    else -> content("<error>")
+                }
+            }
+        }
+    }
 
     internal val cameraAnchor: ArmorStand =
         ejectionViewPoint.world.spawn(ejectionViewPoint, ArmorStand::class.java) {
@@ -236,6 +259,8 @@ class MeetingManager(private val game: Game) : Listener {
                     sendTitlePart(TitlePart.SUBTITLE, subtitle)
                     showBossBar(bossBar)
                 }
+
+                game.actionBarManager.bar(p).add(actionBar)
             }
 
             startDiscussion()
@@ -502,6 +527,8 @@ class MeetingManager(private val game: Game) : Listener {
 //                        player.undiscoverRecipe(key)
 //                    }
                 }
+
+                actionBar.remove()
             }
             disableEventHandler = false
 
