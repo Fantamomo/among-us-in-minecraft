@@ -8,6 +8,7 @@ import com.fantamomo.mc.amongus.ability.AbilityManager
 import com.fantamomo.mc.amongus.area.GameArea
 import com.fantamomo.mc.amongus.manager.*
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import com.fantamomo.mc.amongus.player.PlayerColor
 import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.player.editStatistics
 import com.fantamomo.mc.amongus.role.RoleManager
@@ -19,7 +20,6 @@ import com.fantamomo.mc.amongus.task.TaskManager
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.title.TitlePart
 import org.bukkit.Bukkit
-import org.bukkit.DyeColor
 import org.bukkit.World
 import org.bukkit.entity.Player
 import java.util.*
@@ -107,10 +107,9 @@ class Game(
 
     fun getPlayer(uuid: UUID) = players.find { it.uuid == uuid }
 
-    internal fun randomDyeColor(): DyeColor {
-        val entries = DyeColor.entries
-        if (players.isEmpty()) return entries.random()
-        val list = entries.toMutableList()
+    internal fun randomPlayerColor(): PlayerColor {
+        if (players.isEmpty()) return PlayerColor.random()
+        val list = PlayerColor.notRestrictedColors()
         for (player in players) list.remove(player.color)
         return list.random()
     }

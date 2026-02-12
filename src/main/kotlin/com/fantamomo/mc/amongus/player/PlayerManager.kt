@@ -10,6 +10,7 @@ import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket
 import org.bukkit.craftbukkit.entity.CraftPlayer
 import org.bukkit.entity.Mannequin
 import org.bukkit.entity.Player
+import org.bukkit.inventory.ItemType
 import java.util.*
 
 object PlayerManager {
@@ -42,10 +43,18 @@ object PlayerManager {
 
         player.server.onlinePlayers.forEach {
             it.hidePlayer(AmongUs, player)
+            @Suppress("UNNECESSARY_SAFE_CALL")
             (it as CraftPlayer).handle.connection?.send(ClientboundPlayerInfoUpdatePacket.createSinglePlayerInitializing(nmsPlayer, true))
         }
         player.teleportAsync(game.area.lobbySpawn ?: throw IllegalStateException("Lobby spawn not set"))
         player.inventory.clear()
+
+        @Suppress("UnstableApiUsage")
+        val playerHelmet = ItemType.LEATHER_HELMET.createItemStack {
+            it.setColor(auPlayer.color.color)
+        }
+        player.inventory.helmet = playerHelmet
+        auPlayer.mannequinController.getEntity()?.equipment?.helmet = playerHelmet
         return auPlayer
     }
 
@@ -72,6 +81,7 @@ object PlayerManager {
         for (playingPlayer in players) {
             val bukkitPlayer = playingPlayer.player ?: continue
             player.hidePlayer(AmongUs, bukkitPlayer)
+            @Suppress("UNNECESSARY_SAFE_CALL")
             connection?.send(
                 ClientboundPlayerInfoUpdatePacket.createSinglePlayerInitializing(
                     (bukkitPlayer as CraftPlayer).handle,
@@ -94,6 +104,7 @@ object PlayerManager {
         amongUsPlayer.player = player
         for (onlinePlayer in player.server.onlinePlayers) {
             onlinePlayer.hidePlayer(AmongUs, player)
+            @Suppress("UNNECESSARY_SAFE_CALL")
             (onlinePlayer as CraftPlayer).handle.connection?.send(
                 ClientboundPlayerInfoUpdatePacket.createSinglePlayerInitializing(
                     player.handle, true
