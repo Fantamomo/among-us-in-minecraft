@@ -19,7 +19,6 @@ import com.fantamomo.mc.amongus.task.TaskManager
 import com.fantamomo.mc.amongus.util.CustomPersistentDataTypes
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.title.TitlePart
-import org.bukkit.DyeColor
 import org.bukkit.Location
 import org.bukkit.entity.LivingEntity
 import org.bukkit.entity.Player
@@ -52,7 +51,13 @@ class AmongUsPlayer internal constructor(
                 _profile = value.playerProfile
             }
         }
-    var color: DyeColor = game.randomDyeColor()
+    var color: PlayerColor = game.randomPlayerColor()
+        set(value) {
+            field = value
+            val helmet = value.toItemStack()
+            player?.inventory?.helmet = helmet
+            mannequinController.getEntity()?.equipment?.helmet = helmet
+        }
     val locale: Locale
         get() = player?.locale()?.also { _locale = it } ?: _locale
     val profile: PlayerProfile
