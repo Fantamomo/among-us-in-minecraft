@@ -34,6 +34,7 @@ object AmongUsCommands {
     private fun registerAll(registrar: Commands) {
         registrar.register(AmongUs.pluginMeta, AmongUsAdminCommand, "Among Us Admin Command", listOf("aua"))
         registrar.register(AmongUs.pluginMeta, AmongUsCommand, "Among Us Command", listOf("au"))
+        registrar.register(AmongUs.pluginMeta, AmongUsImposterMsgCommand, "Among Us Imposter Message Command", listOf("im"))
     }
 
     @Suppress("UnstableApiUsage")
