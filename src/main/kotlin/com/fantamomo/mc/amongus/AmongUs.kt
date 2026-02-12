@@ -26,7 +26,7 @@ object AmongUs : JavaPlugin() {
         LanguageManager.init()
 
         AmongUs.lifecycleManager.registerEventHandler(LifecycleEvents.COMMANDS) {
-            AmongUsCommands.registerAll(it.registrar())
+            AmongUsCommands.init(it.registrar())
         }
 
         Permissions.registerAll()
