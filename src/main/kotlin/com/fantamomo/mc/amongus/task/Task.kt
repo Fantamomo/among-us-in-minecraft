@@ -33,7 +33,12 @@ interface Task<T : Task<T, A>, A : AssignedTask<T, A>> {
             OpenWaterwaysTask,
             RecordTemperature,
             FillCanister,
-            RebootWifi
+            RebootWifi,
+            PrimeShieldsTask,
+            DivertPowerTask,
+            FuelEnginesTask,
+            ClearVentTask,
+            ChartCourseTask
         )
     }
 }
