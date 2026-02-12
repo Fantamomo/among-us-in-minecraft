@@ -199,11 +199,12 @@ class TaskManager(val game: Game) {
 
         val showBossbar = game.settings[SettingsKey.TASK_BAR_UPDATE] != TaskBarUpdateEnum.NONE
 
+        val common = commonTasks.randomListDistinct(commonTasksCount)
+
         for (player in game.players) {
             if (showBossbar) player.player?.showBossBar(bossbar)
             val long = longTasks.randomListDistinct(longTasksCount)
             val short = shortTasks.randomListDistinct(shortTasksCount)
-            val common = commonTasks.randomListDistinct(commonTasksCount)
             assignTasks(player, long + short + common)
         }
     }
