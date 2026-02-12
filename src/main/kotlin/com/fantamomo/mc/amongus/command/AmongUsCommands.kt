@@ -6,6 +6,7 @@ import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.PlayerManager
+import com.fantamomo.mc.amongus.role.Team
 import com.mojang.brigadier.Command
 import com.mojang.brigadier.context.CommandContext
 import com.mojang.brigadier.tree.ArgumentCommandNode
@@ -92,12 +93,21 @@ object AmongUsCommands {
             val sender = ctx.source.sender as? Player
                 ?: return original.run(ctx)
 
-            if (PlayerManager.getPlayer(sender) != null) {
+            val senderAuPlayer = PlayerManager.getPlayer(sender)
+            val targets = EntityArgument.getPlayers(ctx, "targets")
+
+            if (targets.size == 1 && senderAuPlayer?.assignedRole?.definition?.team == Team.IMPOSTERS) {
+                val target = PlayerManager.getPlayer(targets.first().bukkitEntity)
+                if (target?.assignedRole?.definition?.team == Team.IMPOSTERS) {
+                    sender.sendMessage(Component.translatable("command.error.msg.to_imposter"))
+                    return 0
+                }
+            }
+
+            if (senderAuPlayer != null) {
                 sender.sendMessage(Component.translatable("command.error.msg.in_game"))
                 return 0
             }
-
-            val targets = EntityArgument.getPlayers(ctx, "targets")
 
             val blockedTarget = targets
                 .asSequence()
