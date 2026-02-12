@@ -34,7 +34,7 @@ object ChartCourseTask : Task<ChartCourseTask, ChartCourseTask.AssignedChartCour
         private val point = itemStack(Material.FIREWORK_STAR).hideTooltip().markWith("point")
         private val border = itemStack(Material.BLACK_STAINED_GLASS_PANE).hideTooltip()
         
-        private val courseSlots = listOf(10, 12, 14, 16)
+        private val courseSlots = (11..16).toList()
         private var currentPointIndex = 0
 
         override fun onInventoryClick(event: InventoryClickEvent) {
@@ -46,7 +46,7 @@ object ChartCourseTask : Task<ChartCourseTask, ChartCourseTask.AssignedChartCour
                     if (currentPointIndex > 0) {
                         inv.setItem(courseSlots[currentPointIndex - 1], null)
                     } else {
-                        inv.setItem(9, null)
+                        inv.setItem(10, null)
                     }
                     
                     currentPointIndex++
@@ -59,8 +59,10 @@ object ChartCourseTask : Task<ChartCourseTask, ChartCourseTask.AssignedChartCour
 
         override fun setupInventory() {
             getBorderItemSlots(SIZE).forEach { inv.setItem(it, border) }
-            inv.setItem(9, ship.clone())
-            courseSlots.forEach { inv.setItem(it, point.clone()) }
+            inv.setItem(10 + currentPointIndex, ship.clone())
+            courseSlots.forEachIndexed { index, i ->
+                if (index >= currentPointIndex) inv.setItem(i, point.clone())
+            }
         }
 
         companion object {
