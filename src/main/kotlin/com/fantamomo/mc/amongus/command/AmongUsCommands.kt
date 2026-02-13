@@ -38,6 +38,39 @@ object AmongUsCommands {
         registrar.register(AmongUs.pluginMeta, AmongUsImposterMsgCommand, "Among Us Imposter Message Command", listOf("im"))
     }
 
+    /**
+     * Intercepts the Brigadier `/msg` command by replacing its execution handler.
+     *
+     * Why not use PlayerCommandPreprocessEvent?
+     *
+     * 1. Preprocess events only provide the raw command string.
+     * 2. There is no reliable way to ensure it is actually the Brigadier `/msg` node.
+     * 3. Commands executed through `/execute` would bypass such interception.
+     * 4. String-based interception is fragile and error-prone.
+     *
+     * This method:
+     * - Locates the root `/msg` node.
+     * - Navigates to `targets -> message`.
+     * - Replaces the execution handler using reflection.
+     *
+     * Important:
+     * It is not necessary to intercept aliases such as `/tell` or `/w`.
+     *
+     * In vanilla/Paper, these aliases internally redirect to the same Brigadier
+     * command node as `/msg`. Since we replace the execution handler directly
+     * on the `/msg` Brigadier node, all aliases automatically inherit the
+     * modified behavior.
+     *
+     * This avoids:
+     * - Duplicate interception logic
+     * - Multiple reflection modifications
+     * - Inconsistent alias behavior
+     *
+     * As long as aliases resolve to the same Brigadier node,
+     * this interception remains fully centralized and consistent.
+     *
+     * @return true if interception succeeds.
+     */
     @Suppress("UnstableApiUsage")
     private fun interceptMsgCommand(registrar: Commands): Boolean {
         logger.debug("Attempting to intercept /msg command")
@@ -86,6 +119,23 @@ object AmongUsCommands {
         return false
     }
 
+    /**
+     * Decorator implementation for the `/msg` command.
+     *
+     * Pattern Used: Command Decorator
+     *
+     * The interceptor:
+     * - Applies game-specific messaging restrictions.
+     * - Delegates to the original command when allowed.
+     *
+     * Rules enforced:
+     * 1. Players currently in-game cannot use `/msg`.
+     * 2. Players cannot message someone currently playing.
+     *
+     * If no rule is violated, the original command executes normally.
+     *
+     * If a imposter tries to message another imposter, they will receive an info message that the should use `/impostermsg`
+     */
     private class MsgInterceptor(
         private val original: Command<CommandSourceStack>
     ) : Command<CommandSourceStack> {
