@@ -3,10 +3,14 @@ package com.fantamomo.mc.amongus.player
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.manager.EntityManager
 import io.papermc.paper.datacomponent.item.ResolvableProfile
+import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
 import org.bukkit.Location
+import org.bukkit.entity.Display
 import org.bukkit.entity.Mannequin
 import org.bukkit.entity.Player
+import org.bukkit.entity.TextDisplay
+import org.bukkit.util.Transformation
 import java.util.*
 import kotlin.math.absoluteValue
 import kotlin.time.Duration
@@ -20,6 +24,7 @@ class MannequinController(
        ========================= */
 
     private var mannequin: Mannequin? = null
+    private var nameDisplay: TextDisplay? = null
     private var lastLocation: Location? = null
 
     private val visibleTo: MutableSet<UUID> = mutableSetOf()
@@ -48,9 +53,25 @@ class MannequinController(
             it.isImmovable = true
         }
 
+        nameDisplay = player.world.spawn(player.location, TextDisplay::class.java) {
+            it.text(Component.text(player.name))
+            it.isPersistent = false
+            it.isInvulnerable = true
+            it.isSeeThrough = false
+            it.viewRange = 12.5f
+            it.billboard = Display.Billboard.CENTER
+
+            val t = it.transformation
+            it.transformation = Transformation(t.translation.add(0f, 0.2f, 0f), t.leftRotation, t.scale, t.rightRotation)
+
+            mannequin?.addPassenger(it)
+        }
+
         player.hideEntity(AmongUs, mannequin!!)
+        player.hideEntity(AmongUs, nameDisplay!!)
 
         EntityManager.addEntityToRemoveOnEnd(owner.game, mannequin!!)
+        EntityManager.addEntityToRemoveOnEnd(owner.game, nameDisplay!!)
         lastLocation = player.location.clone()
 
         visibleTo.clear()
@@ -60,7 +81,9 @@ class MannequinController(
 
     fun despawn() {
         mannequin?.remove()
+        nameDisplay?.remove()
         mannequin = null
+        nameDisplay = null
         lastLocation = null
         visibleTo.clear()
     }
@@ -77,12 +100,16 @@ class MannequinController(
             player.showEntity(AmongUs, it)
             visibleTo += player.uniqueId
         }
+        nameDisplay?.let { player.showEntity(AmongUs, it) }
     }
 
     fun hideFrom(player: Player) {
         mannequin?.let {
             player.hideEntity(AmongUs, it)
             visibleTo -= player.uniqueId
+        }
+        nameDisplay?.let {
+            player.hideEntity(AmongUs, it)
         }
     }
 
