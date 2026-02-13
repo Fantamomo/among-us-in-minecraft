@@ -61,20 +61,48 @@ class CameraManager(val game: Game) {
             p?.showEntity(AmongUs, value.armorStand)
             setSpectatorTarget(value.armorStand)
             p?.sendBlockChange(value.location, Material.BARRIER.createBlockData())
+
             if (old != null) {
                 p?.hideEntity(AmongUs, old.armorStand)
                 p?.sendBlockChange(old.location, old.location.block.blockData)
             }
+
             actionBar.componentLike = value.actionBarMessage
             lastCameraChange = System.currentTimeMillis()
-            AmongUs.server.scheduler.runTaskLater(AmongUs,  { ->
+
+            // Schedule a task to run after 2 ticks.
+            // If the new camera ArmorStand is out of range,
+            // the player may not properly spectate it.
+            // Since spectating is a client-side effect and cannot be verified server-side,
+            // we delay the task by 2 ticks to ensure the player spectates the ArmorStand.
+            AmongUs.server.scheduler.runTaskLater(AmongUs, { ->
                 ignorePlayerStopSpectatingEntityEvent = true
+                // We need to set it to null first because, in the ServerPlayer class,
+                // an update packet is only sent when the new spectate target
+                // differs from the previous one.
                 setSpectatorTarget(null)
                 ignorePlayerStopSpectatingEntityEvent = false
                 setSpectatorTarget(value.armorStand)
             }, 2L)
         }
 
+        /**
+         * Uses `net.minecraft.server.level.ServerPlayer#setCamera` instead of
+         * `org.bukkit.entity.Player#setSpectatorTarget`.
+         *
+         * We intentionally do NOT switch the player to `org.bukkit.GameMode.SPECTATOR`.
+         * Spectator mode would grant additional spectator-specific abilities that we
+         * explicitly want to avoid, such as:
+         *
+         * - Highlighting players (Spectator hotkey), which renders them with a glowing
+         *   outline depending on their team.
+         * - Seeing other spectators and invisible mobs.
+         * - Teleporting to players via number key shortcuts (e.g., 1 for player list,
+         *   2 for team members, including click-to-teleport behavior).
+         *
+         * Since we only want to change the camera perspective without enabling the
+         * full spectator mechanics, we directly set the camera using NMS.
+         */
         private fun setSpectatorTarget(target: ArmorStand?) {
             val player = player.player ?: return
             val craftPlayer = player as CraftPlayer
