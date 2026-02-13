@@ -66,6 +66,7 @@ class MannequinController(
         redNameDisplay = player.world.spawn(player.location, TextDisplay::class.java) {
             it.text(Component.text(player.name, NamedTextColor.RED))
             modifyTextDisplay(it)
+            it.isVisibleByDefault = false
 
             mannequin?.addPassenger(it)
         }

@@ -25,6 +25,11 @@ object PlayerDataManager {
 
     init {
         directory.safeCreateDirectories()
+
+        val value = PersistencePlayerData(Uuid.random(), null)
+        json.encodeToString(value)
+        value.helpPreferences.hide(PlayerHelpPreferences.PlayerHelpMessage.COMMUNICATIONS)
+        json.encodeToString(value)
     }
 
     fun get(uuid: Uuid) = data[uuid] ?: loadOrCreate(uuid).also { data[uuid] = it }
