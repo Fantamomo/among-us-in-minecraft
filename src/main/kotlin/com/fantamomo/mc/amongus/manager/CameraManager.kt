@@ -30,18 +30,14 @@ class CameraManager(val game: Game) {
 
         var lastCameraChange: Long = System.currentTimeMillis()
         var lastPosition: Location? = player.player?.location
+        var ignorePlayerStopSpectatingEntityEvent: Boolean = false
+            private set
         var camera: Camera = camera
             set(value) {
                 checkIsValid()
                 if (field == value) return
-                player.player?.showEntity(AmongUs, value.armorStand)
-                setSpectatorTarget(value.armorStand)
-                player.player?.sendBlockChange(value.location, Material.BARRIER.createBlockData())
-                player.player?.hideEntity(AmongUs, field.armorStand)
-                player.player?.sendBlockChange(field.location, Material.AIR.createBlockData())
-                actionBar.componentLike = value.actionBarMessage
+                switchCamera(field, value)
                 field = value
-                lastCameraChange = System.currentTimeMillis()
             }
         val actionBar = game.actionBarManager.part(
             player,
@@ -51,26 +47,39 @@ class CameraManager(val game: Game) {
         )
 
         init {
-            val player = player.player
-            if (player != null) {
-                player.showEntity(AmongUs, camera.armorStand)
-                player.sendBlockChange(camera.location, Material.BARRIER.createBlockData())
-            }
             this.player.mannequinController.apply {
                 showToSelf()
                 freezeWithPhysics()
             }
-            setSpectatorTarget(camera.armorStand)
-            actionBar.componentLike = camera.actionBarMessage
+            switchCamera(null, camera)
             AbilityManager.invalidatePlayer(this.player)
+        }
+
+        private fun switchCamera(old: Camera?, value: Camera) {
+            val p = player.player
+            p?.teleport(value.location)
+            p?.showEntity(AmongUs, value.armorStand)
+            setSpectatorTarget(value.armorStand)
+            p?.sendBlockChange(value.location, Material.BARRIER.createBlockData())
+            if (old != null) {
+                p?.hideEntity(AmongUs, old.armorStand)
+                p?.sendBlockChange(old.location, old.location.block.blockData)
+            }
+            actionBar.componentLike = value.actionBarMessage
+            lastCameraChange = System.currentTimeMillis()
+            AmongUs.server.scheduler.runTaskLater(AmongUs,  { ->
+                ignorePlayerStopSpectatingEntityEvent = true
+                setSpectatorTarget(null)
+                ignorePlayerStopSpectatingEntityEvent = false
+                setSpectatorTarget(value.armorStand)
+            }, 2L)
         }
 
         private fun setSpectatorTarget(target: ArmorStand?) {
             val player = player.player ?: return
             val craftPlayer = player as CraftPlayer
             val handle = craftPlayer.handle
-            if (target == null) handle.setCamera(handle)
-            else handle.setCamera((target as CraftEntity).handle)
+            handle.setCamera((target as? CraftEntity)?.handle)
         }
 
         private fun checkIsValid() {
@@ -112,6 +121,7 @@ class CameraManager(val game: Game) {
             armorStand.setGravity(false)
             armorStand.isMarker = true
             armorStand.isVisibleByDefault = false
+            armorStand.trackedBy
         }.also { EntityManager.addEntityToRemoveOnEnd(game, it) }
 
         val actionBarMessage = textComponent {
@@ -163,7 +173,10 @@ class CameraManager(val game: Game) {
         val cameraSwitchCooldown = game.settings[SettingsKey.CAMERA_SWITCH_SAFE_COOLDOWN]
         for (cameraPlayer in playersInCamera) {
             if (millis % 200 == 0L && millis - cameraPlayer.lastCameraChange > cameraSwitchCooldown) {
-                cameraPlayer.player.player?.sendBlockChange(cameraPlayer.camera.location, Material.BARRIER.createBlockData())
+                cameraPlayer.player.player?.sendBlockChange(
+                    cameraPlayer.camera.location,
+                    Material.BARRIER.createBlockData()
+                )
             }
         }
     }
