@@ -71,6 +71,7 @@ class AmongUsPlayer internal constructor(
         get() = assignedRole?.definition?.canDoTask != false
 
     val statistics = PlayerStatistics(uuid.toKotlinUuid())
+    val helpPreferences = PlayerHelpPreferences(this)
 
     private fun checkGameRunning() {
         if (game.phase != GamePhase.RUNNING) throw IllegalStateException("Cannot perform this action in this phase")
