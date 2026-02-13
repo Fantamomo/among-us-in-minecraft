@@ -1,0 +1,22 @@
+# The msg-command-blocker module prevents players from sending private messages
+# (/msg, /tell, /w, etc.) while they are in a game. This helps maintain fair play
+# and prevents players from sharing information that could affect the outcome.
+msg-command-blocker:
+  # Master switch to enable or disable blocking of private message commands (/msg, /tell, /w, etc.).
+  disabled: false
+
+  # Legacy mode for command blocking:
+  # - false: Attempts to automatically intercept private message commands, even when executed via /execute.
+  # - true: Uses the explicit "commands" list below to determine which commands to block.
+  #   Recommended if other plugins override /msg or if console errors suggest enabling legacy mode.
+  legacy: false
+
+  # List of commands to block when legacy mode is enabled.
+  # These commands will be prevented while a player is in a game.
+  commands:
+    - msg
+    - tell
+    - w
+    - minecraft:tell
+    - minecraft:msg
+    - minecraft:w

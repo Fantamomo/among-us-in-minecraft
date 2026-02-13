@@ -26,6 +26,7 @@ object AmongUs : JavaPlugin() {
     const val IN_DEVELOPMENT = true
 
     override fun onEnable() {
+        saveDefaultConfig()
         if (IN_DEVELOPMENT) with(slF4JLogger) {
             info("This Plugin is running in development mode!")
             info("In developing mode, some features work not as expected.")
