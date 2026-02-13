@@ -538,11 +538,14 @@ class MeetingManager(private val game: Game) : Listener {
 
             Bukkit.updateRecipes()
 
-            ejectedPlayer?.let {
-                it.statistics.timeUntilDead.timerStop()
-                it.statistics.timeUntilVotedOut.timerStop()
-                respawnLocation?.let { p0 -> it.player?.teleport(p0) }
-                game.killManager.kill(it, false)
+            ejectedPlayer?.let { player ->
+                player.statistics.timeUntilDead.timerStop()
+                player.statistics.timeUntilVotedOut.timerStop()
+                respawnLocation?.let { loc -> player.player?.teleport(loc) }
+                player.mannequinController.getEntity()?.let { mannequin ->
+                    mannequin.fireTicks = 0
+                }
+                game.killManager.kill(player, false)
             }
 
             recipes.clear()
