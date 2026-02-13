@@ -4,6 +4,7 @@ import java.nio.file.Path
 import kotlin.io.path.createDirectories
 import kotlin.io.path.notExists
 
-fun Path.safeCreateDirectories(): Path = apply {
+@Suppress("NOTHING_TO_INLINE")
+inline fun Path.safeCreateDirectories(): Path = apply {
     if (notExists()) createDirectories()
 }
