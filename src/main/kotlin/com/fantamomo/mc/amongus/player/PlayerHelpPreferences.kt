@@ -31,6 +31,8 @@ class PlayerHelpPreferences private constructor(
             ?.also { if (it) cooldown.remove(help) } ?: true
     }
 
+    fun hide(help: PlayerHelpMessage) = hidden.add(help)
+
     fun showHelp(help: PlayerHelpMessage, player: Player) {
         if (allow(help)) {
             cooldown[help] = System.currentTimeMillis()
