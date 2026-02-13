@@ -14,6 +14,7 @@ import com.fantamomo.mc.amongus.manager.ActionBarManager
 import com.fantamomo.mc.amongus.manager.EntityManager
 import com.fantamomo.mc.amongus.manager.WaypointManager
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import com.fantamomo.mc.amongus.player.PlayerHelpPreferences
 import com.fantamomo.mc.amongus.util.accuracyToColor
 import com.fantamomo.mc.amongus.util.getAimAccuracy
 import net.kyori.adventure.text.Component
@@ -168,6 +169,7 @@ class CommunicationsSabotage(
             return
         }
         if (fixingPlayers.any { it.player == player }) return
+        player.player?.let { player.helpPreferences.showHelp(PlayerHelpPreferences.PlayerHelpMessage.COMMUNICATIONS, it) }
         fixingPlayers += FixingPlayer(player)
     }
 
