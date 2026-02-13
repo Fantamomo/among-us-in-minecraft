@@ -73,6 +73,27 @@ object AbilityListener : Listener {
         }
     }
 
+    /**
+     * Prevents ability items from being moved, dropped, or transferred
+     * in unintended ways.
+     *
+     * Insight:
+     * Ability items are considered system-critical items and must remain inside the
+     * player's own inventory. This handler therefore blocks:
+     *
+     * - Moving ability items into other inventories (e.g. chests, furnaces, etc.)
+     * - Dropping them (cursor or slot drops)
+     * - Collect-to-cursor behavior
+     * - Bundle interactions
+     * - Shift-click transfers into foreign inventories
+     * - Hotbar swaps that would move ability items across inventory boundaries
+     *
+     * Only a minimal, explicitly whitelisted set of safe inventory actions is allowed
+     * (e.g., pickup/place/swap within the player's own inventory).
+     *
+     * This ensures ability items remain stable, non-transferable, and non-exploitable
+     * while still allowing normal inventory interaction inside the player inventory.
+     */
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     fun onInventoryClick(event: InventoryClickEvent) {
         val player = event.whoClicked as? Player ?: return
@@ -114,8 +135,6 @@ object AbilityListener : Listener {
             event.isCancelled = true
             return
         }
-
-
 
         when (action) {
 

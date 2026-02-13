@@ -12,6 +12,15 @@ import com.fantamomo.mc.amongus.statistics.StatisticsManager
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
 import org.bukkit.plugin.java.JavaPlugin
 
+/**
+ * An object that serves as the main entry point for the AmongUs plugin.
+ * This object extends [JavaPlugin] for integration with the Minecraft server.
+ *
+ * We use here an `object` instead of a `class` so we don't need to provide to each class an instance of it via the constructor.
+ * And can use in other classes directly [AmongUs].
+ *
+ * @see AmongUsBootstrapper
+ */
 object AmongUs : JavaPlugin() {
 
     const val IN_DEVELOPMENT = true

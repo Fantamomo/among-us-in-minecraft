@@ -37,6 +37,15 @@ import org.bukkit.persistence.PersistentDataType
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
 
+/**
+ * Manages the logic and events related to meetings in the game.
+ *
+ * This class handles the state and functionality of meetings, including their initiation,
+ * ongoing processes, and any associated gameplay mechanics.
+ *
+ * @author Fantamomo
+ * @since 1.0-SNAPSHOT
+ */
 class MeetingManager(private val game: Game) : Listener {
 
     var meeting: Meeting? = null

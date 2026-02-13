@@ -29,6 +29,20 @@ import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 
+/**
+ * Manages scoreboards for an Among Us game session.
+ *
+ * This class handles operations related to managing the scoreboards
+ * of players in the game, such as updating, refreshing, and retrieving
+ * scoreboards for specific players. It also manages players when they
+ * join, leave, or reconnect to the game.
+ *
+ * @property game Holds the reference to the current game associated with the scoreboard manager.
+ * @property scoreboards A mapping of players to their corresponding scoreboards.
+ *
+ * @author Fantamomo
+ * @since 1.0-SNAPSHOT
+ */
 class ScoreboardManager(private val game: Game) {
 
     private val scoreboards = mutableMapOf<AmongUsPlayer, AmongUsScoreboard>()
@@ -70,6 +84,9 @@ class ScoreboardManager(private val game: Game) {
     inner class AmongUsScoreboard(private val player: AmongUsPlayer) {
         private val scoreboard = Bukkit.getScoreboardManager().newScoreboard
 
+        /**
+         * Team used to render dead players as translucent ("ghost-like").
+         */
         val ghostTeam = (scoreboard.getTeam(TEAM_GHOST) ?: scoreboard.registerNewTeam(TEAM_GHOST)).apply {
             setCanSeeFriendlyInvisibles(true)
         }

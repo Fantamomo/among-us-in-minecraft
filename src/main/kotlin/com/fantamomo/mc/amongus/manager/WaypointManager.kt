@@ -38,6 +38,7 @@ class WaypointManager(val game: Game) {
             }
         }
 
+        // we need to use packets directly, due that paper currently does not provide an api for it
         private fun sendPacket(packet: ClientboundTrackedWaypointPacket) {
             val player = player.player ?: return
             val craftPlayer = (player as CraftPlayer)
@@ -166,6 +167,17 @@ class WaypointManager(val game: Game) {
         }
     }
 
+    /**
+     * Displays an action bar with details about the most relevant visible waypoint
+     * near the given player's current position and orientation, if any are applicable.
+     *
+     * @param data The waypoint data encapsulating the player and their associated waypoints.
+     *             This includes information about each waypoint's visibility and position
+     *             relative to the player.
+     * @return A `Component` representing the text to be displayed in the action bar
+     *         regarding the nearest relevant waypoint, or `null` if no suitable waypoint is found
+     *         or conditions to show the action bar are not met.
+     */
     private fun showActionbar(data: WaypointData): Component? {
         if (data.waypoints.isEmpty()) return null
         if (data.waypoints.all { !it.isVisible }) return null
@@ -247,6 +259,12 @@ class WaypointManager(val game: Game) {
             isAccessible = true
         }
 
+        /**
+         * Creates an `Icon` instance with the specified color.
+         *
+         * @param color The color to be applied to the icon.
+         * @return The newly created `Icon` instance, or `Icon.NULL` if the creation fails.
+         */
         private fun createIcon(color: Int): Icon = try {
             constructor.newInstance(WaypointStyleAssets.DEFAULT, Optional.of(color))
         } catch (_: Exception) {

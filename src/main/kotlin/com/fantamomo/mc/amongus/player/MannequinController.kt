@@ -17,6 +17,76 @@ import java.util.*
 import kotlin.math.absoluteValue
 import kotlin.time.Duration
 
+/**
+ * Controls a Mannequin entity that visually replaces the real player entity
+ * for other clients.
+ *
+ * =========================
+ * === Design Rationale ===
+ * =========================
+ *
+ * We intentionally do NOT show the real Player entity to other players.
+ * Instead, we:
+ *
+ * 1. Hide the real player using Paper's hideEntity/showEntity system.
+ * 2. Spawn a Mannequin that mirrors the player's state.
+ * 3. Fully control what other players are allowed to see.
+ *
+ * The primary reason for this architecture is full visual control.
+ *
+ * Example problem:
+ * If we wanted to hide the item in the player's main hand without using a
+ * Mannequin, we would need to:
+ *
+ * - Send equipment update packets with AIR to all other players
+ *   after every main-hand switch.
+ *
+ * This introduces a race-condition problem:
+ * Other players may briefly see the real item before the override packet arrives.
+ *
+ * Alternative approach (tested):
+ * - Intercept outgoing packets using ProtocolLib and modify/cancel them.
+ *
+ * Why this was rejected:
+ * - It requires intercepting and maintaining many different packet types.
+ * - Complex edge cases appear (e.g. when a player enters cameras).
+ * - In camera mode, essentially ALL player-related packets would need to be blocked.
+ * - The solution becomes fragile, hard to maintain, and error-prone.
+ *
+ * Additional benefit:
+ * By fully replacing the visual representation, we can also control how
+ * name tags appear to specific players.
+ *
+ * Example:
+ * Other imposters can see their teammates' names in red,
+ * while normal players see the default name in white.
+ *
+ * This kind of per-viewer name customization would be significantly harder
+ * (and less reliable) when using the real Player entity.
+ *
+ * Final decision:
+ * Use Paper's hideEntity/showEntity system and replace the player visually
+ * with a Mannequin.
+ *
+ * Advantages:
+ * - No packet-level hacks.
+ * - No race conditions.
+ * - No visual flicker.
+ * - No need to block dozens of packet types.
+ * - Complete server-side control over:
+ *      - Equipment visibility
+ *      - Name tag rendering (including per-player color differences)
+ *      - Pose & rotation
+ *      - Sneaking state
+ *      - Visibility per player
+ *
+ * In short:
+ * Instead of fighting the client synchronization model,
+ * we replace the visual representation entirely.
+ *
+ * @author Fantamomo
+ * @since 1.0-SNAPSHOT
+ */
 class MannequinController(
     private val owner: AmongUsPlayer
 ) {

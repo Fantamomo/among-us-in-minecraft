@@ -140,6 +140,29 @@ class KillManager(val game: Game) {
         game.checkWin()
     }
 
+    /**
+     * Marks a player as dead and transitions them into ghost mode.
+     *
+     * Flow overview:
+     *
+     * 1. Update logical state (isAlive = false, stop death timer).
+     * 2. Hide the mannequin from all currently seeing players.
+     * 3. Re-show it only to players who are allowed to see ghosts.
+     * 4. Make the mannequin invisible.
+     * 5. Add player and relevant entities to the ghost scoreboard team.
+     *
+     * Why this is necessary:
+     *
+     * - The mannequin is set invisible so alive it will be shown transparently.
+     * - The ghost team enables `canSeeFriendlyInvisibles`, allowing
+     *   dead players to still see each other.
+     * - We add both the real player and the mannequin entity to the
+     *   ghost team to ensure consistent rendering behavior.
+     *
+     * This ensures:
+     * - Ghosts always see each other.
+     * - Visibility is handled entirely server-side without packet hacks.
+     */
     private fun markAsDead(target: AmongUsPlayer) {
         target.isAlive = false
         target.statistics.timeUntilDead.timerStop()
