@@ -14,6 +14,7 @@ class AbilityContext(
 
     val player = ability.player
     val game = player.game
+    var restartCooldown = true
 
     internal lateinit var abilityItem: AbilityItem
 
