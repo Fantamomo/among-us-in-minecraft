@@ -150,6 +150,13 @@ class AmongUsPlayer internal constructor(
                 }
             )
         }
+
+        for (player in game.players) {
+            if (player === this) continue
+            val p = player.player ?: continue
+            mannequinController.updateNameTag(p)
+        }
+
         statistics.onGameStart()
     }
 }
