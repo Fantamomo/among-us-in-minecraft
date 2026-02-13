@@ -6,6 +6,7 @@ import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.manager.EntityManager
 import com.fantamomo.mc.amongus.manager.WaypointManager
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import com.fantamomo.mc.amongus.player.PlayerHelpPreferences
 import com.fantamomo.mc.amongus.util.centerLocationOf
 import com.fantamomo.mc.amongus.util.isBetween
 import com.fantamomo.mc.amongus.util.sendComponent
@@ -152,6 +153,7 @@ class LightsSabotage internal constructor(override val game: Game) :
         val player = amongUsPlayer.player ?: return
         if (location.isBetween(min, max)) {
             if (doesSeeDisplays.add(amongUsPlayer.uuid)) {
+                amongUsPlayer.helpPreferences.showHelp(PlayerHelpPreferences.PlayerHelpMessage.LIGHTS)
                 levers.values.forEach { display ->
                     player.showEntity(AmongUs, display)
                 }
