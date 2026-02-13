@@ -7,6 +7,7 @@ import com.fantamomo.mc.amongus.languages.LanguageManager
 import com.fantamomo.mc.amongus.listeners.Listeners
 import com.fantamomo.mc.amongus.manager.EntityManager
 import com.fantamomo.mc.amongus.manager.MeetingManager
+import com.fantamomo.mc.amongus.player.PlayerDataManager
 import com.fantamomo.mc.amongus.statistics.StatisticsManager
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
 import org.bukkit.plugin.java.JavaPlugin
@@ -44,6 +45,7 @@ object AmongUs : JavaPlugin() {
         saveRun { MeetingManager.dispose() }
         saveRun { StatisticsManager.saveAll() }
         saveRun { GameAreaManager.saveAll() }
+        saveRun { PlayerDataManager.saveAll() }
 
         val ex = classNotFoundException
         if (ex != null) {
