@@ -18,24 +18,50 @@ class RoleManager(private val game: Game) {
         val imposters = shuffledPlayers.take(imposterCount)
         val crewmates = shuffledPlayers.drop(imposterCount)
 
-        assignRoles(imposters, roleChances.filterKeys { it.team == Team.IMPOSTERS })
-        assignRoles(crewmates, roleChances.filterKeys { it.team == Team.CREWMATES })
+        assignRoles(
+            imposters,
+            roleChances.filterKeys { it.team == Team.IMPOSTERS },
+            Team.IMPOSTERS
+        )
+
+        assignRoles(
+            crewmates,
+            roleChances.filterKeys { it.team == Team.CREWMATES },
+            Team.CREWMATES
+        )
     }
 
-    private fun buildRoleChanceMap(): Map<Role<*, *>, Int> = SettingsKey.roles
-        .mapValues { (_, key) ->
-            game.settings[key].coerceIn(0, 100)
-        }
-        .filterValues { it > 0 }
+    private fun buildRoleChanceMap(): Map<Role<*, *>, Int> =
+        SettingsKey.roles
+            .mapValues { (_, key) ->
+                game.settings[key].coerceIn(0, 100)
+            }
+            .filterValues { it > 0 }
 
     private fun assignRoles(
         players: List<AmongUsPlayer>,
-        roles: Map<Role<*, *>, Int>
+        roles: Map<Role<*, *>, Int>,
+        team: Team
     ) {
-        if (players.isEmpty() || roles.isEmpty()) return
+        if (players.isEmpty()) return
 
-        val guaranteedRoles = roles.filterValues { it == 100 }.keys.toMutableList().apply { shuffle() }
-        val weightedRoles = roles.filterValues { it in 1..99 }.toList().shuffled()
+        if (roles.isEmpty()) {
+            players.forEach { player ->
+                player.assignedRole = team.defaultRole.assignTo(player)
+            }
+            return
+        }
+
+        val guaranteedRoles = roles
+            .filterValues { it == 100 }
+            .keys
+            .toMutableList()
+            .apply { shuffle() }
+
+        val weightedRoles = roles
+            .filterValues { it in 1..99 }
+            .toList()
+            .shuffled()
 
         val shuffledPlayers = players.shuffled()
         val assignedPlayers = mutableSetOf<AmongUsPlayer>()
@@ -49,6 +75,13 @@ class RoleManager(private val game: Game) {
         }
 
         val remainingPlayers = shuffledPlayers.filterNot { it in assignedPlayers }
+
+        if (weightedRoles.isEmpty()) {
+            remainingPlayers.forEach { player ->
+                player.assignedRole = team.defaultRole.assignTo(player)
+            }
+            return
+        }
 
         remainingPlayers.forEach { player ->
             val role = pickWeightedRole(weightedRoles)
