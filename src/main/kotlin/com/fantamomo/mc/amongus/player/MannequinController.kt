@@ -2,8 +2,10 @@ package com.fantamomo.mc.amongus.player
 
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.manager.EntityManager
+import com.fantamomo.mc.amongus.role.Team
 import io.papermc.paper.datacomponent.item.ResolvableProfile
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.entity.Display
@@ -25,6 +27,7 @@ class MannequinController(
 
     private var mannequin: Mannequin? = null
     private var nameDisplay: TextDisplay? = null
+    private var redNameDisplay: TextDisplay? = null
     private var lastLocation: Location? = null
 
     private val visibleTo: MutableSet<UUID> = mutableSetOf()
@@ -55,23 +58,25 @@ class MannequinController(
 
         nameDisplay = player.world.spawn(player.location, TextDisplay::class.java) {
             it.text(Component.text(player.name))
-            it.isPersistent = false
-            it.isInvulnerable = true
-            it.isSeeThrough = false
-            it.viewRange = 12.5f
-            it.billboard = Display.Billboard.CENTER
 
-            val t = it.transformation
-            it.transformation = Transformation(t.translation.add(0f, 0.2f, 0f), t.leftRotation, t.scale, t.rightRotation)
+            modifyTextDisplay(it)
+
+            mannequin?.addPassenger(it)
+        }
+        redNameDisplay = player.world.spawn(player.location, TextDisplay::class.java) {
+            it.text(Component.text(player.name, NamedTextColor.RED))
+            modifyTextDisplay(it)
 
             mannequin?.addPassenger(it)
         }
 
         player.hideEntity(AmongUs, mannequin!!)
         player.hideEntity(AmongUs, nameDisplay!!)
+        player.hideEntity(AmongUs, redNameDisplay!!)
 
         EntityManager.addEntityToRemoveOnEnd(owner.game, mannequin!!)
         EntityManager.addEntityToRemoveOnEnd(owner.game, nameDisplay!!)
+        EntityManager.addEntityToRemoveOnEnd(owner.game, redNameDisplay!!)
         lastLocation = player.location.clone()
 
         visibleTo.clear()
@@ -79,11 +84,27 @@ class MannequinController(
         showToAll()
     }
 
+    private fun modifyTextDisplay(display: TextDisplay) {
+        display.isPersistent = false
+        display.isInvulnerable = true
+        display.isSeeThrough = false
+        display.viewRange = 12.5f
+        display.billboard = Display.Billboard.CENTER
+
+        val t = display.transformation
+        display.transformation =
+            Transformation(t.translation.add(0f, 0.2f, 0f), t.leftRotation, t.scale, t.rightRotation)
+    }
+
     fun despawn() {
         mannequin?.remove()
         nameDisplay?.remove()
+        redNameDisplay?.remove()
+
         mannequin = null
         nameDisplay = null
+        redNameDisplay = null
+
         lastLocation = null
         visibleTo.clear()
     }
@@ -100,7 +121,29 @@ class MannequinController(
             player.showEntity(AmongUs, it)
             visibleTo += player.uniqueId
         }
-        nameDisplay?.let { player.showEntity(AmongUs, it) }
+
+        if (PlayerManager.getPlayer(player)?.assignedRole?.definition?.team == Team.IMPOSTERS
+            && owner.assignedRole?.definition?.team == Team.IMPOSTERS
+        ) {
+            redNameDisplay?.let { player.showEntity(AmongUs, it) }
+        } else {
+            nameDisplay?.let { player.showEntity(AmongUs, it) }
+        }
+    }
+
+    fun updateNameTag(player: Player) {
+        val amongUsPlayer = PlayerManager.getPlayer(player)
+
+        redNameDisplay?.let { player.hideEntity(AmongUs, it) }
+        nameDisplay?.let { player.hideEntity(AmongUs, it) }
+
+        if (amongUsPlayer?.assignedRole?.definition?.team == Team.IMPOSTERS
+            && owner.assignedRole?.definition?.team == Team.IMPOSTERS
+        ) {
+            redNameDisplay?.let { player.showEntity(AmongUs, it) }
+        } else {
+            nameDisplay?.let { player.showEntity(AmongUs, it) }
+        }
     }
 
     fun hideFrom(player: Player) {
@@ -108,9 +151,8 @@ class MannequinController(
             player.hideEntity(AmongUs, it)
             visibleTo -= player.uniqueId
         }
-        nameDisplay?.let {
-            player.hideEntity(AmongUs, it)
-        }
+        nameDisplay?.let { player.hideEntity(AmongUs, it) }
+        redNameDisplay?.let { player.hideEntity(AmongUs, it) }
     }
 
     fun hideFromAll() {
