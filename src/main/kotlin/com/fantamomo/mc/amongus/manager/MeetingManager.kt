@@ -1,9 +1,6 @@
 package com.fantamomo.mc.amongus.manager
 
-import com.fantamomo.mc.adventure.text.args
-import com.fantamomo.mc.adventure.text.content
-import com.fantamomo.mc.adventure.text.textComponent
-import com.fantamomo.mc.adventure.text.translatable
+import com.fantamomo.mc.adventure.text.*
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.game.GamePhase
@@ -105,12 +102,14 @@ class MeetingManager(private val game: Game) : Listener {
         caller: AmongUsPlayer,
         reason: MeetingReason,
         force: Boolean = reason == MeetingReason.BODY,
-        updateStatistics: Boolean = true
+        updateStatistics: Boolean = true,
+        body: AmongUsPlayer? = null
     ) {
         if (meeting != null) return
         if (!caller.isAlive) return
+        val body = if (reason == MeetingReason.BODY) body ?: game.killManager.nearestCorpse(caller.livingEntity.location)?.owner else body
         if (force) {
-            meeting = Meeting(caller, reason)
+            meeting = Meeting(caller, reason, body)
             return
         }
         game.taskManager.updateBossbar(meeting = true)
@@ -132,7 +131,7 @@ class MeetingManager(private val game: Game) : Listener {
         }
         caller.meetingButtonsPressed++
         buttonCooldown.reset()
-        meeting = Meeting(caller, reason)
+        meeting = Meeting(caller, reason, body)
         if (updateStatistics) {
             val statistics = caller.statistics
             statistics.calledEmergency.increment()
@@ -147,7 +146,8 @@ class MeetingManager(private val game: Game) : Listener {
     @Suppress("UnstableApiUsage")
     inner class Meeting(
         private val caller: AmongUsPlayer,
-        private val reason: MeetingReason
+        private val reason: MeetingReason,
+        private val foundBody: AmongUsPlayer?
     ) {
         private var timer: Cooldown? = null
         private val votes: MutableMap<AmongUsPlayer, Vote> = mutableMapOf()
@@ -161,6 +161,7 @@ class MeetingManager(private val game: Game) : Listener {
             private set
         var disableEventHandler: Boolean = false
             private set
+        val foundBodies: List<AmongUsPlayer> = game.killManager.getCorpses().map { it.owner }
 
         init {
             registerRecipes()
@@ -247,6 +248,19 @@ class MeetingManager(private val game: Game) : Listener {
                 }
             }
 
+            val chatMessage: Component = if (foundBodies.isEmpty()) Component.translatable("meeting.called.info.no_bodies")
+            else textComponent {
+                translatable("meeting.called.info.bodies") {
+                    args { numeric("count", foundBodies.size) }
+                }
+                for (body in foundBodies) {
+                    newLine()
+                    translatable(if (body === foundBody) "meeting.called.info.body.found" else "meeting.called.info.body") {
+                        args { string("player", body.name) }
+                    }
+                }
+            }
+
             game.players.forEach { p ->
                 if (game.cameraManager.isInCams(p)) game.cameraManager.leaveCams(p)
                 if (game.ventManager.isVented(p)) game.ventManager.ventOut(p)
@@ -257,6 +271,7 @@ class MeetingManager(private val game: Game) : Listener {
                     closeInventory()
                     sendTitlePart(TitlePart.TITLE, title)
                     sendTitlePart(TitlePart.SUBTITLE, subtitle)
+                    sendMessage(chatMessage)
                     showBossBar(bossBar)
                 }
 
