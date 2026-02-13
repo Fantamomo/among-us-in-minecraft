@@ -5,47 +5,71 @@ import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import kotlin.random.Random
 
-class RoleManager(val game: Game) {
+class RoleManager(private val game: Game) {
 
     fun start() {
-        val impostersCount: Int = game.settings[SettingsKey.IMPOSTERS]
+        val imposterCount = game.settings[SettingsKey.IMPOSTERS]
+        require(imposterCount in 0..game.players.size)
 
-        val roleChances: Map<Role<*, *>, Int> =
-            SettingsKey.roles.mapValues { game.settings[it.value] }
+        val roleChances = buildRoleChanceMap()
 
-        val imposterRoles = roleChances.filter { it.key.team == Team.IMPOSTERS }
-        val crewmateRoles = roleChances.filter { it.key.team == Team.CREWMATES }
+        val shuffledPlayers = game.players.shuffled()
 
-        val shuffledPlayers: List<AmongUsPlayer> = game.players.shuffled()
+        val imposters = shuffledPlayers.take(imposterCount)
+        val crewmates = shuffledPlayers.drop(imposterCount)
 
-        val imposters = shuffledPlayers.take(impostersCount)
-        val crewmates = shuffledPlayers.drop(impostersCount)
+        assignRoles(imposters, roleChances.filterKeys { it.team == Team.IMPOSTERS })
+        assignRoles(crewmates, roleChances.filterKeys { it.team == Team.CREWMATES })
+    }
 
-        imposters.forEach { player ->
-            val role = pickWeightedRole(imposterRoles)
+    private fun buildRoleChanceMap(): Map<Role<*, *>, Int> = SettingsKey.roles
+        .mapValues { (_, key) ->
+            game.settings[key].coerceIn(0, 100)
+        }
+        .filterValues { it > 0 }
+
+    private fun assignRoles(
+        players: List<AmongUsPlayer>,
+        roles: Map<Role<*, *>, Int>
+    ) {
+        if (players.isEmpty() || roles.isEmpty()) return
+
+        val guaranteedRoles = roles.filterValues { it == 100 }.keys.toMutableList().apply { shuffle() }
+        val weightedRoles = roles.filterValues { it in 1..99 }.toList().shuffled()
+
+        val shuffledPlayers = players.shuffled()
+        val assignedPlayers = mutableSetOf<AmongUsPlayer>()
+
+        for ((index, role) in guaranteedRoles.withIndex()) {
+            if (index >= shuffledPlayers.size) break
+
+            val player = shuffledPlayers[index]
             player.assignedRole = role.assignTo(player)
+            assignedPlayers += player
         }
 
-        crewmates.forEach { player ->
-            val role = pickWeightedRole(crewmateRoles)
+        val remainingPlayers = shuffledPlayers.filterNot { it in assignedPlayers }
+
+        remainingPlayers.forEach { player ->
+            val role = pickWeightedRole(weightedRoles)
             player.assignedRole = role.assignTo(player)
         }
     }
 
-    private fun pickWeightedRole(roles: Map<Role<*, *>, Int>): Role<*, *> {
-        val totalWeight = roles.values.sum()
-        require(totalWeight > 0) { "Total role weight must be greater than 0" }
+    private fun pickWeightedRole(roles: List<Pair<Role<*, *>, Int>>): Role<*, *> {
+        val totalWeight = roles.sumOf { it.second }
+        require(totalWeight > 0) { "No weighted roles available." }
 
         val randomValue = Random.nextInt(totalWeight)
-        var currentWeight = 0
+        var accumulated = 0
 
         for ((role, weight) in roles) {
-            currentWeight += weight
-            if (randomValue < currentWeight) {
+            accumulated += weight
+            if (randomValue < accumulated) {
                 return role
             }
         }
 
-        error("Weighted role selection failed")
+        error("Weighted role selection failed.")
     }
 }
