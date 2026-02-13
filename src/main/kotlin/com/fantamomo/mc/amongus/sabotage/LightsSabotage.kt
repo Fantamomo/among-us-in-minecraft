@@ -153,7 +153,7 @@ class LightsSabotage internal constructor(override val game: Game) :
         val player = amongUsPlayer.player ?: return
         if (location.isBetween(min, max)) {
             if (doesSeeDisplays.add(amongUsPlayer.uuid)) {
-                amongUsPlayer.helpPreferences.showHelp(PlayerHelpPreferences.PlayerHelpMessage.LIGHTS)
+                amongUsPlayer.helpPreferences.showHelp(PlayerHelpPreferences.PlayerHelpMessage.LIGHTS, player)
                 levers.values.forEach { display ->
                     player.showEntity(AmongUs, display)
                 }

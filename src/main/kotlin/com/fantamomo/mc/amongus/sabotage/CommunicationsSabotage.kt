@@ -169,7 +169,7 @@ class CommunicationsSabotage(
             return
         }
         if (fixingPlayers.any { it.player == player }) return
-        player.helpPreferences.showHelp(PlayerHelpPreferences.PlayerHelpMessage.COMMUNICATIONS)
+        player.player?.let { player.helpPreferences.showHelp(PlayerHelpPreferences.PlayerHelpMessage.COMMUNICATIONS, it) }
         fixingPlayers += FixingPlayer(player)
     }
 
