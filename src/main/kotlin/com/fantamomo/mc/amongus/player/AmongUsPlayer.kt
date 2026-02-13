@@ -126,7 +126,7 @@ class AmongUsPlayer internal constructor(
     fun <A : Ability<A, S>, S : AssignedAbility<A, S>> getAssignedAbility(ability: A) =
         abilities.firstOrNull { it.definition === ability } as? S
 
-    fun isInVent(): Boolean = game.ventManager.isNearVent(this)
+    fun isNearVent(): Boolean = game.ventManager.isNearVent(this)
 
     fun isInCams(): Boolean = game.cameraManager.isInCams(this)
 
