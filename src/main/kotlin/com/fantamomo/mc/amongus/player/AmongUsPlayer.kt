@@ -36,6 +36,8 @@ class AmongUsPlayer internal constructor(
     private var _profile: PlayerProfile? = null
     internal val abilities: MutableList<AssignedAbility<*, *>> = mutableListOf()
 
+    val persistencePlayerData = PlayerDataManager.get(uuid.toKotlinUuid())
+
     val mannequinController = MannequinController(this)
 
     val name: String
@@ -71,7 +73,7 @@ class AmongUsPlayer internal constructor(
         get() = assignedRole?.definition?.canDoTask != false
 
     val statistics = PlayerStatistics(uuid.toKotlinUuid())
-    val helpPreferences = PlayerHelpPreferences(this)
+    val helpPreferences = persistencePlayerData.helpPreferences
 
     private fun checkGameRunning() {
         if (game.phase != GamePhase.RUNNING) throw IllegalStateException("Cannot perform this action in this phase")
