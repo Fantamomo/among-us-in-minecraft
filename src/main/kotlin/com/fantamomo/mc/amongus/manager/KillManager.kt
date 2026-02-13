@@ -93,6 +93,8 @@ class KillManager(val game: Game) {
     fun isNearCorpse(location: Location): Boolean =
         corpses.any { it.mannequin.location.distanceSquared(location) <= 2 * 2 }
 
+    fun nearestCorpse(location: Location): Corpse? = corpses.minByOrNull { it.mannequin.location.distanceSquared(location) }
+
     fun canKillAsImposter(player: AmongUsPlayer): Boolean {
         val loc = player.livingEntityOrNull?.location ?: return false
         val distance = game.settings[SettingsKey.KILL_DISTANCE].distance
@@ -171,6 +173,8 @@ class KillManager(val game: Game) {
         val scoreboard = game.scoreboardManager.get(amongUsPlayer)
         amongUsPlayer.player?.let { scoreboard?.ghostTeam?.addPlayer(it) }
     }
+
+    fun getCorpses(): List<Corpse> = corpses.toList()
 
     class Corpse(
         val mannequin: Mannequin,
