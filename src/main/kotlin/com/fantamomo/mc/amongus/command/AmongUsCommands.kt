@@ -4,6 +4,7 @@ import com.fantamomo.mc.adventure.text.args
 import com.fantamomo.mc.adventure.text.textComponent
 import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.AmongUs
+import com.fantamomo.mc.amongus.data.AmongUsConfig
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.role.Team
@@ -27,8 +28,14 @@ object AmongUsCommands {
     fun init(registrar: Commands) {
         registerAll(registrar)
 
-        if (!interceptMsgCommand(registrar)) {
-            logger.warn("Failed to intercept /msg command. It may have been overridden by another plugin.")
+        if (!AmongUsConfig.MsgCommandBlocker.disabled && !AmongUsConfig.MsgCommandBlocker.legacy) {
+            if (!interceptMsgCommand(registrar)) {
+                logger.warn("Failed to intercept the /msg command for private messaging.")
+                logger.warn("This usually happens if another plugin overrides /msg commands.")
+                logger.warn("Action: To resolve this, enable 'msg-command-blocker.legacy = true' in the config.yml.")
+                logger.warn("If enabling legacy mode does not fix the issue, please report this problem to the plugin author, " +
+                        "including details about other plugins that might affect private messaging commands.")
+            }
         }
     }
 
