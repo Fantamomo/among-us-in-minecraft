@@ -29,6 +29,7 @@ class KillManager(val game: Game) {
             it.pose = Pose.SLEEPING
             it.isImmovable = true
             it.persistentDataContainer.set(CORPSE_KEY, PersistentDataType.BYTE, 1)
+            it.equipment.helmet = owner.player?.inventory?.helmet
             EntityManager.addEntityToRemoveOnEnd(game, it)
         }
         val corpse = Corpse(mannequin, owner)
