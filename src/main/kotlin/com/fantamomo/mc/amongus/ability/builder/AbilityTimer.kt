@@ -5,13 +5,21 @@ import kotlin.time.Duration
 
 class AbilityTimer(
     val id: String,
-    private val handle: Cooldown
+    internal val handle: Cooldown
 ) {
     constructor(id: String, duration: Duration) : this(id, Cooldown(duration))
 
     fun start(newDuration: Duration = handle.startDuration()) {
         handle.set(newDuration)
         handle.start()
+    }
+
+    fun pause() {
+        handle.pause()
+    }
+
+    fun resume() {
+        handle.resume()
     }
 
     fun stop() {

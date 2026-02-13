@@ -10,12 +10,15 @@ object VentListener : Listener {
     @EventHandler
     fun onPlayerMove(event: PlayerMoveEvent) {
         val player = PlayerManager.getPlayer(event.player) ?: return
+        val ventManager = player.game.ventManager
         if (player.isVented()) {
             if (event.hasChangedPosition()) {
                 event.isCancelled = true
             } else if (event.hasChangedOrientation()) {
-                player.game.ventManager.orientationChange(player, event.to)
+                ventManager.orientationChange(player, event.to)
             }
+        } else if (event.hasChangedPosition()) {
+            ventManager.stopCreatingVent(player)
         }
     }
 }

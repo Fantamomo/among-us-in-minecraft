@@ -48,9 +48,11 @@ class DSLAbilityItem(
     override fun onRightClick() {
         val (state, _) = computeState()
 
+        ctx.restartCooldown = true
+
         states[state]!!.onRightClick(ctx)
 
-        if (state == AbilityItemState.ACTIVE) {
+        if (ctx.restartCooldown && state == AbilityItemState.ACTIVE) {
             ctx.getTimer("cooldown")?.start()
         }
 

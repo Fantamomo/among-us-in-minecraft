@@ -7,6 +7,7 @@ import com.fantamomo.mc.amongus.role.crewmates.CameraManRole
 import com.fantamomo.mc.amongus.role.crewmates.CrewmateRole
 import com.fantamomo.mc.amongus.role.crewmates.EngineerRole
 import com.fantamomo.mc.amongus.role.imposters.ImposterRole
+import com.fantamomo.mc.amongus.role.imposters.MinerRole
 
 interface Role<R : Role<R, A>, A : AssignedRole<R, A>> {
     val id: String
@@ -26,11 +27,13 @@ interface Role<R : Role<R, A>, A : AssignedRole<R, A>> {
 
     companion object {
         val roles: Set<Role<*, *>> = setOf(
-            ImposterRole,
             CrewmateRole,
             CameraManRole,
             EngineerRole,
-            CallerRole
+            CallerRole,
+
+            ImposterRole,
+            MinerRole
         )
     }
 }
