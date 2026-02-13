@@ -28,7 +28,6 @@ object SabotageAbility :
             player.game.sabotageManager.supportedSabotages.values
                 .map(::createItem)
 
-        @Suppress("UnstableApiUsage")
         private fun createItem(
             sabotage: Sabotage<*, *>
         ): AbilityItem = abilityItem(sabotage.sabotageType.id) {
@@ -69,9 +68,6 @@ object SabotageAbility :
 
                 onRightClick {
                     game.sabotageManager.sabotage(sabotage)
-
-                    // Start cooldown after activation
-                    getTimer("cooldown")?.start()
                 }
             }
 
