@@ -8,6 +8,7 @@ import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.util.getClosestLocationOnLine
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Color
 import org.bukkit.Location
 import org.bukkit.Material
@@ -15,13 +16,16 @@ import org.bukkit.entity.BlockDisplay
 import org.bukkit.entity.Player
 import org.bukkit.util.Transformation
 import java.util.*
+import kotlin.math.roundToInt
+import kotlin.random.Random
 import kotlin.uuid.Uuid
 
 
 class VentManager(val game: Game) {
-    val vents: List<Vent> = game.area.vents.flatMap { group -> group.vents.map { Vent(group.id, it) } }
-    val ventsById: Map<Uuid, Vent> = vents.associateBy { it.uuid }
-    val groups = vents.groupBy { it.groupId }.map { VentGroup(it.key, it.value) }
+    val vents: MutableList<Vent> =
+        game.area.vents.flatMapTo(mutableListOf()) { group -> group.vents.map { Vent(group.id, it, false) } }
+    val ventsById: MutableMap<Uuid, Vent> = vents.associateByTo(mutableMapOf()) { it.uuid }
+    val groups = vents.groupBy { it.groupId }.mapTo(mutableSetOf()) { VentGroup(it.key, it.value.toMutableList()) }
     private val ventedPlayers = mutableMapOf<AmongUsPlayer, VentedPlayer>()
 
     inner class VentedPlayer(
@@ -150,9 +154,9 @@ class VentManager(val game: Game) {
         }
     }
 
-    inner class VentGroup internal constructor(val groupId: Int, val vents: List<Vent>)
+    inner class VentGroup internal constructor(val groupId: Int, val vents: MutableList<Vent>)
 
-    inner class Vent internal constructor(val groupId: Int, val location: Location) {
+    inner class Vent internal constructor(val groupId: Int, val location: Location, val minerCreated: Boolean = false) {
         val uuid = Uuid.random()
         val group: VentGroup by lazy { ventGroup(groupId) }
         val otherVents: List<Vent>
@@ -161,7 +165,12 @@ class VentManager(val game: Game) {
                 return vents.toMutableList().apply { remove(this@Vent) }
             }
         val normalizedLocation = location.clone().add(0.5, 0.0, 0.5)
-        val displayEntity = location.world.spawn(location, BlockDisplay::class.java) { display ->
+        val ironTrapDoor = if (minerCreated) location.world.spawn(location.clone().subtract(0.0, 0.1, 0.0), BlockDisplay::class.java) { display ->
+            display.block = Material.IRON_TRAPDOOR.createBlockData()
+            display.isVisibleByDefault = true
+            EntityManager.addEntityToRemoveOnEnd(game, display)
+        } else null
+        val displayEntity = location.world.spawn(if (minerCreated) location.clone().add(0.0, 0.1, 0.0) else location, BlockDisplay::class.java) { display ->
             display.block = Material.STONE.createBlockData()
             display.isGlowing = true
             display.glowColorOverride = Color.RED
@@ -298,9 +307,111 @@ class VentManager(val game: Game) {
                 player.showEntity(AmongUs, entity)
             }
         }
+        for (creatingVentPlayer in creatingVentPlayers) {
+            creatingVentPlayer.value.tick()
+        }
     }
 
     internal fun removePlayer0(player: AmongUsPlayer) {
         ventedPlayers.remove(player)?.dispose()
+    }
+
+    private val creatingVentPlayers: MutableMap<AmongUsPlayer, VentCreation> = mutableMapOf()
+
+    inner class VentCreation(val player: AmongUsPlayer, private val onStop: (Boolean) -> Unit) {
+        private val targets = get3x3BlocksUnderPlayer(player.livingEntity.location)
+            .associateWith { Random.nextInt(100_000_000, Int.MAX_VALUE) }
+        private val actionBar = game.actionBarManager.part(
+            player,
+            "create_vent",
+            ActionBarManager.ActionBarPartType.CENTER,
+            200,
+            {
+                val filledBars = ((state * 100).roundToInt() / 5).coerceIn(0, BAR_LENGTH)
+
+                val bar = BAR_FILLED.repeat(filledBars) +
+                        BAR_EMPTY.repeat(BAR_LENGTH - filledBars)
+
+                Component.text(bar, NamedTextColor.RED)
+            }
+        )
+
+        private var state = 0.0f
+        private var called = false
+
+        fun stop() {
+            creatingVentPlayers.remove(player)
+            if (!called) {
+                called = true
+                onStop(false)
+            }
+            actionBar.remove()
+            for (player in game.players) {
+                val p = player.player ?: continue
+                for ((loc, id) in targets) {
+                    p.sendBlockDamage(loc, 0.0f, id)
+                }
+            }
+        }
+
+        fun tick() {
+            if (tickCounter % 4 == 0) {
+                state = (state + 0.05f).coerceIn(0.0f, 1.0f)
+            }
+            if (state >= 1.0f) {
+                place()
+                return
+            }
+            for (player in game.players) {
+                val p = player.player ?: continue
+                for ((loc, id) in targets) {
+                    p.sendBlockDamage(loc, state, id)
+                }
+            }
+        }
+
+        private fun place() {
+            called = true
+            onStop(true)
+            stop()
+            val groupId = player.uuid.mostSignificantBits.toInt()
+
+            val ventGroup =
+                groups.find { it.groupId == groupId } ?: VentGroup(groupId, mutableListOf()).also { groups.add(it) }
+
+            val loc = player.livingEntity.location.toBlockLocation()
+
+            loc.yaw = 0.0f
+            loc.pitch = 0.0f
+
+            val vent = Vent(ventGroup.groupId, loc, true)
+
+            ventGroup.vents.add(vent)
+            vents.add(vent)
+            ventsById[vent.uuid] = vent
+        }
+    }
+
+    fun startCreatingVent(player: AmongUsPlayer, onStop: (Boolean) -> Unit) {
+        if (creatingVentPlayers.contains(player)) return
+        creatingVentPlayers[player] = VentCreation(player, onStop)
+    }
+
+    fun stopCreatingVent(player: AmongUsPlayer) {
+        creatingVentPlayers.remove(player)?.stop()
+    }
+
+    companion object {
+        private fun get3x3BlocksUnderPlayer(loc: Location) = buildList(9) {
+            for (x in -1..1) {
+                for (z in -1..1) {
+                    add(loc.clone().add(x.toDouble(), -1.0, z.toDouble()))
+                }
+            }
+        }
+        private const val BAR_LENGTH = 20
+
+        private const val BAR_FILLED = "▌"
+        private const val BAR_EMPTY = "▁"
     }
 }
