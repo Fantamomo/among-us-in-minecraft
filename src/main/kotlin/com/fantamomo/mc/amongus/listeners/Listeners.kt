@@ -8,6 +8,7 @@ object Listeners {
         AbilityListener,
         CameraListener,
         ChatListener,
+        CommandListener,
         MeetingListener,
         PlayerListener,
         SabotageListener,
