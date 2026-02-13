@@ -29,7 +29,8 @@ object CameraListener : Listener {
         val player = event.player
         val amongUsPlayer = PlayerManager.getPlayer(player) ?: return
         val cameraManager = amongUsPlayer.game.cameraManager
-        if (cameraManager.isInCams(amongUsPlayer)) {
+        val camera = cameraManager.getCamera(amongUsPlayer) ?: return
+        if (!camera.ignorePlayerStopSpectatingEntityEvent) {
             cameraManager.leaveCams(amongUsPlayer)
         }
     }
