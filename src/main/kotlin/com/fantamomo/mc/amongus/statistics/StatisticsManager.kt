@@ -33,7 +33,7 @@ object StatisticsManager {
         // plugin JAR is hot-reloaded or replaced while the plugin is still loaded,
         // because some serialization classes would otherwise be loaded lazily
         // only on first real use.
-        StatisticMap("dummy-group", Uuid.random()).toJson()
+        json.encodeToString(StatisticMap("dummy-group", Uuid.random()).toJson())
     }
 
     fun register(statistic: StatisticMap) {

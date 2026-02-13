@@ -33,9 +33,10 @@ object AmongUs : JavaPlugin() {
         Permissions.registerAll()
     }
 
-    private var classNotFoundException: NoClassDefFoundError? = null
+    private val classNotFoundExceptions: MutableList<NoClassDefFoundError> = mutableListOf()
 
     override fun onDisable() {
+        classNotFoundExceptions.clear()
         // Lambda expressions are used instead of method references to defer class loading.
         // This prevents NoClassDefFoundError from being thrown outside the try-catch block
         // in saveRun when classes like EntityManager haven't been loaded yet.
@@ -47,10 +48,10 @@ object AmongUs : JavaPlugin() {
         saveRun { GameAreaManager.saveAll() }
         saveRun { PlayerDataManager.saveAll() }
 
-        val ex = classNotFoundException
-        if (ex != null) {
+        val ex = classNotFoundExceptions
+        if (ex.isNotEmpty()) {
             with(slF4JLogger) {
-                error("A NoClassDefFoundError occurred during plugin shutdown.")
+                error("${if (ex.size == 1) "A" else ex.size} NoClassDefFoundError occurred during plugin shutdown.")
                 error("The plugin was most likely hot-reloaded or the JAR was replaced while the server was running.")
                 error("")
                 error("This is NOT supported and breaks the plugin's classloader.")
@@ -58,7 +59,10 @@ object AmongUs : JavaPlugin() {
                 error("")
                 error("We do NOT provide support for any issues or data loss caused by hot-reloading.")
                 error("")
-                error("Exception details:", ex)
+                if (ex.size == 1) error("Exception details:", ex.first())
+                else ex.forEachIndexed { index, error ->
+                    error("Exception details ({}):", index, error)
+                }
             }
         }
     }
@@ -67,7 +71,7 @@ object AmongUs : JavaPlugin() {
         try {
             block()
         } catch (e: NoClassDefFoundError) {
-            if (classNotFoundException == null) classNotFoundException = e
+            classNotFoundExceptions += e
         } catch (e: Exception) {
             slF4JLogger.error("An unexpected error occurred while saving data", e)
         }
