@@ -1,5 +1,9 @@
 package com.fantamomo.mc.amongus.settings
 
+import com.fantamomo.mc.adventure.text.args
+import com.fantamomo.mc.adventure.text.textComponent
+import com.fantamomo.mc.adventure.text.translatable
+import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.role.Role
 import com.fantamomo.mc.amongus.settings.types.BooleanSettingsType
 import com.fantamomo.mc.amongus.settings.types.DurationSettingsType
@@ -7,6 +11,7 @@ import com.fantamomo.mc.amongus.settings.types.EnumSettingsType
 import com.fantamomo.mc.amongus.settings.types.IntSettingsType
 import com.fantamomo.mc.amongus.util.data.DistanceEnum
 import com.fantamomo.mc.amongus.util.data.TaskBarUpdateEnum
+import net.kyori.adventure.text.Component
 import org.bukkit.Material
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
@@ -16,8 +21,8 @@ data class SettingsKey<T : Any, S : SettingsType<T>>(
     val key: String,
     val type: S,
     val defaultValue: T,
-    val settingsDisplayName: String = LANGUAGE_NAME_PREFIX + key,
-    val settingsDescription: String? = LANGUAGE_DESCRIPTION_PREFIX + key,
+    val settingsDisplayName: Component = Component.translatable(LANGUAGE_NAME_PREFIX + key),
+    val settingsDescription: Component? = Component.translatable(LANGUAGE_DESCRIPTION_PREFIX + key),
     val group: SettingsGroup? = null
 ) {
     init {
@@ -71,7 +76,28 @@ data class SettingsKey<T : Any, S : SettingsType<T>>(
 
     object ROLES : SettingsGroup("roles", Material.DIAMOND) {
         val IMPOSTERS = key("imposters", IntSettingsType.range(1, 3), 1)
-        val roles = Role.roles.associateWith { key("roles." + it.id, IntSettingsType.range(0, 100), 50) }
+        val roles = Role.roles.associateWith {
+            val value = Component.translatable("role.${it.id}.name")
+            key(
+                "roles." + it.id,
+                IntSettingsType.range(0, 100),
+                50,
+                textComponent {
+                    translatable("settings.name.role") {
+                        args {
+                            component("role", value)
+                        }
+                    }
+                },
+                textComponent {
+                    translatable("settings.description.role") {
+                        args {
+                            component("role", value)
+                        }
+                    }
+                }
+            )
+        }
         val MINER_CREATE_VENT_COOLDOWN =
             Companion.key("miner.create_vent.cooldown", DurationSettingsType.min(1.seconds), 45.seconds)
     }
