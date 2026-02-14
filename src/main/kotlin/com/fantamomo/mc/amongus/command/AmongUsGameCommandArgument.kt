@@ -549,7 +549,7 @@ private fun KtCommandBuilder<CommandSourceStack, *>.startGameCommandExecute() = 
         }
         return@execute 0
     }
-    game.start()
+    game.startStartCooldown()
     sendMessage {
         translatable("command.success.admin.game.start")
     }
