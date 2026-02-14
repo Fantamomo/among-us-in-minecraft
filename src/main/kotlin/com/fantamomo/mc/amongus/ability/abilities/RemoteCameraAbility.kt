@@ -26,7 +26,6 @@ object RemoteCameraAbility :
 
         override val definition = RemoteCameraAbility
 
-        @Suppress("UnstableApiUsage")
         override val items = listOf(
             abilityItem("camera") {
 

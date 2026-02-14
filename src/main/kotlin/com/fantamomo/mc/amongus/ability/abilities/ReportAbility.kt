@@ -23,7 +23,6 @@ object ReportAbility :
 
         override val definition = ReportAbility
 
-        @Suppress("UnstableApiUsage")
         override val items = listOf(
             abilityItem("report") {
 

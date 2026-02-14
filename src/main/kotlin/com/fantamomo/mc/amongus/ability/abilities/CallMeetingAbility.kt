@@ -24,7 +24,6 @@ object CallMeetingAbility :
 
         override val definition = CallMeetingAbility
 
-        @Suppress("UnstableApiUsage")
         override val items = listOf(
             abilityItem("call_meeting") {
 
