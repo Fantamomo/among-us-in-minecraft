@@ -35,7 +35,7 @@ object PlayerListener : Listener {
     @EventHandler
     fun onDamage(event: EntityDamageEvent) {
         val player = event.entity as? Player ?: return
-        val amongUsPlayer = PlayerManager.getPlayer(player) ?: return
+        if (PlayerManager.getPlayer(player) == null) return
         val cause = event.cause
         if (cause == DamageCause.FALL || cause == DamageCause.ENTITY_ATTACK) {
             event.isCancelled = true

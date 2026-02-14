@@ -155,18 +155,16 @@ class AmongUsPlayer internal constructor(
         }
         addNewAbility(ReportAbility)
         role.definition.defaultAbilities.forEach { addNewAbility(it) }
-        if (player != null) {
-            player.sendTitlePart(
-                TitlePart.TITLE,
-                textComponent {
-                    translatable("roles.assigned.title") {
-                        args {
-                            component("role", Component.translatable(role.definition.name))
-                        }
+        player?.sendTitlePart(
+            TitlePart.TITLE,
+            textComponent {
+                translatable("roles.assigned.title") {
+                    args {
+                        component("role", Component.translatable(role.definition.name))
                     }
                 }
-            )
-        }
+            }
+        )
 
         for (player in game.players) {
             if (player === this) continue

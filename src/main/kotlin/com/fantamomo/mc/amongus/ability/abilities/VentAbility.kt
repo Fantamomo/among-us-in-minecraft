@@ -24,7 +24,6 @@ object VentAbility :
 
         override val definition = VentAbility
 
-        @Suppress("UnstableApiUsage")
         override val items = listOf(
             abilityItem("vent") {
 

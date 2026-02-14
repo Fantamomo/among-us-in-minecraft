@@ -386,13 +386,10 @@ class ScoreboardManager(private val game: Game) {
             val chars = splitToChars(translated)
 
             val existing = animatedLines[id]
-            val line = if (existing == null) {
-                AnimatedLine.createInitial(translated, chars, initialRender, forceAnimate = true).also {
+            val line =
+                existing ?: AnimatedLine.createInitial(translated, chars, initialRender, forceAnimate = true).also {
                     animatedLines[id] = it
                 }
-            } else {
-                existing
-            }
 
             if (line.full != translated) {
                 if (line.chars.size != chars.size) {
@@ -519,6 +516,7 @@ class ScoreboardManager(private val game: Game) {
                 cursorProgress += step
                 if (cursorProgress >= totalChanged) {
                     val mutable = chars.toMutableList()
+                    @Suppress("EmptyRange")
                     for (i in cursorStart until cursorEnd) {
                         mutable[i] = targetChars[i]
                     }
