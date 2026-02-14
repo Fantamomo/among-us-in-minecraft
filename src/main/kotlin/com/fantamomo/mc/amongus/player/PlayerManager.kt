@@ -6,6 +6,7 @@ import com.fantamomo.mc.adventure.text.textComponent
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.game.GamePhase
+import com.fantamomo.mc.amongus.util.internal.NMS
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket
 import org.bukkit.craftbukkit.entity.CraftPlayer
 import org.bukkit.entity.Mannequin
@@ -29,6 +30,7 @@ object PlayerManager {
 
     fun getPlayer(mannequin: Mannequin) = players.find { it.mannequinController.getEntity() == mannequin }
 
+    @NMS
     internal fun joinGame(player: Player, game: Game): AmongUsPlayer {
         if (exists(player.uniqueId)) throw IllegalStateException("Player already in a game")
         val auPlayer = AmongUsPlayer(player.uniqueId, player.name, game, player.location)
@@ -76,6 +78,7 @@ object PlayerManager {
         players.remove(amongUsPlayer)
     }
 
+    @NMS
     internal fun onPlayerJoin(player: Player) {
         val connection = (player as CraftPlayer).handle.connection
         for (playingPlayer in players) {
