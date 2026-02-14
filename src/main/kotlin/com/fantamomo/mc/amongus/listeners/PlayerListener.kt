@@ -1,5 +1,6 @@
 package com.fantamomo.mc.amongus.listeners
 
+import com.fantamomo.mc.amongus.player.PlayerColor
 import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.sabotage.SabotageType
 import com.fantamomo.mc.amongus.util.isSameBlockPosition
@@ -62,6 +63,10 @@ object PlayerListener : Listener {
         if (player.gameMode == GameMode.CREATIVE) return
         val amongUsPlayer = PlayerManager.getPlayer(player) ?: return
         if (event.action == Action.PHYSICAL || event.action.isLeftClick) {
+            event.isCancelled = true
+            return
+        }
+        if (event.item?.type?.asItemType() in PlayerColor.helmetTypes) {
             event.isCancelled = true
             return
         }
