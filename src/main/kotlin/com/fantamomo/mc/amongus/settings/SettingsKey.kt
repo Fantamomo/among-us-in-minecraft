@@ -5,10 +5,7 @@ import com.fantamomo.mc.adventure.text.textComponent
 import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.role.Role
-import com.fantamomo.mc.amongus.settings.types.BooleanSettingsType
-import com.fantamomo.mc.amongus.settings.types.DurationSettingsType
-import com.fantamomo.mc.amongus.settings.types.EnumSettingsType
-import com.fantamomo.mc.amongus.settings.types.IntSettingsType
+import com.fantamomo.mc.amongus.settings.types.*
 import com.fantamomo.mc.amongus.util.data.DistanceEnum
 import com.fantamomo.mc.amongus.util.data.TaskBarUpdateEnum
 import net.kyori.adventure.text.Component
@@ -80,7 +77,7 @@ data class SettingsKey<T : Any, S : SettingsType<T>>(
             val value = Component.translatable("role.${it.id}.name")
             key(
                 "roles." + it.id,
-                IntSettingsType.range(0, 100),
+                PercentSettingsType,
                 50,
                 textComponent {
                     translatable("settings.name.role") {

@@ -14,28 +14,30 @@ import org.bukkit.Material
 import org.bukkit.event.inventory.ClickType
 import org.bukkit.inventory.ItemStack
 
-class IntSettingsType(
+open class IntSettingsType(
     val min: Int? = null,
     val max: Int? = null
 ) : SettingsType<Int> {
     override val type = Int::class
     override val argumentType: ArgumentType<Int> = IntegerArgumentType.integer(min ?: Int.MIN_VALUE, max ?: Int.MAX_VALUE)
 
+    protected open fun itemStack(value: Int) = ItemStack(Material.COAL)
+
     @Suppress("UnstableApiUsage")
-    override fun itemRepresentation(value: Int) = ItemStack(Material.COAL).apply {
+    override fun itemRepresentation(value: Int) = itemStack(value).apply {
         if (min == null && max == null) return@apply
         val lore = ItemLore.lore()
         if (min != null) lore.addLine(textComponent {
             translatable("setting.ui.type.int.min") {
                 args {
-                    string("min", min.toString())
+                    string("min", stringRepresentation(min))
                 }
             }
         })
         if (max != null) lore.addLine(textComponent {
             translatable("setting.ui.type.int.max") {
                 args {
-                    string("max", max.toString())
+                    string("max", stringRepresentation(max))
                 }
             }
         })
