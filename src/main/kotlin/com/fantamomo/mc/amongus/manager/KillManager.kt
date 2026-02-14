@@ -97,7 +97,7 @@ class KillManager(val game: Game) {
 
     fun canKillAsImposter(player: AmongUsPlayer): Boolean {
         val loc = player.livingEntityOrNull?.location ?: return false
-        val distance = game.settings[SettingsKey.KILL_DISTANCE].distance
+        val distance = game.settings[SettingsKey.KILL.KILL_DISTANCE].distance
         for (player in game.players) {
             if (!player.isAlive) continue
             if (game.ventManager.isVented(player)) continue
@@ -112,7 +112,7 @@ class KillManager(val game: Game) {
         val loc = imposter.livingEntity.location
         var nearest: AmongUsPlayer? = null
         var nearestDistance = Double.MAX_VALUE
-        val distance = game.settings[SettingsKey.KILL_DISTANCE].distance
+        val distance = game.settings[SettingsKey.KILL.KILL_DISTANCE].distance
         for (player in game.players) {
             if (!player.isAlive) continue
             if (game.ventManager.isVented(player)) continue

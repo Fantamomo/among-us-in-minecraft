@@ -56,7 +56,7 @@ class TaskManager(val game: Game) {
     }
 
     internal fun updateBossbar(taskCompleted: Boolean = false, meeting: Boolean = false, force: Boolean = false) {
-        val updateFrequency = game.settings[SettingsKey.TASK_BAR_UPDATE]
+        val updateFrequency = game.settings[SettingsKey.TASK.TASK_BAR_UPDATE]
         if (updateFrequency == TaskBarUpdateEnum.NONE) return
         if (game.sabotageManager.isSabotage(SabotageType.Communications)) {
             bossbar.progress(0f)
@@ -188,16 +188,16 @@ class TaskManager(val game: Game) {
     fun allTaskCompleted(): Boolean = tasks.values.all { tasks -> tasks.all { it.completed || it.fake } }
 
     fun start() {
-        val longTasksCount = game.settings[SettingsKey.TASK_LONG]
-        val shortTasksCount = game.settings[SettingsKey.TASK_SHORT]
-        val commonTasksCount = game.settings[SettingsKey.TASK_COMMON]
+        val longTasksCount = game.settings[SettingsKey.TASK.TASK_LONG]
+        val shortTasksCount = game.settings[SettingsKey.TASK.TASK_SHORT]
+        val commonTasksCount = game.settings[SettingsKey.TASK.TASK_COMMON]
 
         val tasks = Task.tasks.filter { it.isAvailable(game) }
         val longTasks = tasks.filter { it.type == TaskType.LONG }
         val shortTasks = tasks.filter { it.type == TaskType.SHORT }
         val commonTasks = tasks.filter { it.type == TaskType.COMMON }
 
-        val showBossbar = game.settings[SettingsKey.TASK_BAR_UPDATE] != TaskBarUpdateEnum.NONE
+        val showBossbar = game.settings[SettingsKey.TASK.TASK_BAR_UPDATE] != TaskBarUpdateEnum.NONE
 
         val common = commonTasks.randomListDistinct(commonTasksCount)
 

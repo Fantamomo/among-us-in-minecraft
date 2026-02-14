@@ -8,7 +8,7 @@ import kotlin.random.Random
 class RoleManager(private val game: Game) {
 
     fun start() {
-        val imposterCount = game.settings[SettingsKey.IMPOSTERS]
+        val imposterCount = game.settings[SettingsKey.ROLES.IMPOSTERS]
         require(imposterCount in 0..game.players.size)
 
         val roleChances = buildRoleChanceMap()
@@ -48,7 +48,7 @@ class RoleManager(private val game: Game) {
     }
 
     private fun buildRoleChanceMap(): Map<Role<*, *>, Int> =
-        SettingsKey.roles
+        SettingsKey.ROLES.roles
             .mapValues { (_, key) ->
                 game.settings[key].coerceIn(0, 100)
             }

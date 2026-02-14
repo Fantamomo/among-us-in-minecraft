@@ -30,7 +30,7 @@ object VentAbility :
 
                 // ---------- MODULAR TIMER ----------
 
-                timer("cooldown", player.game.settings[SettingsKey.VENT_COOLDOWN].seconds)
+                timer("cooldown", player.game.settings[SettingsKey.VENT.VENT_COOLDOWN].seconds)
 
                 // ---------- CONDITIONS ----------
 

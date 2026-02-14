@@ -24,7 +24,7 @@ class ChatManager(val game: Game) {
         }
         val meetingManager = game.meetingManager
         if (!meetingManager.isCurrentlyAMeeting() &&
-            (sender.isAlive || !game.settings[SettingsKey.ALLOW_GHOST_MESSAGE_IN_GAME])
+            (sender.isAlive || !game.settings[SettingsKey.MESSAGES.ALLOW_GHOST_MESSAGE_IN_GAME])
         ) {
             sender.player?.sendMessage(ERROR_IN_GAME)
             return

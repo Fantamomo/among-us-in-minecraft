@@ -23,7 +23,7 @@ object CreateVentAbility : Ability<CreateVentAbility, CreateVentAbility.Assigned
             abilityItem("create_vent") {
                 val createVentCooldown = timer(
                     "cooldown",
-                    player.game.settings[SettingsKey.MINER_CREATE_VENT_COOLDOWN]
+                    player.game.settings[SettingsKey.ROLES.MINER_CREATE_VENT_COOLDOWN]
                 )
 
                 val blockReasonNotOnGround = BlockReason.custom("noBlockBeneath")
@@ -72,7 +72,7 @@ object CreateVentAbility : Ability<CreateVentAbility, CreateVentAbility.Assigned
 
                         createVentCooldown.pause()
                         game.ventManager.startCreatingVent(player) { success ->
-                            val duration = player.game.settings[SettingsKey.MINER_CREATE_VENT_COOLDOWN]
+                            val duration = player.game.settings[SettingsKey.ROLES.MINER_CREATE_VENT_COOLDOWN]
                             if (success) {
                                 createVentCooldown.start(duration)
                             } else {

@@ -38,7 +38,7 @@ val AmongUsImposterMsgCommand = paperCommand("impostermsg") {
                 return@execute 0
             }
 
-            if (!game.settings[SettingsKey.ALLOW_IMPOSTER_PRIVATE_MESSAGE]) {
+            if (!game.settings[SettingsKey.MESSAGES.ALLOW_IMPOSTER_PRIVATE_MESSAGE]) {
                 sendMessage {
                     translatable("command.error.impostermsg.disabled")
                 }

@@ -30,7 +30,7 @@ object KillAbility :
 
                 val killCooldown = timer(
                     "cooldown",
-                    player.game.settings[SettingsKey.KILL_COOLDOWN]
+                    player.game.settings[SettingsKey.KILL.KILL_COOLDOWN]
                 )
 
                 // ---------- BLOCK CONDITIONS ----------
