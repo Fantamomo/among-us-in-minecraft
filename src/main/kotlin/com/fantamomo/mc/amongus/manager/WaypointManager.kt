@@ -2,6 +2,7 @@ package com.fantamomo.mc.amongus.manager
 
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import com.fantamomo.mc.amongus.util.internal.NMS
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.TextColor
 import net.minecraft.core.Vec3i
@@ -39,6 +40,7 @@ class WaypointManager(val game: Game) {
         }
 
         // we need to use packets directly, due that paper currently does not provide an api for it
+        @NMS
         private fun sendPacket(packet: ClientboundTrackedWaypointPacket) {
             val player = player.player ?: return
             val craftPlayer = (player as CraftPlayer)
@@ -130,12 +132,15 @@ class WaypointManager(val game: Game) {
             vector = Vec3i(location.blockX, location.blockY, location.blockZ)
         }
 
+        @NMS
         fun createAddPacket(): ClientboundTrackedWaypointPacket =
             addWaypointPosition(uuid, icon, vector)
 
+        @NMS
         fun createRemovePacket(): ClientboundTrackedWaypointPacket =
             ClientboundTrackedWaypointPacket.removeWaypoint(uuid)
 
+        @NMS
         fun createUpdatePacket(): ClientboundTrackedWaypointPacket =
             ClientboundTrackedWaypointPacket.updateWaypointPosition(uuid, icon, vector)
     }
