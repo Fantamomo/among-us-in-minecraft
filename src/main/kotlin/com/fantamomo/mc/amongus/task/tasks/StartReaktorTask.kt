@@ -153,7 +153,7 @@ object StartReaktorTask : Task<StartReaktorTask, StartReaktorTask.AssignedStartR
                             player.game.taskManager.completeTask(this)
                         } else {
                             step++
-                            resetForNextRound()
+                            resetState()
                         }
                     }
                 }
@@ -185,18 +185,6 @@ object StartReaktorTask : Task<StartReaktorTask, StartReaktorTask.AssignedStartR
         }
 
         private fun resetState() {
-            phase = Phase.SHOW
-            ticks = 0
-            showIndex = 0
-            inputIndex = 0
-            blinkOn = false
-            greenTicksRemaining = 0
-            lastGreenSlot = -1
-            clearLeft()
-            clearRight()
-        }
-
-        private fun resetForNextRound() {
             phase = Phase.SHOW
             ticks = 0
             showIndex = 0
