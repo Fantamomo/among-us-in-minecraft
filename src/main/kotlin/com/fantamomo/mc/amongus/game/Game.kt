@@ -59,6 +59,7 @@ class Game(
     val killManager = KillManager(this)
     val scoreboardManager = ScoreboardManager(this)
     val chatManager = ChatManager(this)
+    val morphManager = MorphManager(this)
 
     internal val players = mutableListOf<AmongUsPlayer>()
     var phase: GamePhase = GamePhase.LOBBY
@@ -84,6 +85,7 @@ class Game(
         sabotageManager.removePlayer(player)
         taskManager.removePlayer(player)
         scoreboardManager.removePlayer(player)
+        morphManager.removePlayer(player)
     }
 
     internal var ticks = 0
@@ -138,7 +140,6 @@ class Game(
                 for (player in players) {
                     val p = player.player ?: continue
                     p.showTitle(title)
-                    p.sendTitlePart(TitlePart.TIMES, Title.DEFAULT_TIMES)
                 }
             } else if (startCooldownTicks == ticks) {
                 startCooldownTicks = -1

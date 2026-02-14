@@ -18,6 +18,7 @@ import com.fantamomo.mc.amongus.role.crewmates.CrewmateRole
 import com.fantamomo.mc.amongus.task.TaskManager
 import com.fantamomo.mc.amongus.util.CustomPersistentDataTypes
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.title.Title
 import net.kyori.adventure.title.TitlePart
 import org.bukkit.Location
 import org.bukkit.entity.LivingEntity
@@ -66,7 +67,14 @@ class AmongUsPlayer internal constructor(
             field = value
             val helmet = value.toItemStack(armorTrim)
             player?.inventory?.helmet = helmet
-            mannequinController.getEntity()?.equipment?.helmet = helmet
+            if (!game.morphManager.isMorphed(this)) {
+                mannequinController.getEntity()?.equipment?.helmet = helmet
+            }
+        }
+    val visibleColor: PlayerColor
+        get() {
+            val morphPlayer = game.morphManager.getMorphedPlayer(this)
+            return morphPlayer?.target?.color ?: color
         }
     val locale: Locale
         get() = player?.locale()?.also { _locale = it } ?: _locale
