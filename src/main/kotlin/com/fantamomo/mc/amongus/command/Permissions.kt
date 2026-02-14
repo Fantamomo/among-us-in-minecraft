@@ -6,16 +6,18 @@ import org.bukkit.permissions.PermissionDefault
 
 object Permissions {
     private val permissions: MutableList<Permission> = mutableListOf()
-
     private const val PREFIX = "amongus"
-
     val ADMIN = perm("admin", PermissionDefault.OP)
+
     val AREA = perm("admin.area", PermissionDefault.OP)
+
     val SETTINGS = perm("admin.settings", PermissionDefault.OP)
     val SEE_GAME_CODES = perm("join.see_game_codes", PermissionDefault.OP)
-
     val SET_PLAYER_COLOR_OTHER = perm("admin.set_player_color_other", PermissionDefault.OP)
+
     val SET_PLAYER_COLOR_FORCE = perm("admin.set_player_color_force", PermissionDefault.OP)
+    val SET_PLAYER_TRIM = perm("set_player_trim", PermissionDefault.TRUE)
+    val SET_PLAYER_TRIM_OTHER = perm("set_player_trim_other", PermissionDefault.OP)
 
     private fun perm(
         node: String,
