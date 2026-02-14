@@ -3,6 +3,7 @@ package com.fantamomo.mc.amongus.role.crewmates
 import com.destroystokyo.paper.ParticleBuilder
 import com.fantamomo.mc.amongus.ability.Ability
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import com.fantamomo.mc.amongus.player.PlayerColor
 import com.fantamomo.mc.amongus.role.AssignedRole
 import com.fantamomo.mc.amongus.role.Role
 import com.fantamomo.mc.amongus.role.Team
@@ -24,7 +25,8 @@ object DetectiveRole : Role<DetectiveRole, DetectiveRole.AssignedDetectiveRole> 
 
         private data class TrailPoint(
             val location: Location,
-            val expireTick: Int
+            val expireTick: Int,
+            val color: PlayerColor
         )
 
         private val trails = mutableMapOf<AmongUsPlayer, ArrayDeque<TrailPoint>>()
@@ -62,7 +64,8 @@ object DetectiveRole : Role<DetectiveRole, DetectiveRole.AssignedDetectiveRole> 
                     trail.addLast(
                         TrailPoint(
                             entityLoc.clone(),
-                            currentTick + TTL
+                            currentTick + TTL,
+                            other.visibleColor
                         )
                     )
                 }
@@ -71,14 +74,12 @@ object DetectiveRole : Role<DetectiveRole, DetectiveRole.AssignedDetectiveRole> 
                     trail.removeFirst()
                 }
 
-                val color = other.color.color
-
                 for (point in trail) {
                     if (point.location.distanceSquared(viewerLoc) > MAX_DISTANCE) continue
 
                     particleBuilder
                         .location(point.location)
-                        .color(color)
+                        .color(point.color.color)
                         .receivers(viewer)
                         .spawn()
                 }
