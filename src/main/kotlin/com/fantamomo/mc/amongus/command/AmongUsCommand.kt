@@ -3,6 +3,7 @@ package com.fantamomo.mc.amongus.command
 import com.fantamomo.mc.adventure.text.args
 import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.command.arguments.PlayerColorArgumentType
+import com.fantamomo.mc.amongus.command.arguments.RegistryArgumentType
 import com.fantamomo.mc.amongus.game.GamePhase
 import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.languages.numeric
@@ -16,13 +17,133 @@ import com.mojang.brigadier.arguments.BoolArgumentType
 import io.papermc.paper.command.brigadier.CommandSourceStack
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver
+import io.papermc.paper.registry.RegistryKey
 import org.bukkit.entity.Player
+import org.bukkit.inventory.meta.trim.ArmorTrim
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.uuid.toKotlinUuid
 
 val AmongUsCommand = paperCommand("amongus") {
     statsCommand()
     colorCommand()
+    trimCommand()
+}
+
+private fun PaperCommand.trimCommand() {
+    literal("trim") {
+        requires { sender.hasPermission(Permissions.SET_PLAYER_TRIM) }
+
+        guard {
+            val targetResolver = optionalArg<PlayerSelectorArgumentResolver>("target")
+
+            val target = targetResolver?.resolve(source)?.firstOrNull() ?: source.sender as? Player
+
+            if (target == null) {
+                sendMessage {
+                    translatable("command.error.set_trim.not_player")
+                }
+                return@guard abort()
+            }
+            val amongUsPlayer = PlayerManager.getPlayer(target)
+            if (amongUsPlayer == null) {
+                sendMessage {
+                    if (target === source.sender) translatable("command.error.set_trim.not_joined")
+                    else translatable("command.error.set_trim.not_joined.other") {
+                        args {
+                            string("player", target.name)
+                        }
+                    }
+                }
+                return@guard abort()
+            }
+
+            if (amongUsPlayer.game.phase != GamePhase.LOBBY) {
+                sendMessage {
+                    translatable("command.error.set_trim.game_not_lobby")
+                }
+                return@guard abort()
+            }
+
+            continueCommand()
+        }
+
+        argument("material", RegistryArgumentType(RegistryKey.TRIM_MATERIAL)) {
+            val materialArg = argRef()
+            argument("pattern", RegistryArgumentType(RegistryKey.TRIM_PATTERN)) {
+                val patternArg = argRef()
+
+                argument("target", ArgumentTypes.player()) {
+                    requires { sender.hasPermission(Permissions.SET_PLAYER_TRIM_OTHER) }
+                    execute {
+                        val material = materialArg.get()
+                        val pattern = patternArg.get()
+                        val targetResolver = arg<PlayerSelectorArgumentResolver>("target")
+                        val targets = targetResolver.resolve(source).first()
+                        val amongUsPlayer = PlayerManager.getPlayer(targets)!!
+                        amongUsPlayer.armorTrim = ArmorTrim(material, pattern)
+
+                        sendMessage {
+                            translatable("command.success.set_trim.other") {
+                                args {
+                                    component("material", material.description())
+                                    component("pattern", pattern.description())
+                                    string("player", targets.name)
+                                }
+                            }
+                        }
+
+                        SINGLE_SUCCESS
+                    }
+                }
+
+                execute {
+                    val material = materialArg.get()
+                    val pattern = patternArg.get()
+                    val amongUsPlayer = PlayerManager.getPlayer(source.sender as Player)!!
+                    amongUsPlayer.armorTrim = ArmorTrim(material, pattern)
+
+                    sendMessage {
+                        translatable("command.success.set_trim") {
+                            args {
+                                component("material", material.description())
+                                component("pattern", pattern.description())
+                            }
+                        }
+                    }
+
+                    SINGLE_SUCCESS
+                }
+            }
+        }
+
+        literal("remove") {
+            argument("target", ArgumentTypes.player()) {
+                requires { sender.hasPermission(Permissions.SET_PLAYER_TRIM_OTHER) }
+                execute {
+                    val targetResolver = arg<PlayerSelectorArgumentResolver>("target")
+                    val target = targetResolver.resolve(source).first()
+                    val amongUsPlayer = PlayerManager.getPlayer(target)!!
+                    amongUsPlayer.armorTrim = null
+                    sendMessage {
+                        translatable("command.success.remove_trim.other") {
+                            args {
+                                string("player", target.name)
+                            }
+                        }
+                    }
+                    SINGLE_SUCCESS
+                }
+            }
+            execute {
+                val amongUsPlayer = PlayerManager.getPlayer(source.sender as Player)!!
+                amongUsPlayer.armorTrim = null
+                sendMessage {
+                    translatable("command.success.remove_trim")
+                }
+                SINGLE_SUCCESS
+            }
+        }
+    }
 }
 
 private fun PaperCommand.colorCommand() {
