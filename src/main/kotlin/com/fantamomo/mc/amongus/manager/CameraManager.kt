@@ -194,13 +194,13 @@ class CameraManager(val game: Game) {
 
     fun nextCame(amongUsPlayer: AmongUsPlayer, ignoreCooldown: Boolean = false) {
         val cameraPlayer = getCamera(amongUsPlayer) ?: return
-        if (!ignoreCooldown && System.currentTimeMillis() - cameraPlayer.lastCameraChange < game.settings[SettingsKey.CAMERA_SWITCH_SAFE_COOLDOWN]) return
+        if (!ignoreCooldown && System.currentTimeMillis() - cameraPlayer.lastCameraChange < game.settings[SettingsKey.UTILS.CAMERA_SWITCH_SAFE_COOLDOWN]) return
         cameraPlayer.camera = getNextCamera(cameraPlayer.camera)
     }
 
     fun tick() {
         val millis = System.currentTimeMillis()
-        val cameraSwitchCooldown = game.settings[SettingsKey.CAMERA_SWITCH_SAFE_COOLDOWN]
+        val cameraSwitchCooldown = game.settings[SettingsKey.UTILS.CAMERA_SWITCH_SAFE_COOLDOWN]
         for (cameraPlayer in playersInCamera) {
             if (millis % 200 == 0L && millis - cameraPlayer.lastCameraChange > cameraSwitchCooldown) {
                 cameraPlayer.player.player?.sendBlockChange(
