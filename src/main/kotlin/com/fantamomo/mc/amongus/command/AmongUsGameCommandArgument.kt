@@ -13,6 +13,7 @@ import com.fantamomo.mc.amongus.languages.numeric
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.role.Team
+import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.task.Task
 import com.fantamomo.mc.brigadier.*
 import com.mojang.brigadier.arguments.BoolArgumentType
@@ -549,6 +550,18 @@ private fun KtCommandBuilder<CommandSourceStack, *>.startGameCommandExecute() = 
         }
         return@execute 0
     }
+
+    if (game.players.size < Game.NEEDED_PLAYERS_FOR_START && game.settings[SettingsKey.DEV.DO_WIN_CHECK]) {
+        sendMessage {
+            translatable("command.error.admin.game.start.not_enough_players") {
+                args {
+                    string("game", game.code)
+                }
+            }
+        }
+        return@execute 0
+    }
+
     game.startStartCooldown()
     sendMessage {
         translatable("command.success.admin.game.start")
