@@ -66,15 +66,22 @@ class SettingsInventory(
     }
 
     private fun requiredSize(contentAmount: Int): Int {
-        val withBorder = contentAmount + 9
-        val rows = ((withBorder / 9.0).toInt() + 1).coerceAtLeast(3)
-        return (rows * 9).coerceAtMost(54)
+        if (contentAmount <= 0) return 9 * 3
+
+        val middleSlotsPerRow = 7
+        val middleRowsNeeded = ((contentAmount + middleSlotsPerRow - 1) / middleSlotsPerRow)
+        val totalRows = middleRowsNeeded + 2
+        val size = (totalRows * 9).coerceAtMost(54)
+        return size
     }
 
     private fun buildMainContent(): List<Any> {
-        val groups = SettingsKey.groups
+        val result: MutableList<Any> = mutableListOf()
+        val grouped = SettingsKey.groups
+        result.addAll(grouped)
         val ungrouped = SettingsKey.keys().filter { it.group == null }
-        return groups + ungrouped
+        result.addAll(ungrouped)
+        return result
     }
 
     @Suppress("UnstableApiUsage")
