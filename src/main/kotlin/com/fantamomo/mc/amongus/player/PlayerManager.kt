@@ -62,6 +62,8 @@ object PlayerManager {
 
     internal fun onPlayerQuit(player: Player) {
         val auPlayer = getPlayer(player.uniqueId) ?: return
+        auPlayer.restorePlayer()
+
         auPlayer.player = null
 
         if (auPlayer.game.phase.onDisconnectRemove) {
@@ -127,6 +129,12 @@ object PlayerManager {
     private fun tick() {
         players.forEach {
             it.mannequinController.syncFromPlayer()
+        }
+    }
+
+    fun stop() {
+        for (player in players) {
+            player.restorePlayer()
         }
     }
 }
