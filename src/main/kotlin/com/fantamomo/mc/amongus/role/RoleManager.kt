@@ -29,6 +29,22 @@ class RoleManager(private val game: Game) {
             roleChances.filterKeys { it.team == Team.CREWMATES },
             Team.CREWMATES
         )
+
+        for (player in game.players) {
+            player.assignedRole?.onGameStart()
+        }
+    }
+
+    fun end() {
+        for (player in game.players) {
+            player.assignedRole?.onGameEnd()
+        }
+    }
+
+    fun tick() {
+        for (player in game.players) {
+            player.assignedRole?.tick()
+        }
     }
 
     private fun buildRoleChanceMap(): Map<Role<*, *>, Int> =
