@@ -22,6 +22,7 @@ import net.kyori.adventure.title.TitlePart
 import org.bukkit.Location
 import org.bukkit.entity.LivingEntity
 import org.bukkit.entity.Player
+import org.bukkit.inventory.meta.trim.ArmorTrim
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import java.util.*
@@ -55,10 +56,15 @@ class AmongUsPlayer internal constructor(
                 _profile = value.playerProfile
             }
         }
+    var armorTrim: ArmorTrim? = null
+        set(value) {
+            field = value
+            color = color
+        }
     var color: PlayerColor = game.randomPlayerColor()
         set(value) {
             field = value
-            val helmet = value.toItemStack()
+            val helmet = value.toItemStack(armorTrim)
             player?.inventory?.helmet = helmet
             mannequinController.getEntity()?.equipment?.helmet = helmet
         }
