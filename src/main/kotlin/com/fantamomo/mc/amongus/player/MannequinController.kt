@@ -372,10 +372,18 @@ class MannequinController(
         lastLocation = location.clone()
     }
 
+    fun restoreAppearance() {
+        copyAppearanceFrom(owner)
+    }
+
     @Suppress("UnstableApiUsage")
-    fun copyAppearanceFrom(player: Player) {
+    fun copyAppearanceFrom(player: AmongUsPlayer) {
         mannequin?.profile =
-            ResolvableProfile.resolvableProfile(player.playerProfile)
+            ResolvableProfile.resolvableProfile(player.profile)
+        val helmet = player.color.toItemStack(player.armorTrim)
+        mannequin?.equipment?.helmet = helmet
+        nameDisplay?.text(Component.text(player.name))
+        redNameDisplay?.text(Component.text(player.name, NamedTextColor.RED))
     }
 
     fun getEntity(): Mannequin? = mannequin
