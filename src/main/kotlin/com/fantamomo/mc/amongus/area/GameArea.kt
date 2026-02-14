@@ -75,6 +75,7 @@ data class GameArea(
         return !(cameraJoinPointMin == null && cameraJoinPointMax == null)
     }
 
+    @Suppress("DuplicatedCode")
     fun withWorld(world: World): GameArea {
         val clone = this.copy()
         clone.minCorner = minCorner?.withWorld(world)

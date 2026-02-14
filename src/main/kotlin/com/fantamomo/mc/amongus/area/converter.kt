@@ -54,6 +54,7 @@ fun GameArea.toDTO(): GameAreaDTO {
     )
 }
 
+@Suppress("DuplicatedCode")
 fun GameAreaDTO.toGameArea(): GameArea {
     val area = GameArea(name, UUID.fromString(uuid))
 
