@@ -143,7 +143,7 @@ object AmongUsCommands {
      *
      * If no rule is violated, the original command executes normally.
      *
-     * If a imposter tries to message another imposter, they will receive an info message that the should use `/impostermsg`
+     * If an imposter tries to message another imposter, they will receive an info message that they should use `/impostermsg`
      */
     private class MsgInterceptor(
         private val original: Command<CommandSourceStack>
