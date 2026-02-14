@@ -49,7 +49,7 @@ object CallMeetingAbility :
                 condition {
                     if (
                         player.meetingButtonsPressed >=
-                        game.settings[SettingsKey.MEETING_BUTTONS]
+                        game.settings[SettingsKey.MEETING.MEETING_BUTTONS]
                     ) BlockReason.LimitReached else null
                 }
 

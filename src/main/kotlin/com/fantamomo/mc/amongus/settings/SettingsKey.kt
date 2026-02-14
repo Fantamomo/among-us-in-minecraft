@@ -1,5 +1,9 @@
 package com.fantamomo.mc.amongus.settings
 
+import com.fantamomo.mc.adventure.text.args
+import com.fantamomo.mc.adventure.text.textComponent
+import com.fantamomo.mc.adventure.text.translatable
+import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.role.Role
 import com.fantamomo.mc.amongus.settings.types.BooleanSettingsType
 import com.fantamomo.mc.amongus.settings.types.DurationSettingsType
@@ -7,6 +11,8 @@ import com.fantamomo.mc.amongus.settings.types.EnumSettingsType
 import com.fantamomo.mc.amongus.settings.types.IntSettingsType
 import com.fantamomo.mc.amongus.util.data.DistanceEnum
 import com.fantamomo.mc.amongus.util.data.TaskBarUpdateEnum
+import net.kyori.adventure.text.Component
+import org.bukkit.Material
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -15,17 +21,20 @@ data class SettingsKey<T : Any, S : SettingsType<T>>(
     val key: String,
     val type: S,
     val defaultValue: T,
-    val settingsDisplayName: String = LANGUAGE_NAME_PREFIX + key,
-    val settingsDescription: String? = LANGUAGE_DESCRIPTION_PREFIX + key
+    val settingsDisplayName: Component = Component.translatable(LANGUAGE_NAME_PREFIX + key),
+    val settingsDescription: Component? = Component.translatable(LANGUAGE_DESCRIPTION_PREFIX + key),
+    val group: SettingsGroup? = null
 ) {
     init {
         keys.add(this)
+        group?.settings?.add(this)
     }
 
     companion object {
         private const val LANGUAGE_NAME_PREFIX = "settings.name."
         private const val LANGUAGE_DESCRIPTION_PREFIX = "settings.description."
         private val keys: MutableSet<SettingsKey<*, *>> = mutableSetOf()
+        val groups: List<SettingsGroup> = listOf(VENT, MEETING, TASK, ROLES, KILL, MESSAGES, UTILS, DEV)
 
         fun fromKey(key: String): SettingsKey<*, *>? = keys.find { it.key == key }
 
@@ -40,36 +49,76 @@ data class SettingsKey<T : Any, S : SettingsType<T>>(
             type,
             defaultValue
         )
+    }
 
+    // Settings
+
+    object VENT : SettingsGroup("vent", Material.TRIPWIRE_HOOK) {
         val VENT_DISTANCE = key("vent.distance", EnumSettingsType.create<DistanceEnum>(), DistanceEnum.NORMAL)
         val VENT_COOLDOWN = key("vent.cooldown", IntSettingsType.range(1, 60), 1)
         val VENT_VISIBLY_AS_WAYPOINT = key("vent.visibly.as.waypoint", BooleanSettingsType, false)
-        val CAMERA_SWITCH_SAFE_COOLDOWN = key("camera.switch.safe.cooldown", IntSettingsType.range(0, 1000), 750)
+    }
 
-        val SABOTAGE_CRISIS_COOLDOWN = key("sabotage.crisis.cooldown", IntSettingsType.range(10, 300), 60)
+    object MEETING : SettingsGroup("meeting", Material.COMPASS) {
         val MEETING_DISCUSSION_TIME =
             key("meeting.discussion.time", DurationSettingsType.range(Duration.ZERO, 3.minutes), 10.seconds)
         val MEETING_VOTING_TIME = key("meeting.voting.time", DurationSettingsType.range(15.seconds, 3.minutes), 60.seconds)
         val MEETING_BUTTONS = key("meeting.buttons", IntSettingsType.positive, 3)
         val MEETING_BUTTON_COOLDOWN = key("meeting.button.cooldown", DurationSettingsType.range(Duration.ZERO, 1.minutes), 15.seconds)
+    }
 
+    object TASK : SettingsGroup("task", Material.PAPER) {
         val TASK_COMMON = key("task.common", IntSettingsType.positive, 3)
         val TASK_SHORT = key("task.short", IntSettingsType.min(1), 6)
         val TASK_LONG = key("task.long", IntSettingsType.positive, 2)
         val TASK_BAR_UPDATE = key("task.bar.update", EnumSettingsType.create<TaskBarUpdateEnum>(), TaskBarUpdateEnum.IMMEDIATELY)
+    }
 
+    object ROLES : SettingsGroup("roles", Material.DIAMOND) {
         val IMPOSTERS = key("imposters", IntSettingsType.range(1, 3), 1)
-        val roles = Role.roles.associateWith { key("roles." + it.id, IntSettingsType.range(0, 100), 50) }
+        val roles = Role.roles.associateWith {
+            val value = Component.translatable("role.${it.id}.name")
+            key(
+                "roles." + it.id,
+                IntSettingsType.range(0, 100),
+                50,
+                textComponent {
+                    translatable("settings.name.role") {
+                        args {
+                            component("role", value)
+                        }
+                    }
+                },
+                textComponent {
+                    translatable("settings.description.role") {
+                        args {
+                            component("role", value)
+                        }
+                    }
+                }
+            )
+        }
+        val MINER_CREATE_VENT_COOLDOWN =
+            key("miner.create_vent.cooldown", DurationSettingsType.min(1.seconds), 45.seconds)
+    }
 
+    object KILL : SettingsGroup("kill", Material.BONE) {
         val KILL_DISTANCE = key("kill.distance", EnumSettingsType.create<DistanceEnum>(), DistanceEnum.NORMAL)
         val KILL_COOLDOWN = key("kill.cooldown", DurationSettingsType.min(1.seconds), 45.seconds)
+    }
 
-        val MINER_CREATE_VENT_COOLDOWN = key("miner.create_vent.cooldown", DurationSettingsType.min(1.seconds), 45.seconds)
-
+    object MESSAGES : SettingsGroup("messages", Material.BOOK) {
         val ALLOW_GHOST_MESSAGE_IN_GAME = key("allow.ghost.message.in.game", BooleanSettingsType, true)
         val ALLOW_IMPOSTER_PRIVATE_MESSAGE = key("allow.imposter.private.message", BooleanSettingsType, true)
+    }
 
-        // DEV
+    object UTILS : SettingsGroup("utils", Material.BOOK) {
+        val CAMERA_SWITCH_SAFE_COOLDOWN = key("camera.switch.safe.cooldown", IntSettingsType.range(0, 1000), 750)
+        val SABOTAGE_CRISIS_COOLDOWN = key("sabotage.crisis.cooldown", IntSettingsType.range(10, 300), 60)
+    }
+
+    // DEV
+    object DEV : SettingsGroup("dev", Material.REDSTONE) {
         val DO_WIN_CHECK = key("dev.do.win.check", BooleanSettingsType, true)
         val DO_WIN_CHECK_ON_TICK = key("dev.do.win.check.on.tick", BooleanSettingsType, true)
     }

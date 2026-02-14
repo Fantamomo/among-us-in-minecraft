@@ -212,7 +212,7 @@ class ScoreboardManager(private val game: Game) {
                     textComponent {
                         translatable("scoreboard.lobby.settings.name") {
                             args {
-                                component("name", Component.translatable(key.settingsDisplayName))
+                                component("name", key.settingsDisplayName)
                             }
                         }
                     }

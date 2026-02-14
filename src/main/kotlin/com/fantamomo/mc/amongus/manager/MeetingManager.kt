@@ -61,7 +61,7 @@ class MeetingManager(private val game: Game) : Listener {
     private val ejectionViewPoint: Location =
         game.area.ejectedViewPoint ?: error("Ejection view point not found")
 
-    private val buttonCooldown = Cooldown(game.settings[SettingsKey.MEETING_BUTTON_COOLDOWN], true)
+    private val buttonCooldown = Cooldown(game.settings[SettingsKey.MEETING.MEETING_BUTTON_COOLDOWN], true)
 
     private val actionBar = game.actionBarManager.ActionBarPart(
         "meeting",
@@ -135,7 +135,7 @@ class MeetingManager(private val game: Game) : Listener {
             })
             return
         }
-        if (caller.meetingButtonsPressed >= game.settings[SettingsKey.MEETING_BUTTONS]) {
+        if (caller.meetingButtonsPressed >= game.settings[SettingsKey.MEETING.MEETING_BUTTONS]) {
             caller.player?.sendMessage(Component.translatable("meeting.button_limit_reached"))
             return
         }
@@ -293,7 +293,7 @@ class MeetingManager(private val game: Game) : Listener {
 
         private fun startDiscussion() {
             setPhase(GamePhase.DISCUSSION)
-            val duration = game.settings[SettingsKey.MEETING_DISCUSSION_TIME]
+            val duration = game.settings[SettingsKey.MEETING.MEETING_DISCUSSION_TIME]
             if (duration <= Duration.ZERO) {
                 startVoting()
                 return
@@ -310,8 +310,8 @@ class MeetingManager(private val game: Game) : Listener {
             }
             setPhase(GamePhase.VOTING)
             votes.clear()
-            timer = Cooldown(game.settings[SettingsKey.MEETING_VOTING_TIME], true)
-            if (game.settings[SettingsKey.MEETING_DISCUSSION_TIME] >= Duration.ZERO) {
+            timer = Cooldown(game.settings[SettingsKey.MEETING.MEETING_VOTING_TIME], true)
+            if (game.settings[SettingsKey.MEETING.MEETING_DISCUSSION_TIME] >= Duration.ZERO) {
                 game.sendTitle(
                     TitlePart.TITLE,
                     textComponent {

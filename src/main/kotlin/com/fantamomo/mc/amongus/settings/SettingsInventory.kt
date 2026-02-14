@@ -1,9 +1,6 @@
 package com.fantamomo.mc.amongus.settings
 
-import com.fantamomo.mc.adventure.text.append
-import com.fantamomo.mc.adventure.text.args
-import com.fantamomo.mc.adventure.text.text
-import com.fantamomo.mc.adventure.text.translatable
+import com.fantamomo.mc.adventure.text.*
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
@@ -26,34 +23,124 @@ import org.bukkit.inventory.InventoryHolder
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
 
-class SettingsInventory(val owner: AmongUsPlayer) : InventoryHolder {
-    private val inv = Bukkit.createInventory(this, 54, Component.translatable("setting.ui.title"))
+class SettingsInventory(
+    val owner: AmongUsPlayer,
+    private val group: SettingsGroup? = null
+) : InventoryHolder {
+
     private val settings = owner.game.settings
+    private lateinit var inv: Inventory
+
+    companion object {
+        val SETTINGS_NAMESPACED_KEY = NamespacedKey(AmongUs, "settings/key")
+        val SETTINGS_GROUP_KEY = NamespacedKey(AmongUs, "settings/group")
+        val SETTINGS_BACK_KEY = NamespacedKey(AmongUs, "settings/back")
+    }
+
     override fun getInventory(): Inventory {
-        setupInventory()
+        buildInventory()
         return inv
     }
 
-    fun setupInventory() {
-        val borderItemSlots = GuiAssignedTask.getBorderItemSlots(54)
-        val middleItemSlots = GuiAssignedTask.getMiddleItemSlots(54)
-        var lastIndex = 0
-        SettingsKey.keys().forEachIndexed { index, key ->
+    private fun buildInventory() {
+        val content = group?.keys?.toList() ?: buildMainContent()
+
+        val size = requiredSize(content.size)
+        inv = Bukkit.createInventory(
+            this,
+            size,
+            if (group == null) Component.translatable("setting.ui.title")
+            else Component.translatable(group.displayName)
+        )
+
+        val borderSlots = GuiAssignedTask.getBorderItemSlots(size)
+        val middleSlots = GuiAssignedTask.getMiddleItemSlots(size)
+
+        val background = ItemStack(Material.BLACK_STAINED_GLASS_PANE)
+        borderSlots.forEach { inv.setItem(it, background) }
+
+        if (group == null) setupMainMenu(middleSlots)
+        else setupGroupMenu(middleSlots)
+
+        if (group != null) addBackButton(size)
+    }
+
+    private fun requiredSize(contentAmount: Int): Int {
+        if (contentAmount <= 0) return 9 * 3
+
+        val middleSlotsPerRow = 7
+        val middleRowsNeeded = ((contentAmount + middleSlotsPerRow - 1) / middleSlotsPerRow)
+        val totalRows = middleRowsNeeded + 2
+        val size = (totalRows * 9).coerceAtMost(54)
+        return size
+    }
+
+    private fun buildMainContent(): List<Any> {
+        val result: MutableList<Any> = mutableListOf()
+        val grouped = SettingsKey.groups
+        result.addAll(grouped)
+        val ungrouped = SettingsKey.keys().filter { it.group == null }
+        result.addAll(ungrouped)
+        return result
+    }
+
+    @Suppress("UnstableApiUsage")
+    private fun setupMainMenu(middleSlots: List<Int>) {
+        val content = buildMainContent()
+        content.forEachIndexed { index, entry ->
+            val slot = middleSlots.getOrNull(index) ?: return@forEachIndexed
+            when (entry) {
+                is SettingsGroup -> {
+                    val item = ItemStack(entry.material)
+                    item.setData(
+                        DataComponentTypes.ITEM_NAME,
+                        Component.translatable(entry.displayName).translateTo(owner.locale)
+                    )
+                    val lines = splitLinesPreserveStyles(
+                        Component.translatable(entry.displayDescription).translateTo(owner.locale).decoration(TextDecoration.ITALIC, false)
+                    )
+                    val lore = ItemLore.lore(lines)
+                    item.setData(DataComponentTypes.LORE, lore)
+                    item.editPersistentDataContainer {
+                        it.set(SETTINGS_GROUP_KEY, PersistentDataType.STRING, entry.name)
+                    }
+                    inv.setItem(slot, item)
+                }
+
+                is SettingsKey<*, *> -> {
+                    @Suppress("UNCHECKED_CAST")
+                    val key = entry as SettingsKey<Any, *>
+                    val value = settings[key]
+                    val item = key.type.itemRepresentation(value)
+                    finishItem(key, value, item)
+                    inv.setItem(slot, item)
+                }
+            }
+        }
+    }
+
+    private fun setupGroupMenu(middleSlots: List<Int>) {
+        group!!.keys.forEachIndexed { index, keyRaw ->
             @Suppress("UNCHECKED_CAST")
-            key as SettingsKey<Any, *>
+            val key = keyRaw as SettingsKey<Any, *>
             val value = settings[key]
             val item = key.type.itemRepresentation(value)
             finishItem(key, value, item)
-            item.editPersistentDataContainer {
-                it.set(SETTINGS_NAMESPACED_KEY, PersistentDataType.STRING, key.key)
-            }
-            val slot = middleItemSlots[index]
+
+            val slot = middleSlots.getOrNull(index) ?: return@forEachIndexed
             inv.setItem(slot, item)
-            lastIndex = slot
         }
-        val background = ItemStack(Material.BLACK_STAINED_GLASS_PANE)
-        for (i in borderItemSlots) inv.setItem(i, background)
-        for (i in lastIndex + 1 until middleItemSlots.size) inv.setItem(middleItemSlots[i], background)
+    }
+
+    private fun addBackButton(size: Int) {
+        val back = ItemStack(Material.ARROW)
+        back.editMeta {
+            it.displayName(Component.translatable("setting.ui.back").translateTo(owner.locale))
+        }
+        back.editPersistentDataContainer {
+            it.set(SETTINGS_BACK_KEY, PersistentDataType.BOOLEAN, true)
+        }
+        inv.setItem(size - 5, back)
     }
 
     @Suppress("UnstableApiUsage")
@@ -61,7 +148,7 @@ class SettingsInventory(val owner: AmongUsPlayer) : InventoryHolder {
         item.setData(
             DataComponentTypes.ITEM_NAME,
             textComponent(owner.locale) {
-                translatable(key.settingsDisplayName)
+                append(key.settingsDisplayName)
                 text(": ", NamedTextColor.GRAY)
                 append(key.type.componentRepresentation(value))
             }
@@ -70,14 +157,12 @@ class SettingsInventory(val owner: AmongUsPlayer) : InventoryHolder {
         val empty = lore.isEmpty()
         key.settingsDescription?.let {
             if (!empty) lore.addFirst(Component.empty())
-            lore.addFirst(Component.translatable(it).translateTo(owner.locale))
+            lore.addFirst(it.translateTo(owner.locale))
         }
         if (empty) lore.add(Component.empty())
-        lore.add(com.fantamomo.mc.adventure.text.textComponent {
+        lore.add(textComponent {
             translatable("setting.ui.default") {
-                args {
-                    string("value", key.type.stringRepresentation(key.defaultValue))
-                }
+                args { string("value", key.type.stringRepresentation(key.defaultValue)) }
             }
         })
         val components = lore
@@ -85,27 +170,42 @@ class SettingsInventory(val owner: AmongUsPlayer) : InventoryHolder {
             .flatMap(::splitLinesPreserveStyles)
             .map { it.decoration(TextDecoration.ITALIC, false) }
 
+        item.editPersistentDataContainer {
+            it.set(SETTINGS_NAMESPACED_KEY, PersistentDataType.STRING, key.key)
+        }
+
         item.setData(DataComponentTypes.LORE, ItemLore.lore(components))
     }
 
     internal fun onClick(event: InventoryClickEvent) {
-        val currentItem = event.currentItem ?: return
-        val key = currentItem.persistentDataContainer.get(SETTINGS_NAMESPACED_KEY, PersistentDataType.STRING) ?: return
-        val settingsKey = SettingsKey.fromKey(key) ?: return
-        @Suppress("UNCHECKED_CAST")
-        settingsKey as SettingsKey<Any, *>
-        if (event.click == ClickType.DROP) {
-            settings.remove(settingsKey)
-            setupInventory()
+        val item = event.currentItem ?: return
+
+        if (item.persistentDataContainer.has(SETTINGS_BACK_KEY)) {
+            owner.player?.openInventory(SettingsInventory(owner).inventory)
             return
         }
-        val currentValue = settings[settingsKey]
-        val new = settingsKey.type.onItemClick(currentValue, event.click)
-        settings.set(settingsKey, new)
-        setupInventory()
-    }
 
-    companion object {
-        val SETTINGS_NAMESPACED_KEY = NamespacedKey(AmongUs, "settings/inventory")
+        val groupName = item.persistentDataContainer.get(SETTINGS_GROUP_KEY, PersistentDataType.STRING)
+        if (groupName != null) {
+            val target = SettingsKey.groups.find { it.name == groupName } ?: return
+            owner.player?.openInventory(SettingsInventory(owner, target).inventory)
+            return
+        }
+
+        val keyName = item.persistentDataContainer.get(SETTINGS_NAMESPACED_KEY, PersistentDataType.STRING) ?: return
+        val settingsKey = SettingsKey.fromKey(keyName) ?: return
+
+        @Suppress("UNCHECKED_CAST")
+        val casted = settingsKey as SettingsKey<Any, *>
+
+        if (event.click == ClickType.DROP) {
+            settings.remove(casted)
+        } else {
+            val current = settings[casted]
+            val new = casted.type.onItemClick(current, event.click)
+            settings.set(casted, new)
+        }
+
+        owner.player?.openInventory(SettingsInventory(owner, group).inventory)
     }
 }

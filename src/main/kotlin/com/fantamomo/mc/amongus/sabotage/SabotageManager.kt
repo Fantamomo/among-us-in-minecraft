@@ -22,7 +22,7 @@ import kotlin.time.Duration.Companion.seconds
 class SabotageManager(private val game: Game) {
 
     private val cooldownBetweenSabotages =
-        game.settings[SettingsKey.SABOTAGE_CRISIS_COOLDOWN].seconds
+        game.settings[SettingsKey.UTILS.SABOTAGE_CRISIS_COOLDOWN].seconds
 
     private val cooldowns = mutableMapOf<Sabotage<*, *>, Cooldown>()
     private var currentSabotage: Sabotage<*, *>? = null

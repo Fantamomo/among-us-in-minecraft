@@ -88,7 +88,7 @@ class Game(
         }
         if (phase == GamePhase.FINISHED) return
         ticks++
-        if (ticks % 20 == 0 && settings[SettingsKey.DO_WIN_CHECK_ON_TICK]) {
+        if (ticks % 20 == 0 && settings[SettingsKey.DEV.DO_WIN_CHECK_ON_TICK]) {
             checkWin()
         }
         for (player in players) {
@@ -178,7 +178,7 @@ class Game(
     }
 
     fun checkWin() {
-        if (!settings[SettingsKey.DO_WIN_CHECK]) return
+        if (!settings[SettingsKey.DEV.DO_WIN_CHECK]) return
         if (taskManager.allTaskCompleted()) {
             letWin(Team.CREWMATES)
             return

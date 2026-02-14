@@ -42,7 +42,7 @@ class VentManager(val game: Game) {
 
                 val hiddenDisplay = getDisplay(field)
                 player?.showEntity(AmongUs, hiddenDisplay)
-                if (game.settings[SettingsKey.VENT_VISIBLY_AS_WAYPOINT]) {
+                if (game.settings[SettingsKey.VENT.VENT_VISIBLY_AS_WAYPOINT]) {
                     game.waypointManager.assignWaypoint(this.player, field.waypoint)
                 }
 
@@ -90,7 +90,7 @@ class VentManager(val game: Game) {
                 val location = vent.normalizedLocation.withRotation(player)
                 player.teleport(location)
                 orientationChange(this.player, location)
-                val ventsAsWaypoints = game.settings[SettingsKey.VENT_VISIBLY_AS_WAYPOINT]
+                val ventsAsWaypoints = game.settings[SettingsKey.VENT.VENT_VISIBLY_AS_WAYPOINT]
                 for (entry in displays) {
                     if (vent == entry.key) continue
                     player.showEntity(AmongUs, entry.value)
@@ -236,7 +236,7 @@ class VentManager(val game: Game) {
 
     fun isNearVent(amongUsPlayer: AmongUsPlayer): Boolean {
         val location = amongUsPlayer.player?.location ?: return false
-        val maxDistance = game.settings[SettingsKey.VENT_DISTANCE].distance
+        val maxDistance = game.settings[SettingsKey.VENT.VENT_DISTANCE].distance
         return vents.any { it.normalizedLocation.distanceSquared(location) < maxDistance * maxDistance }
     }
 

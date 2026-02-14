@@ -80,10 +80,10 @@ private fun PaperCommand.settingsCommand() = literal("settings") {
                             component("key") {
                                 content(key.key)
                                 hoverEvent(KHoverEventType.ShowText) {
-                                    translatable(key.settingsDisplayName)
+                                    append(key.settingsDisplayName)
                                     if (key.settingsDescription != null) {
                                         newLine()
-                                        translatable(key.settingsDescription)
+                                        append(key.settingsDescription)
                                     }
                                 }
                             }
@@ -117,10 +117,10 @@ private fun PaperCommand.settingsCommand() = literal("settings") {
                                     component("key") {
                                         content(key.key)
                                         hoverEvent(KHoverEventType.ShowText) {
-                                            translatable(key.settingsDisplayName)
+                                            append(key.settingsDisplayName)
                                             if (key.settingsDescription != null) {
                                                 newLine()
-                                                translatable(key.settingsDescription)
+                                                append(key.settingsDescription)
                                             }
                                         }
                                     }
@@ -149,10 +149,10 @@ private fun PaperCommand.settingsCommand() = literal("settings") {
                             component("key") {
                                 content(key.key)
                                 hoverEvent(KHoverEventType.ShowText) {
-                                    translatable(key.settingsDisplayName)
+                                    append(key.settingsDisplayName)
                                     if (key.settingsDescription != null) {
                                         newLine()
-                                        translatable(key.settingsDescription)
+                                        append(key.settingsDescription)
                                     }
                                 }
                             }
