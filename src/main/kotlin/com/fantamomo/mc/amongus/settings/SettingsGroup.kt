@@ -1,5 +1,6 @@
 package com.fantamomo.mc.amongus.settings
 
+import net.kyori.adventure.text.Component
 import org.bukkit.Material
 
 open class SettingsGroup(val name: String, val material: Material) {
@@ -18,5 +19,20 @@ open class SettingsGroup(val name: String, val material: Material) {
         type,
         defaultValue,
         group = this
+    )
+
+    fun <T : Any, S : SettingsType<T>> key(
+        key: String,
+        type: S,
+        defaultValue: T,
+        displayName: Component,
+        description: Component?
+    ) = SettingsKey(
+        key,
+        type,
+        defaultValue,
+        displayName,
+        description,
+        this
     )
 }
