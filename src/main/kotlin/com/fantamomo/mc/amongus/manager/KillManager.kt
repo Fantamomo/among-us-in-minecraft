@@ -182,6 +182,7 @@ class KillManager(val game: Game) {
                 mannequin?.let { game.scoreboardManager.get(player)?.ghostTeam?.addEntity(it) }
             }
         }
+        target.addGhostImprovements()
     }
 
     private fun showGhosts(target: AmongUsPlayer) {
