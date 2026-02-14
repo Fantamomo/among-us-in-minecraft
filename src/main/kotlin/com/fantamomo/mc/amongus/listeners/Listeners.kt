@@ -11,6 +11,7 @@ object Listeners {
         CommandListener,
         MeetingListener,
         PlayerListener,
+        RoleListener,
         SabotageListener,
         SettingsListener,
         TaskListener,
