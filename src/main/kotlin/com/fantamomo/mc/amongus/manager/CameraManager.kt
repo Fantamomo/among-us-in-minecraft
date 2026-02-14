@@ -10,6 +10,7 @@ import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.settings.SettingsKey
+import com.fantamomo.mc.amongus.util.internal.NMS
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.craftbukkit.entity.CraftEntity
@@ -103,6 +104,7 @@ class CameraManager(val game: Game) {
          * Since we only want to change the camera perspective without enabling the
          * full spectator mechanics, we directly set the camera using NMS.
          */
+        @NMS
         private fun setSpectatorTarget(target: ArmorStand?) {
             val player = player.player ?: return
             val craftPlayer = player as CraftPlayer

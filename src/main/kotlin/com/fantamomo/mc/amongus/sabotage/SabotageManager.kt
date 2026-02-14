@@ -8,6 +8,7 @@ import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.util.Cooldown
+import com.fantamomo.mc.amongus.util.internal.NMS
 import net.kyori.adventure.bossbar.BossBar
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.title.TitlePart
@@ -97,6 +98,7 @@ class SabotageManager(private val game: Game) {
         }
     }
 
+    @NMS
     private fun sendWorldBorder(real: Boolean) {
         val packet = if (real) ClientboundSetBorderWarningDistancePacket((game.world as CraftWorld).handle.worldBorder)
         else ClientboundSetBorderWarningDistancePacket(fakeWordBorder)

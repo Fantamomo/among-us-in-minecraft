@@ -12,6 +12,7 @@ import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.util.Cooldown
+import com.fantamomo.mc.amongus.util.internal.NMS
 import com.fantamomo.mc.amongus.util.textComponent
 import io.papermc.paper.datacomponent.DataComponentTypes
 import io.papermc.paper.datacomponent.item.ResolvableProfile
@@ -417,6 +418,7 @@ class MeetingManager(private val game: Game) : Listener {
             game.sendTitle(TitlePart.TITLE, component)
         }
 
+        @NMS
         private fun startEjection(player: AmongUsPlayer?) {
             if (player == null || !player.isAlive) {
                 finishMeeting()

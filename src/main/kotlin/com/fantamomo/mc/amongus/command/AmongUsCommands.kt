@@ -8,6 +8,7 @@ import com.fantamomo.mc.amongus.data.AmongUsConfig
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.role.Team
+import com.fantamomo.mc.amongus.util.internal.NMS
 import com.mojang.brigadier.Command
 import com.mojang.brigadier.context.CommandContext
 import com.mojang.brigadier.tree.ArgumentCommandNode
@@ -78,6 +79,7 @@ object AmongUsCommands {
      *
      * @return true if interception succeeds.
      */
+    @NMS
     @Suppress("UnstableApiUsage")
     private fun interceptMsgCommand(registrar: Commands): Boolean {
         logger.debug("Attempting to intercept /msg command")
