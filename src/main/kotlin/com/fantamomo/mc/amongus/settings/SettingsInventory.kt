@@ -148,7 +148,7 @@ class SettingsInventory(
         item.setData(
             DataComponentTypes.ITEM_NAME,
             textComponent(owner.locale) {
-                translatable(key.settingsDisplayName)
+                append(key.settingsDisplayName)
                 text(": ", NamedTextColor.GRAY)
                 append(key.type.componentRepresentation(value))
             }
@@ -157,7 +157,7 @@ class SettingsInventory(
         val empty = lore.isEmpty()
         key.settingsDescription?.let {
             if (!empty) lore.addFirst(Component.empty())
-            lore.addFirst(Component.translatable(it).translateTo(owner.locale))
+            lore.addFirst(it.translateTo(owner.locale))
         }
         if (empty) lore.add(Component.empty())
         lore.add(textComponent {
