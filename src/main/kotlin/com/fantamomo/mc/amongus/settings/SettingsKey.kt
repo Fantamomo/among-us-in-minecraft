@@ -99,7 +99,7 @@ data class SettingsKey<T : Any, S : SettingsType<T>>(
             )
         }
         val MINER_CREATE_VENT_COOLDOWN =
-            Companion.key("miner.create_vent.cooldown", DurationSettingsType.min(1.seconds), 45.seconds)
+            key("miner.create_vent.cooldown", DurationSettingsType.min(1.seconds), 45.seconds)
     }
 
     object KILL : SettingsGroup("kill", Material.BONE) {
