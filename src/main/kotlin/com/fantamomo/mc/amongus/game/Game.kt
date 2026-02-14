@@ -103,6 +103,7 @@ class Game(
         taskManager.tick()
         meetingManager.tick()
         scoreboardManager.tick()
+        roleManager.tick()
     }
 
     fun getPlayer(uuid: UUID) = players.find { it.uuid == uuid }
@@ -216,6 +217,8 @@ class Game(
         waypointManager.end()
         actionBarManager.end()
         scoreboardManager.end()
+
+        roleManager.end()
 
         for (player in players) {
             if (cameraManager.isInCams(player)) cameraManager.leaveCams(player)
