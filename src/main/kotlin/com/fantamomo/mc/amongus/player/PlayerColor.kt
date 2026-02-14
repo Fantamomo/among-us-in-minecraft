@@ -6,6 +6,7 @@ import org.bukkit.Color
 import org.bukkit.inventory.ItemType
 import org.bukkit.inventory.meta.ArmorMeta
 import org.bukkit.inventory.meta.ColorableArmorMeta
+import org.bukkit.inventory.meta.trim.ArmorTrim
 import kotlin.random.Random
 
 @Suppress("UnstableApiUsage")
@@ -43,15 +44,17 @@ enum class PlayerColor(val color: Color, val helmet: ItemType.Typed<out ArmorMet
 
     constructor(color: Color) : this(color, ItemType.LEATHER_HELMET, false)
 
-    fun toItemStack() = helmet.createItemStack { config ->
+    fun toItemStack(trim: ArmorTrim? = null) = helmet.createItemStack { config ->
         if (config is ColorableArmorMeta) {
             config.setColor(color)
         }
+        if (trim != null) config.trim = trim
     }
 
     companion object {
         private val notRestrictedColors = entries.filter { !it.restricted }
         private val restrictedColors = entries.filter { it.restricted }
+        val helmetTypes = entries.map { it.helmet }
 
         fun random(allowRestricted: Boolean = false, random: Random = Random): PlayerColor {
             if (allowRestricted) return entries.random(random)
