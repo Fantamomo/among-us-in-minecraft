@@ -76,7 +76,7 @@ class ScoreboardManager(private val game: Game) {
     }
 
     internal fun addLobbyPlayer(player: AmongUsPlayer) {
-        if (game.phase == GamePhase.LOBBY) {
+        if (game.phase == GamePhase.LOBBY || game.phase == GamePhase.STARTING) {
             scoreboards[player] = AmongUsScoreboard(player).also { sb -> sb.show() }
         }
     }
@@ -121,7 +121,7 @@ class ScoreboardManager(private val game: Game) {
             usedEntries.clear()
             renderOrder.clear()
 
-            if (game.phase == GamePhase.LOBBY) renderLobby()
+            if (game.phase == GamePhase.LOBBY || game.phase == GamePhase.STARTING) renderLobby()
             else renderGame()
 
             animateInitialSequence()
@@ -189,7 +189,7 @@ class ScoreboardManager(private val game: Game) {
                     } else {
                         translatable("scoreboard.lobby.status.starting") {
                             args {
-                                numeric("time", -1) // todo
+                                numeric("time", (game.startCooldownTicks - game.ticks + 19) / 20)
                             }
                         }
                     }

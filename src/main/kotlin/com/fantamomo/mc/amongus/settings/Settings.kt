@@ -1,6 +1,8 @@
 package com.fantamomo.mc.amongus.settings
 
-class Settings {
+import com.fantamomo.mc.amongus.game.Game
+
+class Settings(val game: Game) {
     private val data: MutableMap<String, Any> = mutableMapOf()
     private val recentlyChanged: MutableList<SettingsKey<*, *>> = mutableListOf()
 
@@ -13,11 +15,13 @@ class Settings {
 
     fun <T : Any> set(key: SettingsKey<T, *>, value: T) {
         addRecentlyChanged(key)
+        game.abortStartCooldown()
         data[key.key] = value
     }
 
     fun remove(key: SettingsKey<*, *>): Boolean {
         addRecentlyChanged(key)
+        game.abortStartCooldown()
         return data.remove(key.key) != null
     }
 

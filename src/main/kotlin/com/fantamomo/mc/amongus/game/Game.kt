@@ -18,6 +18,9 @@ import com.fantamomo.mc.amongus.settings.Settings
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.task.TaskManager
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextDecoration
+import net.kyori.adventure.title.Title
 import net.kyori.adventure.title.TitlePart
 import org.bukkit.Bukkit
 import org.bukkit.World
@@ -40,7 +43,7 @@ class Game(
     val code: String = createRandomCode()
     val uuid: Uuid = Uuid.random()
 
-    val settings: Settings = Settings()
+    val settings: Settings = Settings(this)
 
     val ventManager = VentManager(this)
     val cameraManager = CameraManager(this)
@@ -60,11 +63,12 @@ class Game(
     var resultMessage: Component? = null
 
     fun addPlayer(player: Player): Boolean {
-        if (phase != GamePhase.LOBBY) return false
+        if (phase != GamePhase.LOBBY && phase != GamePhase.STARTING) return false
         if (players.size >= maxPlayers) return false
         if (PlayerManager.exists(player.uniqueId)) return false
         val newPlayer = PlayerManager.joinGame(player, this)
         scoreboardManager.addLobbyPlayer(newPlayer)
+        abortStartCooldown()
         return true
     }
 
@@ -79,15 +83,67 @@ class Game(
         scoreboardManager.removePlayer(player)
     }
 
-    private var ticks = 0
+    internal var ticks = 0
+        private set
 
     fun tick() {
-        if (phase == GamePhase.LOBBY) {
+        ticks++
+        if (phase == GamePhase.LOBBY || phase == GamePhase.STARTING) {
             scoreboardManager.tick()
+
+            if (startCooldownTicks > ticks) {
+                val remainingTicks = startCooldownTicks - ticks
+                val remaining = (remainingTicks + 19) / 20
+
+                val tickInSecond = remainingTicks % 20
+                val chars = ('0'..'9') + ('A'..'Z')
+
+                val target = remaining.toString()
+                val length = target.length
+
+                val display = buildString {
+                    for (i in 0 until length) {
+
+                        val stopThreshold = 6 + (i * 4)
+
+                        if (tickInSecond > stopThreshold) {
+                            append(chars.random())
+                        } else {
+                            append(target[i])
+                        }
+                    }
+                }
+
+                val blink = remaining <= 3 && tickInSecond % 4 < 2
+
+                val color = when {
+                    remaining <= 3 -> if (blink) NamedTextColor.RED else NamedTextColor.DARK_RED
+                    remaining <= 5 -> NamedTextColor.RED
+                    else -> NamedTextColor.GOLD
+                }
+
+                val title = Title.title(
+                    Component.text(display)
+                        .color(color)
+                        .decorate(TextDecoration.BOLD),
+                    Component.empty(),
+                    0,
+                    20,
+                    0
+                )
+
+                for (player in players) {
+                    val p = player.player ?: continue
+                    p.showTitle(title)
+                }
+            } else if (startCooldownTicks == ticks) {
+                startCooldownTicks = -1
+                start()
+            }
+
             return
         }
         if (phase == GamePhase.FINISHED) return
-        ticks++
         if (ticks % 20 == 0 && settings[SettingsKey.DEV.DO_WIN_CHECK_ON_TICK]) {
             checkWin()
         }
@@ -159,6 +215,21 @@ class Game(
 
     fun invalidateAbilities() {
         AbilityManager.invalidateAll(this)
+    }
+
+    internal var startCooldownTicks = -1
+        private set
+
+    fun startStartCooldown() {
+        if (phase != GamePhase.LOBBY) return
+        phase = GamePhase.STARTING
+        startCooldownTicks = ticks + 200
+    }
+
+    fun abortStartCooldown() {
+        if (phase != GamePhase.STARTING) return
+        phase = GamePhase.LOBBY
+        startCooldownTicks = -1
     }
 
     fun start() {

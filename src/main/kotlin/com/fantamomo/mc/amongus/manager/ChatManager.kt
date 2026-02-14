@@ -18,7 +18,7 @@ class ChatManager(val game: Game) {
     fun onChat(sender: AmongUsPlayer, event: ChatEvent) {
         event.isCancelled = true
         val message = event.message()
-        if (game.phase == GamePhase.LOBBY) {
+        if (game.phase == GamePhase.LOBBY || game.phase == GamePhase.STARTING) {
             sendLobbyMessage(sender, message)
             return
         }

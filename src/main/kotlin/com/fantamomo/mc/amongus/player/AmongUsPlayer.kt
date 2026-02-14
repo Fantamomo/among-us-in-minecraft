@@ -116,7 +116,7 @@ class AmongUsPlayer internal constructor(
         val assigned = ability.assignTo(this)
         AbilityManager.registerAbility(assigned)
         abilities.add(assigned)
-        if (game.phase == GamePhase.LOBBY) return
+        if (game.phase == GamePhase.LOBBY || game.phase == GamePhase.STARTING) return
         val player = player
         if (player != null) {
             for (item in assigned.items) {
