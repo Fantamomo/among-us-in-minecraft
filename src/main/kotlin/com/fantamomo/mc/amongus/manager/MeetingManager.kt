@@ -251,6 +251,8 @@ class MeetingManager(private val game: Game) : Listener {
 
             game.killManager.removeAllCorpses()
 
+            game.morphManager.unmorphAll()
+
             val title = Component.translatable("meeting.called.title")
             val subtitle = textComponent {
                 translatable(reason.calledTranslationKey) {
