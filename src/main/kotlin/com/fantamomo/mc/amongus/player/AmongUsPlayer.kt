@@ -22,6 +22,8 @@ import net.kyori.adventure.title.TitlePart
 import org.bukkit.Location
 import org.bukkit.entity.LivingEntity
 import org.bukkit.entity.Player
+import org.bukkit.potion.PotionEffect
+import org.bukkit.potion.PotionEffectType
 import java.util.*
 import kotlin.uuid.toKotlinUuid
 
@@ -132,6 +134,12 @@ class AmongUsPlayer internal constructor(
 
     fun canSeeWhenLightsSabotage(): Boolean = assignedRole?.definition?.team == Team.IMPOSTERS
 
+    fun addGhostImprovements() {
+        if (isAlive) return
+        val player = player ?: return
+        player.addPotionEffect(GHOST_SPEED)
+    }
+
     fun start() {
         val player = player
         var role = assignedRole
@@ -161,5 +169,14 @@ class AmongUsPlayer internal constructor(
         }
 
         statistics.onGameStart()
+    }
+
+    internal fun restorePlayer() {
+        val player = player ?: return
+        player.removePotionEffect(PotionEffectType.SPEED)
+    }
+
+    companion object {
+        private val GHOST_SPEED = PotionEffect(PotionEffectType.SPEED, -1, 1, false, false)
     }
 }

@@ -145,6 +145,7 @@ class Game(
         waypointManager.onPlayerRejoin(amongUsPlayer)
         scoreboardManager.onPlayerRejoin(amongUsPlayer)
         killManager.onPlayerRejoin(amongUsPlayer)
+        if (!amongUsPlayer.isAlive) amongUsPlayer.addGhostImprovements()
     }
 
     fun sendChatMessage(component: Component) {
@@ -246,6 +247,7 @@ class Game(
                 }
             }
             PlayerManager.gameEnds(player)
+            player.restorePlayer()
         }
 
         for (it in players.toList()) {
