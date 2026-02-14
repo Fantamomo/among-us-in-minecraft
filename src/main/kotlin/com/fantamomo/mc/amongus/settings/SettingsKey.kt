@@ -29,7 +29,7 @@ data class SettingsKey<T : Any, S : SettingsType<T>>(
         private const val LANGUAGE_NAME_PREFIX = "settings.name."
         private const val LANGUAGE_DESCRIPTION_PREFIX = "settings.description."
         private val keys: MutableSet<SettingsKey<*, *>> = mutableSetOf()
-        val groups: List<SettingsGroup> = listOf(VENT, MEETING, TASK, ROLES, KILL, DEV, MESSAGES)
+        val groups: List<SettingsGroup> = listOf(VENT, MEETING, TASK, ROLES, KILL, MESSAGES, UTILS, DEV)
 
         fun fromKey(key: String): SettingsKey<*, *>? = keys.find { it.key == key }
 
@@ -44,12 +44,6 @@ data class SettingsKey<T : Any, S : SettingsType<T>>(
             type,
             defaultValue
         )
-
-        // Settings
-
-        val CAMERA_SWITCH_SAFE_COOLDOWN = key("camera.switch.safe.cooldown", IntSettingsType.range(0, 1000), 750)
-
-        val SABOTAGE_CRISIS_COOLDOWN = key("sabotage.crisis.cooldown", IntSettingsType.range(10, 300), 60)
     }
 
     // Settings
@@ -90,6 +84,11 @@ data class SettingsKey<T : Any, S : SettingsType<T>>(
     object MESSAGES : SettingsGroup("messages", Material.BOOK) {
         val ALLOW_GHOST_MESSAGE_IN_GAME = key("allow.ghost.message.in.game", BooleanSettingsType, true)
         val ALLOW_IMPOSTER_PRIVATE_MESSAGE = key("allow.imposter.private.message", BooleanSettingsType, true)
+    }
+
+    object UTILS : SettingsGroup("utils", Material.BOOK) {
+        val CAMERA_SWITCH_SAFE_COOLDOWN = key("camera.switch.safe.cooldown", IntSettingsType.range(0, 1000), 750)
+        val SABOTAGE_CRISIS_COOLDOWN = key("sabotage.crisis.cooldown", IntSettingsType.range(10, 300), 60)
     }
 
     // DEV
