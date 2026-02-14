@@ -8,6 +8,7 @@ import com.fantamomo.mc.amongus.listeners.Listeners
 import com.fantamomo.mc.amongus.manager.EntityManager
 import com.fantamomo.mc.amongus.manager.MeetingManager
 import com.fantamomo.mc.amongus.player.PlayerDataManager
+import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.statistics.StatisticsManager
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
 import org.bukkit.plugin.java.JavaPlugin
@@ -52,6 +53,7 @@ object AmongUs : JavaPlugin() {
         // in saveRun when classes like EntityManager haven't been loaded yet.
         // Method references (e.g., EntityManager::dispose) would trigger class loading
         // at the call site before entering the saveRun function.
+        saveRun { PlayerManager.stop() }
         saveRun { EntityManager.dispose() }
         saveRun { MeetingManager.dispose() }
         saveRun { StatisticsManager.saveAll() }
