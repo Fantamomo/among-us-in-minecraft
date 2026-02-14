@@ -165,6 +165,8 @@ class AmongUsPlayer internal constructor(
                 }
             }
         )
+        val team = role.definition.team
+        player?.sendMessage(team.description)
 
         for (player in game.players) {
             if (player === this) continue

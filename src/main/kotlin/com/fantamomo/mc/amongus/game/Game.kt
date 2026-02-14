@@ -1,11 +1,13 @@
 package com.fantamomo.mc.amongus.game
 
+import com.fantamomo.mc.adventure.text.args
 import com.fantamomo.mc.adventure.text.content
 import com.fantamomo.mc.adventure.text.textComponent
 import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.ability.AbilityManager
 import com.fantamomo.mc.amongus.area.GameArea
+import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.manager.*
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.player.PlayerColor
@@ -18,6 +20,7 @@ import com.fantamomo.mc.amongus.settings.Settings
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.task.TaskManager
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.JoinConfiguration
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.title.Title
@@ -182,6 +185,7 @@ class Game(
                     content("${player.name} has disconnected from the game. He has 60 seconds to reconnect, before he will be killed.")
                 })
             }
+
             else -> {}
         }
 
@@ -233,10 +237,24 @@ class Game(
     }
 
     fun start() {
+        if (phase != GamePhase.STARTING && phase != GamePhase.LOBBY) return
         phase = GamePhase.RUNNING
         roleManager.start()
         taskManager.start()
         val gameSpawn = area.gameSpawn ?: throw IllegalStateException("Game spawn not set")
+        val imposterTeamMatesMessage = textComponent {
+            translatable("team.imposters.teammates") {
+                args {
+                    val imposterNames = players.filter { it.assignedRole?.definition?.team == Team.IMPOSTERS }
+                        .map { Component.text(it.name, NamedTextColor.GOLD) }
+                    val players = Component.join(
+                        JoinConfiguration.separator(Component.text(", ", NamedTextColor.RED)),
+                        imposterNames
+                    )
+                    component("players", players)
+                }
+            }
+        }
         for (player in players) {
             player.editStatistics {
                 statedGames.increment()
@@ -244,6 +262,9 @@ class Game(
             }
             player.player?.teleportAsync(gameSpawn)
             player.start()
+            if (player.assignedRole?.definition?.team == Team.IMPOSTERS) {
+                player.player?.sendMessage(imposterTeamMatesMessage)
+            }
         }
         scoreboardManager.start()
     }
@@ -275,10 +296,12 @@ class Game(
         sendTitle(
             TitlePart.TITLE,
             textComponent {
-                translatable(when (team) {
-                    Team.CREWMATES -> "win.crewmate"
-                    Team.IMPOSTERS -> "win.imposter"
-                })
+                translatable(
+                    when (team) {
+                        Team.CREWMATES -> "win.crewmate"
+                        Team.IMPOSTERS -> "win.imposter"
+                    }
+                )
             }
         )
 
