@@ -7,6 +7,7 @@ import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.util.getClosestLocationOnLine
+import com.fantamomo.mc.amongus.util.internal.EntityIdManager
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Color
@@ -17,7 +18,6 @@ import org.bukkit.entity.Player
 import org.bukkit.util.Transformation
 import java.util.*
 import kotlin.math.roundToInt
-import kotlin.random.Random
 import kotlin.uuid.Uuid
 
 
@@ -320,7 +320,7 @@ class VentManager(val game: Game) {
 
     inner class VentCreation(val player: AmongUsPlayer, private val onStop: (Boolean) -> Unit) {
         private val targets = get3x3BlocksUnderPlayer(player.livingEntity.location)
-            .associateWith { Random.nextInt(100_000_000, Int.MAX_VALUE) }
+            .associateWith { EntityIdManager.getFreeId() }
         private val actionBar = game.actionBarManager.part(
             player,
             "create_vent",
@@ -345,6 +345,7 @@ class VentManager(val game: Game) {
                 called = true
                 onStop(false)
             }
+            targets.values.forEach { i -> EntityIdManager.freeId(i) }
             actionBar.remove()
             for (player in game.players) {
                 val p = player.player ?: continue
