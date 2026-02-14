@@ -345,6 +345,7 @@ class VentManager(val game: Game) {
                 called = true
                 onStop(false)
             }
+            targets.values.forEach { i -> EntityIdManager.freeId(i) }
             actionBar.remove()
             for (player in game.players) {
                 val p = player.player ?: continue
