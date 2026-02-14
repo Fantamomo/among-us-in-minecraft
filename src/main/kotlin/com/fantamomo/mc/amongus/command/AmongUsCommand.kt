@@ -57,7 +57,7 @@ private fun PaperCommand.trimCommand() {
                 return@guard abort()
             }
 
-            if (amongUsPlayer.game.phase != GamePhase.LOBBY) {
+            if (amongUsPlayer.game.phase != GamePhase.LOBBY && amongUsPlayer.game.phase != GamePhase.STARTING) {
                 sendMessage {
                     translatable("command.error.set_trim.game_not_lobby")
                 }
@@ -198,7 +198,7 @@ private fun KtCommandBuilder<CommandSourceStack, *>.setColorCommand() = execute 
     }
 
     val game = amongUsPlayer.game
-    if (game.phase != GamePhase.LOBBY) {
+    if (game.phase != GamePhase.LOBBY && game.phase != GamePhase.STARTING) {
         sendMessage {
             translatable("command.error.set_color.game_not_lobby")
         }

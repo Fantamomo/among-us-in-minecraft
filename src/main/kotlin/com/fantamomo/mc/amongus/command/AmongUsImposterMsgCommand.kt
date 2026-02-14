@@ -24,7 +24,7 @@ val AmongUsImposterMsgCommand = paperCommand("impostermsg") {
 
             val game = amongUsPlayer.game
 
-            if (game.phase == GamePhase.LOBBY) {
+            if (game.phase == GamePhase.LOBBY || game.phase == GamePhase.STARTING) {
                 sendMessage {
                     translatable("command.error.impostermsg.lobby")
                 }

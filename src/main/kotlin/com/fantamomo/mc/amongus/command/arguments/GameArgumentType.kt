@@ -28,7 +28,7 @@ class GameArgumentType(val onlyLobbyGames: Boolean = true, val showOnlyLobbyGame
         if (input.length != 4) throw invalidLength.createWithContext(reader, input)
         for (char in input) if (!char.isLetterOrDigit()) throw invalidCodeChars.createWithContext(reader, input)
         val game = GameManager[input.uppercase()] ?: throw gameNotFound.createWithContext(reader, input)
-        if (onlyLobbyGames && game.phase != GamePhase.LOBBY) throw gameNotFound.createWithContext(reader, input)
+        if (onlyLobbyGames && game.phase != GamePhase.LOBBY && game.phase != GamePhase.STARTING) throw gameNotFound.createWithContext(reader, input)
         return game
     }
 
@@ -42,7 +42,7 @@ class GameArgumentType(val onlyLobbyGames: Boolean = true, val showOnlyLobbyGame
         if (!source.sender.hasPermission(Permissions.SEE_GAME_CODES)) return Suggestions.empty()
         val input = builder.remaining
         for (game in GameManager.getGames()) {
-            if (showOnlyLobbyGames && game.phase != GamePhase.LOBBY) continue
+            if (showOnlyLobbyGames && game.phase != GamePhase.LOBBY && game.phase != GamePhase.STARTING) continue
             val code = game.code
             if (!code.startsWith(input, ignoreCase = true)) continue
             builder.suggest(code, AdventureComponent(textComponent {
