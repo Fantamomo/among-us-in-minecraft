@@ -138,6 +138,7 @@ class Game(
                 for (player in players) {
                     val p = player.player ?: continue
                     p.showTitle(title)
+                    p.sendTitlePart(TitlePart.TIMES, Title.DEFAULT_TIMES)
                 }
             } else if (startCooldownTicks == ticks) {
                 startCooldownTicks = -1
@@ -234,6 +235,8 @@ class Game(
         if (phase != GamePhase.STARTING) return
         phase = GamePhase.LOBBY
         startCooldownTicks = -1
+        val abortStartMessage = Component.translatable("game.start.aborted")
+        sendTitle(TitlePart.TITLE, abortStartMessage)
     }
 
     fun start() {
@@ -356,6 +359,7 @@ class Game(
 
     companion object {
         const val DEFAULT_MAX_PLAYERS = 16
+        const val NEEDED_PLAYERS_FOR_START = 4
         val CODE_CHARS = ('A'..'Z') + ('0'..'9')
         const val CODE_LENGTH = 4
 
