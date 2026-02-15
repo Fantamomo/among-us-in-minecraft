@@ -270,6 +270,15 @@ class ScoreboardManager(private val game: Game) {
                         line
                     )
                 }
+            val roleLine = player.assignedRole?.scoreboardLine()
+            if (roleLine != null) {
+                register(ENTRY_ROLE_CUSTOM)
+                score(
+                    ENTRY_ROLE_CUSTOM,
+                    SCORE_ROLE_HEADER - 1,
+                    roleLine
+                )
+            }
         }
 
         private fun renderDeath() {
@@ -677,6 +686,7 @@ class ScoreboardManager(private val game: Game) {
         private const val TEAM_GHOST: String = "ghost"
 
         private const val ENTRY_ROLE = "role"
+        private const val ENTRY_ROLE_CUSTOM = "role_custom"
         private const val ENTRY_ROLE_DESC = "role_desc"
         private const val ENTRY_DEATH = "death"
         private const val ENTRY_TASK = "task"
@@ -687,9 +697,10 @@ class ScoreboardManager(private val game: Game) {
 
         private const val SCORE_ROLE_HEADER = 1000
         private const val SCORE_ROLE_DESC_START = 900
-        private const val SCORE_DEATH = 800
-        private const val SCORE_TASK_START = 500
-        private const val SPACER_ROLE = 700
+        private const val SCORE_ROLE_CUSTOM = 800
+        private const val SCORE_DEATH = 700
+        private const val SCORE_TASK_START = 400
+        private const val SPACER_ROLE = 600
 
         private const val SCORE_LOBBY_CODE = 1000
         private const val SCORE_LOBBY_SPACER_1 = 900
