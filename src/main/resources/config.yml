@@ -31,8 +31,9 @@ morph-blender:
   # If this is off, a player changing form will simply acquire the chosen skin.
   enabled: false
 
-  # Animation type / Blender to use
-  # Available animations:
+  # Blender to use
+  # Available blenders:
   # - virus: Virus blending (default)
-  # - linear: Linear blending
-  animation: virus
+  # - fade: Fade blending
+  # - checker: Checkerboard blending
+  blender: virus
