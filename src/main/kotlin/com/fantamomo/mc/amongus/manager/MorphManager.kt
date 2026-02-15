@@ -36,14 +36,32 @@ class MorphManager(val game: Game) {
         val target: AmongUsPlayer,
         var frames: List<MorphSkinManager.Skin>? = null
     ) {
+        val actionBar = player.game.actionBarManager.part(
+            player,
+            "morph",
+            ActionBarManager.ActionBarPartType.RIGHT,
+            100
+        )
+
+        private var morphing: Boolean? = null
 
         fun playForwardAnimation() {
             val frames = this.frames ?: return
-            playAnimation(frames)
+            morphing = true
+            playAnimation(frames) {
+                actionBar.componentLike = com.fantamomo.mc.adventure.text.textComponent {
+                    translatable("actionbar.morph.info") {
+                        args {
+                            string("player", target.name)
+                        }
+                    }
+                }
+            }
         }
 
         fun playBackwardAnimation(onFinish: () -> Unit) {
             val frames = this.frames ?: return
+            morphing = false
             playAnimation(frames.reversed(), onFinish)
         }
 
@@ -55,6 +73,24 @@ class MorphManager(val game: Game) {
 
             var index = 0
             Bukkit.getScheduler().runTaskTimer(AmongUs, { task ->
+
+                val display = when (morphing) {
+                    true -> com.fantamomo.mc.adventure.text.textComponent {
+                        translatable("actionbar.morph.info.morphing") {
+                            args {
+                                string("player", target.name)
+                            }
+                        }
+                    }
+                    false -> com.fantamomo.mc.adventure.text.textComponent {
+                        translatable("actionbar.morph.info.unmorphing")
+                    }
+                    null -> null
+                }
+
+                if (display != null) {
+                    actionBar.componentLike = display
+                }
 
                 if (index >= frames.size) {
                     task.cancel()
@@ -83,13 +119,15 @@ class MorphManager(val game: Game) {
             }, 0L, 5L)
         }
 
-        fun unmorph() {
-            if (frames != null) {
+        fun unmorph(animation: Boolean = true) {
+            if (animation && frames != null) {
                 playBackwardAnimation {
                     player.mannequinController.restoreAppearance()
+                    actionBar.remove()
                 }
             } else {
                 player.mannequinController.restoreAppearance()
+                actionBar.remove()
             }
         }
     }
@@ -166,7 +204,7 @@ class MorphManager(val game: Game) {
     }
 
     fun unmorphAll() {
-        morphs.values.forEach { it.unmorph() }
+        morphs.values.forEach { it.unmorph(animation = false) }
         morphs.clear()
     }
 
