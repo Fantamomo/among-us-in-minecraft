@@ -9,7 +9,7 @@ interface SkinBlender {
     fun blend(base: BufferedImage, target: BufferedImage, t: Float): BufferedImage
 
     companion object {
-        val blenders: List<SkinBlender> = listOf(VirusSkinBlender)
+        val blenders: List<SkinBlender> = listOf(VirusSkinBlender, CheckerSkinBlender, FadeSkinBlender)
 
         fun lerpColor(a: Int, b: Int, t: Float): Int {
             val invT = 1f - t
