@@ -4,6 +4,7 @@ import com.fantamomo.mc.amongus.util.skinblender.SkinBlender.Companion.lerpColor
 import java.awt.image.BufferedImage
 import kotlin.math.hypot
 
+// Not gonna lie — I didn’t write this one myself. AI got my back.
 object VirusSkinBlender : SkinBlender {
     override val id: String = "virus"
 

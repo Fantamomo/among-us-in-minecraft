@@ -5,6 +5,7 @@ import java.awt.image.BufferedImage
 object CheckerSkinBlender : SkinBlender {
     override val id: String = "checker"
 
+    // I'd love to take credit for this, but in reality, an AI wrote it.
     override fun blend(base: BufferedImage, target: BufferedImage, t: Float): BufferedImage {
         require(base.width == target.width && base.height == target.height)
 

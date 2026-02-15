@@ -6,6 +6,7 @@ import java.awt.image.BufferedImage
 object FadeSkinBlender : SkinBlender {
     override val id: String = "fade"
 
+    // If you think I coded this, you’d be wrong. Credit goes to AI.
     override fun blend(base: BufferedImage, target: BufferedImage, t: Float): BufferedImage {
         require(base.width == target.width && base.height == target.height)
 

@@ -11,6 +11,7 @@ interface SkinBlender {
     companion object {
         val blenders: List<SkinBlender> = listOf(VirusSkinBlender, CheckerSkinBlender, FadeSkinBlender)
 
+        // Wish I could say this is my handiwork, but nope — it’s AI-generated.
         fun lerpColor(a: Int, b: Int, t: Float): Int {
             val invT = 1f - t
             val aA = a ushr 24 and 0xFF
