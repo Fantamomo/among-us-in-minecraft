@@ -1,5 +1,6 @@
 package com.fantamomo.mc.amongus.player
 
+import com.destroystokyo.paper.profile.ProfileProperty
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.manager.EntityManager
 import com.fantamomo.mc.amongus.role.Team
@@ -384,6 +385,24 @@ class MannequinController(
         mannequin?.equipment?.helmet = helmet
         nameDisplay?.text(Component.text(player.name))
         redNameDisplay?.text(Component.text(player.name, NamedTextColor.RED))
+    }
+
+    @Suppress("UnstableApiUsage")
+    fun setSkinTexture(textureBase64: String, signature: String? = null) {
+        val mannequin = mannequin ?: return
+
+        val uuid = UUID.randomUUID()
+        val profile = Bukkit.createProfileExact(uuid, uuid.toString().take(16))
+
+        profile.setProperty(
+            ProfileProperty(
+                "textures",
+                textureBase64,
+                signature
+            )
+        )
+
+        mannequin.profile = ResolvableProfile.resolvableProfile(profile)
     }
 
     fun getEntity(): Mannequin? = mannequin
