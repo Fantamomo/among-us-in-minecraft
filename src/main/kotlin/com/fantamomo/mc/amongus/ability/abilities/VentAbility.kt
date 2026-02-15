@@ -49,6 +49,12 @@ object VentAbility :
                     else null
                 }
 
+                condition {
+                    if (player.isInGhostForm()) {
+                        BlockReason.GhostForm
+                    } else null
+                }
+
                 // ---------- ACTIVE ----------
 
                 state(AbilityItemState.ACTIVE) {
@@ -87,6 +93,9 @@ object VentAbility :
                         translationKey = when (ctx.getBlockReason()) {
                             BlockReason.InMeeting ->
                                 "ability.general.disabled.in_meeting"
+
+                            BlockReason.GhostForm ->
+                                "ability.general.disabled.ghost_form"
 
                             is BlockReason.Custom ->
                                 "ability.vent.vent.deactivate"
