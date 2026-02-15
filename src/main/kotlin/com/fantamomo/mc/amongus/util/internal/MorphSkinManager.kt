@@ -56,12 +56,17 @@ object MorphSkinManager {
     }
 
     init {
-        skinDir.safeCreateDirectories()
-        dataDir.safeCreateDirectories()
+        try {
+            skinDir.safeCreateDirectories()
+            dataDir.safeCreateDirectories()
+        } catch (e: Exception) {
+            logger.error("Failed to create skin or data directories", e)
+        }
     }
 
     fun isValid() = API_KEY.isNotBlank() && AmongUsConfig.MorphBlender.enabled
-    private fun checkValid() = require(isValid()) { "MineSkin API key cannot be blank" }
+
+    private fun checkValid() = require(isValid()) { "MineSkin API key cannot be blank or MorphBlender disabled" }
 
     fun pregenerateFromProfiles(
         baseProfile: PlayerProfile,
@@ -69,16 +74,26 @@ object MorphSkinManager {
         variants: Int
     ): CompletableFuture<List<Skin>> {
 
-        checkValid()
+        return try {
+            checkValid()
 
-        return CompletableFuture.supplyAsync {
-            val baseSkin = fetchSkinFromProfile(baseProfile)
-            val targetSkin = fetchSkinFromProfile(targetProfile)
+            CompletableFuture.supplyAsync {
+                try {
+                    val baseSkin = fetchSkinFromProfile(baseProfile)
+                    val targetSkin = fetchSkinFromProfile(targetProfile)
 
-            val baseId = baseProfile.id.toString()
-            val targetId = targetProfile.id.toString()
+                    val baseId = baseProfile.id.toString()
+                    val targetId = targetProfile.id.toString()
 
-            pregenerate(baseSkin, targetSkin, baseId, targetId, variants, baseProfile, targetProfile).join()
+                    pregenerate(baseSkin, targetSkin, baseId, targetId, variants, baseProfile, targetProfile).join()
+                } catch (e: Exception) {
+                    logger.error("Failed to pregenerate skins from profiles", e)
+                    emptyList<Skin>()
+                }
+            }
+        } catch (e: Exception) {
+            logger.error("Pregeneration aborted due to invalid configuration", e)
+            CompletableFuture.completedFuture(emptyList())
         }
     }
 
@@ -97,53 +112,61 @@ object MorphSkinManager {
         val futures = mutableListOf<CompletableFuture<out Skin>>()
 
         for (i in 0..variants + 1) {
-
             val t = i.toFloat() / (variants + 1)
             val hash = buildHash(baseId, targetId, t)
             val pngFile = skinDir.resolve("$hash.png").toFile()
 
-            if (isCached(hash)) {
-                logger.debug("Cache hit: $hash")
+            try {
+                if (isCached(hash)) {
+                    logger.debug("Cache hit: $hash")
 
-                val cached = getTexture(hash)
-                if (cached != null) {
-                    futures += CompletableFuture.completedFuture(
+                    val cached = getTexture(hash)
+                    if (cached != null) {
+                        futures += CompletableFuture.completedFuture(
+                            Skin.GeneratedSkin(
+                                hash = hash,
+                                t = t,
+                                pngFile = pngFile,
+                                value = cached.value,
+                                signature = cached.signature
+                            )
+                        )
+                        continue
+                    }
+                }
+
+                if (i == 0) {
+                    futures += CompletableFuture.completedFuture(Skin.PlayerProfileSkin(baseProfile, 0f))
+                    continue
+                } else if (i == variants + 1) {
+                    futures += CompletableFuture.completedFuture(Skin.PlayerProfileSkin(targetProfile, 1f))
+                    continue
+                }
+
+                val image = blender.blend(baseSkin, targetSkin, t)
+
+                ImageIO.write(image, "png", pngFile)
+
+                val future = uploadToMineSkin(pngFile, hash)
+                    .thenApply<Skin> { skinData ->
                         Skin.GeneratedSkin(
                             hash = hash,
                             t = t,
                             pngFile = pngFile,
-                            value = cached.value,
-                            signature = cached.signature
+                            value = skinData.value,
+                            signature = skinData.signature
                         )
-                    )
-                    continue
-                }
+                    }
+                    .exceptionally { throwable ->
+                        logger.error("Failed to generate or upload skin for t=$t, hash=$hash", throwable)
+                        Skin.PlayerProfileSkin(baseProfile, t)
+                    }
+
+                futures += future
+
+            } catch (e: Exception) {
+                logger.error("Error during pregeneration for t=$t, hash=$hash", e)
             }
-
-            if (i == 0) {
-                futures += CompletableFuture.completedFuture(Skin.PlayerProfileSkin(baseProfile, 0f))
-                continue
-            } else if (i == variants + 1) {
-                futures += CompletableFuture.completedFuture(Skin.PlayerProfileSkin(targetProfile, 1f))
-                continue
-            }
-
-            val image = blender.blend(baseSkin, targetSkin, t)
-
-            ImageIO.write(image, "png", pngFile)
-
-            val future = uploadToMineSkin(pngFile, hash)
-                .thenApply { skinData ->
-                    Skin.GeneratedSkin(
-                        hash = hash,
-                        t = t,
-                        pngFile = pngFile,
-                        value = skinData.value,
-                        signature = skinData.signature
-                    )
-                }
-
-            futures += future
         }
 
         return CompletableFuture
@@ -152,71 +175,99 @@ object MorphSkinManager {
                 futures.map { it.join() }
                     .sortedBy { it.t }
             }
+            .exceptionally { throwable ->
+                logger.error("Error completing pregeneration", throwable)
+                emptyList()
+            }
     }
 
     fun getTexture(hash: String): SkinData? {
-        val file = dataDir.resolve("$hash.json").toFile()
-        if (!file.exists()) return null
-        return json.decodeFromStream<SkinData>(file.inputStream())
+        return try {
+            val file = dataDir.resolve("$hash.json").toFile()
+            if (!file.exists()) return null
+            json.decodeFromStream<SkinData>(file.inputStream())
+        } catch (e: Exception) {
+            logger.error("Failed to read texture $hash", e)
+            null
+        }
     }
 
-    private fun uploadToMineSkin(
-        file: File,
-        hash: String
-    ): CompletableFuture<SkinData> {
+    private fun uploadToMineSkin(file: File, hash: String): CompletableFuture<SkinData> {
+        return try {
+            val request = GenerateRequest.upload(file)
+                .name("Morph-$hash".take(20))
+                .visibility(Visibility.PUBLIC)
 
-        val request = GenerateRequest.upload(file)
-            .name("Morph-$hash".take(20))
-            .visibility(Visibility.PUBLIC)
+            client.queue().submit(request)
+                .thenCompose { queueResponse ->
+                    val job: JobInfo = queueResponse.job
+                    job.waitForCompletion(client)
+                }
+                .thenCompose { jobResponse ->
+                    jobResponse.getOrLoadSkin(client)
+                }
+                .thenApply { skinInfo ->
+                    val value = skinInfo.texture().data().value()
+                    val signature = skinInfo.texture().data().signature()
 
-        return client.queue().submit(request)
-            .thenCompose { queueResponse ->
-                val job: JobInfo = queueResponse.job
-                job.waitForCompletion(client)
-            }
-            .thenCompose { jobResponse ->
-                jobResponse.getOrLoadSkin(client)
-            }
-            .thenApply { skinInfo ->
+                    val skinData = SkinData(hash, value, signature)
 
-                val value = skinInfo.texture().data().value()
-                val signature = skinInfo.texture().data().signature()
+                    try {
+                        val outFile = dataDir.resolve("$hash.json").toFile()
+                        json.encodeToStream(skinData, outFile.outputStream())
+                    } catch (e: Exception) {
+                        logger.error("Failed to cache skin data $hash", e)
+                    }
 
-                val skinData = SkinData(hash, value, signature)
+                    logger.debug("Uploaded & cached: $hash")
+                    skinData
+                }
+                .exceptionally { throwable ->
+                    logger.error("MineSkin upload failed for $hash", throwable)
+                    throw RuntimeException(throwable)
+                }
 
-                val outFile = dataDir.resolve("$hash.json").toFile()
-                json.encodeToStream(skinData, outFile.outputStream())
-
-                logger.debug("Uploaded & cached: $hash")
-
-                skinData
-            }
-            .exceptionally { throwable ->
-                logger.error("MineSkin upload failed for $hash", throwable)
-                throw RuntimeException(throwable)
-            }
+        } catch (e: Exception) {
+            logger.error("Failed to submit skin upload request for $hash", e)
+            CompletableFuture.failedFuture(e)
+        }
     }
 
     private fun fetchSkinFromProfile(profile: PlayerProfile): BufferedImage {
-        val property = profile.properties.firstOrNull { it.name == "textures" }
-            ?: throw IllegalStateException("Profile has no textures")
+        return try {
+            val property = profile.properties.firstOrNull { it.name == "textures" }
+                ?: throw IllegalStateException("Profile has no textures")
 
-        val decoded = String(Base64.getDecoder().decode(property.value))
-        val urlRegex = """"url"\s*:\s*"([^"]+)"""".toRegex()
-        val match = urlRegex.find(decoded) ?: throw IllegalStateException("Cannot parse skin url")
-        val url = match.groupValues[1]
+            val decoded = String(Base64.getDecoder().decode(property.value))
+            val urlRegex = """"url"\s*:\s*"([^"]+)"""".toRegex()
+            val match = urlRegex.find(decoded) ?: throw IllegalStateException("Cannot parse skin url")
+            val url = match.groupValues[1]
 
-        @Suppress("DEPRECATION")
-        return ImageIO.read(URL(url))
+            @Suppress("DEPRECATION")
+            ImageIO.read(URL(url))
+        } catch (e: Exception) {
+            logger.error("Failed to fetch skin for profile ${profile.name}", e)
+            throw e
+        }
     }
 
-    private fun isCached(hash: String) = dataDir.resolve("$hash.json").exists()
+    private fun isCached(hash: String) = try {
+        dataDir.resolve("$hash.json").exists()
+    } catch (e: Exception) {
+        logger.error("Failed to check cache for $hash", e)
+        false
+    }
 
     fun buildHash(base: String, target: String, t: Float, blender: SkinBlender = this.blender): String {
-        val md = MessageDigest.getInstance("SHA-256")
-        val input = "$base-$target-${blender.id}-${"%.4f".format(t)}"
-        val bytes = md.digest(input.toByteArray())
-        return bytes.toHexString()
+        return try {
+            val md = MessageDigest.getInstance("SHA-256")
+            val input = "$base-$target-${blender.id}-${"%.4f".format(t)}"
+            val bytes = md.digest(input.toByteArray())
+            bytes.toHexString()
+        } catch (e: Exception) {
+            logger.error("Failed to build hash for $base -> $target t=$t", e)
+            UUID.randomUUID().toString().replace("-", "")
+        }
     }
 
     @Serializable
@@ -229,7 +280,6 @@ object MorphSkinManager {
     sealed interface Skin {
         val t: Float
         data class PlayerProfileSkin(val profile: PlayerProfile, override val t: Float) : Skin
-
         data class GeneratedSkin(
             val hash: String,
             override val t: Float,
@@ -238,4 +288,6 @@ object MorphSkinManager {
             val signature: String
         ) : Skin
     }
+
+    private fun ByteArray.toHexString(): String = joinToString("") { "%02x".format(it) }
 }
