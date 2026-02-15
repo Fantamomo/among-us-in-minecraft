@@ -38,7 +38,8 @@ interface Task<T : Task<T, A>, A : AssignedTask<T, A>> {
             DivertPowerTask,
             FuelEnginesTask,
             ClearVentTask,
-            ChartCourseTask
+            ChartCourseTask,
+            StoreArtifactsTask
         )
     }
 }
