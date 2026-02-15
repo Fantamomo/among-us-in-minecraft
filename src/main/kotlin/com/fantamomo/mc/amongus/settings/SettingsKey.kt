@@ -97,6 +97,7 @@ data class SettingsKey<T : Any, S : SettingsType<T>>(
         }
         val MINER_CREATE_VENT_COOLDOWN =
             key("miner.create_vent.cooldown", DurationSettingsType.min(1.seconds), 45.seconds)
+        val MORPHLING_MORPH_COOLDOWN = key("morphling.morph.cooldown", DurationSettingsType.min(1.seconds), 30.seconds)
     }
 
     object KILL : SettingsGroup("kill", Material.BONE) {

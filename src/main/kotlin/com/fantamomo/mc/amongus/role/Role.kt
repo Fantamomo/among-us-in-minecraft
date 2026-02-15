@@ -5,6 +5,7 @@ import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.role.crewmates.*
 import com.fantamomo.mc.amongus.role.imposters.ImposterRole
 import com.fantamomo.mc.amongus.role.imposters.MinerRole
+import com.fantamomo.mc.amongus.role.imposters.MorphlingRole
 
 interface Role<R : Role<R, A>, A : AssignedRole<R, A>> {
     val id: String
@@ -31,7 +32,8 @@ interface Role<R : Role<R, A>, A : AssignedRole<R, A>> {
             DetectiveRole,
 
             ImposterRole,
-            MinerRole
+            MinerRole,
+            MorphlingRole
         )
     }
 }
