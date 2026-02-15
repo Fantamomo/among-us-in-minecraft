@@ -119,10 +119,8 @@ class Game(
                     }
                 }
 
-                val blink = remaining <= 3 && tickInSecond % 4 < 2
-
                 val color = when {
-                    remaining <= 3 -> if (blink) NamedTextColor.RED else NamedTextColor.DARK_RED
+                    remaining <= 3 -> NamedTextColor.DARK_RED
                     remaining <= 5 -> NamedTextColor.RED
                     else -> NamedTextColor.GOLD
                 }
@@ -236,6 +234,7 @@ class Game(
         if (phase != GamePhase.STARTING) return
         phase = GamePhase.LOBBY
         startCooldownTicks = -1
+        sendTitle(TitlePart.TIMES, Title.DEFAULT_TIMES)
         val abortStartMessage = Component.translatable("game.start.aborted")
         sendTitle(TitlePart.TITLE, abortStartMessage)
     }

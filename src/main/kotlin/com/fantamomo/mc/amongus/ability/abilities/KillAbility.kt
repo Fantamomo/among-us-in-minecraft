@@ -36,6 +36,11 @@ object KillAbility :
                 // ---------- BLOCK CONDITIONS ----------
 
                 condition {
+                    if (!player.isAlive) BlockReason.Dead
+                    else null
+                }
+
+                condition {
                     if (game.meetingManager.isCurrentlyAMeeting())
                         BlockReason.InMeeting
                     else null
@@ -76,6 +81,8 @@ object KillAbility :
                     render {
                         material = Material.BARRIER
                         translationKey = when (ctx.getBlockReason()) {
+                            BlockReason.Dead ->
+                                "ability.kill.kill.dead"
                             BlockReason.InVent ->
                                 "ability.general.disabled.in_vent"
 

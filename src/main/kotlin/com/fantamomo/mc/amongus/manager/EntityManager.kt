@@ -60,17 +60,22 @@ object EntityManager {
         var successfullyRemoved = 0
         val totalEntities = removeOnStop.size + removeOnEnd.values.sumOf { it.size }
 
-        val removeEntity: (Entity) -> Unit = { entity ->
-            if (entity.isValid) {
+        removeOnStop.forEach {
+            if (it.isValid) {
                 try {
-                    entity.remove()
+                    it.remove()
                     successfullyRemoved++
                 } catch (_: Exception) {}
             }
         }
-
-        removeOnStop.forEach(removeEntity)
-        removeOnEnd.values.flatten().forEach(removeEntity)
+        removeOnEnd.values.flatten().forEach {
+            if (it.isValid) {
+                try {
+                    it.remove()
+                    successfullyRemoved++
+                } catch (_: Exception) {}
+            }
+        }
 
         logger.info("Removed $successfullyRemoved/$totalEntities entities")
         removeOnStop.clear()

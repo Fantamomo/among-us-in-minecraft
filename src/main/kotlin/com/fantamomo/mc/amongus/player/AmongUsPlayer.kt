@@ -163,6 +163,7 @@ class AmongUsPlayer internal constructor(
         }
         addNewAbility(ReportAbility)
         role.definition.defaultAbilities.forEach { addNewAbility(it) }
+        player?.sendTitlePart(TitlePart.TIMES, Title.DEFAULT_TIMES)
         player?.sendTitlePart(
             TitlePart.TITLE,
             textComponent {
