@@ -114,17 +114,22 @@ class MorphManager(val game: Game) {
         val variants = 10
 
         val expectedHashes = (0..variants + 1).map {
+            if (it == 0 || it == variants + 1) return@map null
             val t = it.toFloat() / (variants + 1)
             MorphSkinManager.buildHash(baseId, targetId, t)
         }
 
-        val cached = expectedHashes.all { MorphSkinManager.getTexture(it) != null }
+        val cached = expectedHashes.all { it == null || MorphSkinManager.getTexture(it) != null }
 
         val morphed = MorphedPlayer(player, target)
         morphs[player] = morphed
 
         if (cached) {
             val frames = expectedHashes.mapIndexed { index, hash ->
+                if (hash == null) {
+                    return@mapIndexed if (index == 0) MorphSkinManager.Skin.PlayerProfileSkin(player.profile, 0f)
+                    else MorphSkinManager.Skin.PlayerProfileSkin(target.profile, 1f)
+                }
                 val data = MorphSkinManager.getTexture(hash)!!
                 MorphSkinManager.Skin.GeneratedSkin(
                     hash,
