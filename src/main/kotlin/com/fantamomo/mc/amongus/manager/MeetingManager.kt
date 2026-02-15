@@ -122,7 +122,12 @@ class MeetingManager(private val game: Game) : Listener {
             meeting = Meeting(caller, reason, body)
             return
         }
-        game.taskManager.updateBossbar(meeting = true)
+
+        if (caller.isInGhostForm()) {
+            caller.player?.sendMessage(Component.translatable("meeting.ghost_form"))
+            return
+        }
+
         if (game.sabotageManager.isCurrentlySabotage()) {
             caller.player?.sendMessage(Component.translatable("meeting.sabotage_in_progress"))
             return
@@ -254,6 +259,8 @@ class MeetingManager(private val game: Game) : Listener {
             game.morphManager.unmorphAll()
 
             game.ghostFormManager.exitAll()
+
+            game.taskManager.updateBossbar(meeting = true)
 
             val title = Component.translatable("meeting.called.title")
             val subtitle = textComponent {
