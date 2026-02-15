@@ -3,6 +3,7 @@ package com.fantamomo.mc.amongus.listeners
 import com.destroystokyo.paper.event.player.PlayerStopSpectatingEntityEvent
 import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.util.isBetween
+import net.kyori.adventure.text.Component
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
@@ -20,6 +21,10 @@ object CameraListener : Listener {
         val amongUsPlayer = PlayerManager.getPlayer(player) ?: return
         val cameraManager = amongUsPlayer.game.cameraManager
         if (location.isBetween(cameraManager.cameraJoinPointMin, cameraManager.cameraJoinPointMax)) {
+            if (amongUsPlayer.isInGhostForm()) {
+                player.sendMessage(Component.translatable("camera.error.ghost_form"))
+                return
+            }
             cameraManager.joinCamera(amongUsPlayer)
         }
     }
