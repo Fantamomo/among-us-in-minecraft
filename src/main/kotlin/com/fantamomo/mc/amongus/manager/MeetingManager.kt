@@ -253,6 +253,8 @@ class MeetingManager(private val game: Game) : Listener {
 
             game.morphManager.unmorphAll()
 
+            game.ghostFormManager.exitAll()
+
             val title = Component.translatable("meeting.called.title")
             val subtitle = textComponent {
                 translatable(reason.calledTranslationKey) {
