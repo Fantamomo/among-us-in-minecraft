@@ -30,6 +30,7 @@ interface Role<R : Role<R, A>, A : AssignedRole<R, A>> {
             EngineerRole,
             CallerRole,
             DetectiveRole,
+            TheDamnedRole,
 
             ImposterRole,
             MinerRole,
