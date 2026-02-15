@@ -9,6 +9,7 @@ import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.task.GuiAssignedTask
 import com.fantamomo.mc.amongus.util.CustomPersistentDataTypes
+import com.fantamomo.mc.amongus.util.internal.MorphSkinManager
 import com.fantamomo.mc.amongus.util.textComponent
 import io.papermc.paper.datacomponent.DataComponentTypes
 import net.kyori.adventure.text.Component
@@ -22,22 +23,64 @@ import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.InventoryHolder
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.ItemType
+import org.slf4j.LoggerFactory
 import kotlin.uuid.toJavaUuid
 import kotlin.uuid.toKotlinUuid
 
 class MorphManager(val game: Game) {
+    private val logger = LoggerFactory.getLogger("AmongUs-MorphManager")
+
     private val morphs: MutableMap<AmongUsPlayer, MorphedPlayer> = mutableMapOf()
 
     class MorphedPlayer(
         val player: AmongUsPlayer,
-        val target: AmongUsPlayer
+        val target: AmongUsPlayer,
+        var frames: List<MorphSkinManager.GeneratedSkin>? = null
     ) {
-        init {
-            player.mannequinController.copyAppearanceFrom(target)
+
+        fun playForwardAnimation() {
+            val frames = this.frames ?: return
+            playAnimation(frames)
+        }
+
+        fun playBackwardAnimation(onFinish: () -> Unit) {
+            val frames = this.frames ?: return
+            playAnimation(frames.reversed(), onFinish)
+        }
+
+        private fun playAnimation(
+            frames: List<MorphSkinManager.GeneratedSkin>,
+            onFinish: (() -> Unit)? = null
+        ) {
+            val bukkitPlayer = player.player ?: return
+
+            var index = 0
+            Bukkit.getScheduler().runTaskTimer(AmongUs, { task ->
+
+                if (index >= frames.size) {
+                    task.cancel()
+                    onFinish?.invoke()
+                    return@runTaskTimer
+                }
+
+                val frame = frames[index++]
+
+                player.mannequinController.setSkinTexture(
+                    frame.value,
+                    frame.signature
+                )
+
+            }, 0L, 5L)
         }
 
         fun unmorph() {
-            player.mannequinController.restoreAppearance()
+            if (frames != null) {
+                playBackwardAnimation {
+                    player.mannequinController.restoreAppearance()
+                }
+            } else {
+                player.mannequinController.restoreAppearance()
+            }
         }
     }
 
@@ -47,7 +90,47 @@ class MorphManager(val game: Game) {
 
     fun morph(player: AmongUsPlayer, target: AmongUsPlayer) {
         if (isMorphed(player)) return
-        morphs[player] = MorphedPlayer(player, target)
+
+        val baseId = player.uuid.toString()
+        val targetId = target.uuid.toString()
+
+        val variants = 10
+
+        val expectedHashes = (0..variants + 1).map {
+            val t = it.toFloat() / (variants + 1)
+            MorphSkinManager.buildHash(baseId, targetId, t)
+        }
+
+        val cached = expectedHashes.all { MorphSkinManager.getTexture(it) != null }
+
+        val morphed = MorphedPlayer(player, target)
+        morphs[player] = morphed
+
+        if (cached) {
+            val frames = expectedHashes.mapIndexed { index, hash ->
+                val data = MorphSkinManager.getTexture(hash)!!
+                MorphSkinManager.GeneratedSkin(
+                    hash,
+                    index.toFloat() / (variants + 1),
+                    MorphSkinManager.skinDir.resolve("$hash.png").toFile(),
+                    data.value,
+                    data.signature
+                )
+            }
+            morphed.frames = frames
+            morphed.playForwardAnimation()
+        } else {
+            player.mannequinController.copyAppearanceFrom(target)
+
+            MorphSkinManager.pregenerateFromProfiles(
+                player.profile,
+                target.profile,
+                variants
+            ).thenAccept { frames ->
+                morphed.frames = frames
+                logger.debug("Morph cache generated for ${player.name}")
+            }
+        }
     }
 
     fun showMorphInventory(amongUsPlayer: AmongUsPlayer, callback: (Boolean) -> Unit) {
