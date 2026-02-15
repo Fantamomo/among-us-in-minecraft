@@ -275,7 +275,7 @@ class ScoreboardManager(private val game: Game) {
                 register(ENTRY_ROLE_CUSTOM)
                 score(
                     ENTRY_ROLE_CUSTOM,
-                    SCORE_ROLE_HEADER - 1,
+                    SCORE_ROLE_CUSTOM,
                     roleLine
                 )
             }
@@ -459,7 +459,11 @@ class ScoreboardManager(private val game: Game) {
         var cursorEnd: Int = 0,
         var cursorPhase: Int = 0,
         var cursorProgress: Int = 0,
-        var targetChars: List<Component> = emptyList()
+        var targetChars: List<Component> = emptyList(),
+        var scrollMode: Boolean = false,
+        var scrollOffset: Int = 0,
+        var scrollDelay: Int = 0,
+        var scrollPauseCounter: Int = 0
     ) {
 
         companion object {
@@ -474,12 +478,19 @@ class ScoreboardManager(private val game: Game) {
                     initialRender -> 0f
                     else -> chars.size.toFloat()
                 }
+
+                val needsScrolling = chars.size > MAX_LINE_LENGTH
+
                 return AnimatedLine(
                     full = full,
                     chars = chars,
                     progress = startProgress,
                     cursorMode = false,
-                    targetChars = chars
+                    targetChars = chars,
+                    scrollMode = needsScrolling,
+                    scrollOffset = 0,
+                    scrollDelay = 0,
+                    scrollPauseCounter = if (needsScrolling) SCROLL_PAUSE_START else 0
                 )
             }
         }
@@ -488,6 +499,11 @@ class ScoreboardManager(private val game: Game) {
             if (cursorMode) {
                 return cursorPhase == 1 && cursorProgress >= (cursorEnd - cursorStart)
             }
+
+            if (scrollMode && progress >= MAX_LINE_LENGTH.coerceAtMost(chars.size)) {
+                return true
+            }
+
             return progress >= chars.size
         }
 
@@ -497,12 +513,45 @@ class ScoreboardManager(private val game: Game) {
                 return
             }
 
-            if (isFinished()) return
+            if (!isFinished()) {
+                val targetSize = if (scrollMode) MAX_LINE_LENGTH.coerceAtMost(chars.size) else chars.size
+                val remaining = targetSize - progress
+                val step = (remaining * speed).coerceAtLeast(0.15f)
+                progress += step
+                if (progress > targetSize) progress = targetSize.toFloat()
+                return
+            }
 
-            val remaining = chars.size - progress
-            val step = (remaining * speed).coerceAtLeast(0.15f)
-            progress += step
-            if (progress > chars.size) progress = chars.size.toFloat()
+            if (scrollMode) {
+                advanceScrolling()
+            }
+        }
+
+        private fun advanceScrolling() {
+            if (chars.size <= MAX_LINE_LENGTH) {
+                scrollMode = false
+                return
+            }
+
+            if (scrollPauseCounter > 0) {
+                scrollPauseCounter--
+                return
+            }
+
+            scrollDelay++
+            if (scrollDelay < SCROLL_DELAY_TICKS) {
+                return
+            }
+            scrollDelay = 0
+
+            scrollOffset++
+
+            val maxOffset = chars.size - MAX_LINE_LENGTH + ELLIPSIS.length
+
+            if (scrollOffset > maxOffset) {
+                scrollPauseCounter = SCROLL_PAUSE_END
+                scrollOffset = 0
+            }
         }
 
         private fun advanceCursorMode(speed: Float) {
@@ -552,6 +601,7 @@ class ScoreboardManager(private val game: Game) {
             if (firstDiff == -1) {
                 full = newFull
                 targetChars = newChars
+                scrollMode = newChars.size > MAX_LINE_LENGTH
                 return
             }
 
@@ -563,6 +613,9 @@ class ScoreboardManager(private val game: Game) {
                 progress = 0f
                 cursorMode = false
                 targetChars = newChars
+                scrollMode = newChars.size > MAX_LINE_LENGTH
+                scrollOffset = 0
+                scrollPauseCounter = if (scrollMode) SCROLL_PAUSE_START else 0
                 return
             }
 
@@ -580,11 +633,24 @@ class ScoreboardManager(private val game: Game) {
                 return buildCursorShown()
             }
 
-            val count = progress.toInt().coerceAtMost(chars.size)
+            if (progress < (if (scrollMode) MAX_LINE_LENGTH.coerceAtMost(chars.size) else chars.size)) {
+                return buildInitialAnimation()
+            }
+
+            if (scrollMode && chars.size > MAX_LINE_LENGTH) {
+                return buildScrollingLine()
+            }
+
+            return buildNormalLine()
+        }
+
+        private fun buildInitialAnimation(): Component {
+            val targetSize = if (scrollMode) MAX_LINE_LENGTH.coerceAtMost(chars.size) else chars.size
+            val count = progress.toInt().coerceAtMost(targetSize)
             if (chars.isEmpty()) return Component.empty()
 
             val revealed = chars.take(count)
-            val unrevealed = chars.drop(count)
+            val unrevealed = chars.drop(count).take(targetSize - count)
 
             var current = Component.empty()
             revealed.forEach { current = current.append(it) }
@@ -594,6 +660,45 @@ class ScoreboardManager(private val game: Game) {
                 current = current.append(Component.space().style(style))
             }
 
+            return current
+        }
+
+        private fun buildScrollingLine(): Component {
+            var current = Component.empty()
+
+            val hasStartEllipsis = scrollOffset > 0
+            val ellipsisLength = if (hasStartEllipsis) ELLIPSIS.length else 0
+            val visibleTextLength = MAX_LINE_LENGTH - ellipsisLength
+
+            if (hasStartEllipsis) {
+                val style = chars.firstOrNull()?.style() ?: Style.empty()
+                current = current.append(Component.text(ELLIPSIS).style(style))
+            }
+
+            val startIndex = scrollOffset
+            val endIndex = (startIndex + visibleTextLength).coerceAtMost(chars.size)
+
+            for (i in startIndex until endIndex) {
+                current = current.append(chars[i])
+            }
+
+            val actualLength = ellipsisLength + (endIndex - startIndex)
+            val paddingNeeded = MAX_LINE_LENGTH - actualLength
+
+            if (paddingNeeded > 0) {
+                val style = chars.lastOrNull()?.style() ?: Style.empty()
+                repeat(paddingNeeded) {
+                    current = current.append(Component.space().style(style))
+                }
+            }
+
+            return current
+        }
+
+        private fun buildNormalLine(): Component {
+            if (chars.isEmpty()) return Component.empty()
+            var current = Component.empty()
+            chars.forEach { current = current.append(it) }
             return current
         }
 
@@ -709,6 +814,12 @@ class ScoreboardManager(private val game: Game) {
         private const val SCORE_LOBBY_SETTINGS_START = 600
 
         private const val ANIMATION_SPEED = 0.18f
+
+        private const val MAX_LINE_LENGTH = 32
+        private const val SCROLL_DELAY_TICKS = 3
+        private const val SCROLL_PAUSE_START = 40
+        private const val SCROLL_PAUSE_END = 40
+        private const val ELLIPSIS = "..."
 
         private val COMMUNICATIONS_SABOTAGED_SCOREBOARD_LINE =
             textComponent { translatable("scoreboard.communications_sabotaged.info") }
