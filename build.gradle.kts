@@ -14,6 +14,9 @@ repositories {
     maven("https://repo.papermc.io/repository/maven-public/") {
         name = "papermc-repo"
     }
+    maven("https://repo.inventivetalent.org/repository/public/") {
+        name = "inventive-repo"
+    }
 }
 
 dependencies {
@@ -24,6 +27,9 @@ dependencies {
 
     implementation("com.fantamomo.mc:kotlin-adventure:1.3-SNAPSHOT")
     implementation("com.fantamomo.mc:brigadier-kt:1.3-SNAPSHOT")
+
+    implementation("org.mineskin:java-client:3.2.1-SNAPSHOT")
+    implementation("org.mineskin:java-client-jsoup:3.2.1-SNAPSHOT")
 }
 
 val targetJavaVersion = 21
