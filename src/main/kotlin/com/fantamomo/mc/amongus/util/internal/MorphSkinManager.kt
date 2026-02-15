@@ -2,9 +2,11 @@ package com.fantamomo.mc.amongus.util.internal
 
 import com.destroystokyo.paper.profile.PlayerProfile
 import com.fantamomo.mc.amongus.AmongUs
+import com.fantamomo.mc.amongus.data.AmongUsConfig
 import com.fantamomo.mc.amongus.data.AmongUsSecrets
 import com.fantamomo.mc.amongus.util.safeCreateDirectories
 import com.fantamomo.mc.amongus.util.skinblender.SkinBlender
+import com.fantamomo.mc.amongus.util.skinblender.VirusSkinBlender
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
@@ -42,6 +44,11 @@ object MorphSkinManager {
             .build()
     }
 
+    private val blender: SkinBlender by lazy {
+        val selected = AmongUsConfig.MorphBlender.blender
+        SkinBlender.blenders.firstOrNull { it.id == selected } ?: VirusSkinBlender
+    }
+
     private val json = Json {
         prettyPrint = AmongUs.IN_DEVELOPMENT
         ignoreUnknownKeys = true
@@ -52,14 +59,14 @@ object MorphSkinManager {
         dataDir.safeCreateDirectories()
     }
 
-    fun isValid() = API_KEY.isNotBlank()
+    fun isValid() = API_KEY.isNotBlank() && AmongUsConfig.MorphBlender.enabled
     private fun checkValid() = require(isValid()) { "MineSkin API key cannot be blank" }
 
     fun pregenerateFromProfiles(
         baseProfile: PlayerProfile,
         targetProfile: PlayerProfile,
         variants: Int
-    ): CompletableFuture<List<GeneratedSkin>> {
+    ): CompletableFuture<List<Skin>> {
 
         checkValid()
 
@@ -70,21 +77,23 @@ object MorphSkinManager {
             val baseId = baseProfile.id.toString()
             val targetId = targetProfile.id.toString()
 
-            pregenerate(baseSkin, targetSkin, baseId, targetId, variants).join()
+            pregenerate(baseSkin, targetSkin, baseId, targetId, variants, baseProfile, targetProfile).join()
         }
     }
 
-    fun pregenerate(
+    private fun pregenerate(
         baseSkin: BufferedImage,
         targetSkin: BufferedImage,
         baseId: String,
         targetId: String,
-        variants: Int
-    ): CompletableFuture<List<GeneratedSkin>> {
+        variants: Int,
+        baseProfile: PlayerProfile,
+        targetProfile: PlayerProfile
+    ): CompletableFuture<List<Skin>> {
 
         checkValid()
 
-        val futures = mutableListOf<CompletableFuture<GeneratedSkin>>()
+        val futures = mutableListOf<CompletableFuture<out Skin>>()
 
         for (i in 0..variants + 1) {
 
@@ -98,7 +107,7 @@ object MorphSkinManager {
                 val cached = getTexture(hash)
                 if (cached != null) {
                     futures += CompletableFuture.completedFuture(
-                        GeneratedSkin(
+                        Skin.GeneratedSkin(
                             hash = hash,
                             t = t,
                             pngFile = pngFile,
@@ -110,17 +119,21 @@ object MorphSkinManager {
                 }
             }
 
-            val image = when (i) {
-                0 -> baseSkin
-                variants + 1 -> targetSkin
-                else -> SkinBlender.blendVirusWithRanken(baseSkin, targetSkin, t)
+            if (i == 0) {
+                futures += CompletableFuture.completedFuture(Skin.PlayerProfileSkin(baseProfile, 0f))
+                continue
+            } else if (i == variants + 1) {
+                futures += CompletableFuture.completedFuture(Skin.PlayerProfileSkin(targetProfile, 1f))
+                continue
             }
+
+            val image = blender.blend(baseSkin, targetSkin, t)
 
             ImageIO.write(image, "png", pngFile)
 
             val future = uploadToMineSkin(pngFile, hash)
                 .thenApply { skinData ->
-                    GeneratedSkin(
+                    Skin.GeneratedSkin(
                         hash = hash,
                         t = t,
                         pngFile = pngFile,
@@ -200,11 +213,11 @@ object MorphSkinManager {
         return dataDir.resolve("$hash.json").toFile().exists()
     }
 
-    fun buildHash(base: String, target: String, t: Float): String {
+    fun buildHash(base: String, target: String, t: Float, blender: SkinBlender = this.blender): String {
         val md = MessageDigest.getInstance("SHA-256")
-        val input = "$base-$target-${"%.4f".format(t)}"
+        val input = "$base-$target-${blender.id}-${"%.4f".format(t)}"
         val bytes = md.digest(input.toByteArray())
-        return bytes.joinToString("") { "%02x".format(it) }
+        return bytes.toHexString()
     }
 
     @Serializable
@@ -214,11 +227,16 @@ object MorphSkinManager {
         val signature: String
     )
 
-    data class GeneratedSkin(
-        val hash: String,
-        val t: Float,
-        val pngFile: File,
-        val value: String,
-        val signature: String
-    )
+    sealed interface Skin {
+        val t: Float
+        data class PlayerProfileSkin(val profile: PlayerProfile, override val t: Float) : Skin
+
+        data class GeneratedSkin(
+            val hash: String,
+            override val t: Float,
+            val pngFile: File,
+            val value: String,
+            val signature: String
+        ) : Skin
+    }
 }
