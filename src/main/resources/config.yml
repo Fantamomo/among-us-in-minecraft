@@ -20,3 +20,19 @@ msg-command-blocker:
     - minecraft:tell
     - minecraft:msg
     - minecraft:w
+
+# MorphBlender / Skin Animation Configuration
+# This section allows you to enable or disable the MorphBlender
+# and choose which animation to use for morphing skins.
+# A valid Mineskin API key is required for this feature.
+# See secrets.properties for more information.
+morph-blender:
+  # Master switch to enable/disable MorphBlender
+  # If this is off, a player changing form will simply acquire the chosen skin.
+  enabled: false
+
+  # Animation type / Blender to use
+  # Available animations:
+  # - virus: Virus blending (default)
+  # - linear: Linear blending
+  animation: virus
