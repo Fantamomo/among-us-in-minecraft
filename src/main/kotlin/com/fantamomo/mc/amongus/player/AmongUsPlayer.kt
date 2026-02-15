@@ -146,6 +146,8 @@ class AmongUsPlayer internal constructor(
 
     fun isInCams(): Boolean = game.cameraManager.isInCams(this)
 
+    fun isInGhostForm(): Boolean = game.ghostFormManager.isInGhostForm(this)
+
     fun canSeeWhenLightsSabotage(): Boolean = assignedRole?.definition?.team == Team.IMPOSTERS
 
     fun addGhostImprovements() {

@@ -6,6 +6,7 @@ sealed interface BlockReason {
     data object InVent : BlockReason
     data object Dead : BlockReason
     data object LimitReached : BlockReason
+    data object GhostForm : BlockReason
     data class Custom(val id: String) : BlockReason
 
     companion object {

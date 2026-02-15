@@ -8,6 +8,7 @@ import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.role.Team
+import com.fantamomo.mc.amongus.role.crewmates.TheDamnedRole
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import io.papermc.paper.datacomponent.item.ResolvableProfile
 import net.kyori.adventure.title.TitlePart
@@ -82,6 +83,13 @@ class KillManager(val game: Game) {
             p.sendHurtAnimation(0f)
         }
         markAsDead(target)
+        if (target.assignedRole?.definition == TheDamnedRole) {
+            game.meetingManager.callMeeting(
+                imposter,
+                MeetingManager.MeetingReason.BODY,
+                body = target
+            )
+        }
         game.checkWin()
     }
 

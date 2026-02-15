@@ -60,6 +60,7 @@ class Game(
     val scoreboardManager = ScoreboardManager(this)
     val chatManager = ChatManager(this)
     val morphManager = MorphManager(this)
+    val ghostFormManager = GhostFormManager(this)
 
     internal val players = mutableListOf<AmongUsPlayer>()
     var phase: GamePhase = GamePhase.LOBBY
@@ -163,6 +164,7 @@ class Game(
         meetingManager.tick()
         scoreboardManager.tick()
         roleManager.tick()
+        ghostFormManager.tick()
     }
 
     fun getPlayer(uuid: UUID) = players.find { it.uuid == uuid }
