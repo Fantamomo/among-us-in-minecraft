@@ -3,6 +3,7 @@ package com.fantamomo.mc.amongus.manager
 import com.fantamomo.mc.adventure.text.args
 import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.AmongUs
+import com.fantamomo.mc.amongus.data.AmongUsConfig
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
@@ -28,14 +29,12 @@ import kotlin.uuid.toJavaUuid
 import kotlin.uuid.toKotlinUuid
 
 class MorphManager(val game: Game) {
-    private val logger = LoggerFactory.getLogger("AmongUs-MorphManager")
-
     private val morphs: MutableMap<AmongUsPlayer, MorphedPlayer> = mutableMapOf()
 
     class MorphedPlayer(
         val player: AmongUsPlayer,
         val target: AmongUsPlayer,
-        var frames: List<MorphSkinManager.GeneratedSkin>? = null
+        var frames: List<MorphSkinManager.Skin>? = null
     ) {
 
         fun playForwardAnimation() {
@@ -49,10 +48,10 @@ class MorphManager(val game: Game) {
         }
 
         private fun playAnimation(
-            frames: List<MorphSkinManager.GeneratedSkin>,
+            frames: List<MorphSkinManager.Skin>,
             onFinish: (() -> Unit)? = null
         ) {
-            val bukkitPlayer = player.player ?: return
+            player.player ?: return
 
             var index = 0
             Bukkit.getScheduler().runTaskTimer(AmongUs, { task ->
@@ -65,11 +64,22 @@ class MorphManager(val game: Game) {
 
                 val frame = frames[index++]
 
-                player.mannequinController.setSkinTexture(
-                    frame.value,
-                    frame.signature
-                )
-
+                if (frame is MorphSkinManager.Skin.GeneratedSkin) {
+                    player.mannequinController.setSkinTexture(
+                        frame.value,
+                        frame.signature
+                    )
+                } else if (frame is MorphSkinManager.Skin.PlayerProfileSkin) {
+                    val profile = frame.profile.id
+                    if (profile != null) {
+                        val amongUsPlayer = PlayerManager.getPlayer(profile)
+                        if (amongUsPlayer == null) {
+                            logger.warn("Got $profile skin but there is no among us player with that profile")
+                            return@runTaskTimer
+                        }
+                        player.mannequinController.copyAppearanceFrom(amongUsPlayer)
+                    }
+                }
             }, 0L, 5L)
         }
 
@@ -91,6 +101,13 @@ class MorphManager(val game: Game) {
     fun morph(player: AmongUsPlayer, target: AmongUsPlayer) {
         if (isMorphed(player)) return
 
+        if (!AmongUsConfig.MorphBlender.enabled) {
+            val morphed = MorphedPlayer(player, target)
+            morphs[player] = morphed
+            player.mannequinController.copyAppearanceFrom(target)
+            return
+        }
+
         val baseId = player.uuid.toString()
         val targetId = target.uuid.toString()
 
@@ -109,7 +126,7 @@ class MorphManager(val game: Game) {
         if (cached) {
             val frames = expectedHashes.mapIndexed { index, hash ->
                 val data = MorphSkinManager.getTexture(hash)!!
-                MorphSkinManager.GeneratedSkin(
+                MorphSkinManager.Skin.GeneratedSkin(
                     hash,
                     index.toFloat() / (variants + 1),
                     MorphSkinManager.skinDir.resolve("$hash.png").toFile(),
@@ -215,6 +232,7 @@ class MorphManager(val game: Game) {
     }
 
     companion object {
+        private val logger = LoggerFactory.getLogger("AmongUs-MorphManager")
         private const val INVENTORY_SIZE = 54
         val SELECTED_PLAYER = NamespacedKey(AmongUs, "inv/morph/selected_player")
     }
