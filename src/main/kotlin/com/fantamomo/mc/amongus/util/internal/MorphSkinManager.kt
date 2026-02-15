@@ -24,6 +24,7 @@ import java.security.MessageDigest
 import java.util.*
 import java.util.concurrent.CompletableFuture
 import javax.imageio.ImageIO
+import kotlin.io.path.exists
 
 @Suppress("OPT_IN_USAGE")
 object MorphSkinManager {
@@ -209,9 +210,7 @@ object MorphSkinManager {
         return ImageIO.read(URL(url))
     }
 
-    private fun isCached(hash: String): Boolean {
-        return dataDir.resolve("$hash.json").toFile().exists()
-    }
+    private fun isCached(hash: String) = dataDir.resolve("$hash.json").exists()
 
     fun buildHash(base: String, target: String, t: Float, blender: SkinBlender = this.blender): String {
         val md = MessageDigest.getInstance("SHA-256")
