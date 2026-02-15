@@ -1,8 +1,25 @@
 package com.fantamomo.mc.amongus.util
 
 import kotlin.time.Duration
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 
-fun Duration.toSmartString(): String {
+private val UNITS = DurationUnit.entries.asReversed().map {
+    it to 1.toDuration(it).inWholeNanoseconds
+}
+
+private val DurationUnit.suffix
+    get() = when (this) {
+        DurationUnit.DAYS -> "d"
+        DurationUnit.HOURS -> "h"
+        DurationUnit.MINUTES -> "m"
+        DurationUnit.SECONDS -> "s"
+        DurationUnit.MILLISECONDS -> "ms"
+        DurationUnit.MICROSECONDS -> "µs"
+        DurationUnit.NANOSECONDS -> "ns"
+    }
+
+fun Duration.toSmartString(minUnit: DurationUnit = DurationUnit.NANOSECONDS): String {
     if (this.inWholeMilliseconds == 0L) return "0s"
 
     val abs = this.absoluteValue
@@ -10,34 +27,16 @@ fun Duration.toSmartString(): String {
 
     var remainder = abs.inWholeNanoseconds
 
-    val days = remainder / 86_400_000_000_000
-    remainder %= 86_400_000_000_000
-
-    val hours = remainder / 3_600_000_000_000
-    remainder %= 3_600_000_000_000
-
-    val minutes = remainder / 60_000_000_000
-    remainder %= 60_000_000_000
-
-    val seconds = remainder / 1_000_000_000
-    remainder %= 1_000_000_000
-
-    val milliseconds = remainder / 1_000_000
-    remainder %= 1_000_000
-
-    val microseconds = remainder / 1_000
-    remainder %= 1_000
-
-    val nanoseconds = remainder
-
     val parts = buildList {
-        if (days > 0) add("${days}d")
-        if (hours > 0) add("${hours}h")
-        if (minutes > 0) add("${minutes}m")
-        if (seconds > 0) add("${seconds}s")
-        if (milliseconds > 0) add("${milliseconds}ms")
-        if (microseconds > 0) add("${microseconds}µs")
-        if (nanoseconds > 0) add("${nanoseconds}ns")
+        for ((unit, factor) in UNITS) {
+            if (unit.ordinal < minUnit.ordinal) continue
+
+            val value = remainder / factor
+            if (value > 0) {
+                add("${value}${unit.suffix}")
+                remainder %= factor
+            }
+        }
     }
 
     return sign + parts.joinToString(" ")
