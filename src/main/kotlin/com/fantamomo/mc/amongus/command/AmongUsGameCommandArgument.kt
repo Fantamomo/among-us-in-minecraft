@@ -64,40 +64,73 @@ private fun PaperCommand.roleGameCommand() = literal("role") {
 
         continueCommand()
     }
-    literal("force") {
-        argument("role", RoleArgumentType.ALL) {
-            argument("target", AmongUsPlayerArgumentType.SINGLE) {
-                execute {
-                    val amongUsPlayer = arg<AmongUsPlayer>("player")
-                    val role = arg<Role<*, *>>("role")
-                    amongUsPlayer.game.roleManager.forceRole(amongUsPlayer, role)
-                    sendMessage {
-                        translatable("command.success.admin.game.role.set.other") {
-                            args {
-                                string("player", amongUsPlayer.name)
-                                component("role", Component.translatable(role.name))
-                            }
-                        }
-                    }
-                    SINGLE_SUCCESS
-                }
-            }
-            execute {
-                val amongUsPlayer = arg<AmongUsPlayer>("player")
-                val role = arg<Role<*, *>>("role")
-                amongUsPlayer.game.roleManager.forceRole(amongUsPlayer, role)
-                sendMessage {
-                    translatable("command.success.admin.game.role.set") {
-                        args {
-                            component("role", Component.translatable(role.name))
-                        }
-                    }
-                }
-                SINGLE_SUCCESS
-            }
-        }
+
+    roleSubCommand(
+        name = "force",
+        successKeySelf = "command.success.admin.game.role.force",
+        successKeyOther = "command.success.admin.game.role.force.other"
+    ) { player, role ->
+        player.game.roleManager.forceRole(player, role)
     }
 
+    roleSubCommand(
+        name = "block",
+        successKeySelf = "command.success.admin.game.role.block",
+        successKeyOther = "command.success.admin.game.role.block.other"
+    ) { player, role ->
+        player.game.roleManager.blockRole(player, role)
+    }
+
+    roleSubCommand(
+        name = "unblock",
+        successKeySelf = "command.success.admin.game.role.unblock",
+        successKeyOther = "command.success.admin.game.role.unblock.other"
+    ) { player, role ->
+        player.game.roleManager.unblockRole(player, role)
+    }
+
+    roleSubCommand(
+        name = "allow",
+        successKeySelf = "command.success.admin.game.role.allow",
+        successKeyOther = "command.success.admin.game.role.allow.other"
+    ) { player, role ->
+        player.game.roleManager.allowRole(player, role)
+    }
+}
+
+private fun PaperCommand.roleSubCommand(
+    name: String,
+    successKeySelf: String,
+    successKeyOther: String,
+    action: (AmongUsPlayer, Role<*, *>) -> Unit
+) = literal(name) {
+    argument("role", RoleArgumentType.ALL) {
+        fun KtCommandBuilder<CommandSourceStack, *>.executeRole(targeted: Boolean) = execute {
+            val amongUsPlayer = arg<AmongUsPlayer>("player")
+            val role = arg<Role<*, *>>("role")
+
+            action(amongUsPlayer, role)
+
+            sendMessage {
+                translatable(if (targeted) successKeyOther else successKeySelf) {
+                    args {
+                        if (targeted) {
+                            string("player", amongUsPlayer.name)
+                        }
+                        component("role", Component.translatable(role.name))
+                    }
+                }
+            }
+
+            SINGLE_SUCCESS
+        }
+
+        argument("target", AmongUsPlayerArgumentType.SINGLE) {
+            executeRole(true)
+        }
+
+        executeRole(false)
+    }
 }
 
 private fun PaperCommand.killPlayerGameCommand() = literal("kill") {
