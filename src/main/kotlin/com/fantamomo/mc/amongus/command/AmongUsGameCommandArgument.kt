@@ -7,9 +7,12 @@ import com.fantamomo.mc.amongus.command.arguments.*
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.game.GameManager
 import com.fantamomo.mc.amongus.game.GamePhase
+import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.languages.numeric
 import com.fantamomo.mc.amongus.languages.string
+import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.player.PlayerManager
+import com.fantamomo.mc.amongus.role.Role
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.task.Task
@@ -18,6 +21,7 @@ import com.mojang.brigadier.arguments.BoolArgumentType
 import com.mojang.brigadier.arguments.IntegerArgumentType
 import io.papermc.paper.command.brigadier.CommandSourceStack
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes
+import net.kyori.adventure.text.Component
 import org.bukkit.World
 import org.bukkit.entity.Player
 
@@ -30,6 +34,70 @@ fun PaperCommand.gameCommand() = literal("game") {
     taskGameCommand()
     letWinGameCommand()
     killPlayerGameCommand()
+    roleGameCommand()
+}
+
+private fun PaperCommand.roleGameCommand() = literal("role") {
+    guard {
+        val targetResolver = optionalArg<AmongUsPlayerSelectorArgumentResolver>("target")
+
+        val target = targetResolver?.resolve(source)?.firstOrNull()
+            ?: (source.sender as? Player)?.let { PlayerManager.getPlayer(it) }
+
+        if (target == null) {
+            sendMessage {
+                translatable("command.error.admin.game.role.not_player")
+            }
+            return@guard abort()
+        }
+
+        val game = target.game
+
+        if (game.phase != GamePhase.LOBBY) {
+            sendMessage {
+                translatable("command.error.admin.game.role.not_in_lobby")
+            }
+            return@guard abort()
+        }
+
+        setArgument("player", target)
+
+        continueCommand()
+    }
+    literal("force") {
+        argument("role", RoleArgumentType.ALL) {
+            argument("target", AmongUsPlayerArgumentType.SINGLE) {
+                execute {
+                    val amongUsPlayer = arg<AmongUsPlayer>("player")
+                    val role = arg<Role<*, *>>("role")
+                    amongUsPlayer.game.roleManager.forceRole(amongUsPlayer, role)
+                    sendMessage {
+                        translatable("command.success.admin.game.role.set.other") {
+                            args {
+                                string("player", amongUsPlayer.name)
+                                component("role", Component.translatable(role.name))
+                            }
+                        }
+                    }
+                    SINGLE_SUCCESS
+                }
+            }
+            execute {
+                val amongUsPlayer = arg<AmongUsPlayer>("player")
+                val role = arg<Role<*, *>>("role")
+                amongUsPlayer.game.roleManager.forceRole(amongUsPlayer, role)
+                sendMessage {
+                    translatable("command.success.admin.game.role.set") {
+                        args {
+                            component("role", Component.translatable(role.name))
+                        }
+                    }
+                }
+                SINGLE_SUCCESS
+            }
+        }
+    }
+
 }
 
 private fun PaperCommand.killPlayerGameCommand() = literal("kill") {
