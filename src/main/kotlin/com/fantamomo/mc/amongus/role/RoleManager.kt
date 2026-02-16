@@ -14,8 +14,9 @@ class RoleManager(private val game: Game) {
 
     fun start() {
         val players = game.players.toList()
-        val imposterCount = game.settings[SettingsKey.ROLES.IMPOSTERS]
-        require(imposterCount in 0..players.size)
+        if (players.isEmpty()) return
+
+        val imposterCount = game.settings[SettingsKey.ROLES.IMPOSTERS].coerceIn(0, players.size)
 
         val roleChances = buildRoleChanceMap()
 
@@ -26,20 +27,36 @@ class RoleManager(private val game: Game) {
         val playersWithoutForced = players.filterNot { it in forcedRoles }
 
         val forcedImposters = forcedRoles.count { it.value.team == Team.IMPOSTERS }
-        val remainingImposters = (imposterCount - forcedImposters).coerceAtLeast(0)
+        val forcedCrewmates = forcedRoles.count { it.value.team == Team.CREWMATES }
 
-        val eligibleForImposter = playersWithoutForced.filter {
-            restrictedTeams[it] != Team.CREWMATES
+        val targetImposters = when {
+            forcedImposters >= imposterCount -> 0
+            forcedImposters + playersWithoutForced.size < imposterCount -> playersWithoutForced.size
+            else -> (imposterCount - forcedImposters).coerceAtLeast(0)
         }
 
-        val imposters = eligibleForImposter
-            .shuffled()
-            .take(remainingImposters)
+        val eligibleForImposter = playersWithoutForced.filter { player ->
+            val teamRestriction = restrictedTeams[player]
+            teamRestriction == null || teamRestriction == Team.IMPOSTERS
+        }
+
+        val imposters = if (eligibleForImposter.size >= targetImposters) {
+            eligibleForImposter.shuffled().take(targetImposters)
+        } else {
+            playersWithoutForced.shuffled().take(targetImposters)
+        }
 
         val crewmates = playersWithoutForced - imposters.toSet()
 
         assignRoles(imposters, roleChances, Team.IMPOSTERS)
         assignRoles(crewmates, roleChances, Team.CREWMATES)
+
+        for (player in players) {
+            if (player.assignedRole == null) {
+                val defaultRole = Team.CREWMATES.defaultRole
+                player.assignedRole = defaultRole.assignTo(player)
+            }
+        }
 
         for (player in players) {
             player.assignedRole?.onGameStart()
@@ -81,19 +98,28 @@ class RoleManager(private val game: Game) {
         fallbackTeam: Team
     ): Role<*, *> {
 
+        var possibleRoles = teamRoles
+
         val whitelist = allowedRoles[player]
-        var possibleRoles = if (!whitelist.isNullOrEmpty()) {
-            teamRoles.filterKeys { it in whitelist }
-        } else {
-            teamRoles
+        if (!whitelist.isNullOrEmpty()) {
+            val filtered = possibleRoles.filterKeys { it in whitelist }
+            if (filtered.isNotEmpty()) {
+                possibleRoles = filtered
+            }
         }
 
         restrictedTeams[player]?.let { restricted ->
-            possibleRoles = possibleRoles.filterKeys { it.team == restricted }
+            val filtered = possibleRoles.filterKeys { it.team == restricted }
+            if (filtered.isNotEmpty()) {
+                possibleRoles = filtered
+            }
         }
 
         blockedRoles[player]?.let { blocked ->
-            possibleRoles = possibleRoles.filterKeys { it !in blocked }
+            val filtered = possibleRoles.filterKeys { it !in blocked }
+            if (filtered.isNotEmpty()) {
+                possibleRoles = filtered
+            }
         }
 
         if (possibleRoles.isEmpty()) {
@@ -107,15 +133,21 @@ class RoleManager(private val game: Game) {
 
         val weighted = possibleRoles.filterValues { it in 1..99 }.toList()
         if (weighted.isEmpty()) {
-            return fallbackTeam.defaultRole
+            return possibleRoles.keys.firstOrNull() ?: fallbackTeam.defaultRole
         }
 
         return pickWeightedRole(weighted)
     }
 
     private fun pickWeightedRole(roles: List<Pair<Role<*, *>, Int>>): Role<*, *> {
+        if (roles.isEmpty()) {
+            error("No roles to pick from")
+        }
+
         val totalWeight = roles.sumOf { it.second }
-        require(totalWeight > 0)
+        if (totalWeight <= 0) {
+            return roles.first().first
+        }
 
         val randomValue = Random.nextInt(totalWeight)
         var accumulated = 0
@@ -127,7 +159,7 @@ class RoleManager(private val game: Game) {
             }
         }
 
-        error("Weighted role selection failed.")
+        return roles.last().first
     }
 
     private fun buildRoleChanceMap(): Map<Role<*, *>, Int> =
@@ -139,6 +171,7 @@ class RoleManager(private val game: Game) {
 
     fun forceRole(player: AmongUsPlayer, role: Role<*, *>) {
         forcedRoles[player] = role
+        restrictedTeams.remove(player)
     }
 
     fun clearForcedRole(player: AmongUsPlayer) {
@@ -147,6 +180,7 @@ class RoleManager(private val game: Game) {
 
     fun blockRole(player: AmongUsPlayer, role: Role<*, *>) {
         blockedRoles.computeIfAbsent(player) { mutableSetOf() }.add(role)
+        allowedRoles[player]?.remove(role)
     }
 
     fun unblockRole(player: AmongUsPlayer, role: Role<*, *>) {
@@ -154,11 +188,15 @@ class RoleManager(private val game: Game) {
     }
 
     fun allowRole(player: AmongUsPlayer, role: Role<*, *>) {
-        allowedRoles.computeIfAbsent(player) { mutableSetOf() }.add(role)
+        val allowed = allowedRoles.computeIfAbsent(player) { mutableSetOf() }
+        allowed.add(role)
+        blockedRoles[player]?.remove(role)
     }
 
     fun restrictTeam(player: AmongUsPlayer, team: Team?) {
-        restrictedTeams[player] = team
+        if (player !in forcedRoles) {
+            restrictedTeams[player] = team
+        }
     }
 
     fun clearRestrictions(player: AmongUsPlayer) {
