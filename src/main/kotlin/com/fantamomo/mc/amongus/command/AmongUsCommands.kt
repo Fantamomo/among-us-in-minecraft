@@ -5,22 +5,30 @@ import com.fantamomo.mc.adventure.text.textComponent
 import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.data.AmongUsConfig
+import com.fantamomo.mc.amongus.game.GameManager
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.util.internal.NMS
 import com.mojang.brigadier.Command
 import com.mojang.brigadier.context.CommandContext
+import com.mojang.brigadier.suggestion.SuggestionsBuilder
 import com.mojang.brigadier.tree.ArgumentCommandNode
 import com.mojang.brigadier.tree.CommandNode
 import io.papermc.paper.command.brigadier.Commands
 import io.papermc.paper.command.brigadier.ShadowBrigNode
 import net.kyori.adventure.text.Component
 import net.minecraft.commands.CommandSourceStack
+import net.minecraft.commands.SharedSuggestionProvider
 import net.minecraft.commands.arguments.EntityArgument
+import net.minecraft.commands.arguments.selector.EntitySelectorParser
+import net.minecraft.commands.arguments.selector.options.EntitySelectorOptions
+import net.minecraft.world.entity.Entity
 import org.bukkit.entity.Player
 import org.slf4j.LoggerFactory
 import java.lang.reflect.Field
+import java.util.function.Consumer
+import java.util.function.Predicate
 
 object AmongUsCommands {
 
@@ -34,16 +42,24 @@ object AmongUsCommands {
                 logger.warn("Failed to intercept the /msg command for private messaging.")
                 logger.warn("This usually happens if another plugin overrides /msg commands.")
                 logger.warn("Action: To resolve this, enable 'msg-command-blocker.legacy = true' in the config.yml.")
-                logger.warn("If enabling legacy mode does not fix the issue, please report this problem to the plugin author, " +
-                        "including details about other plugins that might affect private messaging commands.")
+                logger.warn(
+                    "If enabling legacy mode does not fix the issue, please report this problem to the plugin author, " +
+                            "including details about other plugins that might affect private messaging commands."
+                )
             }
         }
+        registerEntitySelectorOption()
     }
 
     private fun registerAll(registrar: Commands) {
         registrar.register(AmongUs.pluginMeta, AmongUsAdminCommand, "Among Us Admin Command", listOf("aua"))
         registrar.register(AmongUs.pluginMeta, AmongUsCommand, "Among Us Command", listOf("au"))
-        registrar.register(AmongUs.pluginMeta, AmongUsImposterMsgCommand, "Among Us Imposter Message Command", listOf("im"))
+        registrar.register(
+            AmongUs.pluginMeta,
+            AmongUsImposterMsgCommand,
+            "Among Us Imposter Message Command",
+            listOf("im")
+        )
     }
 
     /**
@@ -188,5 +204,39 @@ object AmongUsCommands {
 
             return original.run(ctx)
         }
+    }
+
+    @NMS
+    private fun registerEntitySelectorOption() {
+        val clazz = EntitySelectorOptions::class.java
+        val methode = clazz.getDeclaredMethod(
+            "register",
+            String::class.java,
+            EntitySelectorOptions.Modifier::class.java,
+            Predicate::class.java,
+            net.minecraft.network.chat.Component::class.java
+        )
+        methode.isAccessible = true
+
+        val id = "game"
+        val handle: EntitySelectorOptions.Modifier = { parser ->
+            val cursor = parser.reader.cursor
+            val shouldInvertValue = parser.shouldInvertValue()
+            val unquotedString = parser.reader.readUnquotedString()
+            parser.addPredicate { entity: Entity ->
+                parser.setSuggestions { builder: SuggestionsBuilder, _: Consumer<SuggestionsBuilder> ->
+                    SharedSuggestionProvider.suggest(
+                        GameManager.getGames().map { it.code },
+                        builder
+                    )
+                }
+                val bukkitEntity = entity.bukkitEntity
+                if (bukkitEntity !is Player) return@addPredicate !shouldInvertValue
+                val amongUsPlayer = PlayerManager.getPlayer(bukkitEntity) ?: return@addPredicate !shouldInvertValue
+                return@addPredicate (amongUsPlayer.game.code.equals(unquotedString, ignoreCase = true)) != shouldInvertValue
+            }
+        }
+        val predicate: Predicate<EntitySelectorParser> = { true }
+        methode.invoke(null, id, handle, predicate, net.minecraft.network.chat.Component.literal("test"))
     }
 }
