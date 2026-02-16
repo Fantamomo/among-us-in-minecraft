@@ -5,6 +5,7 @@ import com.fantamomo.mc.adventure.text.textComponent
 import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.data.AmongUsConfig
+import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.game.GameManager
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.PlayerManager
@@ -12,14 +13,15 @@ import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.util.internal.NMS
 import com.mojang.brigadier.Command
 import com.mojang.brigadier.context.CommandContext
+import com.mojang.brigadier.exceptions.SimpleCommandExceptionType
 import com.mojang.brigadier.suggestion.SuggestionsBuilder
 import com.mojang.brigadier.tree.ArgumentCommandNode
 import com.mojang.brigadier.tree.CommandNode
+import io.papermc.paper.adventure.AdventureComponent
 import io.papermc.paper.command.brigadier.Commands
 import io.papermc.paper.command.brigadier.ShadowBrigNode
 import net.kyori.adventure.text.Component
 import net.minecraft.commands.CommandSourceStack
-import net.minecraft.commands.SharedSuggestionProvider
 import net.minecraft.commands.arguments.EntityArgument
 import net.minecraft.commands.arguments.selector.EntitySelectorParser
 import net.minecraft.commands.arguments.selector.options.EntitySelectorOptions
@@ -206,6 +208,8 @@ object AmongUsCommands {
         }
     }
 
+    private val ILLEGAL_GAME_CODE = SimpleCommandExceptionType(AdventureComponent(Component.translatable("command.utils.selector_option.game.illegal_code")))
+
     @NMS
     private fun registerEntitySelectorOption() {
         val clazz = EntitySelectorOptions::class.java
@@ -220,23 +224,58 @@ object AmongUsCommands {
 
         val id = "game"
         val handle: EntitySelectorOptions.Modifier = { parser ->
+            parser.setSuggestions { builder: SuggestionsBuilder, _: Consumer<SuggestionsBuilder> ->
+                var remaining = builder.remainingLowerCase
+                var flag = true
+                var flag2 = true
+                if (remaining.isNotEmpty()) {
+                    if (remaining.startsWith("!")) {
+                        flag = false
+                        remaining = remaining.substring(1)
+                    } else {
+                        flag2 = false
+                    }
+                }
+                for (game in GameManager.getGames()) {
+                    if (game.code.startsWith(remaining, ignoreCase = true)) {
+                        if (flag2) {
+                            builder.suggest("!" + game.code)
+                        }
+
+                        if (flag) {
+                            builder.suggest(game.code)
+                        }
+                    }
+                }
+
+                builder.buildFuture()
+            }
             val cursor = parser.reader.cursor
             val shouldInvertValue = parser.shouldInvertValue()
             val unquotedString = parser.reader.readUnquotedString()
+
+            if (!Game.validCode(unquotedString)) {
+                throw ILLEGAL_GAME_CODE.createWithContext(parser.reader)
+            }
+
+            parser.setIncludesEntities(false)
             parser.addPredicate { entity: Entity ->
-                parser.setSuggestions { builder: SuggestionsBuilder, _: Consumer<SuggestionsBuilder> ->
-                    SharedSuggestionProvider.suggest(
-                        GameManager.getGames().map { it.code },
-                        builder
-                    )
-                }
                 val bukkitEntity = entity.bukkitEntity
-                if (bukkitEntity !is Player) return@addPredicate !shouldInvertValue
-                val amongUsPlayer = PlayerManager.getPlayer(bukkitEntity) ?: return@addPredicate !shouldInvertValue
-                return@addPredicate (amongUsPlayer.game.code.equals(unquotedString, ignoreCase = true)) != shouldInvertValue
+                if (bukkitEntity !is Player) return@addPredicate false
+                val amongUsPlayer = PlayerManager.getPlayer(bukkitEntity) ?: return@addPredicate shouldInvertValue
+                return@addPredicate (amongUsPlayer.game.code.equals(
+                    unquotedString,
+                    ignoreCase = true
+                )) != shouldInvertValue
             }
         }
         val predicate: Predicate<EntitySelectorParser> = { true }
-        methode.invoke(null, id, handle, predicate, net.minecraft.network.chat.Component.literal("test"))
+        methode.invoke(
+            null,
+            id,
+            handle,
+            predicate,
+            net.minecraft.network.chat.Component.translatable("command.utils.selector_option.game")
+        )
     }
 }
