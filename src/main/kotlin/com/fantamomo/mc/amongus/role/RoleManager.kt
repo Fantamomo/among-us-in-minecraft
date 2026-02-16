@@ -7,16 +7,27 @@ import kotlin.random.Random
 
 class RoleManager(private val game: Game) {
 
+    private val forcedRoles = mutableMapOf<AmongUsPlayer, Role<*, *>>()
+
     fun start() {
         val imposterCount = game.settings[SettingsKey.ROLES.IMPOSTERS]
         require(imposterCount in 0..game.players.size)
 
         val roleChances = buildRoleChanceMap()
 
+        for ((player, role) in forcedRoles) {
+            player.assignedRole = role.assignTo(player)
+        }
+
         val shuffledPlayers = game.players.shuffled()
 
-        val imposters = shuffledPlayers.take(imposterCount)
-        val crewmates = shuffledPlayers.drop(imposterCount)
+        val playersWithoutForcedRole = shuffledPlayers.filterNot { it in forcedRoles.keys }
+
+        val forcedImposters = forcedRoles.count { it.value.team == Team.IMPOSTERS }
+        val remainingImposterCount = (imposterCount - forcedImposters).coerceAtLeast(0)
+
+        val imposters = playersWithoutForcedRole.take(remainingImposterCount)
+        val crewmates = playersWithoutForcedRole.drop(remainingImposterCount)
 
         assignRoles(
             imposters,
@@ -33,6 +44,8 @@ class RoleManager(private val game: Game) {
         for (player in game.players) {
             player.assignedRole?.onGameStart()
         }
+
+        forcedRoles.clear()
     }
 
     fun end() {
@@ -120,5 +133,9 @@ class RoleManager(private val game: Game) {
         }
 
         error("Weighted role selection failed.")
+    }
+
+    fun forceRole(amongUsPlayer: AmongUsPlayer, role: Role<*, *>) {
+        forcedRoles[amongUsPlayer] = role
     }
 }
