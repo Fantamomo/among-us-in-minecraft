@@ -96,6 +96,64 @@ private fun PaperCommand.roleGameCommand() = literal("role") {
     ) { player, role ->
         player.game.roleManager.allowRole(player, role)
     }
+
+    literal("team") {
+        argument("team", EnumArgumentType.of<Team>()) {
+            argument("target", AmongUsPlayerArgumentType.SINGLE) {
+                execute {
+                    val amongUsPlayer = arg<AmongUsPlayer>("player")
+                    val team = arg<Team>("team")
+                    amongUsPlayer.game.roleManager.restrictTeam(amongUsPlayer, team)
+                    sendMessage {
+                        translatable("command.success.admin.game.role.team.other") {
+                            args {
+                                string("player", amongUsPlayer.name)
+                                string("team", team.name)
+                            }
+                        }
+                    }
+                    SINGLE_SUCCESS
+                }
+            }
+            execute {
+                val amongUsPlayer = arg<AmongUsPlayer>("player")
+                val team = arg<Team>("team")
+                amongUsPlayer.game.roleManager.restrictTeam(amongUsPlayer, team)
+                sendMessage {
+                    translatable("command.success.admin.game.role.team") {
+                        args {
+                            string("team", team.name)
+                        }
+                    }
+                }
+                SINGLE_SUCCESS
+            }
+        }
+        literal("random") {
+            argument("target", AmongUsPlayerArgumentType.SINGLE) {
+                execute {
+                    val amongUsPlayer = arg<AmongUsPlayer>("player")
+                    amongUsPlayer.game.roleManager.restrictTeam(amongUsPlayer, null)
+                    sendMessage {
+                        translatable("command.success.admin.game.role.team.random.other") {
+                            args {
+                                string("player", amongUsPlayer.name)
+                            }
+                        }
+                    }
+                    SINGLE_SUCCESS
+                }
+            }
+            execute {
+                val amongUsPlayer = arg<AmongUsPlayer>("player")
+                amongUsPlayer.game.roleManager.restrictTeam(amongUsPlayer, null)
+                sendMessage {
+                    translatable("command.success.admin.game.role.team.random")
+                }
+                SINGLE_SUCCESS
+            }
+        }
+    }
 }
 
 private fun PaperCommand.roleSubCommand(
