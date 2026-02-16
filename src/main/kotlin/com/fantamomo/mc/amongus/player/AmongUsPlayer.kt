@@ -33,7 +33,7 @@ class AmongUsPlayer internal constructor(
     val uuid: UUID,
     name: String,
     val game: Game,
-    val locationBeforeGame: Location? = null
+    val locationBeforeGame: Location
 ) {
     private var _name: String = name
     private var _locale: Locale = Locale.getDefault()
