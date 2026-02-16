@@ -30,6 +30,8 @@ object PlayerManager {
 
     fun getPlayer(mannequin: Mannequin) = players.find { it.mannequinController.getEntity() == mannequin }
 
+    fun getPlayer(name: String) = players.find { it.name == name }
+
     @NMS
     internal fun joinGame(player: Player, game: Game): AmongUsPlayer {
         if (exists(player.uniqueId)) throw IllegalStateException("Player already in a game")

@@ -365,6 +365,8 @@ class Game(
         val CODE_CHARS = ('A'..'Z') + ('0'..'9')
         const val CODE_LENGTH = 4
 
+        fun validCode(code: String) = code.length == CODE_LENGTH && code.all { it in CODE_CHARS }
+
         private fun createRandomCode(): String = (1..CODE_LENGTH).map { CODE_CHARS.random() }.joinToString("")
     }
 }

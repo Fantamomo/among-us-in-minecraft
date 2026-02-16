@@ -3,9 +3,7 @@ package com.fantamomo.mc.amongus.command
 import com.fantamomo.mc.adventure.text.args
 import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.area.GameArea
-import com.fantamomo.mc.amongus.command.arguments.GameAreaArgumentType
-import com.fantamomo.mc.amongus.command.arguments.GameArgumentType
-import com.fantamomo.mc.amongus.command.arguments.TaskIdArgumentType
+import com.fantamomo.mc.amongus.command.arguments.*
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.game.GameManager
 import com.fantamomo.mc.amongus.game.GamePhase
@@ -20,7 +18,6 @@ import com.mojang.brigadier.arguments.BoolArgumentType
 import com.mojang.brigadier.arguments.IntegerArgumentType
 import io.papermc.paper.command.brigadier.CommandSourceStack
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes
-import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver
 import org.bukkit.World
 import org.bukkit.entity.Player
 
@@ -36,7 +33,7 @@ fun PaperCommand.gameCommand() = literal("game") {
 }
 
 private fun PaperCommand.killPlayerGameCommand() = literal("kill") {
-    argument("target", ArgumentTypes.player()) {
+    argument("target", AmongUsPlayerArgumentType.SINGLE) {
         argument("corpse", BoolArgumentType.bool()) {
             killPlayerGamCommandExecute()
         }
@@ -45,20 +42,10 @@ private fun PaperCommand.killPlayerGameCommand() = literal("kill") {
 }
 
 private fun KtCommandBuilder<CommandSourceStack, *>.killPlayerGamCommandExecute() = execute {
-    val targetResolver: PlayerSelectorArgumentResolver =
-        arg<PlayerSelectorArgumentResolver>("target")
-    val target = targetResolver.resolve(source).first()
+    val targetResolver = arg<AmongUsPlayerSelectorArgumentResolver>("target")
+    val amongUsPlayer = targetResolver.resolve(source).first()
 
     val corpse = optionalArg<Boolean>("corpse") == true
-
-    val amongUsPlayer = PlayerManager.getPlayer(target)
-
-    if (amongUsPlayer == null) {
-        sendMessage {
-            translatable("command.error.admin.game.letwin.not_joined")
-        }
-        return@execute 0
-    }
 
     val game = amongUsPlayer.game
 
@@ -92,7 +79,7 @@ private fun KtCommandBuilder<CommandSourceStack, *>.killPlayerGamCommandExecute(
         sendMessage {
             translatable("command.error.admin.game.kill.not_alive") {
                 args {
-                    string("player", target.name)
+                    string("player", amongUsPlayer.name)
                 }
             }
         }
@@ -101,12 +88,12 @@ private fun KtCommandBuilder<CommandSourceStack, *>.killPlayerGamCommandExecute(
 
     game.killManager.kill(amongUsPlayer, corpse)
 
-    val loc = target.location
+    val loc = (amongUsPlayer.mannequinController.getEntity() ?: amongUsPlayer.livingEntity).location
     sendMessage {
         if (corpse) {
             translatable("command.success.admin.game.kill.corpse") {
                 args {
-                    string("player", target.name)
+                    string("player", amongUsPlayer.name)
                     numeric("x", loc.blockX)
                     numeric("y", loc.blockY)
                     numeric("z", loc.blockZ)
@@ -115,7 +102,7 @@ private fun KtCommandBuilder<CommandSourceStack, *>.killPlayerGamCommandExecute(
         } else {
             translatable("command.success.admin.game.kill") {
                 args {
-                    string("player", target.name)
+                    string("player", amongUsPlayer.name)
                 }
             }
         }
@@ -196,11 +183,11 @@ private fun KtCommandBuilder<CommandSourceStack, *>.letWinGameCommandExecute(tea
 }
 
 private fun PaperCommand.taskGameCommand() = literal("task") {
-    argument("players", ArgumentTypes.players()) {
+    argument("players", AmongUsPlayerArgumentType.MANY) {
         literal("assign") {
             literalExecute("all") {
-                val targetResolver: PlayerSelectorArgumentResolver =
-                    arg<PlayerSelectorArgumentResolver>("players")
+                val targetResolver =
+                    arg<AmongUsPlayerSelectorArgumentResolver>("players")
                 val targets = targetResolver.resolve(source)
 
                 if (targets.isEmpty()) {
@@ -211,8 +198,7 @@ private fun PaperCommand.taskGameCommand() = literal("task") {
                 }
 
                 var success = 0
-                for (target in targets) {
-                    val auPlayer = PlayerManager.getPlayer(target) ?: continue
+                for (auPlayer in targets) {
                     for (task in Task.tasks) {
                         auPlayer.game.taskManager.assignTask(auPlayer, task)
                         success++
@@ -242,8 +228,8 @@ private fun PaperCommand.taskGameCommand() = literal("task") {
             argument("task", TaskIdArgumentType) {
                 val taskRef = argRef()
                 execute {
-                    val targetResolver: PlayerSelectorArgumentResolver =
-                        arg<PlayerSelectorArgumentResolver>("players")
+                    val targetResolver =
+                        arg<AmongUsPlayerSelectorArgumentResolver>("players")
                     val targets = targetResolver.resolve(source)
                     val task = taskRef.get()
 
@@ -255,8 +241,7 @@ private fun PaperCommand.taskGameCommand() = literal("task") {
                     }
 
                     var success = 0
-                    for (target in targets) {
-                        val auPlayer = PlayerManager.getPlayer(target) ?: continue
+                    for (auPlayer in targets) {
                         auPlayer.game.taskManager.assignTask(auPlayer, task)
                         success++
                     }
@@ -298,8 +283,8 @@ private fun PaperCommand.taskGameCommand() = literal("task") {
         }
         literal("unassign") {
             literalExecute("all") {
-                val targetResolver: PlayerSelectorArgumentResolver =
-                    arg<PlayerSelectorArgumentResolver>("players")
+                val targetResolver =
+                    arg<AmongUsPlayerSelectorArgumentResolver>("players")
                 val targets = targetResolver.resolve(source)
 
                 if (targets.isEmpty()) {
@@ -310,8 +295,7 @@ private fun PaperCommand.taskGameCommand() = literal("task") {
                 }
 
                 var success = 0
-                for (target in targets) {
-                    val auPlayer = PlayerManager.getPlayer(target) ?: continue
+                for (auPlayer in targets) {
                     val tasks = auPlayer.tasks.toList()
                     for (task in tasks) {
                         auPlayer.game.taskManager.unassignTask(auPlayer, task.task.task)
@@ -343,8 +327,8 @@ private fun PaperCommand.taskGameCommand() = literal("task") {
                 val taskRef = argRef()
 
                 execute {
-                    val targetResolver: PlayerSelectorArgumentResolver =
-                        arg<PlayerSelectorArgumentResolver>("players")
+                    val targetResolver =
+                        arg<AmongUsPlayerSelectorArgumentResolver>("players")
                     val targets = targetResolver.resolve(source)
                     val task = taskRef.get()
 
@@ -356,8 +340,7 @@ private fun PaperCommand.taskGameCommand() = literal("task") {
                     }
 
                     var success = 0
-                    for (target in targets) {
-                        val auPlayer = PlayerManager.getPlayer(target) ?: continue
+                    for (auPlayer in targets) {
                         auPlayer.game.taskManager.unassignTask(auPlayer, task)
                         success++
                     }
@@ -385,15 +368,14 @@ private fun PaperCommand.taskGameCommand() = literal("task") {
                     SINGLE_SUCCESS
                 }
                 suggests {
-                    val targetResolver: PlayerSelectorArgumentResolver =
-                        context.arg<PlayerSelectorArgumentResolver>("players")
+                    val targetResolver =
+                        context.arg<AmongUsPlayerSelectorArgumentResolver>("players")
                     val targets = targetResolver.resolve(context.source)
 
                     val input = builder.remaining
 
                     targets
                         .asSequence()
-                        .mapNotNull { PlayerManager.getPlayer(it) }
                         .flatMap { it.tasks }
                         .map { it.task.task.id }
                         .filter { it.startsWith(input, ignoreCase = true) }
@@ -404,8 +386,8 @@ private fun PaperCommand.taskGameCommand() = literal("task") {
         }
         literal("complete") {
             literalExecute("all") {
-                val targetResolver: PlayerSelectorArgumentResolver =
-                    arg<PlayerSelectorArgumentResolver>("players")
+                val targetResolver =
+                    arg<AmongUsPlayerSelectorArgumentResolver>("players")
                 val targets = targetResolver.resolve(source)
 
                 if (targets.isEmpty()) {
@@ -416,8 +398,7 @@ private fun PaperCommand.taskGameCommand() = literal("task") {
                 }
 
                 var success = 0
-                for (target in targets) {
-                    val auPlayer = PlayerManager.getPlayer(target) ?: continue
+                for (auPlayer in targets) {
                     auPlayer.tasks.forEach {
                         if (it.completed) return@forEach
                         auPlayer.game.taskManager.completeTask(it.task, modifyStatistics = false)
@@ -444,14 +425,13 @@ private fun PaperCommand.taskGameCommand() = literal("task") {
             argument("task", TaskIdArgumentType) {
                 val taskRef = argRef()
                 execute {
-                    val targetResolver: PlayerSelectorArgumentResolver =
-                        arg<PlayerSelectorArgumentResolver>("players")
+                    val targetResolver =
+                        arg<AmongUsPlayerSelectorArgumentResolver>("players")
                     val targets = targetResolver.resolve(source)
                     val task = taskRef.get()
 
                     var success = 0
-                    for (target in targets) {
-                        val auPlayer = PlayerManager.getPlayer(target) ?: continue
+                    for (auPlayer in targets) {
                         auPlayer.tasks.forEach {
                             if (it.task.task != task) return@forEach
                             auPlayer.game.taskManager.completeTask(it.task, modifyStatistics = false)
@@ -482,15 +462,14 @@ private fun PaperCommand.taskGameCommand() = literal("task") {
                     SINGLE_SUCCESS
                 }
                 suggests {
-                    val targetResolver: PlayerSelectorArgumentResolver =
-                        context.arg<PlayerSelectorArgumentResolver>("players")
+                    val targetResolver =
+                        context.arg<AmongUsPlayerSelectorArgumentResolver>("players")
                     val targets = targetResolver.resolve(context.source)
 
                     val input = builder.remaining
 
                     targets
                         .asSequence()
-                        .mapNotNull { PlayerManager.getPlayer(it) }
                         .flatMap { it.tasks }
                         .filter { !it.completed }
                         .map { it.task.task.id }
