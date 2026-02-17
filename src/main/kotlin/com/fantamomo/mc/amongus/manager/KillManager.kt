@@ -1,16 +1,16 @@
 package com.fantamomo.mc.amongus.manager
 
-import com.fantamomo.mc.adventure.text.args
-import com.fantamomo.mc.adventure.text.textComponent
-import com.fantamomo.mc.adventure.text.translatable
+import com.fantamomo.mc.adventure.text.*
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.game.Game
-import com.fantamomo.mc.amongus.languages.string
+import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.role.crewmates.TheDamnedRole
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import io.papermc.paper.datacomponent.item.ResolvableProfile
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.`object`.ObjectContents
 import net.kyori.adventure.title.TitlePart
 import org.bukkit.Location
 import org.bukkit.NamespacedKey
@@ -48,12 +48,17 @@ class KillManager(val game: Game) {
                     translatable("dead.by.imposter")
                 }
             )
+            val killerToShow = game.morphManager.getMorphedPlayer(imposter)?.target ?: imposter
             sendTitlePart(
                 TitlePart.SUBTITLE,
                 textComponent {
                     translatable("dead.by.imposter.subtitle") {
                         args {
-                            string("player", imposter.name)
+                            component("player") {
+                                append(Component.`object`(ObjectContents.playerHead(killerToShow.uuid)))
+                                space()
+                                text(killerToShow.name)
+                            }
                         }
                     }
                 }
