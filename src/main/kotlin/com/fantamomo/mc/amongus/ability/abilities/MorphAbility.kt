@@ -80,11 +80,7 @@ object MorphAbility : Ability<MorphAbility, MorphAbility.AssignedMorphAbility> {
                         }
 
                         game.morphManager.showMorphInventory(player) { success ->
-                            if (success) {
-                                morphCooldown.start(2.seconds)
-                            } else {
-                                morphCooldown.start(5.seconds)
-                            }
+                            morphCooldown.start(5.seconds)
                         }
                     }
                 }
