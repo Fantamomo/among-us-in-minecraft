@@ -75,6 +75,23 @@ data class GameArea(
         return !(cameraJoinPointMin == null && cameraJoinPointMax == null)
     }
 
+    fun getMissedLocations(): List<String> {
+        if (isValid()) return listOf()
+        val missed = mutableListOf<String>()
+        if (minCorner == null) missed.add("min_corner")
+        if (maxCorner == null) missed.add("max_corner")
+        if (lobbySpawn == null) missed.add("lobby_spawn")
+        if (gameSpawn == null) missed.add("game_spawn")
+        if (meetingBlock == null) missed.add("meeting_block")
+        if (ejectedFallPoint == null) missed.add("ejected_fall_point")
+        if (ejectedViewPoint == null) missed.add("ejected_view_point")
+        if (cameraJoinPointMin == null || cameraJoinPointMax == null) {
+            if (cameraJoinPointMin == null) missed.add("camera_join_point_min")
+            else missed.add("camera_join_point_max")
+        }
+        return missed
+    }
+
     @Suppress("DuplicatedCode")
     fun withWorld(world: World): GameArea {
         val clone = this.copy()
