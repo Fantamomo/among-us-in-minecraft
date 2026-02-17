@@ -164,6 +164,7 @@ class Game(
         meetingManager.tick()
         scoreboardManager.tick()
         roleManager.tick()
+        morphManager.tick()
         ghostFormManager.tick()
     }
 
