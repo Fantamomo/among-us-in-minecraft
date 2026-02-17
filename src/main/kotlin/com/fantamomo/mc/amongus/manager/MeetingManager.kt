@@ -5,6 +5,7 @@ import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.game.GamePhase
 import com.fantamomo.mc.amongus.languages.LanguageManager
+import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.languages.numeric
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
@@ -20,6 +21,7 @@ import io.papermc.paper.datacomponent.item.ResolvableProfile
 import net.kyori.adventure.bossbar.BossBar
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.TextDecoration
+import net.kyori.adventure.text.`object`.ObjectContents
 import net.kyori.adventure.title.TitlePart
 import net.kyori.adventure.util.TriState
 import org.bukkit.Bukkit
@@ -118,7 +120,8 @@ class MeetingManager(private val game: Game) : Listener {
     ) {
         if (meeting != null) return
         if (!caller.isAlive) return
-        val body = if (reason == MeetingReason.BODY) body ?: game.killManager.nearestCorpse(caller.livingEntity.location)?.owner else body
+        val body = if (reason == MeetingReason.BODY) body
+            ?: game.killManager.nearestCorpse(caller.livingEntity.location)?.owner else body
         if (force) {
             meeting = Meeting(caller, reason, body)
             return
@@ -266,22 +269,31 @@ class MeetingManager(private val game: Game) : Listener {
             val title = Component.translatable("meeting.called.title")
             val subtitle = textComponent {
                 translatable(reason.calledTranslationKey) {
-                    args { string("player", caller.name) }
-                }
-            }
-
-            val chatMessage: Component = if (foundBodies.isEmpty()) Component.translatable("meeting.called.info.no_bodies")
-            else textComponent {
-                translatable("meeting.called.info.bodies") {
-                    args { numeric("count", foundBodies.size) }
-                }
-                for (body in foundBodies) {
-                    newLine()
-                    translatable(if (body === foundBody) "meeting.called.info.body.found" else "meeting.called.info.body") {
-                        args { string("player", body.name) }
+                    args {
+                        component("player") {
+                            append(Component.`object`(ObjectContents.playerHead(caller.uuid)))
+                            space()
+                            text(caller.name)
+                        }
                     }
                 }
             }
+
+            val chatMessage: Component =
+                if (foundBodies.isEmpty()) Component.translatable("meeting.called.info.no_bodies")
+                else textComponent {
+                    translatable("meeting.called.info.bodies") {
+                        args { numeric("count", foundBodies.size) }
+                    }
+                    for (body in foundBodies) {
+                        newLine()
+                        append(Component.`object`(ObjectContents.playerHead(body.uuid)))
+                        space()
+                        translatable(if (body === foundBody) "meeting.called.info.body.found" else "meeting.called.info.body") {
+                            args { string("player", body.name) }
+                        }
+                    }
+                }
 
             game.players.forEach { p ->
                 if (game.cameraManager.isInCams(p)) game.cameraManager.leaveCams(p)
@@ -441,7 +453,13 @@ class MeetingManager(private val game: Game) : Listener {
             val component = player?.let {
                 textComponent {
                     translatable("meeting.result.ejected") {
-                        args { string("player", it.name) }
+                        args {
+                            component("player") {
+                                append(Component.`object`(ObjectContents.playerHead(it.uuid)))
+                                space()
+                                text(it.name)
+                            }
+                        }
                     }
                 }
             } ?: Component.translatable("meeting.result.skip")
@@ -635,6 +653,7 @@ class MeetingManager(private val game: Game) : Listener {
 
     sealed interface Voter {
         val player: AmongUsPlayer
+
         data class NormalPlayer(override val player: AmongUsPlayer) : Voter
         data class MayorVoter(override val player: AmongUsPlayer) : Voter
     }
