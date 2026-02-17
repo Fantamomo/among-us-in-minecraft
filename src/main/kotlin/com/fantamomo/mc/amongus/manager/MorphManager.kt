@@ -31,7 +31,9 @@ import kotlin.uuid.toKotlinUuid
 class MorphManager(val game: Game) {
     private val morphs: MutableMap<AmongUsPlayer, MorphedPlayer> = mutableMapOf()
 
-    class MorphedPlayer(
+    private var ticks: Int = 0
+
+    inner class MorphedPlayer(
         val player: AmongUsPlayer,
         val target: AmongUsPlayer,
         var frames: List<MorphSkinManager.Skin>? = null
@@ -43,7 +45,13 @@ class MorphManager(val game: Game) {
             100
         )
 
-        private var morphing: Boolean? = null
+        var morphing: Boolean? = null
+            private set
+        private var animationFrames: List<MorphSkinManager.Skin>? = null
+        private var animationIndex: Int = 0
+        private var animationDelay: Int = 0
+        private var animationOnFinish: (() -> Unit)? = null
+        private val animationInterval = 5
 
         fun playForwardAnimation() {
             val frames = this.frames ?: return
@@ -69,54 +77,10 @@ class MorphManager(val game: Game) {
             frames: List<MorphSkinManager.Skin>,
             onFinish: (() -> Unit)? = null
         ) {
-            player.player ?: return
-
-            var index = 0
-            Bukkit.getScheduler().runTaskTimer(AmongUs, { task ->
-
-                val display = when (morphing) {
-                    true -> com.fantamomo.mc.adventure.text.textComponent {
-                        translatable("actionbar.morph.info.morphing") {
-                            args {
-                                string("player", target.name)
-                            }
-                        }
-                    }
-                    false -> com.fantamomo.mc.adventure.text.textComponent {
-                        translatable("actionbar.morph.info.unmorphing")
-                    }
-                    null -> null
-                }
-
-                if (display != null) {
-                    actionBar.componentLike = display
-                }
-
-                if (index >= frames.size) {
-                    task.cancel()
-                    onFinish?.invoke()
-                    return@runTaskTimer
-                }
-
-                val frame = frames[index++]
-
-                if (frame is MorphSkinManager.Skin.GeneratedSkin) {
-                    player.mannequinController.setSkinTexture(
-                        frame.value,
-                        frame.signature
-                    )
-                } else if (frame is MorphSkinManager.Skin.PlayerProfileSkin) {
-                    val profile = frame.profile.id
-                    if (profile != null) {
-                        val amongUsPlayer = PlayerManager.getPlayer(profile)
-                        if (amongUsPlayer == null) {
-                            logger.warn("Got $profile skin but there is no among us player with that profile")
-                            return@runTaskTimer
-                        }
-                        player.mannequinController.copyAppearanceFrom(amongUsPlayer)
-                    }
-                }
-            }, 0L, 5L)
+            animationFrames = frames
+            animationIndex = 0
+            animationDelay = 0
+            animationOnFinish = onFinish
         }
 
         fun unmorph(animation: Boolean = true) {
@@ -124,10 +88,61 @@ class MorphManager(val game: Game) {
                 playBackwardAnimation {
                     player.mannequinController.restoreAppearance()
                     actionBar.remove()
+                    morphs.remove(player)
                 }
             } else {
                 player.mannequinController.restoreAppearance()
                 actionBar.remove()
+            }
+        }
+
+        fun tick() {
+            val frames = animationFrames ?: return
+            if (player.player == null) return
+
+            if (++animationDelay < animationInterval) return
+            animationDelay = 0
+
+            val display = when (morphing) {
+                true -> com.fantamomo.mc.adventure.text.textComponent {
+                    translatable("actionbar.morph.info.morphing") {
+                        args { string("player", target.name) }
+                    }
+                }
+                false -> com.fantamomo.mc.adventure.text.textComponent {
+                    translatable("actionbar.morph.info.unmorphing")
+                }
+                null -> null
+            }
+
+            if (display != null) {
+                actionBar.componentLike = display
+            }
+
+            if (animationIndex >= frames.size) {
+                animationFrames = null
+                animationOnFinish?.invoke()
+                animationOnFinish = null
+                return
+            }
+
+            when (val frame = frames[animationIndex++]) {
+                is MorphSkinManager.Skin.GeneratedSkin -> {
+                    player.mannequinController.setSkinTexture(
+                        frame.value,
+                        frame.signature
+                    )
+                }
+
+                is MorphSkinManager.Skin.PlayerProfileSkin -> {
+                    val profile = frame.profile.id ?: return
+                    val amongUsPlayer = PlayerManager.getPlayer(profile)
+                    if (amongUsPlayer == null) {
+                        logger.warn("Got $profile skin but there is no among us player with that profile")
+                        return
+                    }
+                    player.mannequinController.copyAppearanceFrom(amongUsPlayer)
+                }
             }
         }
     }
@@ -135,6 +150,14 @@ class MorphManager(val game: Game) {
     fun isMorphed(player: AmongUsPlayer) = morphs.containsKey(player)
 
     fun getMorphedPlayer(player: AmongUsPlayer) = morphs[player]
+
+    fun tick() {
+        if (morphs.isEmpty()) return
+        for (morphedPlayer in morphs.values) {
+            morphedPlayer.tick()
+        }
+        ticks++
+    }
 
     fun morph(player: AmongUsPlayer, target: AmongUsPlayer) {
         if (isMorphed(player)) return
@@ -200,7 +223,7 @@ class MorphManager(val game: Game) {
     }
 
     fun unmorph(player: AmongUsPlayer) {
-        morphs.remove(player)?.unmorph()
+        morphs[player]?.unmorph()
     }
 
     fun unmorphAll() {
