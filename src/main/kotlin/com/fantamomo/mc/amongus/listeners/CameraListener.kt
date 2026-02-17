@@ -21,6 +21,10 @@ object CameraListener : Listener {
         val amongUsPlayer = PlayerManager.getPlayer(player) ?: return
         val cameraManager = amongUsPlayer.game.cameraManager
         if (location.isBetween(cameraManager.cameraJoinPointMin, cameraManager.cameraJoinPointMax)) {
+            if (player.isSneaking) {
+                player.sendMessage(Component.translatable("camera.error.sneaking"))
+                return
+            }
             if (amongUsPlayer.isInGhostForm()) {
                 player.sendMessage(Component.translatable("camera.error.ghost_form"))
                 return
@@ -36,6 +40,7 @@ object CameraListener : Listener {
         val cameraManager = amongUsPlayer.game.cameraManager
         val camera = cameraManager.getCamera(amongUsPlayer) ?: return
         if (!camera.ignorePlayerStopSpectatingEntityEvent) {
+            player.isSneaking = false
             cameraManager.leaveCams(amongUsPlayer)
         }
     }
