@@ -21,7 +21,6 @@ import io.papermc.paper.datacomponent.item.ResolvableProfile
 import net.kyori.adventure.bossbar.BossBar
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.TextDecoration
-import net.kyori.adventure.text.`object`.ObjectContents
 import net.kyori.adventure.title.TitlePart
 import net.kyori.adventure.util.TriState
 import org.bukkit.Bukkit
@@ -271,7 +270,11 @@ class MeetingManager(private val game: Game) : Listener {
                 translatable(reason.calledTranslationKey) {
                     args {
                         component("player") {
-                            append(Component.`object`(ObjectContents.playerHead(caller.uuid)))
+                            objectComponent {
+                                playerHead {
+                                    id(caller.uuid)
+                                }
+                            }
                             space()
                             text(caller.name)
                         }
@@ -287,7 +290,11 @@ class MeetingManager(private val game: Game) : Listener {
                     }
                     for (body in foundBodies) {
                         newLine()
-                        append(Component.`object`(ObjectContents.playerHead(body.uuid)))
+                        objectComponent {
+                            playerHead {
+                                id(body.uuid)
+                            }
+                        }
                         space()
                         translatable(if (body === foundBody) "meeting.called.info.body.found" else "meeting.called.info.body") {
                             args { string("player", body.name) }
@@ -455,7 +462,11 @@ class MeetingManager(private val game: Game) : Listener {
                     translatable("meeting.result.ejected") {
                         args {
                             component("player") {
-                                append(Component.`object`(ObjectContents.playerHead(it.uuid)))
+                                objectComponent {
+                                    playerHead {
+                                        id(it.uuid)
+                                    }
+                                }
                                 space()
                                 text(it.name)
                             }
