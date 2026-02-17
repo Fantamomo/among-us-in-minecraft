@@ -211,6 +211,9 @@ class Game(
                     player.inventory.addItem(item.get())
                 }
             }
+            for (other in players) {
+                other.mannequinController.updateNameTag(player)
+            }
         }
         waypointManager.onPlayerRejoin(amongUsPlayer)
         scoreboardManager.onPlayerRejoin(amongUsPlayer)
@@ -355,8 +358,8 @@ class Game(
                     online.showPlayer(AmongUs, p)
                 }
             }
-            PlayerManager.gameEnds(player)
             player.restorePlayer()
+            PlayerManager.gameEnds(player)
         }
 
         for (it in players.toList()) {
