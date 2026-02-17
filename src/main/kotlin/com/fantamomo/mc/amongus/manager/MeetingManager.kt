@@ -10,6 +10,7 @@ import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.role.Team
+import com.fantamomo.mc.amongus.role.crewmates.MayorRole
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.util.Cooldown
 import com.fantamomo.mc.amongus.util.internal.NMS
@@ -165,7 +166,7 @@ class MeetingManager(private val game: Game) : Listener {
         private val foundBody: AmongUsPlayer?
     ) {
         private var timer: Cooldown? = null
-        private val votes: MutableMap<AmongUsPlayer, Vote> = mutableMapOf()
+        private val votes: MutableMap<Voter, Vote> = mutableMapOf()
         var respawnLocation: Location? = null
             private set
         var ejectedPlayer: AmongUsPlayer? = null
@@ -323,18 +324,22 @@ class MeetingManager(private val game: Game) : Listener {
             votes.clear()
             timer = Cooldown(game.settings[SettingsKey.MEETING.MEETING_VOTING_TIME], true)
             if (game.settings[SettingsKey.MEETING.MEETING_DISCUSSION_TIME] >= Duration.ZERO) {
-                game.sendTitle(
-                    TitlePart.TITLE,
-                    textComponent {
-                        translatable("meeting.voting.start")
-                    }
-                )
-                game.sendTitle(
-                    TitlePart.SUBTITLE,
-                    textComponent {
-                        translatable("meeting.voting.start.subtitle")
-                    }
-                )
+                for (player in game.players) {
+                    val p = player.player
+                    if (p == null || !player.isAlive) continue
+                    p.sendTitlePart(
+                        TitlePart.TITLE,
+                        textComponent {
+                            translatable("meeting.voting.start")
+                        }
+                    )
+                    p.sendTitlePart(
+                        TitlePart.SUBTITLE,
+                        textComponent {
+                            translatable("meeting.voting.start.subtitle")
+                        }
+                    )
+                }
             }
         }
 
@@ -346,7 +351,8 @@ class MeetingManager(private val game: Game) : Listener {
             respawnLocation = ejectedPlayer?.livingEntity?.location
             showVoteResult(ejectedPlayer)
 
-            votes.entries.forEach { (player, vote) ->
+            votes.entries.forEach { (voter, vote) ->
+                val player = voter.player
                 player.statistics.voted.increment()
                 when (vote) {
                     is Vote.For -> {
@@ -375,6 +381,12 @@ class MeetingManager(private val game: Game) : Listener {
         }
 
         fun voteFor(voter: AmongUsPlayer, target: AmongUsPlayer): Boolean {
+            val mayorVote = voter.assignedRole?.definition === MayorRole && hasVoted(voter)
+            return voteFor(voter, target, mayorVote)
+        }
+
+        fun voteFor(voter: AmongUsPlayer, target: AmongUsPlayer, mayorVote: Boolean): Boolean {
+            val voter = if (mayorVote) Voter.MayorVoter(voter) else Voter.NormalPlayer(voter)
             if (game.phase != GamePhase.VOTING || voter in votes) return false
             if (!target.isAlive) return false
             votes[voter] = Vote.For(target)
@@ -390,14 +402,22 @@ class MeetingManager(private val game: Game) : Listener {
         }
 
         fun voteSkip(voter: AmongUsPlayer): Boolean {
+            val mayorVote = voter.assignedRole?.definition === MayorRole && hasVoted(voter)
+            return voteSkip(voter, mayorVote)
+        }
+
+        fun voteSkip(voter: AmongUsPlayer, mayorVote: Boolean): Boolean {
+            val voter = if (mayorVote) Voter.MayorVoter(voter) else Voter.NormalPlayer(voter)
             if (game.phase != GamePhase.VOTING || voter in votes) return false
             votes[voter] = Vote.Skip
             mayEndVoting()
             return true
         }
 
-        fun hasVoted(player: AmongUsPlayer): Boolean =
-            player in votes
+        fun hasVoted(player: AmongUsPlayer, mayorVote: Boolean = false): Boolean {
+            val voter = if (mayorVote) Voter.MayorVoter(player) else Voter.NormalPlayer(player)
+            return voter in votes
+        }
 
         private fun calculateVoteResult(): AmongUsPlayer? {
             val counts = mutableMapOf<AmongUsPlayer, Int>()
@@ -485,12 +505,13 @@ class MeetingManager(private val game: Game) : Listener {
         }
 
         fun openVoteInventory(player: AmongUsPlayer) {
-            if (hasVoted(player)) {
+            if (hasVoted(player) && player.assignedRole?.definition !== MayorRole || hasVoted(player, true)) {
                 voteInventories.remove(player)
                 return
             }
+            val mayorVoting = player.assignedRole?.definition === MayorRole && hasVoted(player, false)
             val view = STONECUTTER.builder()
-                .title(Component.translatable("meeting.voting.title"))
+                .title(Component.translatable("meeting.voting.title" + if (mayorVoting) ".mayor" else ""))
                 .build(player.player ?: return)
 
             val item = ItemStack(Material.BARRIER).apply {
@@ -612,8 +633,14 @@ class MeetingManager(private val game: Game) : Listener {
         val VOTING_KEY = NamespacedKey(AmongUs, "meeting/voting")
     }
 
+    sealed interface Voter {
+        val player: AmongUsPlayer
+        data class NormalPlayer(override val player: AmongUsPlayer) : Voter
+        data class MayorVoter(override val player: AmongUsPlayer) : Voter
+    }
+
     sealed interface Vote {
-        object Skip : Vote
+        data object Skip : Vote
         data class For(val target: AmongUsPlayer) : Vote
     }
 

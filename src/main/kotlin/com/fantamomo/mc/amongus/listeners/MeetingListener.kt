@@ -79,6 +79,7 @@ object MeetingListener : Listener {
             val target = item.persistentDataContainer.get(MeetingManager.VOTING_KEY, PersistentDataType.STRING) ?: return
             if (target == "close") {
                 player.closeInventory()
+                meeting.voteInventories.values.remove(view)
                 return
             }
             if (target == "skip") {
@@ -89,6 +90,7 @@ object MeetingListener : Listener {
                 meeting.voteFor(voter, targetPlayer)
             }
             player.closeInventory()
+            meeting.voteInventories.values.remove(view)
         }
     }
 
