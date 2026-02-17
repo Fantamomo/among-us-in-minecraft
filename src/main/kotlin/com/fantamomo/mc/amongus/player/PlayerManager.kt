@@ -18,10 +18,6 @@ object PlayerManager {
     private val players = mutableListOf<AmongUsPlayer>()
     private var taskId = -1
 
-    init {
-        taskId = AmongUs.server.scheduler.scheduleSyncRepeatingTask(AmongUs, ::tick, 0L, 1L)
-    }
-
     fun getPlayers(): List<AmongUsPlayer> = players
 
     fun exists(uuid: UUID) = players.any { it.uuid == uuid }
@@ -126,12 +122,6 @@ object PlayerManager {
         val amongUsPlayer = getPlayer(player.uniqueId)
         amongUsPlayer?.player = player
         return amongUsPlayer
-    }
-
-    private fun tick() {
-        players.forEach {
-            it.mannequinController.syncFromPlayer()
-        }
     }
 
     fun stop() {

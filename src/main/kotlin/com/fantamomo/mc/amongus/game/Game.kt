@@ -95,6 +95,9 @@ class Game(
     fun tick() {
         ticks++
         if (phase == GamePhase.LOBBY || phase == GamePhase.STARTING) {
+            for (player in players) {
+                player.mannequinController.syncFromPlayer()
+            }
             scoreboardManager.tick()
 
             if (startCooldownTicks > ticks) {
@@ -166,6 +169,9 @@ class Game(
         roleManager.tick()
         morphManager.tick()
         ghostFormManager.tick()
+        for (player in players) {
+            player.mannequinController.syncFromPlayer()
+        }
     }
 
     fun getPlayer(uuid: UUID) = players.find { it.uuid == uuid }

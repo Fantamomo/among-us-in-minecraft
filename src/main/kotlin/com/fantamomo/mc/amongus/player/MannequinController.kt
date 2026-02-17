@@ -9,10 +9,7 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
 import org.bukkit.Location
-import org.bukkit.entity.Display
-import org.bukkit.entity.Mannequin
-import org.bukkit.entity.Player
-import org.bukkit.entity.TextDisplay
+import org.bukkit.entity.*
 import org.bukkit.util.Transformation
 import java.util.*
 import kotlin.math.absoluteValue
@@ -106,7 +103,7 @@ class MannequinController(
     private var frozen = false
     private var static = false
     private var invisible = false
-    private var dontShowSneakingUntil: Long? = null
+    private var dontShowSomePosesUntil: Long? = null
 
     /* =========================
        === Lifecycle ===
@@ -308,12 +305,14 @@ class MannequinController(
     }
 
     private fun syncPose(player: Player, mannequin: Mannequin) {
-        mannequin.pose = player.pose
-        val dontShowSneakingUntil = dontShowSneakingUntil
-        if (dontShowSneakingUntil == null || dontShowSneakingUntil <= System.currentTimeMillis()) {
+        val pose = player.pose
+        val dontShowSomePosesUntil = dontShowSomePosesUntil
+        if (dontShowSomePosesUntil == null || dontShowSomePosesUntil <= System.currentTimeMillis()) {
+            mannequin.pose = pose
             mannequin.isSneaking = player.isSneaking
-            this.dontShowSneakingUntil = null
+            this.dontShowSomePosesUntil = null
         } else {
+            if (pose != Pose.SNEAKING && pose != Pose.CROAKING) mannequin.pose = pose
             mannequin.isSneaking = false
         }
         mannequin.isGliding = player.isGliding
@@ -360,8 +359,8 @@ class MannequinController(
         hideFrom(owner.player ?: return)
     }
 
-    fun hideSneakingFor(duration: Duration) {
-        dontShowSneakingUntil = System.currentTimeMillis() + duration.inWholeMilliseconds
+    fun hideSomePosesFor(duration: Duration) {
+        dontShowSomePosesUntil = System.currentTimeMillis() + duration.inWholeMilliseconds
     }
 
     /* =========================

@@ -16,7 +16,6 @@ import org.bukkit.Material
 import org.bukkit.craftbukkit.entity.CraftEntity
 import org.bukkit.craftbukkit.entity.CraftPlayer
 import org.bukkit.entity.ArmorStand
-import kotlin.time.Duration.Companion.milliseconds
 import kotlin.uuid.Uuid
 
 class CameraManager(val game: Game) {
@@ -123,17 +122,19 @@ class CameraManager(val game: Game) {
             actionBar.remove()
 
             val player = player.player
+            val mannequinController = this.player.mannequinController
             if (player != null) {
-                val loc = this.player.mannequinController.getEntity()?.location ?: lastPosition
+                val loc = mannequinController.getEntity()?.location ?: lastPosition
                 if (loc != null) player.teleport(loc)
+                ignorePlayerStopSpectatingEntityEvent = true
                 setSpectatorTarget(null)
+                ignorePlayerStopSpectatingEntityEvent = false
                 player.hideEntity(AmongUs, camera.armorStand)
                 player.sendBlockChange(camera.location, Material.AIR.createBlockData())
             }
-            this.player.mannequinController.apply {
+            mannequinController.apply {
                 hideFromSelf()
                 unfreeze()
-                hideSneakingFor(500.milliseconds)
             }
             val ability = this.player.getAssignedAbility(RemoteCameraAbility)
             if (ability != null) {
@@ -174,6 +175,7 @@ class CameraManager(val game: Game) {
     fun joinCamera(player: AmongUsPlayer, camera: Camera) {
         var cameraPlayer = getCamera(player)
         if (cameraPlayer != null) return
+        if (player.player?.isSneaking == true) return
         cameraPlayer = CameraPlayer(player, camera)
         playersInCamera.add(cameraPlayer)
     }

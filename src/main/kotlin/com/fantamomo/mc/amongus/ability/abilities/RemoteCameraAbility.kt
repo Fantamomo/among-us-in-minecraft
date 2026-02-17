@@ -55,6 +55,12 @@ object RemoteCameraAbility :
                     else null
                 }
 
+                condition {
+                    if (player.player?.isSneaking == true)
+                        BlockReason.Custom("sneaking")
+                    else null
+                }
+
                 // ---------- ACTIVE ----------
 
                 state(AbilityItemState.ACTIVE) {
@@ -82,7 +88,7 @@ object RemoteCameraAbility :
 
                     render {
                         material = Material.BARRIER
-                        translationKey = when (ctx.getBlockReason()) {
+                        translationKey = when (val reason = ctx.getBlockReason()) {
 
                             BlockReason.Sabotage ->
                                 "ability.general.disabled.sabotage"
@@ -93,8 +99,11 @@ object RemoteCameraAbility :
                             BlockReason.InMeeting ->
                                 "ability.general.disabled.in_meeting"
 
-                            is BlockReason.Custom ->
+                            is BlockReason.Custom if (reason.id == "inCams") ->
                                 "ability.remote_camera.camera.already_in_cams"
+
+                            is BlockReason.Custom if (reason.id == "sneaking") ->
+                                "ability.remote_camera.camera.sneaking"
 
                             else ->
                                 "ability.remote_camera.camera.already_in_cams"
