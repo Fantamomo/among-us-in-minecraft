@@ -4,9 +4,11 @@ import com.destroystokyo.paper.profile.ProfileProperty
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.manager.EntityManager
 import com.fantamomo.mc.amongus.role.Team
+import com.fantamomo.mc.amongus.role.crewmates.SnitchRole
 import io.papermc.paper.datacomponent.item.ResolvableProfile
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextColor
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.entity.*
@@ -94,9 +96,10 @@ class MannequinController(
        ========================= */
 
     private var mannequin: Mannequin? = null
-    private var nameDisplay: TextDisplay? = null
-    private var redNameDisplay: TextDisplay? = null
     private var lastLocation: Location? = null
+
+    private val colorDisplays: MutableMap<TextColor, TextDisplay> = mutableMapOf()
+    private val viewerColors: MutableMap<UUID, TextColor> = mutableMapOf()
 
     private val visibleTo: MutableSet<UUID> = mutableSetOf()
 
@@ -124,31 +127,15 @@ class MannequinController(
             it.isImmovable = true
         }
 
-        nameDisplay = player.world.spawn(player.location, TextDisplay::class.java) {
-            it.text(Component.text(player.name))
-
-            modifyTextDisplay(it)
-
-            mannequin?.addPassenger(it)
-        }
-        redNameDisplay = player.world.spawn(player.location, TextDisplay::class.java) {
-            it.text(Component.text(player.name, NamedTextColor.RED))
-            modifyTextDisplay(it)
-            it.isVisibleByDefault = false
-
-            mannequin?.addPassenger(it)
-        }
-
         player.hideEntity(AmongUs, mannequin!!)
-        player.hideEntity(AmongUs, nameDisplay!!)
-        player.hideEntity(AmongUs, redNameDisplay!!)
 
         EntityManager.addEntityToRemoveOnEnd(owner.game, mannequin!!)
-        EntityManager.addEntityToRemoveOnEnd(owner.game, nameDisplay!!)
-        EntityManager.addEntityToRemoveOnEnd(owner.game, redNameDisplay!!)
+
         lastLocation = player.location.clone()
 
         visibleTo.clear()
+        viewerColors.clear()
+        colorDisplays.clear()
 
         showToAll()
     }
@@ -167,12 +154,12 @@ class MannequinController(
 
     fun despawn() {
         mannequin?.remove()
-        nameDisplay?.remove()
-        redNameDisplay?.remove()
+
+        colorDisplays.values.forEach { it.remove() }
 
         mannequin = null
-        nameDisplay = null
-        redNameDisplay = null
+        colorDisplays.clear()
+        viewerColors.clear()
 
         lastLocation = null
         visibleTo.clear()
@@ -191,27 +178,81 @@ class MannequinController(
             visibleTo += player.uniqueId
         }
 
-        if (PlayerManager.getPlayer(player)?.assignedRole?.definition?.team == Team.IMPOSTERS
-            && owner.assignedRole?.definition?.team == Team.IMPOSTERS
-        ) {
-            redNameDisplay?.let { player.showEntity(AmongUs, it) }
-        } else {
-            nameDisplay?.let { player.showEntity(AmongUs, it) }
-        }
+        updateNameTag(player)
+    }
+
+    fun updateNameTag(player: AmongUsPlayer) {
+        updateNameTag(player.player ?: return)
     }
 
     fun updateNameTag(player: Player) {
+        val mannequin = mannequin ?: return
+        if (!player.canSee(mannequin)) return
+
         val amongUsPlayer = PlayerManager.getPlayer(player)
 
-        redNameDisplay?.let { player.hideEntity(AmongUs, it) }
-        nameDisplay?.let { player.hideEntity(AmongUs, it) }
+        val color = viewerColors[player.uniqueId]
+            ?: determineDefaultColorFor(player, amongUsPlayer)
 
-        if (amongUsPlayer?.assignedRole?.definition?.team == Team.IMPOSTERS
-            && owner.assignedRole?.definition?.team == Team.IMPOSTERS
-        ) {
-            redNameDisplay?.let { player.showEntity(AmongUs, it) }
+        if (colorDisplays[color]?.let { player.canSee(it) } == true) {
+            return
+        }
+
+        colorDisplays.values.forEach {
+            player.hideEntity(AmongUs, it)
+        }
+
+        val display = colorDisplays.getOrPut(color) {
+            mannequin.world.spawn(mannequin.location, TextDisplay::class.java) {
+                it.text(Component.text(owner.name, color))
+                modifyTextDisplay(it)
+                it.isVisibleByDefault = false
+                mannequin.addPassenger(it)
+                EntityManager.addEntityToRemoveOnEnd(owner.game, it)
+            }
+        }
+
+        player.showEntity(AmongUs, display)
+        viewerColors[player.uniqueId] = color
+    }
+
+    fun setNameColorFor(viewer: Player, color: TextColor?) {
+        setNameColorFor0(viewer.uniqueId, color)
+        updateNameTag(viewer)
+    }
+
+    fun setNameColorFor(viewer: UUID, color: TextColor?) {
+        setNameColorFor0(viewer, color)
+        updateNameTag(Bukkit.getPlayer(viewer) ?: return)
+    }
+
+    private fun setNameColorFor0(viewer: UUID, color: TextColor?) {
+        if (color == null) {
+            viewerColors.remove(viewer)
         } else {
-            nameDisplay?.let { player.showEntity(AmongUs, it) }
+            viewerColors[viewer] = color
+        }
+    }
+
+    fun resetNameColorFor(viewer: UUID) {
+        viewerColors.remove(viewer)
+    }
+
+    private fun determineDefaultColorFor(
+        viewer: Player,
+        viewerAmongUs: AmongUsPlayer?
+    ): TextColor {
+
+        val assignedRole = viewerAmongUs?.assignedRole
+
+        return if (
+            owner.assignedRole?.definition?.team == Team.IMPOSTERS &&
+            (assignedRole?.definition?.team == Team.IMPOSTERS ||
+                    (assignedRole as? SnitchRole.AssignedSnitchRole)?.canSeeImposters() == true)
+        ) {
+            NamedTextColor.RED
+        } else {
+            NamedTextColor.WHITE
         }
     }
 
@@ -220,8 +261,14 @@ class MannequinController(
             player.hideEntity(AmongUs, it)
             visibleTo -= player.uniqueId
         }
-        nameDisplay?.let { player.hideEntity(AmongUs, it) }
-        redNameDisplay?.let { player.hideEntity(AmongUs, it) }
+
+        viewerColors[player.uniqueId]?.let { color ->
+            colorDisplays[color]?.let {
+                player.hideEntity(AmongUs, it)
+            }
+        }
+
+        viewerColors.remove(player.uniqueId)
     }
 
     fun hideFromAll() {
@@ -382,8 +429,9 @@ class MannequinController(
             ResolvableProfile.resolvableProfile(player.profile)
         val helmet = player.color.toItemStack(player.armorTrim)
         mannequin?.equipment?.helmet = helmet
-        nameDisplay?.text(Component.text(player.name))
-        redNameDisplay?.text(Component.text(player.name, NamedTextColor.RED))
+        for ((color, display) in colorDisplays) {
+            display.text(Component.text(player.name, color))
+        }
     }
 
     @Suppress("UnstableApiUsage")
