@@ -1,7 +1,6 @@
 package com.fantamomo.mc.amongus.command
 
-import com.fantamomo.mc.adventure.text.args
-import com.fantamomo.mc.adventure.text.translatable
+import com.fantamomo.mc.adventure.text.*
 import com.fantamomo.mc.amongus.area.GameArea
 import com.fantamomo.mc.amongus.command.arguments.*
 import com.fantamomo.mc.amongus.game.Game
@@ -22,6 +21,7 @@ import com.mojang.brigadier.arguments.IntegerArgumentType
 import io.papermc.paper.command.brigadier.CommandSourceStack
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.World
 import org.bukkit.entity.Player
 
@@ -862,6 +862,32 @@ private fun PaperCommand.createGameCommand() = literal("create") {
 
 private fun KtArgumentCommandBuilder<CommandSourceStack, *>.createGameCommandExecute() = execute {
     val area = arg<GameArea>("area")
+
+    val missedLocations = area.getMissedLocations()
+    if (missedLocations.isNotEmpty()) {
+        sendMessage {
+            translatable("command.error.admin.game.create.missing_locations") {
+                args {
+                    component("missing") {
+                        var first = true
+                        for (missedLocation in missedLocations) {
+                            if (first) {
+                                first = false
+                            } else {
+                                text(", ", NamedTextColor.GRAY)
+                            }
+                            translatable("area.location.name.$missedLocation") {
+                                hoverEvent(KHoverEventType.ShowText) {
+                                    translatable("area.location.description.$missedLocation")
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return@execute 0
+    }
 
     val world = optionalArg<World>("world") ?: source.location.world
 
