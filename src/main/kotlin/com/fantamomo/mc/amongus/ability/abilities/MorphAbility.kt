@@ -64,6 +64,7 @@ object MorphAbility : Ability<MorphAbility, MorphAbility.AssignedMorphAbility> {
                             Component.translatable("ability.morph.morph.active.unmorph").translateTo(player.locale)
                                 .decoration(TextDecoration.ITALIC, false)
                         )
+                        item.amount = morphedPlayer.remainingTime.inWholeSeconds.toInt().coerceIn(1, 99)
                         return@renderOverride item
                     }
 
