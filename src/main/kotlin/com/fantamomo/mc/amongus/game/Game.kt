@@ -311,12 +311,7 @@ class Game(
         sendTitle(
             TitlePart.TITLE,
             textComponent {
-                translatable(
-                    when (team) {
-                        Team.CREWMATES -> "win.crewmate"
-                        Team.IMPOSTERS -> "win.imposter"
-                    }
-                )
+                translatable("win.${team.id}")
             }
         )
 
@@ -334,7 +329,7 @@ class Game(
             if (ventManager.isVented(player)) ventManager.ventOut(player)
 
             val t = player.assignedRole?.definition?.team ?: Team.CREWMATES
-            val hasWon = t == team
+            val hasWon = t === team
 
             player.editStatistics {
                 val resultCount = when {
