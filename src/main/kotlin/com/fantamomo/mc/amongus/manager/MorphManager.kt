@@ -3,11 +3,13 @@ package com.fantamomo.mc.amongus.manager
 import com.fantamomo.mc.adventure.text.args
 import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.AmongUs
+import com.fantamomo.mc.amongus.ability.builder.AbilityTimer
 import com.fantamomo.mc.amongus.data.AmongUsConfig
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.player.PlayerManager
+import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.task.GuiAssignedTask
 import com.fantamomo.mc.amongus.util.CustomPersistentDataTypes
 import com.fantamomo.mc.amongus.util.internal.MorphSkinManager
@@ -25,6 +27,9 @@ import org.bukkit.inventory.InventoryHolder
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.ItemType
 import org.slf4j.LoggerFactory
+import kotlin.time.Clock
+import kotlin.time.Duration
+import kotlin.time.Instant
 import kotlin.uuid.toJavaUuid
 import kotlin.uuid.toKotlinUuid
 
@@ -36,8 +41,14 @@ class MorphManager(val game: Game) {
     inner class MorphedPlayer(
         val player: AmongUsPlayer,
         val target: AmongUsPlayer,
-        var frames: List<MorphSkinManager.Skin>? = null
+        val abilityTimer: AbilityTimer? = null,
+        var frames: List<MorphSkinManager.Skin>? = null,
+        val start: Instant = Clock.System.now()
     ) {
+        val remainingTime: Duration
+            get() = (player.game.settings[SettingsKey.ROLES.MORPHLING_MORPH_DURATION] - (Clock.System.now() - start)).takeIf { it > Duration.ZERO }
+                ?: Duration.ZERO
+
         val actionBar = player.game.actionBarManager.part(
             player,
             "morph",
@@ -89,14 +100,23 @@ class MorphManager(val game: Game) {
                     player.mannequinController.restoreAppearance()
                     actionBar.remove()
                     morphs.remove(player)
+                    abilityTimer?.start(player.game.settings[SettingsKey.ROLES.MORPHLING_MORPH_COOLDOWN])
                 }
             } else {
+                abilityTimer?.start(player.game.settings[SettingsKey.ROLES.MORPHLING_MORPH_COOLDOWN])
                 player.mannequinController.restoreAppearance()
                 actionBar.remove()
+                morphs.remove(player)
             }
         }
 
         fun tick() {
+            if (morphing != false) {
+                if (remainingTime <= Duration.ZERO) {
+                    unmorph()
+                }
+            }
+
             val frames = animationFrames ?: return
             if (player.player == null) return
 
@@ -109,9 +129,11 @@ class MorphManager(val game: Game) {
                         args { string("player", target.name) }
                     }
                 }
+
                 false -> com.fantamomo.mc.adventure.text.textComponent {
                     translatable("actionbar.morph.info.unmorphing")
                 }
+
                 null -> null
             }
 
@@ -159,7 +181,7 @@ class MorphManager(val game: Game) {
         ticks++
     }
 
-    fun morph(player: AmongUsPlayer, target: AmongUsPlayer) {
+    fun morph(player: AmongUsPlayer, target: AmongUsPlayer, abilityTimer: AbilityTimer? = null) {
         if (isMorphed(player)) return
 
         if (!AmongUsConfig.MorphBlender.enabled) {
@@ -182,7 +204,7 @@ class MorphManager(val game: Game) {
 
         val cached = expectedHashes.all { it == null || MorphSkinManager.getTexture(it) != null }
 
-        val morphed = MorphedPlayer(player, target)
+        val morphed = MorphedPlayer(player, target, abilityTimer)
         morphs[player] = morphed
 
         if (cached) {
