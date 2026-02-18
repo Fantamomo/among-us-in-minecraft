@@ -163,6 +163,7 @@ object AmongUsCommands {
      *
      * If an imposter tries to message another imposter, they will receive an info message that they should use `/impostermsg`
      */
+    @NMS
     private class MsgInterceptor(
         private val original: Command<CommandSourceStack>
     ) : Command<CommandSourceStack> {

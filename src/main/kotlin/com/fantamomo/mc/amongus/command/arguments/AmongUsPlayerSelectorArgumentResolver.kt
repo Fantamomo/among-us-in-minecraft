@@ -2,6 +2,7 @@ package com.fantamomo.mc.amongus.command.arguments
 
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.player.PlayerManager
+import com.fantamomo.mc.amongus.util.internal.NMS
 import com.mojang.brigadier.exceptions.CommandSyntaxException
 import io.papermc.paper.command.brigadier.CommandSourceStack
 import it.unimi.dsi.fastutil.objects.ObjectArrayList
@@ -56,6 +57,7 @@ import kotlin.reflect.KClass
  * the property of Mojang Studios. Paper and paperweight are projects of the
  * PaperMC organization.
  */
+@NMS
 class AmongUsPlayerSelectorArgumentResolver(
     private val handle: EntitySelector,
     private val single: Boolean = false
