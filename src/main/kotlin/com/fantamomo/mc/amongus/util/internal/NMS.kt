@@ -13,6 +13,6 @@ package com.fantamomo.mc.amongus.util.internal
  * @author Fantamomo
  * @since 1.0-SNAPSHOT
  */
-@Target(AnnotationTarget.FUNCTION)
+@Target(AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY, AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.SOURCE)
 annotation class NMS
