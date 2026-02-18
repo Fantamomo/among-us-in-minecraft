@@ -1,5 +1,7 @@
 package com.fantamomo.mc.amongus.player
 
+import com.fantamomo.mc.amongus.util.hideTooltip
+import io.papermc.paper.datacomponent.DataComponentTypes
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.TextColor
 import org.bukkit.Color
@@ -49,6 +51,10 @@ enum class PlayerColor(val color: Color, val helmet: ItemType.Typed<out ArmorMet
             config.setColor(color)
         }
         if (trim != null) config.trim = trim
+    }.apply {
+        unsetData(DataComponentTypes.ATTRIBUTE_MODIFIERS)
+        setData(DataComponentTypes.UNBREAKABLE)
+        hideTooltip()
     }
 
     companion object {
