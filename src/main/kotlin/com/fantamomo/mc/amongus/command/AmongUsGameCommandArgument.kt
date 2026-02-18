@@ -271,14 +271,21 @@ private fun KtCommandBuilder<CommandSourceStack, *>.killPlayerGamCommandExecute(
 }
 
 private fun PaperCommand.letWinGameCommand() = literal("letwin") {
-    Team.entries.forEach(::letWinGameCommandArgument)
+    Team.getTeams().forEach(::letWinGameCommandArgument)
 }
 
-private fun PaperCommand.letWinGameCommandArgument(team: Team) = literal(team.name.lowercase()) {
-    argument("game", GameArgumentType(false)) {
+private fun PaperCommand.letWinGameCommandArgument(team: Team, step: Boolean = false) {
+    if (team is Team.NEUTRAL && !step) {
+        literal("neutral") {
+            letWinGameCommandArgument(team, true)
+        }
+    }
+    literal(team.name) {
+        argument("game", GameArgumentType(false)) {
+            letWinGameCommandExecute(team)
+        }
         letWinGameCommandExecute(team)
     }
-    letWinGameCommandExecute(team)
 }
 
 private fun KtCommandBuilder<CommandSourceStack, *>.letWinGameCommandExecute(team: Team) = execute {
