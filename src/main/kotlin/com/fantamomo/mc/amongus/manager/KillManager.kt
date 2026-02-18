@@ -9,6 +9,7 @@ import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.role.crewmates.TheDamnedRole
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import io.papermc.paper.datacomponent.item.ResolvableProfile
+import net.kyori.adventure.text.Component
 import net.kyori.adventure.title.TitlePart
 import org.bukkit.Location
 import org.bukkit.NamespacedKey
@@ -109,6 +110,20 @@ class KillManager(val game: Game) {
         corpses.any { it.mannequin.location.distanceSquared(location) <= 2 * 2 }
 
     fun nearestCorpse(location: Location): Corpse? = corpses.minByOrNull { it.mannequin.location.distanceSquared(location) }
+
+    fun canKillAsSheriff(sheriff: AmongUsPlayer): Boolean {
+        val loc = sheriff.livingEntityOrNull?.location ?: return false
+        val distance = game.settings[SettingsKey.KILL.KILL_DISTANCE].distance
+        if (game.ventManager.isVented(sheriff)) return false
+        for (player in game.players) {
+            if (player === sheriff) continue
+            if (!player.isAlive) continue
+            if (game.ventManager.isVented(player)) continue
+            val location = player.mannequinController.getEntity()?.location ?: player.livingEntityOrNull?.location ?: continue
+            if (loc.distanceSquared(location) < distance * distance) return true
+        }
+        return true
+    }
 
     fun canKillAsImposter(player: AmongUsPlayer): Boolean {
         val loc = player.livingEntityOrNull?.location ?: return false
@@ -214,6 +229,117 @@ class KillManager(val game: Game) {
     }
 
     fun getCorpses(): List<Corpse> = corpses.toList()
+
+    fun killNearestAsSheriff(sheriff: AmongUsPlayer) {
+        val loc = sheriff.livingEntity.location
+        var nearest: AmongUsPlayer? = null
+        var nearestDistance = Double.MAX_VALUE
+        val distance = game.settings[SettingsKey.KILL.KILL_DISTANCE].distance
+        for (player in game.players) {
+            if (player === sheriff) continue
+            if (!player.isAlive) continue
+            if (game.ventManager.isVented(player)) continue
+            val location = player.mannequinController.getEntity()?.location ?: player.livingEntity.location
+            val distanceSquared = loc.distanceSquared(location)
+            if (distanceSquared < nearestDistance && distanceSquared < distance * distance) {
+                nearest = player
+                nearestDistance = distanceSquared
+            }
+        }
+        if (nearest != null) killBySheriff(sheriff, nearest)
+    }
+
+    private fun killBySheriff(
+        sheriff: AmongUsPlayer,
+        target: AmongUsPlayer
+    ) {
+        if (target.isInCams()) {
+            game.cameraManager.leaveCams(target)
+        }
+        target.player?.run {
+            sendTitlePart(
+                TitlePart.TITLE,
+                textComponent {
+                    translatable("dead.by.sheriff")
+                }
+            )
+            sendTitlePart(
+                TitlePart.SUBTITLE,
+                textComponent {
+                    translatable("dead.by.sheriff.subtitle") {
+                        args {
+                            component("player") {
+                                objectComponent {
+                                    playerHead {
+                                        id(sheriff.uuid)
+                                    }
+                                }
+                                space()
+                                text(sheriff.name)
+                            }
+                        }
+                    }
+                }
+            )
+        }
+        val location = target.livingEntity.location
+
+//        imposter.statistics.killsAsImposter.increment()
+//        target.statistics.killedByImposter.increment()
+//        target.statistics.timeUntilKilled.timerStop()
+//        if (game.sabotageManager.isCurrentlySabotage()) {
+//            imposter.statistics.killsAsImposterWhileSabotage.increment()
+//            target.statistics.killedByImposterWhileSabotage.increment()
+//        }
+        val sheriffLoc = sheriff.livingEntity.location
+
+        sheriff.player?.also { p ->
+            val clone = location.clone()
+            clone.rotation = p.location.rotation
+            p.teleport(clone)
+            p.addPotionEffect(slownessEffect)
+        }
+
+        showCorpse(target, location)
+        target.player?.also { p ->
+            p.addPotionEffect(blindnessEffect)
+            p.closeInventory()
+            p.sendHurtAnimation(0f)
+        }
+        markAsDead(target)
+
+        if (target.assignedRole?.definition?.team != Team.IMPOSTERS) {
+            showCorpse(sheriff, sheriffLoc)
+            sheriff.player?.also { p ->
+                p.sendTitlePart(
+                    TitlePart.TITLE,
+                    textComponent {
+                        translatable("dead.by.sheriff.wrong") {
+                            args {
+                                component("player") {
+                                    objectComponent {
+                                        playerHead {
+                                            id(target.uuid)
+                                        }
+                                    }
+                                    space()
+                                    text(target.name)
+                                }
+                            }
+                        }
+                    }
+                )
+                p.sendTitlePart(
+                    TitlePart.SUBTITLE,
+                    Component.translatable("dead.by.sheriff.subtitle.wrong")
+                )
+                p.addPotionEffect(blindnessEffect)
+                p.sendHurtAnimation(0f)
+            }
+            markAsDead(sheriff)
+        }
+        game.checkWin()
+    }
 
     class Corpse(
         val mannequin: Mannequin,
