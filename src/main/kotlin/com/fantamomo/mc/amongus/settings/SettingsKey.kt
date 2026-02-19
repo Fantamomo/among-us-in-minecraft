@@ -102,6 +102,8 @@ data class SettingsKey<T : Any, S : SettingsType<T>>(
         val GHOST_FORM_COOLDOWN = key("ghost.form.cooldown", DurationSettingsType.min(1.seconds), 30.seconds)
         val GHOST_FORM_DURATION = key("ghost.form.duration", DurationSettingsType.min(1.seconds), 15.seconds)
         val CANNIBAL_BODIES_TO_EAT = key("roles.cannibal.bodies_to_eat", IntSettingsType.range(1, 10), 4)
+        val ARSONIST_DOUSE_COOLDOWN = key("arsonist.douse.cooldown", DurationSettingsType.min(1.seconds), 30.seconds)
+        val ARSONIST_DOUSE_DISTANCE = key("arsonist.douse.distance", EnumSettingsType.create<DistanceEnum>(), DistanceEnum.NORMAL)
     }
 
     object KILL : SettingsGroup("kill", Material.BONE) {
