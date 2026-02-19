@@ -7,7 +7,9 @@ import com.fantamomo.mc.amongus.role.imposters.ImposterRole
 import com.fantamomo.mc.amongus.role.imposters.MinerRole
 import com.fantamomo.mc.amongus.role.imposters.MorphlingRole
 import com.fantamomo.mc.amongus.role.imposters.PhantomRole
+import com.fantamomo.mc.amongus.role.neutral.CannibalRole
 import com.fantamomo.mc.amongus.role.neutral.JesterRole
+import net.kyori.adventure.text.Component
 
 interface Role<R : Role<R, A>, A : AssignedRole<R, A>> {
     val id: String
@@ -15,11 +17,10 @@ interface Role<R : Role<R, A>, A : AssignedRole<R, A>> {
     val canDoTask: Boolean
         get() = team.canDoTask
 
-    /** A translation Key */
-    val name: String
-        get() = "role.$id.name"
-    val description: String
-        get() = "role.$id.description"
+    val name: Component
+        get() = Component.translatable("role.$id.name")
+    val description: Component
+        get() = Component.translatable("role.$id.description")
 
     val defaultAbilities: Set<Ability<*, *>>
 
@@ -44,7 +45,8 @@ interface Role<R : Role<R, A>, A : AssignedRole<R, A>> {
             PhantomRole
         )
         val neutrals: Set<Role<*, *>> = setOf(
-            JesterRole
+            JesterRole,
+            CannibalRole
         )
 
         val roles: Set<Role<*, *>> = crewmates + imposters + neutrals
