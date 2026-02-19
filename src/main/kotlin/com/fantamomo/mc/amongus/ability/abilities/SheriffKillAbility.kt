@@ -82,16 +82,6 @@ object SheriffKillAbility : Ability<SheriffKillAbility, SheriffKillAbility.Assig
                         }
                     }
                 }
-
-                // ---------- COOLDOWN ----------
-
-                state(AbilityItemState.COOLDOWN) {
-
-                    render {
-                        itemType = ItemType.BARRIER
-                        translationKey = "ability.general.disabled.cooldown"
-                    }
-                }
             }
         )
     }

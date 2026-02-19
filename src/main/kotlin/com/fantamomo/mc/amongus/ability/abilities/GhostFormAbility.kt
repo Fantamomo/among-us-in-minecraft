@@ -105,16 +105,6 @@ object GhostFormAbility : Ability<GhostFormAbility, GhostFormAbility.AssignedGho
                         }
                     }
                 }
-
-                // ---------- COOLDOWN ----------
-
-                state(AbilityItemState.COOLDOWN) {
-
-                    render {
-                        itemType = ItemType.BARRIER
-                        translationKey = "ability.general.disabled.cooldown"
-                    }
-                }
             }
         )
     }

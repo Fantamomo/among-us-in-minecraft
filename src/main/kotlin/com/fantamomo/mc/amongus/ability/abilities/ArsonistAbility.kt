@@ -91,16 +91,6 @@ object ArsonistAbility : Ability<ArsonistAbility, ArsonistAbility.AssignedArsoni
                         }
                     }
                 }
-
-                // ---------- COOLDOWN ----------
-
-                state(AbilityItemState.COOLDOWN) {
-
-                    render {
-                        itemType = ItemType.BARRIER
-                        translationKey = "ability.general.disabled.cooldown"
-                    }
-                }
             }
         )
     }

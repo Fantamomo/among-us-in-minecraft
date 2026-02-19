@@ -102,13 +102,6 @@ object MorphAbility : Ability<MorphAbility, MorphAbility.AssignedMorphAbility> {
                         }
                     }
                 }
-
-                state(AbilityItemState.COOLDOWN) {
-                    render {
-                        itemType = ItemType.BARRIER
-                        translationKey = "ability.general.disabled.cooldown"
-                    }
-                }
             }
         )
     }

@@ -111,15 +111,6 @@ object RemoteCameraAbility :
                         }
                     }
                 }
-
-                // ---------- COOLDOWN (unused but present) ----------
-
-                state(AbilityItemState.COOLDOWN) {
-                    render {
-                        itemType = ItemType.BARRIER
-                        translationKey = "ability.general.disabled.cooldown"
-                    }
-                }
             }
         )
     }

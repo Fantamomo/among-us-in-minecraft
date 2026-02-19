@@ -9,7 +9,6 @@ import com.fantamomo.mc.amongus.ability.builder.itemType
 import com.fantamomo.mc.amongus.ability.item.AbilityItem
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.sabotage.Sabotage
-import org.bukkit.inventory.ItemType
 
 object SabotageAbility :
     Ability<SabotageAbility, SabotageAbility.AssignedSabotageAbility> {
@@ -29,7 +28,6 @@ object SabotageAbility :
             player.game.sabotageManager.supportedSabotages.values
                 .map(::createItem)
 
-        @Suppress("UnstableApiUsage")
         private fun createItem(
             sabotage: Sabotage<*, *>
         ): AbilityItem = abilityItem(sabotage.sabotageType.id) {
@@ -92,15 +90,6 @@ object SabotageAbility :
                         else ->
                             "ability.sabotage.disabled"
                     }
-                }
-            }
-
-            // ---------- COOLDOWN ----------
-
-            state(AbilityItemState.COOLDOWN) {
-                render {
-                    itemType = ItemType.BARRIER
-                    translationKey = "ability.general.disabled.cooldown"
                 }
             }
         }
