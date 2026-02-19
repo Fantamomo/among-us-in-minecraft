@@ -21,7 +21,7 @@ class AbilityItemBuilder(
 
     init {
         AbilityItemState.entries.forEach {
-            states[it] = AbilityItemStateDefinition()
+            states[it] = it.createDefault()
         }
     }
 
