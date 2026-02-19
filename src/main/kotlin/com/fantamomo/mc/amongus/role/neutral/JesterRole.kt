@@ -8,7 +8,7 @@ import com.fantamomo.mc.amongus.role.Team
 
 object JesterRole : Role<JesterRole, JesterRole.AssignedJesterRole> {
     override val id: String = "jester"
-    override val team: Team = Team.NEUTRAL(JesterRole)
+    override val team: Team = Team.NEUTRAL.JESTER
     override val defaultAbilities: Set<Ability<*, *>> = setOf()
 
     override fun assignTo(player: AmongUsPlayer) = AssignedJesterRole(player)
