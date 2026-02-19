@@ -8,8 +8,9 @@ import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.role.AssignedRole
 import com.fantamomo.mc.amongus.role.Role
 import com.fantamomo.mc.amongus.role.Team
+import com.fantamomo.mc.amongus.role.marker.KillerRole
 
-object ImposterRole : Role<ImposterRole, ImposterRole.AssignedImposterRole> {
+object ImposterRole : Role<ImposterRole, ImposterRole.AssignedImposterRole>, KillerRole {
     override val id: String = "imposter"
     override val team: Team = Team.IMPOSTERS
     override val defaultAbilities: Set<Ability<*, *>> = setOf(

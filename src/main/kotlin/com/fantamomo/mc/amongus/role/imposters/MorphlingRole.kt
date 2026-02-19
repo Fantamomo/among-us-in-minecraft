@@ -10,8 +10,9 @@ import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.role.AssignedRole
 import com.fantamomo.mc.amongus.role.Role
 import com.fantamomo.mc.amongus.role.Team
+import com.fantamomo.mc.amongus.role.marker.KillerRole
 
-object MorphlingRole : Role<MorphlingRole, MorphlingRole.AssignedMorphlingRole> {
+object MorphlingRole : Role<MorphlingRole, MorphlingRole.AssignedMorphlingRole>, KillerRole {
     override val id: String = "morphling"
     override val team: Team = Team.IMPOSTERS
     override val defaultAbilities: Set<Ability<*, *>> = ImposterRole.defaultAbilities + MorphAbility
