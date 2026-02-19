@@ -2,6 +2,7 @@ package com.fantamomo.mc.amongus.role
 
 import com.fantamomo.mc.amongus.role.crewmates.CrewmateRole
 import com.fantamomo.mc.amongus.role.imposters.ImposterRole
+import com.fantamomo.mc.amongus.role.neutral.ArsonistRole
 import com.fantamomo.mc.amongus.role.neutral.CannibalRole
 import com.fantamomo.mc.amongus.role.neutral.JesterRole
 import net.kyori.adventure.text.Component
@@ -27,16 +28,26 @@ sealed class Team(val name: String, private val default: Role<*, *>?, val id: St
 
     data object CREWMATES : Team("crewmates", CrewmateRole)
     data object IMPOSTERS : Team("imposters", ImposterRole)
+
     @ConsistentCopyVisibility
     data class NEUTRAL private constructor(val role: Role<*, *>) : Team(role.id, null, "neutral.${role.id}") {
         companion object {
             val JESTER by lazy { NEUTRAL(JesterRole) }
             val CANNIBAL by lazy { NEUTRAL(CannibalRole) }
+            val ARSONIST by lazy { NEUTRAL(ArsonistRole) }
         }
     }
 
     companion object {
         // using lazy initialization for teams, because CREWMATES is due to unknown reason `null`, but IMPOSTERS and JESTER are not
-        val teams: Set<Team> by lazy { setOf(CREWMATES, IMPOSTERS, NEUTRAL.JESTER, NEUTRAL.CANNIBAL) }
+        val teams: Set<Team> by lazy {
+            setOf(
+                CREWMATES,
+                IMPOSTERS,
+                NEUTRAL.JESTER,
+                NEUTRAL.CANNIBAL,
+                NEUTRAL.ARSONIST
+            )
+        }
     }
 }
