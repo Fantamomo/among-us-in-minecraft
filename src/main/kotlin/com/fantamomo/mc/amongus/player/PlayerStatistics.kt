@@ -46,6 +46,8 @@ class PlayerStatistics(uuid: Uuid) {
 
     val cannibalEatenBodies = statistics.counter("cannibal_eaten_bodies")
     val minerCreatedVents = statistics.counter("miner_created_vents")
+    val arsonistDousedPlayers = statistics.counter("arsonist_doused_players")
+    val arsonistDoused = statistics.counter("arsonist_doused")
 
     val ejected = statistics.counter("ejected")
     val ejectedWrong = statistics.counter("ejected_wrong")
