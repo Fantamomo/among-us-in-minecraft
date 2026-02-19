@@ -7,6 +7,7 @@ import com.fantamomo.mc.amongus.role.imposters.ImposterRole
 import com.fantamomo.mc.amongus.role.imposters.MinerRole
 import com.fantamomo.mc.amongus.role.imposters.MorphlingRole
 import com.fantamomo.mc.amongus.role.imposters.PhantomRole
+import com.fantamomo.mc.amongus.role.neutral.ArsonistRole
 import com.fantamomo.mc.amongus.role.neutral.CannibalRole
 import com.fantamomo.mc.amongus.role.neutral.JesterRole
 import net.kyori.adventure.text.Component
@@ -46,7 +47,8 @@ interface Role<R : Role<R, A>, A : AssignedRole<R, A>> {
         )
         val neutrals: Set<Role<*, *>> = setOf(
             JesterRole,
-            CannibalRole
+            CannibalRole,
+            ArsonistRole
         )
 
         val roles: Set<Role<*, *>> = crewmates + imposters + neutrals
