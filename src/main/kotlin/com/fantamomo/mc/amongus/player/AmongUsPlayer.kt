@@ -57,14 +57,20 @@ class AmongUsPlayer internal constructor(
                 _profile = value.playerProfile
             }
         }
-    var armorTrim: ArmorTrim? = null
+    var armorTrim: ArmorTrim? = persistencePlayerData
+        .let { it.trimMaterial to it.trimPattern }
+        .takeIf { it.first != null && it.second != null }
+        ?.let { ArmorTrim(it.first!!, it.second!!) }
         set(value) {
             field = value
+            persistencePlayerData.trimMaterial = value?.material
+            persistencePlayerData.trimPattern = value?.pattern
             color = color
         }
-    var color: PlayerColor = game.randomPlayerColor()
+    var color: PlayerColor = persistencePlayerData.color?.takeIf { color -> game.players.none { it.color == color } } ?: game.randomPlayerColor()
         set(value) {
             field = value
+            persistencePlayerData.color = value
             val helmet = value.toItemStack(armorTrim)
             player?.inventory?.helmet = helmet
             if (!game.morphManager.isMorphed(this)) {
