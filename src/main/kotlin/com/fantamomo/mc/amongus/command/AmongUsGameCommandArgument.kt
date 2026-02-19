@@ -20,7 +20,6 @@ import com.mojang.brigadier.arguments.BoolArgumentType
 import com.mojang.brigadier.arguments.IntegerArgumentType
 import io.papermc.paper.command.brigadier.CommandSourceStack
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes
-import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.World
 import org.bukkit.entity.Player
@@ -187,7 +186,7 @@ private fun PaperCommand.roleSubCommand(
                         if (targeted) {
                             string("player", amongUsPlayer.name)
                         }
-                        component("role", Component.translatable(role.name))
+                        component("role", role.name)
                     }
                 }
             }
