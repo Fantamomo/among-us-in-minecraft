@@ -32,6 +32,8 @@ class TimerStatistic(
         runningSince = null
     }
 
+    override fun shouldSave() = totalMillis != 0L
+
     override fun toData(): MutableMap<String, JsonElement> = mutableMapOf("value" to JsonPrimitive(totalMillis))
 
     companion object {

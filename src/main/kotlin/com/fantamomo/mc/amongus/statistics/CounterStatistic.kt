@@ -10,6 +10,8 @@ class CounterStatistic(override val id: String) : Statistic {
         value++
     }
 
+    override fun shouldSave() = value != 0
+
     override fun toData(): MutableMap<String, JsonElement> = mutableMapOf("value" to JsonPrimitive(value))
 
     companion object {

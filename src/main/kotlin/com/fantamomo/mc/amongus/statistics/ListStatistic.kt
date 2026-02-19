@@ -33,6 +33,8 @@ class ListStatistic(
         startTime = null
     }
 
+    override fun shouldSave() = data.isNotEmpty()
+
     override fun toData(): MutableMap<String, JsonElement> = mutableMapOf("data" to JsonArray(data.map { JsonPrimitive(it) }))
 
     companion object {
