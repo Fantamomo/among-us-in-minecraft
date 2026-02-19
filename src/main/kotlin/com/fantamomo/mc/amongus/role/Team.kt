@@ -16,6 +16,10 @@ sealed class Team(val name: String, private val default: Role<*, *>?, val id: St
     open val canDoTask: Boolean
         get() = this === CREWMATES
 
+    /** If the Sheriff can kill someone from this team without dying*/
+    open val canByKilledBySheriff: Boolean
+        get() = this === IMPOSTERS || this === NEUTRAL.JESTER
+
     val defaultRole: Role<*, *>
         get() = default ?: throw IllegalStateException("$id team has no default role")
 
