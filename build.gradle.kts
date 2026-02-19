@@ -33,7 +33,7 @@ dependencies {
     implementation("org.mineskin:java-client-jsoup:3.2.1-SNAPSHOT")
 }
 
-val targetJavaVersion = 21
+val targetJavaVersion = 24
 kotlin {
     jvmToolchain(targetJavaVersion)
     compilerOptions {
