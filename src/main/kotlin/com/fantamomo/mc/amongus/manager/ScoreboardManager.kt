@@ -240,21 +240,17 @@ class ScoreboardManager(private val game: Game) {
                 textComponent {
                     translatable("scoreboard.role") {
                         args {
-                            component("role") {
-                                translatable(
-                                    player.assignedRole?.definition?.name
-                                        ?: "scoreboard.role.none"
-                                )
-                            }
+                            component("role",
+                                player.assignedRole?.name
+                                    ?: Component.translatable("scoreboard.role.none")
+                            )
                         }
                     }
                 }
             )
 
             val desc = player.assignedRole
-                ?.definition
                 ?.description
-                ?.let(Component::translatable)
                 ?: return
 
             wrapComponent(desc.translateTo(player.locale))
