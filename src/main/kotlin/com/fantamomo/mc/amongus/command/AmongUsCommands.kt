@@ -11,15 +11,13 @@ import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.util.internal.NMS
-import com.mojang.brigadier.Command
+import com.fantamomo.mc.brigadier.interception.BrigadierInterceptor
+import com.fantamomo.mc.brigadier.interception.InceptionContext
 import com.mojang.brigadier.context.CommandContext
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType
 import com.mojang.brigadier.suggestion.SuggestionsBuilder
-import com.mojang.brigadier.tree.ArgumentCommandNode
-import com.mojang.brigadier.tree.CommandNode
 import io.papermc.paper.adventure.AdventureComponent
 import io.papermc.paper.command.brigadier.Commands
-import io.papermc.paper.command.brigadier.ShadowBrigNode
 import net.kyori.adventure.text.Component
 import net.minecraft.commands.CommandSourceStack
 import net.minecraft.commands.arguments.EntityArgument
@@ -28,10 +26,10 @@ import net.minecraft.commands.arguments.selector.options.EntitySelectorOptions
 import net.minecraft.world.entity.Entity
 import org.bukkit.entity.Player
 import org.slf4j.LoggerFactory
-import java.lang.reflect.Field
 import java.util.function.Consumer
 import java.util.function.Predicate
 
+@Suppress("UnstableApiUsage")
 object AmongUsCommands {
 
     private val logger = LoggerFactory.getLogger("AmongUs-MsgInterceptor")
@@ -67,61 +65,19 @@ object AmongUsCommands {
     /**
      * Intercepts the Brigadier `/msg` command by replacing its execution handler.
      *
-     * Why not use PlayerCommandPreprocessEvent?
-     *
-     * 1. Preprocess events only provide the raw command string.
-     * 2. There is no reliable way to ensure it is actually the Brigadier `/msg` node.
-     * 3. Commands executed through `/execute` would bypass such interception.
-     * 4. String-based interception is fragile and error-prone.
-     *
-     * This method:
-     * - Locates the root `/msg` node.
-     * - Navigates to `targets -> message`.
-     * - Replaces the execution handler using reflection.
-     *
-     * Important:
-     * It is not necessary to intercept aliases such as `/tell` or `/w`.
-     *
-     * In vanilla/Paper, these aliases internally redirect to the same Brigadier
-     * command node as `/msg`. Since we replace the execution handler directly
-     * on the `/msg` Brigadier node, all aliases automatically inherit the
-     * modified behavior.
-     *
-     * This avoids:
-     * - Duplicate interception logic
-     * - Multiple reflection modifications
-     * - Inconsistent alias behavior
-     *
-     * As long as aliases resolve to the same Brigadier node,
-     * this interception remains fully centralized and consistent.
-     *
-     * @return true if interception succeeds.
+     * For more info: [brigadier-interception](https://github.com/Fantamomo/brigadier-interception)
      */
-    @NMS
     @Suppress("UnstableApiUsage")
     private fun interceptMsgCommand(registrar: Commands): Boolean {
         logger.debug("Attempting to intercept /msg command")
 
-        val dispatcher = registrar.dispatcher
-        val rootMsgNode = dispatcher.root.children
-            .firstOrNull { it.name == "msg" } as? ShadowBrigNode
-            ?: return logAndReturn("Could not find /msg command node")
-
-        val targetsNode = rootMsgNode.handle.children
-            .firstOrNull { it.name == "targets" }
-            ?: return logAndReturn("Could not find 'targets' node in /msg")
-
-        val messageNode = targetsNode.children
-            .firstOrNull { it.name == "message" } as? ArgumentCommandNode<*, *>
-            ?: return logAndReturn("Could not find 'message' node in /msg")
-
-        val commandField = getCommandField() ?: return false
-
-        @Suppress("UNCHECKED_CAST")
-        val oldCommand = messageNode.command as Command<CommandSourceStack>
-
         return try {
-            commandField.set(messageNode, MsgInterceptor(oldCommand))
+            BrigadierInterceptor.build(registrar.dispatcher) {
+                interception {
+                    runMsgInception()
+                }
+                path("msg", "targets", "message")
+            }
             logger.debug("/msg command successfully intercepted")
             true
         } catch (ex: Exception) {
@@ -130,26 +86,8 @@ object AmongUsCommands {
         }
     }
 
-    private fun getCommandField(): Field? {
-        return try {
-            CommandNode::class.java.getDeclaredField("command").apply {
-                isAccessible = true
-            }
-        } catch (ex: Exception) {
-            logger.error("Failed to access Brigadier command field via reflection", ex)
-            null
-        }
-    }
-
-    private fun logAndReturn(message: String): Boolean {
-        logger.warn(message)
-        return false
-    }
-
     /**
      * Decorator implementation for the `/msg` command.
-     *
-     * Pattern Used: Command Decorator
      *
      * The interceptor:
      * - Applies game-specific messaging restrictions.
@@ -163,53 +101,51 @@ object AmongUsCommands {
      *
      * If an imposter tries to message another imposter, they will receive an info message that they should use `/impostermsg`
      */
-    @NMS
-    private class MsgInterceptor(
-        private val original: Command<CommandSourceStack>
-    ) : Command<CommandSourceStack> {
-        override fun run(ctx: CommandContext<CommandSourceStack>): Int {
-            val sender = ctx.source.sender as? Player
-                ?: return original.run(ctx)
+    private fun InceptionContext.runMsgInception(): Int {
+        val sender = context.source.sender as? Player
+            ?: return runOriginal()
 
-            val senderAuPlayer = PlayerManager.getPlayer(sender)
-            val targets = EntityArgument.getPlayers(ctx, "targets")
+        val senderAuPlayer = PlayerManager.getPlayer(sender)
 
-            if (targets.size == 1 && senderAuPlayer?.assignedRole?.definition?.team == Team.IMPOSTERS) {
-                val target = PlayerManager.getPlayer(targets.first().bukkitEntity)
-                if (target?.assignedRole?.definition?.team == Team.IMPOSTERS) {
-                    sender.sendMessage(Component.translatable("command.error.msg.to_imposter"))
-                    return 0
-                }
-            }
+        @Suppress("UNCHECKED_CAST")
+        val targets = EntityArgument.getPlayers(context as CommandContext<CommandSourceStack>, "targets")
 
-            if (senderAuPlayer != null) {
-                sender.sendMessage(Component.translatable("command.error.msg.in_game"))
+        if (targets.size == 1 && senderAuPlayer?.assignedRole?.definition?.team == Team.IMPOSTERS) {
+            val target = PlayerManager.getPlayer(targets.first().bukkitEntity)
+            if (target?.assignedRole?.definition?.team == Team.IMPOSTERS) {
+                sender.sendMessage(Component.translatable("command.error.msg.to_imposter"))
                 return 0
             }
+        }
 
-            val blockedTarget = targets
-                .asSequence()
-                .map { it.bukkitEntity }
-                .firstOrNull { PlayerManager.getPlayer(it) != null }
+        if (senderAuPlayer != null) {
+            sender.sendMessage(Component.translatable("command.error.msg.in_game"))
+            return 0
+        }
 
-            if (blockedTarget != null) {
-                sender.sendMessage(
-                    textComponent {
-                        translatable("command.error.msg.to_playing") {
-                            args {
-                                string("player", blockedTarget.name)
-                            }
+        val blockedTarget = targets
+            .asSequence()
+            .map { it.bukkitEntity }
+            .firstOrNull { PlayerManager.getPlayer(it) != null }
+
+        if (blockedTarget != null) {
+            sender.sendMessage(
+                textComponent {
+                    translatable("command.error.msg.to_playing") {
+                        args {
+                            string("player", blockedTarget.name)
                         }
                     }
-                )
-                return 0
-            }
-
-            return original.run(ctx)
+                }
+            )
+            return 0
         }
+
+        return runOriginal()
     }
 
-    private val ILLEGAL_GAME_CODE = SimpleCommandExceptionType(AdventureComponent(Component.translatable("command.utils.selector_option.game.illegal_code")))
+    private val ILLEGAL_GAME_CODE =
+        SimpleCommandExceptionType(AdventureComponent(Component.translatable("command.utils.selector_option.game.illegal_code")))
 
     @NMS
     private fun registerEntitySelectorOption() {
