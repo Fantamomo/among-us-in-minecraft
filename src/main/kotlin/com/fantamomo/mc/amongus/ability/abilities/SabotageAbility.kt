@@ -5,10 +5,11 @@ import com.fantamomo.mc.amongus.ability.AssignedAbility
 import com.fantamomo.mc.amongus.ability.builder.AbilityItemState
 import com.fantamomo.mc.amongus.ability.builder.BlockReason
 import com.fantamomo.mc.amongus.ability.builder.abilityItem
+import com.fantamomo.mc.amongus.ability.builder.itemType
 import com.fantamomo.mc.amongus.ability.item.AbilityItem
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.sabotage.Sabotage
-import org.bukkit.Material
+import org.bukkit.inventory.ItemType
 
 object SabotageAbility :
     Ability<SabotageAbility, SabotageAbility.AssignedSabotageAbility> {
@@ -28,6 +29,7 @@ object SabotageAbility :
             player.game.sabotageManager.supportedSabotages.values
                 .map(::createItem)
 
+        @Suppress("UnstableApiUsage")
         private fun createItem(
             sabotage: Sabotage<*, *>
         ): AbilityItem = abilityItem(sabotage.sabotageType.id) {
@@ -61,7 +63,7 @@ object SabotageAbility :
             state(AbilityItemState.ACTIVE) {
 
                 render {
-                    material = sabotage.sabotageType.activeMaterial
+                    itemType(sabotage.sabotageType.activeItemType)
                     translationKey = "ability.sabotage.${sabotage.sabotageType.id}.active"
 
                 }
@@ -75,7 +77,7 @@ object SabotageAbility :
 
             state(AbilityItemState.BLOCKED) {
                 render {
-                    material = sabotage.sabotageType.deactivateMaterial
+                    itemType(sabotage.sabotageType.deactivateMaterial)
                     translationKey = when (ctx.getBlockReason()) {
 
                         BlockReason.Sabotage ->
@@ -97,7 +99,7 @@ object SabotageAbility :
 
             state(AbilityItemState.COOLDOWN) {
                 render {
-                    material = Material.BARRIER
+                    itemType = ItemType.BARRIER
                     translationKey = "ability.general.disabled.cooldown"
                 }
             }

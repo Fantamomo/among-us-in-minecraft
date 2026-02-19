@@ -2,13 +2,14 @@ package com.fantamomo.mc.amongus.sabotage
 
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.util.isBetween
-import org.bukkit.Material
+import org.bukkit.inventory.ItemType
 
+@Suppress("UnstableApiUsage")
 sealed interface SabotageType<S : SabotageType<S, A>, A : Sabotage<S, A>> {
     val id: String
-    val activeMaterial: Material
-    val deactivateMaterial: Material
-        get() = Material.BARRIER
+    val activeItemType: ItemType
+    val deactivateMaterial: ItemType
+        get() = ItemType.BARRIER
     val isCrisis: Boolean
     val stopOnBodyReport: Boolean
     val canCallEmergencyMeeting: Boolean
@@ -22,7 +23,7 @@ sealed interface SabotageType<S : SabotageType<S, A>, A : Sabotage<S, A>> {
 
     object Lights : SabotageType<Lights, LightsSabotage> {
         override val id: String = "lights"
-        override val activeMaterial = Material.REDSTONE_TORCH
+        override val activeItemType = ItemType.REDSTONE_TORCH
         override val isCrisis: Boolean = false
         override val stopOnBodyReport: Boolean = false
 
@@ -38,7 +39,7 @@ sealed interface SabotageType<S : SabotageType<S, A>, A : Sabotage<S, A>> {
 
     object SeismicStabilizers : SabotageType<SeismicStabilizers, SeismicStabilizersSabotage> {
         override val id: String = "seismic_stabilizers"
-        override val activeMaterial: Material = Material.END_CRYSTAL
+        override val activeItemType: ItemType = ItemType.END_CRYSTAL
         override val isCrisis: Boolean = true
         override val stopOnBodyReport: Boolean = true
 
@@ -52,7 +53,7 @@ sealed interface SabotageType<S : SabotageType<S, A>, A : Sabotage<S, A>> {
 
     object Communications : SabotageType<Communications, CommunicationsSabotage> {
         override val id: String = "communications"
-        override val activeMaterial: Material = Material.COMPASS
+        override val activeItemType: ItemType = ItemType.COMPASS
         override val isCrisis: Boolean = false
         override val stopOnBodyReport: Boolean = false
 
