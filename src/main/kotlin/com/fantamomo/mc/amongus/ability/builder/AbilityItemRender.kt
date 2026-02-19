@@ -7,22 +7,33 @@ import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.util.textComponent
 import io.papermc.paper.datacomponent.DataComponentTypes
 import io.papermc.paper.datacomponent.item.UseCooldown
-import org.bukkit.Material
 import org.bukkit.inventory.ItemStack
+import org.bukkit.inventory.ItemType
+import org.bukkit.inventory.meta.ItemMeta
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 import kotlin.time.DurationUnit
 
-class AbilityItemRender(
+@Suppress("UnstableApiUsage")
+class AbilityItemRender<M : ItemMeta>(
     val ctx: AbilityContext
 ) {
-    lateinit var material: Material
+    lateinit var itemType: ItemType.Typed<M>
     lateinit var translationKey: String
+    var amount: Int = 1
+        set(value) {
+            field = value.coerceIn(1, 99)
+        }
 
     var initialDefaultArgs: Boolean = true
     var cooldownName: String? = "cooldown"
     private var args: (KTranslatableArgsBuilder.() -> Unit)? = null
+    private var itemTypeConsumer: (M.() -> Unit)? = null
+
+    fun itemMeta(block: M.() -> Unit) {
+        itemTypeConsumer = block
+    }
 
     fun nameArgs(block: KTranslatableArgsBuilder.() -> Unit) {
         args = block
@@ -30,7 +41,7 @@ class AbilityItemRender(
 
     @Suppress("UnstableApiUsage")
     fun toItemStack(): ItemStack {
-        val item = ItemStack(material)
+        val item = itemType.createItemStack(amount, itemTypeConsumer)
 
         val timer = cooldownName?.let { ctx.getTimer(it) }
         val remaining = timer?.remaining()
@@ -44,7 +55,7 @@ class AbilityItemRender(
                         args?.invoke(this)
                         if (initialDefaultArgs) {
                             string("ability", ctx.ability.definition.id)
-                            remainingSeconds?.let { string("cooldown", "${it}s")}
+                            remainingSeconds?.let { string("cooldown", "${it}s") }
                         }
                     }
                 }
@@ -66,10 +77,15 @@ class AbilityItemRender(
     }
 }
 
+@Suppress("UnstableApiUsage")
+fun AbilityItemRender<ItemMeta>.itemType(itemType: ItemType) {
+    this.itemType = itemType.typed()
+}
+
 @OptIn(ExperimentalContracts::class)
-internal fun (AbilityItemRender.() -> Unit).toItemStack(ctx: AbilityContext): ItemStack {
+internal fun <M : ItemMeta> (AbilityItemRender<M>.() -> Unit).toItemStack(ctx: AbilityContext): ItemStack {
     contract { callsInPlace(this@toItemStack, InvocationKind.EXACTLY_ONCE) }
-    val render = AbilityItemRender(ctx)
+    val render = AbilityItemRender<M>(ctx)
     this(render)
     return render.toItemStack()
 }
