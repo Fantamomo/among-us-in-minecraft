@@ -5,8 +5,9 @@ import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.role.AssignedRole
 import com.fantamomo.mc.amongus.role.Role
 import com.fantamomo.mc.amongus.role.Team
+import com.fantamomo.mc.amongus.role.marker.KillerRole
 
-object MinerRole : Role<MinerRole, MinerRole.AssignedMinerRole> {
+object MinerRole : Role<MinerRole, MinerRole.AssignedMinerRole>, KillerRole {
     override val id: String = "miner"
     override val team: Team = Team.IMPOSTERS
     override val defaultAbilities = ImposterRole.defaultAbilities + CreateVentAbility

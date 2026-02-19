@@ -10,10 +10,11 @@ import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.role.AssignedRole
 import com.fantamomo.mc.amongus.role.Role
 import com.fantamomo.mc.amongus.role.Team
+import com.fantamomo.mc.amongus.role.marker.KillerRole
 import com.fantamomo.mc.amongus.util.toSmartString
 import kotlin.time.DurationUnit
 
-object PhantomRole : Role<PhantomRole, PhantomRole.AssignedPhantomRole> {
+object PhantomRole : Role<PhantomRole, PhantomRole.AssignedPhantomRole>, KillerRole {
     override val id: String = "phantom"
     override val team: Team = Team.IMPOSTERS
     override val defaultAbilities: Set<Ability<*, *>> = ImposterRole.defaultAbilities + GhostFormAbility

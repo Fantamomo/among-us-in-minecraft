@@ -2,6 +2,7 @@ package com.fantamomo.mc.amongus.role
 
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import com.fantamomo.mc.amongus.player.editStatistics
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import kotlin.random.Random
 
@@ -20,7 +21,7 @@ class RoleManager(private val game: Game) {
         val roleChances = buildRoleChanceMap()
 
         for ((player, role) in forcedRoles) {
-            player.assignedRole = role.assignTo(player)
+            assignRole(player, role)
         }
 
         val remaining = players.filterNot { it in forcedRoles }.toMutableList()
@@ -32,7 +33,7 @@ class RoleManager(private val game: Game) {
             val targetTeam = restrictedTeams[player] as Team.NEUTRAL
             val matchingRole = roleChances.keys
                 .firstOrNull { it.team == targetTeam && isEligibleFor(player, it) }
-            player.assignedRole = (matchingRole ?: Team.CREWMATES.defaultRole).assignTo(player)
+            assignRole(player, matchingRole ?: Team.CREWMATES.defaultRole)
         }
 
         val forcedImposters = forcedRoles.count { it.value.team == Team.IMPOSTERS }
@@ -58,7 +59,7 @@ class RoleManager(private val game: Game) {
 
             val candidate = shuffledPool.firstOrNull { isEligibleFor(it, role) } ?: continue
 
-            candidate.assignedRole = role.assignTo(candidate)
+            assignRole(candidate, role)
             shuffledPool.remove(candidate)
             remaining.remove(candidate)
         }
@@ -81,7 +82,7 @@ class RoleManager(private val game: Game) {
 
         for (player in players) {
             if (player.assignedRole == null) {
-                player.assignedRole = Team.CREWMATES.defaultRole.assignTo(player)
+                assignRole(player, Team.CREWMATES.defaultRole)
             }
         }
 
@@ -189,6 +190,15 @@ class RoleManager(private val game: Game) {
                 game.settings[key].coerceIn(0, 100)
             }
             .filterValues { it > 0 }
+
+    private fun assignRole(player: AmongUsPlayer, role: Role<*, *>) {
+        player.assignedRole = role.assignTo(player)
+        player.editStatistics {
+            assignedRole[role]?.increment()
+            assignedTeam[role.team]?.increment()
+        }
+    }
+
 
     fun forceRole(player: AmongUsPlayer, role: Role<*, *>) {
         forcedRoles[player] = role

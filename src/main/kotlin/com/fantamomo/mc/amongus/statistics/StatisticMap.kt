@@ -55,8 +55,9 @@ class StatisticMap(val group: String, val id: Uuid) {
 
     fun toJson(): JsonObject {
         val data: MutableMap<String, JsonElement> = mutableMapOf()
-        for (entry in statistics) {
-            data[entry.key] = StatisticRegistry.toJson(entry.value)
+        for ((key, value) in statistics) {
+            if (!value.shouldSave()) continue
+            data[key] = StatisticRegistry.toJson(value)
         }
         return JsonObject(data)
     }

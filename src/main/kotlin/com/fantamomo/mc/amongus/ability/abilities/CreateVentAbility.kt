@@ -74,6 +74,7 @@ object CreateVentAbility : Ability<CreateVentAbility, CreateVentAbility.Assigned
                         game.ventManager.startCreatingVent(player) { success ->
                             val duration = player.game.settings[SettingsKey.ROLES.MINER_CREATE_VENT_COOLDOWN]
                             if (success) {
+                                player.statistics.minerCreatedVents.increment()
                                 createVentCooldown.start(duration)
                             } else {
                                 createVentCooldown.start(5.seconds.takeIf { duration > it } ?: duration)

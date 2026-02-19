@@ -70,12 +70,20 @@ class KillManager(val game: Game) {
         }
         val location = target.livingEntity.location
 
-        imposter.statistics.killsAsImposter.increment()
-        target.statistics.killedByImposter.increment()
+        imposter.statistics.kills[imposter.assignedRole?.definition]?.increment()
+        target.statistics.killed[imposter.assignedRole?.definition]?.increment()
         target.statistics.timeUntilKilled.timerStop()
         if (game.sabotageManager.isCurrentlySabotage()) {
             imposter.statistics.killsAsImposterWhileSabotage.increment()
             target.statistics.killedByImposterWhileSabotage.increment()
+        }
+        if (imposter.isInGhostForm()) {
+            imposter.statistics.killsInGhostForm.increment()
+            target.statistics.killedByPlayerInGhostForm.increment()
+        }
+        if (game.morphManager.isMorphed(imposter)) {
+            imposter.statistics.killsWhileMorphed.increment()
+            target.statistics.killedByMorphedPlayer.increment()
         }
 
         imposter.player?.also { p ->
@@ -285,13 +293,18 @@ class KillManager(val game: Game) {
         }
         val location = target.livingEntity.location
 
-//        imposter.statistics.killsAsImposter.increment()
-//        target.statistics.killedByImposter.increment()
-//        target.statistics.timeUntilKilled.timerStop()
-//        if (game.sabotageManager.isCurrentlySabotage()) {
-//            imposter.statistics.killsAsImposterWhileSabotage.increment()
-//            target.statistics.killedByImposterWhileSabotage.increment()
-//        }
+        sheriff.statistics.kills[sheriff.assignedRole?.definition]?.increment()
+        target.statistics.killed[sheriff.assignedRole?.definition]?.increment()
+        target.statistics.timeUntilKilled.timerStop()
+        if (sheriff.isInGhostForm()) {
+            sheriff.statistics.killsInGhostForm.increment()
+            target.statistics.killedByPlayerInGhostForm.increment()
+        }
+        if (game.morphManager.isMorphed(sheriff)) {
+            sheriff.statistics.killsWhileMorphed.increment()
+            target.statistics.killedByMorphedPlayer.increment()
+        }
+
         val sheriffLoc = sheriff.livingEntity.location
 
         sheriff.player?.also { p ->
@@ -310,6 +323,8 @@ class KillManager(val game: Game) {
         markAsDead(target)
 
         if (target.assignedRole?.definition?.team?.canByKilledBySheriff != true) {
+            target.statistics.killedBySheriffWrong.increment()
+            sheriff.statistics.killedAsSheriffWrong.increment()
             showCorpse(sheriff, sheriffLoc)
             sheriff.player?.also { p ->
                 p.sendTitlePart(
@@ -338,6 +353,9 @@ class KillManager(val game: Game) {
                 p.sendHurtAnimation(0f)
             }
             markAsDead(sheriff)
+        } else {
+            target.statistics.killedBySheriffCorrect.increment()
+            sheriff.statistics.killedAsSheriffCorrect.increment()
         }
         game.checkWin()
     }
@@ -348,7 +366,7 @@ class KillManager(val game: Game) {
 
         val corpse = nearestCorpse(player.livingEntity.location) ?: return
         corpse.remove()
-        cannibalRole.eatenBodies++
+        cannibalRole.incrementEatenBodies()
         game.checkWin()
     }
 

@@ -28,6 +28,8 @@ class AverageStatistic(
         return false
     }
 
+    override fun shouldSave() = numerator.shouldSave() || denominator.shouldSave()
+
     override fun toData(): MutableMap<String, JsonElement> = mutableMapOf<String, JsonElement>().apply {
         put("numerator", JsonObject(numerator.toData()))
         put("denominator", JsonObject(denominator.toData()))
