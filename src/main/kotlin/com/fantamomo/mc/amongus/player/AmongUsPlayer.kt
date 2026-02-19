@@ -17,7 +17,6 @@ import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.role.crewmates.CrewmateRole
 import com.fantamomo.mc.amongus.task.TaskManager
 import com.fantamomo.mc.amongus.util.CustomPersistentDataTypes
-import net.kyori.adventure.text.Component
 import net.kyori.adventure.title.Title
 import net.kyori.adventure.title.TitlePart
 import org.bukkit.Location
@@ -127,6 +126,8 @@ class AmongUsPlayer internal constructor(
     }
 
     fun addNewAbility(ability: Ability<*, *>) {
+        if (!game.phase.isPlaying) throw IllegalStateException("Cannot add ability in this phase")
+        if (!ability.canAssignTo(this)) throw IllegalArgumentException("Ability cannot be assigned to this player")
         val assigned = ability.assignTo(this)
         AbilityManager.registerAbility(assigned)
         abilities.add(assigned)
@@ -177,7 +178,7 @@ class AmongUsPlayer internal constructor(
             textComponent {
                 translatable("roles.assigned.title") {
                     args {
-                        component("role", Component.translatable(role.definition.name))
+                        component("role", role.name)
                     }
                 }
             }

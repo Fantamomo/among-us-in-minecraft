@@ -11,7 +11,6 @@ import com.mojang.brigadier.suggestion.Suggestions
 import com.mojang.brigadier.suggestion.SuggestionsBuilder
 import io.papermc.paper.adventure.AdventureComponent
 import io.papermc.paper.command.brigadier.argument.CustomArgumentType
-import net.kyori.adventure.text.Component
 import java.util.concurrent.CompletableFuture
 
 class RoleArgumentType(private val roles: Collection<Role<*, *>>) : CustomArgumentType<Role<*, *>, String> {
@@ -29,7 +28,7 @@ class RoleArgumentType(private val roles: Collection<Role<*, *>>) : CustomArgume
         val input = builder.remainingLowerCase
         for (role in roles) {
             if (!role.id.startsWith(input, ignoreCase = true)) continue
-            builder.suggest(role.id, AdventureComponent(Component.translatable(role.name)))
+            builder.suggest(role.id, AdventureComponent(role.name))
         }
         return builder.buildFuture()
     }

@@ -32,9 +32,17 @@ class RoleManager(private val game: Game) {
             val targetTeam = restrictedTeams[player] as Team.NEUTRAL
             val matchingRole = roleChances.keys
                 .firstOrNull { it.team == targetTeam && isEligibleFor(player, it) }
-
             player.assignedRole = (matchingRole ?: Team.CREWMATES.defaultRole).assignTo(player)
         }
+
+        val forcedImposters = forcedRoles.count { it.value.team == Team.IMPOSTERS }
+        val targetImposters = when {
+            forcedImposters >= imposterCount -> 0
+            forcedImposters + remaining.size < imposterCount -> remaining.size
+            else -> (imposterCount - forcedImposters).coerceAtLeast(0)
+        }
+
+        val minRequiredForTeams = targetImposters + 1
 
         val neutralRoleChances = roleChances.entries
             .filter { it.key.team is Team.NEUTRAL }
@@ -43,7 +51,7 @@ class RoleManager(private val game: Game) {
         val shuffledPool = remaining.shuffled().toMutableList()
 
         for ((role, chance) in neutralRoleChances) {
-            if (shuffledPool.isEmpty()) break
+            if (shuffledPool.size <= minRequiredForTeams) break
 
             val spawns = chance == 100 || Random.nextInt(100) < chance
             if (!spawns) continue
@@ -53,13 +61,6 @@ class RoleManager(private val game: Game) {
             candidate.assignedRole = role.assignTo(candidate)
             shuffledPool.remove(candidate)
             remaining.remove(candidate)
-        }
-
-        val forcedImposters = forcedRoles.count { it.value.team == Team.IMPOSTERS }
-        val targetImposters = when {
-            forcedImposters >= imposterCount -> 0
-            forcedImposters + remaining.size < imposterCount -> remaining.size
-            else -> (imposterCount - forcedImposters).coerceAtLeast(0)
         }
 
         val eligibleForImposter = remaining.filter { player ->

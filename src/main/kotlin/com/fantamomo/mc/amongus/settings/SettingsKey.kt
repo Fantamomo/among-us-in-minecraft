@@ -101,6 +101,7 @@ data class SettingsKey<T : Any, S : SettingsType<T>>(
         val MORPHLING_MORPH_DURATION = key("morphling.morph.duration", DurationSettingsType.min(5.seconds), 15.seconds)
         val GHOST_FORM_COOLDOWN = key("ghost.form.cooldown", DurationSettingsType.min(1.seconds), 30.seconds)
         val GHOST_FORM_DURATION = key("ghost.form.duration", DurationSettingsType.min(1.seconds), 15.seconds)
+        val CANNIBAL_BODIES_TO_EAT = key("roles.cannibal.bodies_to_eat", IntSettingsType.range(1, 10), 4)
     }
 
     object KILL : SettingsGroup("kill", Material.BONE) {

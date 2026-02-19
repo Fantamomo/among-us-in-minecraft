@@ -7,6 +7,7 @@ import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.role.crewmates.TheDamnedRole
+import com.fantamomo.mc.amongus.role.neutral.CannibalRole.AssignedCannibalRole
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import io.papermc.paper.datacomponent.item.ResolvableProfile
 import net.kyori.adventure.text.Component
@@ -107,9 +108,9 @@ class KillManager(val game: Game) {
     }
 
     fun isNearCorpse(location: Location): Boolean =
-        corpses.any { it.mannequin.location.distanceSquared(location) <= 2 * 2 }
+        corpses.any { it.valid && it.mannequin.location.distanceSquared(location) <= 2 * 2 }
 
-    fun nearestCorpse(location: Location): Corpse? = corpses.minByOrNull { it.mannequin.location.distanceSquared(location) }
+    fun nearestCorpse(location: Location): Corpse? = corpses.minByOrNull { Double.MAX_VALUE.takeIf { _ -> !it.valid } ?: it.mannequin.location.distanceSquared(location) }
 
     fun canKillAsSheriff(sheriff: AmongUsPlayer): Boolean {
         val loc = sheriff.livingEntityOrNull?.location ?: return false
@@ -341,10 +342,27 @@ class KillManager(val game: Game) {
         game.checkWin()
     }
 
+    fun eatCorpse(player: AmongUsPlayer) {
+        val cannibalRole: AssignedCannibalRole = player.assignedRole as? AssignedCannibalRole
+            ?: throw IllegalStateException("Only cannibal role can eat bodies")
+
+        val corpse = nearestCorpse(player.livingEntity.location) ?: return
+        corpse.remove()
+        cannibalRole.eatenBodies++
+        game.checkWin()
+    }
+
     class Corpse(
         val mannequin: Mannequin,
         val owner: AmongUsPlayer
-    )
+    ) {
+        val valid: Boolean
+            get() = mannequin.isValid
+
+        fun remove() {
+            mannequin.remove()
+        }
+    }
 
     companion object {
         val CORPSE_KEY = NamespacedKey(AmongUs, "corpse")

@@ -2,6 +2,7 @@ package com.fantamomo.mc.amongus.role
 
 import com.fantamomo.mc.amongus.role.crewmates.CrewmateRole
 import com.fantamomo.mc.amongus.role.imposters.ImposterRole
+import com.fantamomo.mc.amongus.role.neutral.CannibalRole
 import com.fantamomo.mc.amongus.role.neutral.JesterRole
 import net.kyori.adventure.text.Component
 
@@ -10,15 +11,14 @@ sealed class Team(val name: String, private val default: Role<*, *>?, val id: St
     init {
         require(id.isNotBlank()) { "Team ID cannot be blank" }
         require(default != null || id != name) { "Default role must be provided for non-neutral teams" }
-
     }
 
     open val canDoTask: Boolean
         get() = this === CREWMATES
 
-    /** If the Sheriff can kill someone from this team without dying*/
+    /** If the Sheriff can kill someone from this team without dying */
     open val canByKilledBySheriff: Boolean
-        get() = this === IMPOSTERS || this === NEUTRAL.JESTER
+        get() = this === IMPOSTERS || this is NEUTRAL
 
     val defaultRole: Role<*, *>
         get() = default ?: throw IllegalStateException("$id team has no default role")
@@ -30,12 +30,13 @@ sealed class Team(val name: String, private val default: Role<*, *>?, val id: St
     @ConsistentCopyVisibility
     data class NEUTRAL private constructor(val role: Role<*, *>) : Team(role.id, null, "neutral.${role.id}") {
         companion object {
-            val JESTER = NEUTRAL(JesterRole)
+            val JESTER by lazy { NEUTRAL(JesterRole) }
+            val CANNIBAL by lazy { NEUTRAL(CannibalRole) }
         }
     }
 
     companion object {
         // using lazy initialization for teams, because CREWMATES is due to unknown reason `null`, but IMPOSTERS and JESTER are not
-        val teams: Set<Team> by lazy { setOf(CREWMATES, IMPOSTERS, NEUTRAL.JESTER) }
+        val teams: Set<Team> by lazy { setOf(CREWMATES, IMPOSTERS, NEUTRAL.JESTER, NEUTRAL.CANNIBAL) }
     }
 }

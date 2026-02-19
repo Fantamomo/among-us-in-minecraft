@@ -300,6 +300,13 @@ class Game(
             letWin(Team.IMPOSTERS)
             return
         }
+        for (player in players) {
+            val assignedRole = player.assignedRole ?: continue
+            if (assignedRole.hasWon()) {
+                letWin(assignedRole.definition.team)
+                return
+            }
+        }
     }
 
     fun letWin(team: Team) {
