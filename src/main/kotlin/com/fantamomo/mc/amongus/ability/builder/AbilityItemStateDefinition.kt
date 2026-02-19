@@ -2,6 +2,7 @@ package com.fantamomo.mc.amongus.ability.builder
 
 import org.bukkit.Material
 import org.bukkit.inventory.ItemStack
+import org.bukkit.inventory.meta.ItemMeta
 
 class AbilityItemStateDefinition {
 
@@ -20,7 +21,7 @@ class AbilityItemStateDefinition {
         render = block
     }
 
-    fun render(block: AbilityItemRender.() -> Unit) {
+    fun <M : ItemMeta> render(block: AbilityItemRender<M>.() -> Unit) {
         render = block::toItemStack
     }
 
