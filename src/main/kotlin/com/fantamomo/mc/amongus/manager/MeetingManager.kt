@@ -12,6 +12,7 @@ import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.role.crewmates.MayorRole
+import com.fantamomo.mc.amongus.role.neutral.JesterRole
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.util.Cooldown
 import com.fantamomo.mc.amongus.util.internal.NMS
@@ -596,6 +597,7 @@ class MeetingManager(private val game: Game) : Listener {
             currentlyEjecting = false
 
             disableEventHandler = true
+            val ejectedPlayer = ejectedPlayer
             game.players.forEach { p ->
 
                 if (hasEjected && p != ejectedPlayer) {
@@ -642,6 +644,11 @@ class MeetingManager(private val game: Game) : Listener {
             buttonCooldown.start()
             setPhase(GamePhase.RUNNING)
             game.invalidateAbilities()
+
+            val assignedRole = ejectedPlayer?.assignedRole
+            if (assignedRole?.definition === JesterRole) {
+                game.letWin(assignedRole.definition.team)
+            }
         }
 
         private fun setPhase(phase: GamePhase) {

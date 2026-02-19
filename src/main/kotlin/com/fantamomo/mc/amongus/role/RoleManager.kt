@@ -17,25 +17,52 @@ class RoleManager(private val game: Game) {
         if (players.isEmpty()) return
 
         val imposterCount = game.settings[SettingsKey.ROLES.IMPOSTERS].coerceIn(0, players.size)
-
         val roleChances = buildRoleChanceMap()
 
         for ((player, role) in forcedRoles) {
             player.assignedRole = role.assignTo(player)
         }
 
-        val playersWithoutForced = players.filterNot { it in forcedRoles }
+        val remaining = players.filterNot { it in forcedRoles }.toMutableList()
+
+        val neutralRestricted = remaining.filter { restrictedTeams[it] is Team.NEUTRAL }.toMutableList()
+        remaining.removeAll(neutralRestricted)
+
+        for (player in neutralRestricted) {
+            val targetTeam = restrictedTeams[player] as Team.NEUTRAL
+            val matchingRole = roleChances.keys
+                .firstOrNull { it.team == targetTeam && isEligibleFor(player, it) }
+
+            player.assignedRole = (matchingRole ?: Team.CREWMATES.defaultRole).assignTo(player)
+        }
+
+        val neutralRoleChances = roleChances.entries
+            .filter { it.key.team is Team.NEUTRAL }
+            .shuffled()
+
+        val shuffledPool = remaining.shuffled().toMutableList()
+
+        for ((role, chance) in neutralRoleChances) {
+            if (shuffledPool.isEmpty()) break
+
+            val spawns = chance == 100 || Random.nextInt(100) < chance
+            if (!spawns) continue
+
+            val candidate = shuffledPool.firstOrNull { isEligibleFor(it, role) } ?: continue
+
+            candidate.assignedRole = role.assignTo(candidate)
+            shuffledPool.remove(candidate)
+            remaining.remove(candidate)
+        }
 
         val forcedImposters = forcedRoles.count { it.value.team == Team.IMPOSTERS }
-        val forcedCrewmates = forcedRoles.count { it.value.team == Team.CREWMATES }
-
         val targetImposters = when {
             forcedImposters >= imposterCount -> 0
-            forcedImposters + playersWithoutForced.size < imposterCount -> playersWithoutForced.size
+            forcedImposters + remaining.size < imposterCount -> remaining.size
             else -> (imposterCount - forcedImposters).coerceAtLeast(0)
         }
 
-        val eligibleForImposter = playersWithoutForced.filter { player ->
+        val eligibleForImposter = remaining.filter { player ->
             val teamRestriction = restrictedTeams[player]
             teamRestriction == null || teamRestriction == Team.IMPOSTERS
         }
@@ -43,18 +70,17 @@ class RoleManager(private val game: Game) {
         val imposters = if (eligibleForImposter.size >= targetImposters) {
             eligibleForImposter.shuffled().take(targetImposters)
         } else {
-            playersWithoutForced.shuffled().take(targetImposters)
+            remaining.shuffled().take(targetImposters)
         }
 
-        val crewmates = playersWithoutForced - imposters.toSet()
+        val crewmates = remaining - imposters.toSet()
 
         assignRoles(imposters, roleChances, Team.IMPOSTERS)
         assignRoles(crewmates, roleChances, Team.CREWMATES)
 
         for (player in players) {
             if (player.assignedRole == null) {
-                val defaultRole = Team.CREWMATES.defaultRole
-                player.assignedRole = defaultRole.assignTo(player)
+                player.assignedRole = Team.CREWMATES.defaultRole.assignTo(player)
             }
         }
 
@@ -97,69 +123,63 @@ class RoleManager(private val game: Game) {
         teamRoles: Map<Role<*, *>, Int>,
         fallbackTeam: Team
     ): Role<*, *> {
-
         var possibleRoles = teamRoles
 
         val whitelist = allowedRoles[player]
         if (!whitelist.isNullOrEmpty()) {
             val filtered = possibleRoles.filterKeys { it in whitelist }
-            if (filtered.isNotEmpty()) {
-                possibleRoles = filtered
-            }
+            if (filtered.isNotEmpty()) possibleRoles = filtered
         }
 
         restrictedTeams[player]?.let { restricted ->
             val filtered = possibleRoles.filterKeys { it.team == restricted }
-            if (filtered.isNotEmpty()) {
-                possibleRoles = filtered
-            }
+            if (filtered.isNotEmpty()) possibleRoles = filtered
         }
 
         blockedRoles[player]?.let { blocked ->
             val filtered = possibleRoles.filterKeys { it !in blocked }
-            if (filtered.isNotEmpty()) {
-                possibleRoles = filtered
-            }
+            if (filtered.isNotEmpty()) possibleRoles = filtered
         }
 
-        if (possibleRoles.isEmpty()) {
-            return fallbackTeam.defaultRole
-        }
+        if (possibleRoles.isEmpty()) return fallbackTeam.defaultRole
 
         val guaranteed = possibleRoles.filterValues { it == 100 }.keys.toList()
-        if (guaranteed.isNotEmpty()) {
-            return guaranteed.random()
-        }
+        if (guaranteed.isNotEmpty()) return guaranteed.random()
 
         val weighted = possibleRoles.filterValues { it in 1..99 }.toList()
-        if (weighted.isEmpty()) {
-            return possibleRoles.keys.firstOrNull() ?: fallbackTeam.defaultRole
-        }
+        if (weighted.isEmpty()) return possibleRoles.keys.firstOrNull() ?: fallbackTeam.defaultRole
 
         return pickWeightedRole(weighted)
     }
 
     private fun pickWeightedRole(roles: List<Pair<Role<*, *>, Int>>): Role<*, *> {
-        if (roles.isEmpty()) {
-            error("No roles to pick from")
-        }
+        if (roles.isEmpty()) error("No roles to pick from")
 
         val totalWeight = roles.sumOf { it.second }
-        if (totalWeight <= 0) {
-            return roles.first().first
-        }
+        if (totalWeight <= 0) return roles.first().first
 
         val randomValue = Random.nextInt(totalWeight)
         var accumulated = 0
 
         for ((role, weight) in roles) {
             accumulated += weight
-            if (randomValue < accumulated) {
-                return role
-            }
+            if (randomValue < accumulated) return role
         }
 
         return roles.last().first
+    }
+
+    private fun isEligibleFor(player: AmongUsPlayer, role: Role<*, *>): Boolean {
+        val whitelist = allowedRoles[player]
+        if (!whitelist.isNullOrEmpty() && role !in whitelist) return false
+
+        val blocked = blockedRoles[player]
+        if (blocked != null && role in blocked) return false
+
+        val teamRestriction = restrictedTeams[player]
+        if (teamRestriction != null && teamRestriction != role.team) return false
+
+        return true
     }
 
     private fun buildRoleChanceMap(): Map<Role<*, *>, Int> =

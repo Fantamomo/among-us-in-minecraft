@@ -308,7 +308,7 @@ class KillManager(val game: Game) {
         }
         markAsDead(target)
 
-        if (target.assignedRole?.definition?.team != Team.IMPOSTERS) {
+        if (target.assignedRole?.definition?.team?.canByKilledBySheriff != true) {
             showCorpse(sheriff, sheriffLoc)
             sheriff.player?.also { p ->
                 p.sendTitlePart(
