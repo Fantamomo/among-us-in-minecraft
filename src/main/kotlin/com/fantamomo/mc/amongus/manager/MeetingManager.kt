@@ -377,7 +377,10 @@ class MeetingManager(private val game: Game) : Listener {
                 when (vote) {
                     is Vote.For -> {
                         val target = vote.target
+                        if (target === player) player.statistics.votedSelf.increment()
                         target.statistics.accused.increment()
+                        target.statistics.accusedAs[target.assignedRole?.definition]?.increment()
+                        player.statistics.votedAt[target.assignedRole?.definition]?.increment()
                         if (target.assignedRole?.definition?.team == Team.IMPOSTERS) {
                             player.statistics.votedCorrect.increment()
                             target.statistics.accusedCorrect.increment()
@@ -392,6 +395,9 @@ class MeetingManager(private val game: Game) : Listener {
             }
 
             for (player in game.players) {
+                if (player !== ejectedPlayer && player.isAlive) {
+                    player.statistics.emergencyMeetingsSurvived.increment()
+                }
                 player.player?.closeInventory()
             }
 
@@ -509,6 +515,8 @@ class MeetingManager(private val game: Game) : Listener {
             } else {
                 statistics.ejectedWrong.increment()
             }
+
+            statistics.ejectedAs[player.assignedRole?.definition]?.increment()
 
             Bukkit.getScheduler().runTaskLater(AmongUs, { ->
                 if (currentlyEjecting) finishMeeting(true)
