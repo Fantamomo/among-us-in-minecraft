@@ -98,37 +98,7 @@ private fun PaperCommand.roleGameCommand() = literal("role") {
     }
 
     literal("team") {
-        argument("team", EnumArgumentType.of<Team>()) {
-            argument("target", AmongUsPlayerArgumentType.SINGLE) {
-                execute {
-                    val amongUsPlayer = arg<AmongUsPlayer>("player")
-                    val team = arg<Team>("team")
-                    amongUsPlayer.game.roleManager.restrictTeam(amongUsPlayer, team)
-                    sendMessage {
-                        translatable("command.success.admin.game.role.team.other") {
-                            args {
-                                string("player", amongUsPlayer.name)
-                                string("team", team.name)
-                            }
-                        }
-                    }
-                    SINGLE_SUCCESS
-                }
-            }
-            execute {
-                val amongUsPlayer = arg<AmongUsPlayer>("player")
-                val team = arg<Team>("team")
-                amongUsPlayer.game.roleManager.restrictTeam(amongUsPlayer, team)
-                sendMessage {
-                    translatable("command.success.admin.game.role.team") {
-                        args {
-                            string("team", team.name)
-                        }
-                    }
-                }
-                SINGLE_SUCCESS
-            }
-        }
+        Team.teams.forEach(::subRoleTeamGameCommand)
         literal("random") {
             argument("target", AmongUsPlayerArgumentType.SINGLE) {
                 execute {
@@ -153,6 +123,48 @@ private fun PaperCommand.roleGameCommand() = literal("role") {
                 SINGLE_SUCCESS
             }
         }
+    }
+}
+
+private fun PaperCommand.subRoleTeamGameCommand(team: Team, step: Boolean = true) {
+    if (team is Team.NEUTRAL && step) {
+        literal("neutral") {
+            subRoleTeamGameCommand(team, false)
+        }
+        return
+    }
+    literal(team.name) {
+        roleTeamGameCommand(team)
+    }
+}
+
+private fun KtCommandBuilder<CommandSourceStack, *>.roleTeamGameCommand(team: Team) {
+    argument("target", AmongUsPlayerArgumentType.SINGLE) {
+        execute {
+            val amongUsPlayer = arg<AmongUsPlayer>("player")
+            amongUsPlayer.game.roleManager.restrictTeam(amongUsPlayer, team)
+            sendMessage {
+                translatable("command.success.admin.game.role.team.other") {
+                    args {
+                        string("player", amongUsPlayer.name)
+                        string("team", team.name)
+                    }
+                }
+            }
+            SINGLE_SUCCESS
+        }
+    }
+    execute {
+        val amongUsPlayer = arg<AmongUsPlayer>("player")
+        amongUsPlayer.game.roleManager.restrictTeam(amongUsPlayer, team)
+        sendMessage {
+            translatable("command.success.admin.game.role.team") {
+                args {
+                    string("team", team.name)
+                }
+            }
+        }
+        SINGLE_SUCCESS
     }
 }
 
@@ -271,7 +283,7 @@ private fun KtCommandBuilder<CommandSourceStack, *>.killPlayerGamCommandExecute(
 }
 
 private fun PaperCommand.letWinGameCommand() = literal("letwin") {
-    Team.getTeams().forEach(::letWinGameCommandArgument)
+    Team.teams.forEach(::letWinGameCommandArgument)
 }
 
 private fun PaperCommand.letWinGameCommandArgument(team: Team, step: Boolean = false) {
@@ -279,6 +291,7 @@ private fun PaperCommand.letWinGameCommandArgument(team: Team, step: Boolean = f
         literal("neutral") {
             letWinGameCommandArgument(team, true)
         }
+        return
     }
     literal(team.name) {
         argument("game", GameArgumentType(false)) {
