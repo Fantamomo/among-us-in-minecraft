@@ -339,13 +339,14 @@ class Game(
             val hasWon = t === team
 
             player.editStatistics {
-                val resultCount = when {
-                    hasWon && team == Team.IMPOSTERS -> winsAsImposter
-                    hasWon -> winsAsCrewmate
-                    team == Team.IMPOSTERS -> losesAsImposter
-                    else -> losesAsCrewmate
+                if (player.isAlive) survivedGames.increment()
+                if (hasWon) {
+                    winsAs[player.assignedRole?.definition]?.increment()
+                    winsWith[t]?.increment()
+                } else {
+                    losesAs[player.assignedRole?.definition]?.increment()
+                    losesWith[t]?.increment()
                 }
-                resultCount.increment()
                 playTime.timerStop()
                 playedGames.increment()
             }
