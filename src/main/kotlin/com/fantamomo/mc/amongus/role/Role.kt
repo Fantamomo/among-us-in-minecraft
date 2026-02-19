@@ -7,6 +7,7 @@ import com.fantamomo.mc.amongus.role.imposters.ImposterRole
 import com.fantamomo.mc.amongus.role.imposters.MinerRole
 import com.fantamomo.mc.amongus.role.imposters.MorphlingRole
 import com.fantamomo.mc.amongus.role.imposters.PhantomRole
+import com.fantamomo.mc.amongus.role.neutral.JesterRole
 
 interface Role<R : Role<R, A>, A : AssignedRole<R, A>> {
     val id: String
@@ -25,7 +26,7 @@ interface Role<R : Role<R, A>, A : AssignedRole<R, A>> {
     fun assignTo(player: AmongUsPlayer): A
 
     companion object {
-        val roles: Set<Role<*, *>> = setOf(
+        val crewmates: Set<Role<*, *>> = setOf(
             CrewmateRole,
             CameraManRole,
             EngineerRole,
@@ -34,12 +35,18 @@ interface Role<R : Role<R, A>, A : AssignedRole<R, A>> {
             TheDamnedRole,
             MayorRole,
             SnitchRole,
-            SheriffRole,
-
+            SheriffRole
+        )
+        val imposters: Set<Role<*, *>> = setOf(
             ImposterRole,
             MinerRole,
             MorphlingRole,
             PhantomRole
         )
+        val neutrals: Set<Role<*, *>> = setOf(
+            JesterRole
+        )
+
+        val roles: Set<Role<*, *>> = crewmates + imposters + neutrals
     }
 }
