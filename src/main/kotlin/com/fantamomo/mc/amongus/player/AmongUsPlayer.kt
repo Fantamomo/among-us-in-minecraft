@@ -86,6 +86,7 @@ class AmongUsPlayer internal constructor(
     val profile: PlayerProfile
         get() = player?.playerProfile?.also { _profile = it } ?: _profile ?: throw IllegalStateException("No profile available")
     var assignedRole: AssignedRole<*, *>? = null
+        internal set
     val tasks: MutableSet<TaskManager.RegisteredTask>
         get() = game.taskManager.get(this)
     var isAlive: Boolean = true
@@ -169,6 +170,8 @@ class AmongUsPlayer internal constructor(
         if (role == null) {
             role = CrewmateRole.assignTo(this)
             assignedRole = role
+            statistics.assignedRole[Team.CREWMATES.defaultRole]?.increment()
+            statistics.assignedTeam[Team.CREWMATES]?.increment()
         }
         addNewAbility(ReportAbility)
         role.definition.defaultAbilities.forEach { addNewAbility(it) }
