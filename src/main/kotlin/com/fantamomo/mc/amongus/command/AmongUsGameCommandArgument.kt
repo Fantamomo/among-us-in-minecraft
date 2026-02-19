@@ -256,8 +256,6 @@ private fun KtCommandBuilder<CommandSourceStack, *>.killPlayerGamCommandExecute(
         return@execute 0
     }
 
-    game.killManager.kill(amongUsPlayer, corpse)
-
     val loc = (amongUsPlayer.mannequinController.getEntity() ?: amongUsPlayer.livingEntity).location
     sendMessage {
         if (corpse) {
@@ -277,6 +275,8 @@ private fun KtCommandBuilder<CommandSourceStack, *>.killPlayerGamCommandExecute(
             }
         }
     }
+
+    game.killManager.kill(amongUsPlayer, corpse)
 
     SINGLE_SUCCESS
 }
