@@ -8,7 +8,7 @@ import com.fantamomo.mc.amongus.ability.builder.abilityItem
 import com.fantamomo.mc.amongus.manager.MeetingManager
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.settings.SettingsKey
-import org.bukkit.Material
+import org.bukkit.inventory.ItemType
 
 object CallMeetingAbility :
     Ability<CallMeetingAbility, CallMeetingAbility.AssignedCallMeetingAbility> {
@@ -24,6 +24,7 @@ object CallMeetingAbility :
 
         override val definition = CallMeetingAbility
 
+        @Suppress("UnstableApiUsage")
         override val items = listOf(
             abilityItem("call_meeting") {
 
@@ -55,7 +56,7 @@ object CallMeetingAbility :
                 state(AbilityItemState.ACTIVE) {
 
                     render {
-                        material = Material.BELL
+                        itemType = ItemType.BELL
                         translationKey = "ability.call_meeting.call_meeting.active"
                     }
 
@@ -70,7 +71,7 @@ object CallMeetingAbility :
                 state(AbilityItemState.BLOCKED) {
 
                     render {
-                        material = Material.BARRIER
+                        itemType = ItemType.BARRIER
                         translationKey = when (ctx.getBlockReason()) {
                             BlockReason.InMeeting ->
                                 "ability.call_meeting.call_meeting.already_in_meeting"
@@ -92,7 +93,7 @@ object CallMeetingAbility :
 
                 state(AbilityItemState.COOLDOWN) {
                     render {
-                        material = Material.BARRIER
+                        itemType = ItemType.BARRIER
                         translationKey = "ability.general.disabled.cooldown"
                     }
                 }

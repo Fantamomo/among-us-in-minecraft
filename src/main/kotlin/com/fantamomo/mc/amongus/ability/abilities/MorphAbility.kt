@@ -25,6 +25,7 @@ object MorphAbility : Ability<MorphAbility, MorphAbility.AssignedMorphAbility> {
     class AssignedMorphAbility(override val player: AmongUsPlayer) :
         AssignedAbility<MorphAbility, AssignedMorphAbility> {
         override val definition = MorphAbility
+        @Suppress("UnstableApiUsage")
         override val items: List<AbilityItem> = listOf(
             abilityItem("morph") {
                 val morphCooldown = timer(
@@ -88,7 +89,7 @@ object MorphAbility : Ability<MorphAbility, MorphAbility.AssignedMorphAbility> {
 
                 state(AbilityItemState.BLOCKED) {
                     render {
-                        material = Material.BARRIER
+                        itemType = ItemType.BARRIER
                         translationKey = when (ctx.getBlockReason()) {
                             BlockReason.InVent ->
                                 "ability.general.disabled.in_vent"
@@ -104,7 +105,7 @@ object MorphAbility : Ability<MorphAbility, MorphAbility.AssignedMorphAbility> {
 
                 state(AbilityItemState.COOLDOWN) {
                     render {
-                        material = Material.BARRIER
+                        itemType = ItemType.BARRIER
                         translationKey = "ability.general.disabled.cooldown"
                     }
                 }

@@ -8,7 +8,7 @@ import com.fantamomo.mc.amongus.ability.builder.abilityItem
 import com.fantamomo.mc.amongus.manager.CameraManager
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.sabotage.SabotageType
-import org.bukkit.Material
+import org.bukkit.inventory.ItemType
 
 object RemoteCameraAbility :
     Ability<RemoteCameraAbility, RemoteCameraAbility.AssignedCameraAbility> {
@@ -26,6 +26,7 @@ object RemoteCameraAbility :
 
         override val definition = RemoteCameraAbility
 
+        @Suppress("UnstableApiUsage")
         override val items = listOf(
             abilityItem("camera") {
 
@@ -66,7 +67,7 @@ object RemoteCameraAbility :
                 state(AbilityItemState.ACTIVE) {
 
                     render {
-                        material = Material.ENDER_EYE
+                        itemType = ItemType.ENDER_EYE
                         translationKey = "ability.remote_camera.camera.active"
                     }
 
@@ -87,7 +88,7 @@ object RemoteCameraAbility :
                 state(AbilityItemState.BLOCKED) {
 
                     render {
-                        material = Material.BARRIER
+                        itemType = ItemType.BARRIER
                         translationKey = when (val reason = ctx.getBlockReason()) {
 
                             BlockReason.Sabotage ->
@@ -115,7 +116,7 @@ object RemoteCameraAbility :
 
                 state(AbilityItemState.COOLDOWN) {
                     render {
-                        material = Material.BARRIER
+                        itemType = ItemType.BARRIER
                         translationKey = "ability.general.disabled.cooldown"
                     }
                 }

@@ -7,7 +7,7 @@ import com.fantamomo.mc.amongus.ability.builder.BlockReason
 import com.fantamomo.mc.amongus.ability.builder.abilityItem
 import com.fantamomo.mc.amongus.manager.MeetingManager
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
-import org.bukkit.Material
+import org.bukkit.inventory.ItemType
 
 object ReportAbility :
     Ability<ReportAbility, ReportAbility.AssignedReportAbility> {
@@ -23,6 +23,7 @@ object ReportAbility :
 
         override val definition = ReportAbility
 
+        @Suppress("UnstableApiUsage")
         override val items = listOf(
             abilityItem("report") {
 
@@ -58,7 +59,7 @@ object ReportAbility :
                 state(AbilityItemState.ACTIVE) {
 
                     render {
-                        material = Material.FIREWORK_ROCKET
+                        itemType = ItemType.FIREWORK_ROCKET
                         translationKey = "ability.report.report.active"
                     }
 
@@ -75,7 +76,7 @@ object ReportAbility :
                 state(AbilityItemState.BLOCKED) {
 
                     render {
-                        material = Material.BARRIER
+                        itemType = ItemType.BARRIER
                         translationKey = when (val reason = ctx.getBlockReason()) {
 
                             BlockReason.InMeeting ->
@@ -105,7 +106,7 @@ object ReportAbility :
 
                 state(AbilityItemState.COOLDOWN) {
                     render {
-                        material = Material.BARRIER
+                        itemType = ItemType.BARRIER
                         translationKey = "ability.general.disabled.cooldown"
                     }
                 }

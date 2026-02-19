@@ -8,7 +8,7 @@ import com.fantamomo.mc.amongus.ability.builder.abilityItem
 import com.fantamomo.mc.amongus.ability.item.AbilityItem
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.role.neutral.CannibalRole
-import org.bukkit.Material
+import org.bukkit.inventory.ItemType
 
 object EatBodyAbility : Ability<EatBodyAbility, EatBodyAbility.AssignedEatBodyAbility> {
     override val id: String = "eat_body"
@@ -21,6 +21,7 @@ object EatBodyAbility : Ability<EatBodyAbility, EatBodyAbility.AssignedEatBodyAb
         AssignedAbility<EatBodyAbility, AssignedEatBodyAbility> {
         override val definition = EatBodyAbility
 
+        @Suppress("UnstableApiUsage")
         override val items: List<AbilityItem> = listOf(
             abilityItem("eat_body") {
                 condition {
@@ -45,7 +46,7 @@ object EatBodyAbility : Ability<EatBodyAbility, EatBodyAbility.AssignedEatBodyAb
                 state(AbilityItemState.ACTIVE) {
 
                     render {
-                        material = Material.CLAY_BALL
+                        itemType = ItemType.CLAY_BALL
                         translationKey = "ability.eat_body.eat_body.active"
                     }
 
@@ -57,7 +58,7 @@ object EatBodyAbility : Ability<EatBodyAbility, EatBodyAbility.AssignedEatBodyAb
                 state(AbilityItemState.BLOCKED) {
 
                     render {
-                        material = Material.BARRIER
+                        itemType = ItemType.BARRIER
                         translationKey = when (val reason = ctx.getBlockReason()) {
 
                             BlockReason.InMeeting ->

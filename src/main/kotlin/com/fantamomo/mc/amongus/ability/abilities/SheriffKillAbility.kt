@@ -8,7 +8,7 @@ import com.fantamomo.mc.amongus.ability.builder.abilityItem
 import com.fantamomo.mc.amongus.ability.item.AbilityItem
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.settings.SettingsKey
-import org.bukkit.Material
+import org.bukkit.inventory.ItemType
 
 object SheriffKillAbility : Ability<SheriffKillAbility, SheriffKillAbility.AssignedSheriffKillAbility> {
     override val id: String = "sheriff_kill"
@@ -17,6 +17,7 @@ object SheriffKillAbility : Ability<SheriffKillAbility, SheriffKillAbility.Assig
 
     class AssignedSheriffKillAbility(override val player: AmongUsPlayer) : AssignedAbility<SheriffKillAbility, AssignedSheriffKillAbility> {
         override val definition = SheriffKillAbility
+        @Suppress("UnstableApiUsage")
         override val items: List<AbilityItem> = listOf(
             abilityItem("sheriff_kill") {
                 // ---------- TIMER SETUP ----------
@@ -50,7 +51,7 @@ object SheriffKillAbility : Ability<SheriffKillAbility, SheriffKillAbility.Assig
                 state(AbilityItemState.ACTIVE) {
 
                     render {
-                        material = Material.NETHER_STAR
+                        itemType = ItemType.NETHER_STAR
                         translationKey = "ability.sheriff_kill.sheriff_kill.active"
                     }
 
@@ -66,7 +67,7 @@ object SheriffKillAbility : Ability<SheriffKillAbility, SheriffKillAbility.Assig
                 state(AbilityItemState.BLOCKED) {
 
                     render {
-                        material = Material.BARRIER
+                        itemType = ItemType.BARRIER
                         translationKey = when (ctx.getBlockReason()) {
                             BlockReason.Dead ->
                                 "ability.kill.kill.dead"
@@ -87,7 +88,7 @@ object SheriffKillAbility : Ability<SheriffKillAbility, SheriffKillAbility.Assig
                 state(AbilityItemState.COOLDOWN) {
 
                     render {
-                        material = Material.BARRIER
+                        itemType = ItemType.BARRIER
                         translationKey = "ability.general.disabled.cooldown"
                     }
                 }
