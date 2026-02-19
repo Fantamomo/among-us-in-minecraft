@@ -30,6 +30,12 @@ object CannibalRole : Role<CannibalRole, CannibalRole.AssignedCannibalRole> {
             get() = player.game.settings[SettingsKey.ROLES.CANNIBAL_BODIES_TO_EAT]
 
         var eatenBodies: Int = 0
+            private set
+
+        fun incrementEatenBodies() {
+            eatenBodies++
+            player.statistics.cannibalEatenBodies.increment()
+        }
 
         override val description: Component
             get() = textComponent {

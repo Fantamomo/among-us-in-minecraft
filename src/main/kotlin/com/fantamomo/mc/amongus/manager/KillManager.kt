@@ -348,7 +348,7 @@ class KillManager(val game: Game) {
 
         val corpse = nearestCorpse(player.livingEntity.location) ?: return
         corpse.remove()
-        cannibalRole.eatenBodies++
+        cannibalRole.incrementEatenBodies()
         game.checkWin()
     }
 
