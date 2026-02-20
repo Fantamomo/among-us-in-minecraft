@@ -7,6 +7,7 @@ class AbilityTimer(
     val id: String,
     internal val handle: Cooldown
 ) {
+    var resetAfterMeeting: Boolean = true
     constructor(id: String, duration: Duration) : this(id, Cooldown(duration))
 
     fun start(newDuration: Duration = handle.startDuration()) {
