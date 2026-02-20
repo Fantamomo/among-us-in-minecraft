@@ -9,6 +9,7 @@ import io.papermc.paper.datacomponent.DataComponentTypes
 import io.papermc.paper.datacomponent.item.UseCooldown
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.TranslatableComponent
+import net.kyori.adventure.text.minimessage.translation.Argument
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.ItemType
 import org.bukkit.inventory.meta.ItemMeta
@@ -22,7 +23,8 @@ class AbilityItemRender<M : ItemMeta>(
     val ctx: AbilityContext
 ) {
     lateinit var itemType: ItemType.Typed<M>
-    private var displayNameObject: Any? = ctx.getBlockReason()?.defaultBlockMessage
+    private var displayNameObject: Any? =
+        (ctx.getBlockReason()?.defaultBlockMessage as? TranslatableComponent)?.arguments(Argument.string("ability", ctx.ability.definition.id))
     var displayName: Component
         get() = when (val obj = displayNameObject) {
             is Component -> obj

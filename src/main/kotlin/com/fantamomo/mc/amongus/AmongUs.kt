@@ -46,6 +46,8 @@ object AmongUs : JavaPlugin() {
         Permissions.registerAll()
 
         runCatching { classLoader.loadClass("kotlin.io.FilesKt") }
+        @Suppress("UnusedExpression")
+        PlayerDataManager
     }
 
     private val classNotFoundExceptions: MutableList<NoClassDefFoundError> = mutableListOf()
