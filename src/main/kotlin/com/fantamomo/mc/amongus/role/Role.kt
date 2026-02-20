@@ -3,10 +3,7 @@ package com.fantamomo.mc.amongus.role
 import com.fantamomo.mc.amongus.ability.Ability
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.role.crewmates.*
-import com.fantamomo.mc.amongus.role.imposters.ImposterRole
-import com.fantamomo.mc.amongus.role.imposters.MinerRole
-import com.fantamomo.mc.amongus.role.imposters.MorphlingRole
-import com.fantamomo.mc.amongus.role.imposters.PhantomRole
+import com.fantamomo.mc.amongus.role.imposters.*
 import com.fantamomo.mc.amongus.role.neutral.ArsonistRole
 import com.fantamomo.mc.amongus.role.neutral.CannibalRole
 import com.fantamomo.mc.amongus.role.neutral.JesterRole
@@ -44,7 +41,8 @@ interface Role<R : Role<R, A>, A : AssignedRole<R, A>> {
             ImposterRole,
             MinerRole,
             MorphlingRole,
-            PhantomRole
+            PhantomRole,
+            CamouflagerRole
         )
         val neutrals: Set<Role<*, *>> = setOf(
             JesterRole,

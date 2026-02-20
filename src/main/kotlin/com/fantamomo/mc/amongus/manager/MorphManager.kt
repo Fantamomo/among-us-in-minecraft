@@ -35,6 +35,8 @@ import kotlin.uuid.toKotlinUuid
 
 class MorphManager(val game: Game) {
     private val morphs: MutableMap<AmongUsPlayer, MorphedPlayer> = mutableMapOf()
+    private var camouflageStart: Instant? = null
+    private var camouflageTarget: AmongUsPlayer? = null
 
     private var ticks: Int = 0
 
@@ -97,14 +99,14 @@ class MorphManager(val game: Game) {
         fun unmorph(animation: Boolean = true) {
             if (animation && frames != null) {
                 playBackwardAnimation {
-                    player.mannequinController.restoreAppearance()
+                    if (camouflageStart == null) player.mannequinController.restoreAppearance()
                     actionBar.remove()
                     morphs.remove(player)
                     abilityTimer?.start(player.game.settings[SettingsKey.ROLES.MORPHLING_MORPH_COOLDOWN])
                 }
             } else {
                 abilityTimer?.start(player.game.settings[SettingsKey.ROLES.MORPHLING_MORPH_COOLDOWN])
-                player.mannequinController.restoreAppearance()
+                if (camouflageStart == null) player.mannequinController.restoreAppearance()
                 actionBar.remove()
                 morphs.remove(player)
             }
@@ -150,6 +152,7 @@ class MorphManager(val game: Game) {
 
             when (val frame = frames[animationIndex++]) {
                 is MorphSkinManager.Skin.GeneratedSkin -> {
+                    if (camouflageStart != null) return
                     player.mannequinController.setSkinTexture(
                         frame.value,
                         frame.signature
@@ -157,6 +160,7 @@ class MorphManager(val game: Game) {
                 }
 
                 is MorphSkinManager.Skin.PlayerProfileSkin -> {
+                    if (camouflageStart != null) return
                     val profile = frame.profile.id ?: return
                     val amongUsPlayer = PlayerManager.getPlayer(profile)
                     if (amongUsPlayer == null) {
@@ -174,6 +178,17 @@ class MorphManager(val game: Game) {
     fun getMorphedPlayer(player: AmongUsPlayer) = morphs[player]
 
     fun tick() {
+        val camouflageStart = camouflageStart
+        if (camouflageStart != null) {
+            val camouflageDuration = game.settings[SettingsKey.ROLES.CAMOUFLAGE_DURATION]
+            if (Clock.System.now() - camouflageStart > camouflageDuration) {
+                this.camouflageStart = null
+                this.camouflageTarget = null
+                for (player in game.players) {
+                    player.mannequinController.restoreAppearanceFromOriginalOrMorph()
+                }
+            }
+        }
         if (morphs.isEmpty()) return
         for (morphedPlayer in morphs.values) {
             morphedPlayer.tick()
@@ -225,7 +240,7 @@ class MorphManager(val game: Game) {
             morphed.frames = frames
             morphed.playForwardAnimation()
         } else {
-            player.mannequinController.copyAppearanceFrom(target)
+            if (camouflageStart == null) player.mannequinController.copyAppearanceFrom(target)
 
             MorphSkinManager.pregenerateFromProfiles(
                 player.profile,
@@ -303,6 +318,26 @@ class MorphManager(val game: Game) {
             callback(false)
         }
     }
+
+    fun remainingCamouflageTime(): Duration? {
+        val camouflageStart = camouflageStart ?: return null
+        val camouflageDuration = game.settings[SettingsKey.ROLES.CAMOUFLAGE_DURATION]
+        return (camouflageDuration - (Clock.System.now() - camouflageStart)).takeIf { it > Duration.ZERO } ?: Duration.ZERO
+    }
+
+    fun isCamouflageMode() = camouflageStart != null
+
+    fun camouflageMode() {
+        if (camouflageStart != null) return
+        camouflageStart = Clock.System.now()
+        val selectedPlayer = game.players.random()
+        camouflageTarget = selectedPlayer
+        for (player in game.players) {
+            player.mannequinController.copyAppearanceFrom(selectedPlayer)
+        }
+    }
+
+    fun camouflageTarget(): AmongUsPlayer? = camouflageTarget
 
     private fun onClick(inventory: MorphInventory, event: InventoryClickEvent): Boolean {
         val player = inventory.player
