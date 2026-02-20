@@ -37,7 +37,8 @@ interface Role<R : Role<R, A>, A : AssignedRole<R, A>> {
             TheDamnedRole,
             MayorRole,
             SnitchRole,
-            SheriffRole
+            SheriffRole,
+            SeerRole
         )
         val imposters: Set<Role<*, *>> = setOf(
             ImposterRole,
