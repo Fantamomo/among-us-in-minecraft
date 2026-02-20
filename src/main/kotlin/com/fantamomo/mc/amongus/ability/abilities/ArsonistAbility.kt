@@ -33,7 +33,7 @@ object ArsonistAbility : Ability<ArsonistAbility, ArsonistAbility.AssignedArsoni
 
                 val douseCooldown = timer(
                     "cooldown",
-                    player.game.settings[SettingsKey.ROLES.ARSONIST_DOUSE_COOLDOWN]
+                    player.game.settings[SettingsKey.ROLES.ARSONIST.DOUSE_COOLDOWN]
                 )
 
                 condition {

@@ -185,7 +185,7 @@ class RoleManager(private val game: Game) {
     }
 
     private fun buildRoleChanceMap(): Map<Role<*, *>, Int> =
-        SettingsKey.ROLES.roles
+        SettingsKey.ROLES.ROLE_CHANCES.roles
             .mapValues { (_, key) ->
                 game.settings[key].coerceIn(0, 100)
             }

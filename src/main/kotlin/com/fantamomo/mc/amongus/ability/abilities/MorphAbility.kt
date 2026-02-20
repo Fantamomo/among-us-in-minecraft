@@ -30,7 +30,7 @@ object MorphAbility : Ability<MorphAbility, MorphAbility.AssignedMorphAbility> {
             abilityItem("morph") {
                 val morphCooldown = timer(
                     "cooldown",
-                    player.game.settings[SettingsKey.ROLES.MORPHLING_MORPH_COOLDOWN]
+                    player.game.settings[SettingsKey.ROLES.MORPHLING.MORPH_COOLDOWN]
                 )
 
                 condition {
@@ -76,7 +76,7 @@ object MorphAbility : Ability<MorphAbility, MorphAbility.AssignedMorphAbility> {
 
                         if (player.game.morphManager.isMorphed(player)) {
                             player.game.morphManager.unmorph(player)
-                            val duration = player.game.settings[SettingsKey.ROLES.MORPHLING_MORPH_COOLDOWN]
+                            val duration = player.game.settings[SettingsKey.ROLES.MORPHLING.MORPH_COOLDOWN]
                             morphCooldown.start(duration)
                             return@onRightClick
                         }
