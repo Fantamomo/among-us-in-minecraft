@@ -203,8 +203,10 @@ class MannequinController(
         }
 
         val display = colorDisplays.getOrPut(color) {
+            val nameToDisplay = owner.game.morphManager.getMorphedPlayer(owner)?.target?.name ?: owner.name
+
             mannequin.world.spawn(mannequin.location, TextDisplay::class.java) {
-                it.text(Component.text(owner.name, color))
+                it.text(Component.text(nameToDisplay, color))
                 modifyTextDisplay(it)
                 it.isVisibleByDefault = false
                 mannequin.addPassenger(it)
