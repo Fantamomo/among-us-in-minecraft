@@ -6,8 +6,10 @@ import com.fantamomo.mc.amongus.role.neutral.ArsonistRole
 import com.fantamomo.mc.amongus.role.neutral.CannibalRole
 import com.fantamomo.mc.amongus.role.neutral.JesterRole
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextColor
 
-sealed class Team(val name: String, private val default: Role<*, *>?, val id: String = name) {
+sealed class Team(val name: String, private val default: Role<*, *>?, val textColor: TextColor, val id: String = name) {
 
     init {
         require(id.isNotBlank()) { "Team ID cannot be blank" }
@@ -26,11 +28,15 @@ sealed class Team(val name: String, private val default: Role<*, *>?, val id: St
 
     val description = Component.translatable("team.$id")
 
-    data object CREWMATES : Team("crewmates", CrewmateRole)
-    data object IMPOSTERS : Team("imposters", ImposterRole)
+    data object CREWMATES : Team("crewmates", CrewmateRole, NamedTextColor.BLUE)
+    data object IMPOSTERS : Team("imposters", ImposterRole, NamedTextColor.RED)
 
     @ConsistentCopyVisibility
-    data class NEUTRAL private constructor(val role: Role<*, *>) : Team(role.id, null, "neutral.${role.id}") {
+    data class NEUTRAL private constructor(
+        val role: Role<*, *>
+    ) : Team(
+        role.id, null, NamedTextColor.LIGHT_PURPLE, "neutral.${role.id}"
+    ) {
         companion object {
             val JESTER by lazy { NEUTRAL(JesterRole) }
             val CANNIBAL by lazy { NEUTRAL(CannibalRole) }
