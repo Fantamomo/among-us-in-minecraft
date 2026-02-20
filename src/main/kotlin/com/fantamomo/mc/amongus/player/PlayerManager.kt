@@ -62,8 +62,8 @@ object PlayerManager {
         if (auPlayer.game.phase.onDisconnectRemove) {
             auPlayer.mannequinController.despawn()
             players.remove(auPlayer)
-            auPlayer.game.onDisconnected(auPlayer)
         }
+        auPlayer.game.onDisconnected(auPlayer)
     }
 
     internal fun gameEnds(amongUsPlayer: AmongUsPlayer) {
@@ -112,6 +112,7 @@ object PlayerManager {
         }
         amongUsPlayer.mannequinController.hideFromSelf()
         amongUsPlayer.wardrobeMannequin?.let { player.showEntity(AmongUs, it) }
+        amongUsPlayer.disconnectedAt = null
         game.onRejoin(amongUsPlayer)
     }
 

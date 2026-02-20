@@ -1,13 +1,13 @@
 package com.fantamomo.mc.amongus.game
 
 import com.fantamomo.mc.adventure.text.args
-import com.fantamomo.mc.adventure.text.content
 import com.fantamomo.mc.adventure.text.textComponent
 import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.ability.AbilityManager
 import com.fantamomo.mc.amongus.area.GameArea
 import com.fantamomo.mc.amongus.languages.component
+import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.manager.*
 import com.fantamomo.mc.amongus.player.*
 import com.fantamomo.mc.amongus.role.RoleManager
@@ -16,6 +16,7 @@ import com.fantamomo.mc.amongus.sabotage.SabotageManager
 import com.fantamomo.mc.amongus.settings.Settings
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.task.TaskManager
+import com.fantamomo.mc.amongus.util.toSmartString
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.JoinConfiguration
 import net.kyori.adventure.text.format.NamedTextColor
@@ -26,6 +27,8 @@ import org.bukkit.Bukkit
 import org.bukkit.World
 import org.bukkit.entity.Player
 import java.util.*
+import kotlin.time.Clock
+import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.Uuid
 
 class Game(
@@ -166,9 +169,29 @@ class Game(
         roleManager.tick()
         morphManager.tick()
         ghostFormManager.tick()
+
+        val now = Clock.System.now()
+
         for (player in players) {
             player.mannequinController.syncFromPlayer()
+            val disconnectedAt = player.disconnectedAt ?: continue
+            if (now - disconnectedAt < MAX_DISCONNECT_TIME) continue
+            killPlayer(player)
         }
+    }
+
+    private fun killPlayer(player: AmongUsPlayer) {
+        killManager.kill(player, false)
+        taskManager.removePlayer(player)
+        player.abilities.clear()
+        player.disconnectedAt = null
+        sendChatMessage(textComponent {
+            translatable("game.disconnected.killed") {
+                args {
+                    string("player", player.name)
+                }
+            }
+        })
     }
 
     fun getPlayer(uuid: UUID) = players.find { it.uuid == uuid }
@@ -181,6 +204,7 @@ class Game(
     }
 
     internal fun onDisconnected(player: AmongUsPlayer) {
+        player.disconnectedAt = Clock.System.now()
         when (phase) {
             GamePhase.RUNNING,
             GamePhase.CALLING_MEETING,
@@ -188,7 +212,12 @@ class Game(
             GamePhase.VOTING,
             GamePhase.ENDING_MEETING -> {
                 sendChatMessage(textComponent {
-                    content("${player.name} has disconnected from the game. He has 60 seconds to reconnect, before he will be killed.")
+                    translatable("game.disconnected") {
+                        args {
+                            string("player", player.name)
+                            string("time", MAX_DISCONNECT_TIME.toSmartString())
+                        }
+                    }
                 })
             }
 
@@ -386,6 +415,7 @@ class Game(
     }
 
     companion object {
+        val MAX_DISCONNECT_TIME = 30.seconds
         const val DEFAULT_MAX_PLAYERS = 16
         const val NEEDED_PLAYERS_FOR_START = 4
         val CODE_CHARS = ('A'..'Z') + ('0'..'9')
