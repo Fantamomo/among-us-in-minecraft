@@ -1,8 +1,12 @@
 package com.fantamomo.mc.amongus.listeners
 
+import com.fantamomo.mc.amongus.game.GamePhase
+import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.player.PlayerColor
 import com.fantamomo.mc.amongus.player.PlayerManager
+import com.fantamomo.mc.amongus.player.WardrobeInventory
 import com.fantamomo.mc.amongus.sabotage.SabotageType
+import com.fantamomo.mc.amongus.util.RefPersistentDataType
 import com.fantamomo.mc.amongus.util.isSameBlockPosition
 import io.papermc.paper.event.entity.EntityKnockbackEvent
 import org.bukkit.GameMode
@@ -16,6 +20,7 @@ import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryType
+import org.bukkit.event.player.PlayerInteractEntityEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
@@ -86,6 +91,32 @@ object PlayerListener : Listener {
         ) return
         if (!game.meetingManager.isCurrentlyAMeeting() && area.meetingBlock?.isSameBlockPosition(target) == true) return
         event.isCancelled = true
+    }
+
+    @EventHandler
+    fun onPlayerInteractEntity(event: PlayerInteractEntityEvent) {
+        val player = event.player
+        val usPlayer = PlayerManager.getPlayer(player) ?: return
+        val game = usPlayer.game
+        if (game.phase != GamePhase.LOBBY && game.phase != GamePhase.STARTING) return
+        val rightClicked = event.rightClicked
+        if (rightClicked !is Mannequin) return
+        if (!rightClicked.persistentDataContainer.has(AmongUsPlayer.WARDROBE_MANNEQUIN_OWNER)) return
+        val owner = rightClicked.persistentDataContainer.get(AmongUsPlayer.WARDROBE_MANNEQUIN_OWNER, RefPersistentDataType.refPersistentDataType<AmongUsPlayer>())?.getOrNull() ?: return
+        if (usPlayer !== owner) return
+        player.openInventory(WardrobeInventory(owner).inventory)
+        usPlayer.game.updateAllWardrobeInventories()
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    fun onInventoryInteract(event: InventoryClickEvent) {
+        val inventory = event.inventory
+        val holder = inventory.holder
+        if (holder !is WardrobeInventory) return
+        event.isCancelled = true
+        val player = event.whoClicked as? Player ?: return
+        if (holder.owner.player !== player) return
+        holder.onClick(event)
     }
 
     @EventHandler
