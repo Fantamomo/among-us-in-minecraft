@@ -38,6 +38,20 @@ object AbilityManager {
         }
     }
 
+    fun resetCooldownsAfterMeeting(game: Game) {
+        for (player in game.players) {
+            for (ability in player.abilities) {
+                for (item in ability.items) {
+                    if (item !is DSLAbilityItem) continue
+                    for ((_, timer) in item.ctx.timers) {
+                        if (timer.resetAfterMeeting) timer.reset(true)
+                    }
+                    item.notifyItemChange()
+                }
+            }
+        }
+    }
+
     fun invalidateAll(game: Game) {
         for (player in game.players) {
             invalidatePlayer(player)
