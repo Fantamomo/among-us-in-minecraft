@@ -15,7 +15,7 @@ object SettingsListener : Listener {
         if (holder !is SettingsInventory) return
         event.isCancelled = true
         val player = event.whoClicked as? Player ?: return
-        if (holder.owner.player != player) return
+        if (holder.owner.player !== player) return
         holder.onClick(event)
     }
 }
