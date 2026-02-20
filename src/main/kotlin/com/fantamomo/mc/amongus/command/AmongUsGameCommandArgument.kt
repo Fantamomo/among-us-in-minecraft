@@ -23,6 +23,7 @@ import io.papermc.paper.command.brigadier.argument.ArgumentTypes
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.World
 import org.bukkit.entity.Player
+import java.util.*
 
 
 fun PaperCommand.gameCommand() = literal("game") {
@@ -34,6 +35,283 @@ fun PaperCommand.gameCommand() = literal("game") {
     letWinGameCommand()
     killPlayerGameCommand()
     roleGameCommand()
+    playerInfoGameCommand()
+}
+
+private fun PaperCommand.playerInfoGameCommand() = literal("info") {
+    argument("target", AmongUsPlayerArgumentType.SINGLE) {
+        execute {
+            val targetResolver = arg<AmongUsPlayerSelectorArgumentResolver>("target")
+            val target: AmongUsPlayer = targetResolver.resolve(source).first()
+
+            val role = target.assignedRole
+            val tasks = target.tasks.toList()
+            val completedTasks = tasks.count { it.completed }
+            val location = target.livingEntityOrNull?.location
+
+            sendMessage {
+                translatable("command.success.admin.game.info.header") {
+                    args {
+                        string("player", target.name)
+                        string("uuid", target.uuid.toString())
+                    }
+                }
+            }
+
+            sendMessage {
+                translatable("command.success.admin.game.info.section.identity")
+            }
+            sendMessage {
+                translatable("command.success.admin.game.info.locale") {
+                    args {
+                        string("locale", target.locale.toLanguageTag())
+                        string("language", target.locale.getDisplayLanguage(Locale.US))
+                    }
+                }
+            }
+            sendMessage {
+                translatable("command.success.admin.game.info.color") {
+                    args {
+                        string("color", target.color.name)
+                        string("visible_color", target.visibleColor.name)
+                        component("morphed") {
+                            translatable(
+                                if (target.game.morphManager.isMorphed(target)) "command.success.admin.game.info.yes"
+                                else "command.success.admin.game.info.no"
+                            )
+                        }
+                    }
+                }
+            }
+            target.armorTrim?.let { trim ->
+                sendMessage {
+                    translatable("command.success.admin.game.info.armor_trim") {
+                        args {
+                            component("material", trim.material.description())
+                            component("pattern", trim.pattern.description())
+                        }
+                    }
+                }
+            }
+
+            sendMessage {
+                translatable("command.success.admin.game.info.section.game")
+            }
+            sendMessage {
+                translatable("command.success.admin.game.info.game") {
+                    args {
+                        string("code", target.game.code)
+                        string("area", target.game.area.name)
+                        string("phase", target.game.phase.name.lowercase().replaceFirstChar(Char::uppercase))
+                        numeric("players", target.game.players.size)
+                        numeric("max_players", target.game.maxPlayers)
+                    }
+                }
+            }
+
+            sendMessage {
+                translatable("command.success.admin.game.info.section.status")
+            }
+            sendMessage {
+                translatable("command.success.admin.game.info.alive") {
+                    args {
+                        component("value") {
+                            translatable(if (target.isAlive) "command.success.admin.game.info.alive.yes" else "command.success.admin.game.info.alive.no")
+                        }
+                    }
+                }
+            }
+            sendMessage {
+                translatable("command.success.admin.game.info.online") {
+                    args {
+                        component("value") {
+                            translatable(if (target.player != null) "command.success.admin.game.info.yes" else "command.success.admin.game.info.no")
+                        }
+                    }
+                }
+            }
+            target.disconnectedAt?.let {
+                sendMessage {
+                    translatable("command.success.admin.game.info.disconnected_at") {
+                        args {
+                            string("time", it.toString())
+                        }
+                    }
+                }
+            }
+            sendMessage {
+                translatable("command.success.admin.game.info.ghost_form") {
+                    args {
+                        component("value") {
+                            translatable(if (target.isInGhostForm()) "command.success.admin.game.info.yes" else "command.success.admin.game.info.no")
+                        }
+                    }
+                }
+            }
+            sendMessage {
+                translatable("command.success.admin.game.info.meetings_pressed") {
+                    args {
+                        numeric("count", target.meetingButtonsPressed)
+                    }
+                }
+            }
+
+            sendMessage {
+                translatable("command.success.admin.game.info.section.location")
+            }
+            if (location != null) {
+                sendMessage {
+                    translatable("command.success.admin.game.info.location") {
+                        args {
+                            numeric("x", location.blockX)
+                            numeric("y", location.blockY)
+                            numeric("z", location.blockZ)
+                            string("world", location.world.name)
+                        }
+                    }
+                }
+                sendMessage {
+                    translatable("command.success.admin.game.info.location.entity_type") {
+                        args {
+                            string(
+                                "type", when {
+                                    target.player != null -> "Player"
+                                    target.mannequinController.getEntity() != null -> "Mannequin"
+                                    else -> "None"
+                                }
+                            )
+                        }
+                    }
+                }
+            } else {
+                sendMessage {
+                    translatable("command.success.admin.game.info.location.none")
+                }
+            }
+            sendMessage {
+                translatable("command.success.admin.game.info.vented") {
+                    args {
+                        component("value") {
+                            translatable(if (target.isVented()) "command.success.admin.game.info.yes" else "command.success.admin.game.info.no")
+                        }
+                    }
+                }
+            }
+            sendMessage {
+                translatable("command.success.admin.game.info.near_vent") {
+                    args {
+                        component("value") {
+                            translatable(if (target.isNearVent()) "command.success.admin.game.info.yes" else "command.success.admin.game.info.no")
+                        }
+                    }
+                }
+            }
+            sendMessage {
+                translatable("command.success.admin.game.info.in_cams") {
+                    args {
+                        component("value") {
+                            translatable(if (target.isInCams()) "command.success.admin.game.info.yes" else "command.success.admin.game.info.no")
+                        }
+                    }
+                }
+            }
+
+            sendMessage {
+                translatable("command.success.admin.game.info.section.role")
+            }
+            if (role != null) {
+                sendMessage {
+                    translatable("command.success.admin.game.info.role") {
+                        args {
+                            component("role", role.name)
+                            string("team", role.definition.team.name)
+                        }
+                    }
+                }
+                sendMessage {
+                    translatable("command.success.admin.game.info.role.can_do_tasks") {
+                        args {
+                            component("value") {
+                                translatable(if (target.canDoTasks) "command.success.admin.game.info.yes" else "command.success.admin.game.info.no")
+                            }
+                        }
+                    }
+                }
+                sendMessage {
+                    translatable("command.success.admin.game.info.role.can_see_lights") {
+                        args {
+                            component("value") {
+                                translatable(if (target.canSeeWhenLightsSabotage()) "command.success.admin.game.info.yes" else "command.success.admin.game.info.no")
+                            }
+                        }
+                    }
+                }
+            } else {
+                sendMessage {
+                    translatable("command.success.admin.game.info.role.none")
+                }
+            }
+
+            sendMessage {
+                translatable("command.success.admin.game.info.section.abilities") {
+                    args {
+                        numeric("count", target.abilities.size)
+                    }
+                }
+            }
+            if (target.abilities.isEmpty()) {
+                sendMessage {
+                    translatable("command.success.admin.game.info.abilities.none")
+                }
+            } else {
+                for (ability in target.abilities) {
+                    sendMessage {
+                        translatable("command.success.admin.game.info.ability.entry") {
+                            args {
+                                string("ability", ability.definition.id)
+                                numeric("items", ability.items.size)
+                            }
+                        }
+                    }
+                }
+            }
+
+            sendMessage {
+                translatable("command.success.admin.game.info.section.tasks") {
+                    args {
+                        numeric("completed", completedTasks)
+                        numeric("total", tasks.size)
+                    }
+                }
+            }
+            if (tasks.isEmpty()) {
+                sendMessage {
+                    translatable("command.success.admin.game.info.tasks.none")
+                }
+            } else {
+                for (registeredTask in tasks) {
+                    sendMessage {
+                        translatable(
+                            if (registeredTask.completed)
+                                "command.success.admin.game.info.task.entry.completed"
+                            else
+                                "command.success.admin.game.info.task.entry.pending"
+                        ) {
+                            args {
+                                string("task", registeredTask.task.task.id)
+                            }
+                        }
+                    }
+                }
+            }
+
+            sendMessage {
+                translatable("command.success.admin.game.info.footer")
+            }
+
+            SINGLE_SUCCESS
+        }
+    }
 }
 
 private fun PaperCommand.roleGameCommand() = literal("role") {
