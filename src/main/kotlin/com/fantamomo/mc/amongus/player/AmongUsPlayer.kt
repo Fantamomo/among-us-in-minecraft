@@ -33,6 +33,7 @@ import org.bukkit.inventory.meta.trim.ArmorTrim
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import java.util.*
+import kotlin.time.Instant
 import kotlin.uuid.toKotlinUuid
 
 class AmongUsPlayer internal constructor(
@@ -135,6 +136,7 @@ class AmongUsPlayer internal constructor(
     var meetingButtonsPressed: Int = 0
     val canDoTasks: Boolean
         get() = assignedRole?.definition?.canDoTask != false
+    internal var disconnectedAt: Instant? = null
 
     val statistics = PlayerStatistics(uuid.toKotlinUuid())
     val helpPreferences = persistencePlayerData.helpPreferences
