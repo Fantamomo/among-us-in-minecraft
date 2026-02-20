@@ -91,17 +91,11 @@ object GhostFormAbility : Ability<GhostFormAbility, GhostFormAbility.AssignedGho
 
                     render {
                         itemType = ItemType.BARRIER
-                        translationKey = when (ctx.getBlockReason()) {
+                        when (ctx.getBlockReason()) {
                             BlockReason.Dead ->
-                                "ability.kill.kill.dead"
-                            BlockReason.InVent ->
-                                "ability.general.disabled.in_vent"
+                                translationKey = "ability.kill.kill.dead"
 
-                            BlockReason.InMeeting ->
-                                "ability.general.disabled.in_meeting"
-
-                            else ->
-                                "ability.ghost_form.ghost_form.deactivate"
+                            else -> {}
                         }
                     }
                 }

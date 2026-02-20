@@ -77,15 +77,8 @@ object ReportAbility :
 
                     render {
                         itemType = ItemType.BARRIER
-                        translationKey = when (val reason = ctx.getBlockReason()) {
-
-                            BlockReason.InMeeting ->
-                                "ability.general.disabled.in_meeting"
-
-                            BlockReason.InVent ->
-                                "ability.general.disabled.in_vent"
-
-                            is BlockReason.Custom -> when (reason.id) {
+                        when (val reason = ctx.getBlockReason()) {
+                            is BlockReason.Custom -> translationKey = when (reason.id) {
                                 "notNearCorpse" ->
                                     "ability.report.report.deactivate"
 
@@ -96,8 +89,7 @@ object ReportAbility :
                                     "ability.report.report.deactivate"
                             }
 
-                            else ->
-                                "ability.report.report.deactivate"
+                            else -> {}
                         }
                     }
                 }

@@ -76,20 +76,6 @@ object SabotageAbility :
             state(AbilityItemState.BLOCKED) {
                 render {
                     itemType(sabotage.sabotageType.deactivateMaterial)
-                    translationKey = when (ctx.getBlockReason()) {
-
-                        BlockReason.Sabotage ->
-                            "ability.sabotage.disabled"
-
-                        BlockReason.InMeeting ->
-                            "ability.general.disabled.in_meeting"
-
-                        BlockReason.InVent ->
-                            "ability.general.disabled.in_vent"
-
-                        else ->
-                            "ability.sabotage.disabled"
-                    }
                 }
             }
         }

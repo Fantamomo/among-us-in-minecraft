@@ -68,17 +68,12 @@ object SheriffKillAbility : Ability<SheriffKillAbility, SheriffKillAbility.Assig
 
                     render {
                         itemType = ItemType.BARRIER
-                        translationKey = when (ctx.getBlockReason()) {
+                        when (ctx.getBlockReason()) {
                             BlockReason.Dead ->
-                                "ability.kill.kill.dead"
-                            BlockReason.InVent ->
-                                "ability.general.disabled.in_vent"
-
-                            BlockReason.InMeeting ->
-                                "ability.general.disabled.in_meeting"
-
-                            else ->
-                                "ability.sheriff_kill.sheriff_kill.deactivate"
+                                translationKey = "ability.kill.kill.dead"
+                            is BlockReason.Custom ->
+                                translationKey = "ability.sheriff_kill.sheriff_kill.deactivate"
+                            else -> {}
                         }
                     }
                 }

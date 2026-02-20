@@ -74,20 +74,14 @@ object ArsonistAbility : Ability<ArsonistAbility, ArsonistAbility.AssignedArsoni
 
                     render {
                         itemType = ItemType.BARRIER
-                        translationKey = when (ctx.getBlockReason()) {
+                        when (ctx.getBlockReason()) {
                             BlockReason.Dead ->
-                                "ability.arsonist.douse.dead"
-                            BlockReason.InVent ->
-                                "ability.general.disabled.in_vent"
-
-                            BlockReason.InMeeting ->
-                                "ability.general.disabled.in_meeting"
+                                translationKey = "ability.arsonist.douse.dead"
 
                             is BlockReason.Custom ->
-                                "ability.arsonist.douse.deactivate.not_near_undoused_player"
+                                translationKey = "ability.arsonist.douse.deactivate.not_near_undoused_player"
 
-                            else ->
-                                "ability.arsonist.douse.deactivate"
+                            else -> {}
                         }
                     }
                 }

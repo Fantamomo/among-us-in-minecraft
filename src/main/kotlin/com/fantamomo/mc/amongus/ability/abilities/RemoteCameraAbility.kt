@@ -89,25 +89,15 @@ object RemoteCameraAbility :
 
                     render {
                         itemType = ItemType.BARRIER
-                        translationKey = when (val reason = ctx.getBlockReason()) {
-
-                            BlockReason.Sabotage ->
-                                "ability.general.disabled.sabotage"
-
-                            BlockReason.InVent ->
-                                "ability.general.disabled.in_vent"
-
-                            BlockReason.InMeeting ->
-                                "ability.general.disabled.in_meeting"
+                        when (val reason = ctx.getBlockReason()) {
 
                             is BlockReason.Custom if (reason.id == "inCams") ->
-                                "ability.remote_camera.camera.already_in_cams"
+                                translationKey = "ability.remote_camera.camera.already_in_cams"
 
                             is BlockReason.Custom if (reason.id == "sneaking") ->
-                                "ability.remote_camera.camera.sneaking"
+                                translationKey = "ability.remote_camera.camera.sneaking"
 
-                            else ->
-                                "ability.remote_camera.camera.already_in_cams"
+                            else -> {}
                         }
                     }
                 }

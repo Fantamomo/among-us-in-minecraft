@@ -81,20 +81,14 @@ object KillAbility :
 
                     render {
                         itemType = ItemType.BARRIER
-                        translationKey = when (ctx.getBlockReason()) {
+                        when (ctx.getBlockReason()) {
                             BlockReason.Dead ->
-                                "ability.kill.kill.dead"
-                            BlockReason.InVent ->
-                                "ability.general.disabled.in_vent"
+                                translationKey = "ability.kill.kill.dead"
 
-                            BlockReason.InMeeting ->
-                                "ability.general.disabled.in_meeting"
 
                             is BlockReason.Custom ->
-                                "ability.kill.kill.deactivate"
-
-                            else ->
-                                "ability.kill.kill.deactivate"
+                                translationKey = "ability.kill.kill.deactivate"
+                            else -> {}
                         }
                     }
                 }

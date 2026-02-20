@@ -91,18 +91,11 @@ object VentAbility :
 
                     render {
                         itemType = ItemType.BARRIER
-                        translationKey = when (ctx.getBlockReason()) {
-                            BlockReason.InMeeting ->
-                                "ability.general.disabled.in_meeting"
-
-                            BlockReason.GhostForm ->
-                                "ability.general.disabled.ghost_form"
-
+                        when (ctx.getBlockReason()) {
                             is BlockReason.Custom ->
-                                "ability.vent.vent.deactivate"
+                                translationKey = "ability.vent.vent.deactivate"
 
-                            else ->
-                                "ability.vent.vent.deactivate"
+                            else -> {}
                         }
                     }
                 }

@@ -59,15 +59,9 @@ object EatBodyAbility : Ability<EatBodyAbility, EatBodyAbility.AssignedEatBodyAb
 
                     render {
                         itemType = ItemType.BARRIER
-                        translationKey = when (val reason = ctx.getBlockReason()) {
+                        when (val reason = ctx.getBlockReason()) {
 
-                            BlockReason.InMeeting ->
-                                "ability.general.disabled.in_meeting"
-
-                            BlockReason.InVent ->
-                                "ability.general.disabled.in_vent"
-
-                            is BlockReason.Custom -> when (reason.id) {
+                            is BlockReason.Custom -> translationKey = when (reason.id) {
                                 "notNearCorpse" ->
                                     "ability.eat_body.eat_body.deactivate.not_near_corpse"
 
@@ -77,9 +71,7 @@ object EatBodyAbility : Ability<EatBodyAbility, EatBodyAbility.AssignedEatBodyAb
                                 else ->
                                     "ability.eat_body.eat_body.deactivate"
                             }
-
-                            else ->
-                                "ability.report.report.deactivate"
+                            else -> {}
                         }
                     }
                 }

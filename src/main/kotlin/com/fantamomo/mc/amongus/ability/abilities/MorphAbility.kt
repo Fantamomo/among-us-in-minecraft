@@ -90,16 +90,6 @@ object MorphAbility : Ability<MorphAbility, MorphAbility.AssignedMorphAbility> {
                 state(AbilityItemState.BLOCKED) {
                     render {
                         itemType = ItemType.BARRIER
-                        translationKey = when (ctx.getBlockReason()) {
-                            BlockReason.InVent ->
-                                "ability.general.disabled.in_vent"
-
-                            BlockReason.InMeeting ->
-                                "ability.general.disabled.in_meeting"
-
-                            else ->
-                                "ability.morph.morph.deactivate"
-                        }
                     }
                 }
             }

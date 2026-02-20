@@ -87,23 +87,16 @@ object CreateVentAbility : Ability<CreateVentAbility, CreateVentAbility.Assigned
                 state(AbilityItemState.BLOCKED) {
                     render {
                         itemType = ItemType.BARRIER
-                        translationKey = when (val reason = ctx.getBlockReason()) {
+                        when (val reason = ctx.getBlockReason()) {
                             BlockReason.Dead ->
-                                "ability.create_vent.create_vent.deactivate.dead"
-                            BlockReason.InVent ->
-                                "ability.general.disabled.in_vent"
-
-                            BlockReason.InMeeting ->
-                                "ability.general.disabled.in_meeting"
+                                translationKey = "ability.create_vent.create_vent.deactivate.dead"
 
                             is BlockReason.Custom if (reason.id == "nearVent") ->
-                                "ability.create_vent.create_vent.deactivate.near_vent"
+                                translationKey = "ability.create_vent.create_vent.deactivate.near_vent"
 
                             is BlockReason.Custom if (reason.id == "noBlockBeneath") ->
-                                "ability.create_vent.create_vent.deactivate.no_block_beneath"
-
-                            else ->
-                                "ability.create_vent.create_vent.deactivate"
+                                translationKey = "ability.create_vent.create_vent.deactivate.no_block_beneath"
+                            else -> {}
                         }
                     }
                 }

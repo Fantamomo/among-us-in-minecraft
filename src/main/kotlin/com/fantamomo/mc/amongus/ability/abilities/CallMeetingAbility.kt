@@ -72,21 +72,14 @@ object CallMeetingAbility :
 
                     render {
                         itemType = ItemType.BARRIER
-                        translationKey = when (ctx.getBlockReason()) {
+                        when (ctx.getBlockReason()) {
                             BlockReason.InMeeting ->
-                                "ability.call_meeting.call_meeting.already_in_meeting"
-
-                            BlockReason.Sabotage ->
-                                "ability.general.disabled.sabotage"
-
-                            BlockReason.InVent ->
-                                "ability.general.disabled.in_vent"
+                                translationKey = "ability.call_meeting.call_meeting.already_in_meeting"
 
                             BlockReason.LimitReached ->
-                                "ability.call_meeting.call_meeting.button_limit_reached"
+                                translationKey = "ability.call_meeting.call_meeting.button_limit_reached"
 
-                            else ->
-                                "ability.call_meeting.call_meeting.error"
+                            else -> {}
                         }
                     }
                 }
