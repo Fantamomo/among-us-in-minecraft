@@ -14,6 +14,7 @@ data class GameArea(
 
     var lobbySpawn: Location? = null
     var gameSpawn: Location? = null
+    var wardrobe: Location? = null
 
     var meetingRoomMin: Location? = null
     var meetingRoomMax: Location? = null
@@ -99,6 +100,7 @@ data class GameArea(
         clone.maxCorner = maxCorner?.withWorld(world)
         clone.lobbySpawn = lobbySpawn?.withWorld(world)
         clone.gameSpawn = gameSpawn?.withWorld(world)
+        clone.wardrobe = wardrobe?.withWorld(world)
         clone.meetingRoomMin = meetingRoomMin?.withWorld(world)
         clone.meetingRoomMax = meetingRoomMax?.withWorld(world)
         clone.meetingBlock = meetingBlock?.withWorld(world)
@@ -130,6 +132,7 @@ data class GameArea(
             "maxCorner" to GameArea::maxCorner,
             "lobbySpawn" to GameArea::lobbySpawn,
             "gameSpawn" to GameArea::gameSpawn,
+            "wardrobe" to GameArea::wardrobe,
             "meetingRoomMin" to GameArea::meetingRoomMin,
             "meetingRoomMax" to GameArea::meetingRoomMax,
             "meetingBlock" to GameArea::meetingBlock,

@@ -48,6 +48,7 @@ object PlayerManager {
         player.teleportAsync(game.area.lobbySpawn ?: throw IllegalStateException("Lobby spawn not set"))
         player.inventory.clear()
 
+        auPlayer.wardrobeMannequin?.let { player.showEntity(AmongUs, it) }
         auPlayer.color = auPlayer.color
         return auPlayer
     }
@@ -61,6 +62,7 @@ object PlayerManager {
         if (auPlayer.game.phase.onDisconnectRemove) {
             auPlayer.mannequinController.despawn()
             players.remove(auPlayer)
+            auPlayer.game.onDisconnected(auPlayer)
         }
     }
 
@@ -109,6 +111,7 @@ object PlayerManager {
             )
         }
         amongUsPlayer.mannequinController.hideFromSelf()
+        amongUsPlayer.wardrobeMannequin?.let { player.showEntity(AmongUs, it) }
         game.onRejoin(amongUsPlayer)
     }
 

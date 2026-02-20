@@ -9,10 +9,7 @@ import com.fantamomo.mc.amongus.ability.AbilityManager
 import com.fantamomo.mc.amongus.area.GameArea
 import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.manager.*
-import com.fantamomo.mc.amongus.player.AmongUsPlayer
-import com.fantamomo.mc.amongus.player.PlayerColor
-import com.fantamomo.mc.amongus.player.PlayerManager
-import com.fantamomo.mc.amongus.player.editStatistics
+import com.fantamomo.mc.amongus.player.*
 import com.fantamomo.mc.amongus.role.RoleManager
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.sabotage.SabotageManager
@@ -200,6 +197,22 @@ class Game(
 
         meetingManager.meeting?.voteInventories?.remove(player)
         if (phase.onDisconnectRemove) removePlayer0(player)
+    }
+
+    internal fun isColorFree(color: PlayerColor) = players.none { it.color == color }
+
+    internal fun updateAllWardrobeInventories() {
+        if (phase != GamePhase.LOBBY && phase != GamePhase.STARTING) return
+        val cooldowns = PlayerColor.entries.associateWith { if (isColorFree(it)) 0 else Int.MAX_VALUE / 2 }
+        for (player in players) {
+            val p = player.player ?: continue
+            val topInventory = p.openInventory.topInventory
+            val holder = topInventory.holder as? WardrobeInventory ?: continue
+            holder.update()
+            for (entry in cooldowns) {
+                p.setCooldown(entry.key.cooldownGroup, entry.value)
+            }
+        }
     }
 
     internal fun onRejoin(amongUsPlayer: AmongUsPlayer) {

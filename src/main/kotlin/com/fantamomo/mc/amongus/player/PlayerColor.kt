@@ -2,6 +2,7 @@ package com.fantamomo.mc.amongus.player
 
 import com.fantamomo.mc.amongus.util.hideTooltip
 import io.papermc.paper.datacomponent.DataComponentTypes
+import net.kyori.adventure.key.Key
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.TextColor
 import org.bukkit.Color
@@ -43,6 +44,9 @@ enum class PlayerColor(val color: Color, val helmet: ItemType.Typed<out ArmorMet
 
     val textColor = TextColor.color(color.asRGB())
     val coloredName = Component.text(name.lowercase(), textColor)
+    val capitalizeColoredName = Component.text(name.lowercase().replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }, textColor)
+
+    internal val cooldownGroup = Key.key("amongus", "player_color/cooldown_group/${name.lowercase()}")
 
     constructor(color: Color) : this(color, ItemType.LEATHER_HELMET, false)
 
@@ -55,6 +59,12 @@ enum class PlayerColor(val color: Color, val helmet: ItemType.Typed<out ArmorMet
         unsetData(DataComponentTypes.ATTRIBUTE_MODIFIERS)
         setData(DataComponentTypes.UNBREAKABLE)
         hideTooltip()
+    }
+
+    fun rawItemStack() = helmet.createItemStack { config ->
+        if (config is ColorableArmorMeta) {
+            config.setColor(color)
+        }
     }
 
     companion object {

@@ -4,6 +4,7 @@ import com.destroystokyo.paper.profile.PlayerProfile
 import com.fantamomo.mc.adventure.text.args
 import com.fantamomo.mc.adventure.text.textComponent
 import com.fantamomo.mc.adventure.text.translatable
+import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.ability.Ability
 import com.fantamomo.mc.amongus.ability.AbilityManager
 import com.fantamomo.mc.amongus.ability.AssignedAbility
@@ -12,15 +13,21 @@ import com.fantamomo.mc.amongus.ability.item.AbilityItem
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.game.GamePhase
 import com.fantamomo.mc.amongus.languages.component
+import com.fantamomo.mc.amongus.manager.EntityManager
 import com.fantamomo.mc.amongus.role.AssignedRole
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.role.crewmates.CrewmateRole
 import com.fantamomo.mc.amongus.task.TaskManager
 import com.fantamomo.mc.amongus.util.CustomPersistentDataTypes
+import com.fantamomo.mc.amongus.util.RefPersistentDataType
+import com.fantamomo.mc.amongus.util.internal.Symbol
+import io.papermc.paper.datacomponent.item.ResolvableProfile
 import net.kyori.adventure.title.Title
 import net.kyori.adventure.title.TitlePart
 import org.bukkit.Location
+import org.bukkit.NamespacedKey
 import org.bukkit.entity.LivingEntity
+import org.bukkit.entity.Mannequin
 import org.bukkit.entity.Player
 import org.bukkit.inventory.meta.trim.ArmorTrim
 import org.bukkit.potion.PotionEffect
@@ -42,6 +49,37 @@ class AmongUsPlayer internal constructor(
     val persistencePlayerData = PlayerDataManager.get(uuid.toKotlinUuid())
 
     val mannequinController = MannequinController(this)
+
+    private var _wardrobeMannequin: Any? = NOT_SPAWNED
+
+    var wardrobeMannequin: Mannequin?
+        get() = when (val m = _wardrobeMannequin) {
+            is Mannequin -> m
+            NOT_SPAWNED -> {
+                val m = game.area.wardrobe?.takeIf { game.phase == GamePhase.LOBBY }?.let { loc ->
+                    loc.world.spawn(loc, Mannequin::class.java) { mannequin ->
+                        mannequin.isVisibleByDefault = false
+                        mannequin.isInvulnerable = true
+                        mannequin.isImmovable = true
+                        @Suppress("UnstableApiUsage")
+                        mannequin.profile = ResolvableProfile.resolvableProfile(profile)
+                        mannequin.persistentDataContainer.set(
+                            WARDROBE_MANNEQUIN_OWNER,
+                            RefPersistentDataType.refPersistentDataType(),
+                            RefPersistentDataType.newRef(this)
+                        )
+                        EntityManager.addEntityToRemoveOnEnd(game, mannequin)
+                    }
+                }
+                _wardrobeMannequin = m
+                m
+            }
+
+            else -> null
+        }
+        set(value) {
+            _wardrobeMannequin = value
+        }
 
     val name: String
         get() = player?.name?.also { _name = it } ?: _name
@@ -66,15 +104,18 @@ class AmongUsPlayer internal constructor(
             persistencePlayerData.trimPattern = value?.pattern
             color = color
         }
-    var color: PlayerColor = persistencePlayerData.color?.takeIf { color -> game.players.none { it.color == color } } ?: game.randomPlayerColor()
+    var color: PlayerColor = persistencePlayerData.color?.takeIf { color -> game.players.none { it.color == color } }
+        ?: game.randomPlayerColor()
         set(value) {
             field = value
             persistencePlayerData.color = value
             val helmet = value.toItemStack(armorTrim)
             player?.inventory?.helmet = helmet
+            wardrobeMannequin?.equipment?.helmet = helmet
             if (!game.morphManager.isMorphed(this)) {
                 mannequinController.getEntity()?.equipment?.helmet = helmet
             }
+            game.updateAllWardrobeInventories()
         }
     val visibleColor: PlayerColor
         get() {
@@ -84,7 +125,8 @@ class AmongUsPlayer internal constructor(
     val locale: Locale
         get() = player?.locale()?.also { _locale = it } ?: _locale
     val profile: PlayerProfile
-        get() = player?.playerProfile?.also { _profile = it } ?: _profile ?: throw IllegalStateException("No profile available")
+        get() = player?.playerProfile?.also { _profile = it } ?: _profile
+        ?: throw IllegalStateException("No profile available")
     var assignedRole: AssignedRole<*, *>? = null
         internal set
     val tasks: MutableSet<TaskManager.RegisteredTask>
@@ -196,6 +238,8 @@ class AmongUsPlayer internal constructor(
         }
 
         statistics.onGameStart()
+        wardrobeMannequin?.remove()
+        wardrobeMannequin = null
     }
 
     internal fun restorePlayer() {
@@ -204,6 +248,8 @@ class AmongUsPlayer internal constructor(
     }
 
     companion object {
+        internal val WARDROBE_MANNEQUIN_OWNER = NamespacedKey(AmongUs, "wardrobe/mannequin/owner")
+        private val NOT_SPAWNED = Symbol("NOT_SPAWNED")
         private val GHOST_SPEED = PotionEffect(PotionEffectType.SPEED, -1, 1, false, false)
     }
 }
