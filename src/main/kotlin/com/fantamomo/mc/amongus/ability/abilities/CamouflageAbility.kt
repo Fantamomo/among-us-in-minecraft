@@ -9,7 +9,6 @@ import com.fantamomo.mc.amongus.ability.item.AbilityItem
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import org.bukkit.inventory.ItemType
-import kotlin.time.Duration.Companion.seconds
 
 object CamouflageAbility : Ability<CamouflageAbility, CamouflageAbility.AssignedCamouflageAbility> {
     override val id: String = "camouflage"
@@ -23,7 +22,7 @@ object CamouflageAbility : Ability<CamouflageAbility, CamouflageAbility.Assigned
             abilityItem("camouflage") {
                 val camouflageCooldown = timer(
                     "cooldown",
-                    player.game.settings[SettingsKey.ROLES.CAMOUFLAGE_COOLDOWN]
+                    player.game.settings[SettingsKey.ROLES.CAMOUFLAGE.DURATION]
                 )
 
                 condition {
@@ -49,7 +48,7 @@ object CamouflageAbility : Ability<CamouflageAbility, CamouflageAbility.Assigned
                         val morphManager = player.game.morphManager
                         if (morphManager.isCamouflageMode()) return@onRightClick
                         morphManager.camouflageMode()
-                        camouflageCooldown.start(player.game.settings[SettingsKey.ROLES.CAMOUFLAGE_COOLDOWN] + player.game.settings[SettingsKey.ROLES.CAMOUFLAGE_DURATION])
+                        camouflageCooldown.start(player.game.settings[SettingsKey.ROLES.CAMOUFLAGE.COOLDOWN] + player.game.settings[SettingsKey.ROLES.CAMOUFLAGE.DURATION])
                     }
                 }
             }

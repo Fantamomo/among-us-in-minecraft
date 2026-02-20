@@ -27,7 +27,7 @@ object RevealTeamAbility : Ability<RevealTeamAbility, RevealTeamAbility.Assigned
             abilityItem("reveal_team") {
                 val revealTeamCooldown = timer(
                     "cooldown",
-                    player.game.settings[SettingsKey.ROLES.REVEAL_TEAM_START_COOLDOWN]
+                    player.game.settings[SettingsKey.ROLES.REVEAL_TEAM.START_COOLDOWN]
                 )
 
                 condition {
@@ -38,7 +38,7 @@ object RevealTeamAbility : Ability<RevealTeamAbility, RevealTeamAbility.Assigned
 
                 condition {
                     val thisLoc = (player.mannequinController.getEntity() ?: player.livingEntity).location
-                    val maxDistance = player.game.settings[SettingsKey.ROLES.REVEAL_TEAM_DISTANCE].distance.let { it * it }
+                    val maxDistance = player.game.settings[SettingsKey.ROLES.REVEAL_TEAM.DISTANCE].distance.let { it * it }
                     for (player in game.players) {
                         if (player === this@AssignedRevealTeamAbility.player) continue
                         if (!player.isAlive && this@AssignedRevealTeamAbility.player.isAlive) continue
@@ -60,7 +60,7 @@ object RevealTeamAbility : Ability<RevealTeamAbility, RevealTeamAbility.Assigned
                     onRightClick {
                         restartCooldown = false
                         val thisLoc = (player.mannequinController.getEntity() ?: player.livingEntity).location
-                        val maxDistance = player.game.settings[SettingsKey.ROLES.REVEAL_TEAM_DISTANCE].distance.let { it * it }
+                        val maxDistance = player.game.settings[SettingsKey.ROLES.REVEAL_TEAM.DISTANCE].distance.let { it * it }
                         var nearestPlayer: AmongUsPlayer? = null
                         var nearestDistance = Double.MAX_VALUE
                         for (player in game.players) {
@@ -84,7 +84,7 @@ object RevealTeamAbility : Ability<RevealTeamAbility, RevealTeamAbility.Assigned
                         } else {
                             nearestPlayer.mannequinController.setNameColorFor(player.uuid, color)
                         }
-                        val timeToAdd = player.game.settings[SettingsKey.ROLES.REVEAL_TEAM_COOLDOWN_INCREMENT]
+                        val timeToAdd = player.game.settings[SettingsKey.ROLES.REVEAL_TEAM.COOLDOWN_INCREMENT]
                         if (timeToAdd <= Duration.ZERO) {
                             revealTeamCooldown.start()
                         } else {

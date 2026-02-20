@@ -17,7 +17,7 @@ class GhostFormManager(val game: Game) {
         val ghostCooldown: AbilityTimer?
     ) {
         val remainingTime: Duration
-            get() = (player.game.settings[SettingsKey.ROLES.GHOST_FORM_DURATION] - (Clock.System.now() - start)).takeIf { it > Duration.ZERO } ?: Duration.ZERO
+            get() = (player.game.settings[SettingsKey.ROLES.GHOST.FORM_DURATION] - (Clock.System.now() - start)).takeIf { it > Duration.ZERO } ?: Duration.ZERO
 
         init {
             player.mannequinController.freezeWithPhysics()
@@ -25,7 +25,7 @@ class GhostFormManager(val game: Game) {
         }
 
         internal fun exit() {
-            ghostCooldown?.start(player.game.settings[SettingsKey.ROLES.GHOST_FORM_COOLDOWN])
+            ghostCooldown?.start(player.game.settings[SettingsKey.ROLES.GHOST.FORM_COOLDOWN])
             player.mannequinController.also { controller ->
                 controller.getEntity()?.location?.let { player.player?.teleport(it) }
                 controller.unfreeze()

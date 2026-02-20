@@ -27,7 +27,7 @@ object CannibalRole : Role<CannibalRole, CannibalRole.AssignedCannibalRole> {
         override val definition = CannibalRole
 
         val bodiesToEat: Int
-            get() = player.game.settings[SettingsKey.ROLES.CANNIBAL_BODIES_TO_EAT]
+            get() = player.game.settings[SettingsKey.ROLES.CANNIBAL.BODIES_TO_EAT]
 
         var eatenBodies: Int = 0
             private set

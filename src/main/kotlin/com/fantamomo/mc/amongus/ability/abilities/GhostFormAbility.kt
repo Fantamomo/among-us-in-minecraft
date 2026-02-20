@@ -27,7 +27,7 @@ object GhostFormAbility : Ability<GhostFormAbility, GhostFormAbility.AssignedGho
             abilityItem("ghost_form") {
                 val ghostCooldown = timer(
                     "cooldown",
-                    player.game.settings[SettingsKey.ROLES.GHOST_FORM_COOLDOWN]
+                    player.game.settings[SettingsKey.ROLES.GHOST.FORM_COOLDOWN]
                 )
 
                 // ---------- BLOCK CONDITIONS ----------

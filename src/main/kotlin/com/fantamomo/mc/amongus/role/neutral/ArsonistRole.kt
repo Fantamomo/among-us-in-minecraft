@@ -21,7 +21,7 @@ object ArsonistRole : Role<ArsonistRole, ArsonistRole.AssignedArsonistRole> {
         override val definition = ArsonistRole
 
         val douseDistance: DistanceEnum
-            get() = player.game.settings[SettingsKey.ROLES.ARSONIST_DOUSE_DISTANCE]
+            get() = player.game.settings[SettingsKey.ROLES.ARSONIST.DOUSE_DISTANCE]
 
         val dousedPlayers: MutableSet<AmongUsPlayer> = mutableSetOf()
 

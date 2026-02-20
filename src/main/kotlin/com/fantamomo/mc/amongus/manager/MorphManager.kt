@@ -48,7 +48,7 @@ class MorphManager(val game: Game) {
         val start: Instant = Clock.System.now()
     ) {
         val remainingTime: Duration
-            get() = (player.game.settings[SettingsKey.ROLES.MORPHLING_MORPH_DURATION] - (Clock.System.now() - start)).takeIf { it > Duration.ZERO }
+            get() = (player.game.settings[SettingsKey.ROLES.MORPHLING.MORPH_DURATION] - (Clock.System.now() - start)).takeIf { it > Duration.ZERO }
                 ?: Duration.ZERO
 
         val actionBar = player.game.actionBarManager.part(
@@ -102,10 +102,10 @@ class MorphManager(val game: Game) {
                     if (camouflageStart == null) player.mannequinController.restoreAppearance()
                     actionBar.remove()
                     morphs.remove(player)
-                    abilityTimer?.start(player.game.settings[SettingsKey.ROLES.MORPHLING_MORPH_COOLDOWN])
+                    abilityTimer?.start(player.game.settings[SettingsKey.ROLES.MORPHLING.MORPH_COOLDOWN])
                 }
             } else {
-                abilityTimer?.start(player.game.settings[SettingsKey.ROLES.MORPHLING_MORPH_COOLDOWN])
+                abilityTimer?.start(player.game.settings[SettingsKey.ROLES.MORPHLING.MORPH_COOLDOWN])
                 if (camouflageStart == null) player.mannequinController.restoreAppearance()
                 actionBar.remove()
                 morphs.remove(player)
@@ -180,7 +180,7 @@ class MorphManager(val game: Game) {
     fun tick() {
         val camouflageStart = camouflageStart
         if (camouflageStart != null) {
-            val camouflageDuration = game.settings[SettingsKey.ROLES.CAMOUFLAGE_DURATION]
+            val camouflageDuration = game.settings[SettingsKey.ROLES.CAMOUFLAGE.DURATION]
             if (Clock.System.now() - camouflageStart > camouflageDuration) {
                 this.camouflageStart = null
                 this.camouflageTarget = null
@@ -321,7 +321,7 @@ class MorphManager(val game: Game) {
 
     fun remainingCamouflageTime(): Duration? {
         val camouflageStart = camouflageStart ?: return null
-        val camouflageDuration = game.settings[SettingsKey.ROLES.CAMOUFLAGE_DURATION]
+        val camouflageDuration = game.settings[SettingsKey.ROLES.CAMOUFLAGE.DURATION]
         return (camouflageDuration - (Clock.System.now() - camouflageStart)).takeIf { it > Duration.ZERO } ?: Duration.ZERO
     }
 
