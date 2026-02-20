@@ -2,6 +2,7 @@ package com.fantamomo.mc.amongus.manager
 
 import com.fantamomo.mc.adventure.text.*
 import com.fantamomo.mc.amongus.AmongUs
+import com.fantamomo.mc.amongus.ability.AbilityManager
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.game.GamePhase
 import com.fantamomo.mc.amongus.languages.LanguageManager
@@ -651,7 +652,7 @@ class MeetingManager(private val game: Game) : Listener {
             meeting = null
             buttonCooldown.start()
             setPhase(GamePhase.RUNNING)
-            game.invalidateAbilities()
+            AbilityManager.resetCooldownsAfterMeeting(game)
 
             val assignedRole = ejectedPlayer?.assignedRole
             if (assignedRole?.definition === JesterRole) {
