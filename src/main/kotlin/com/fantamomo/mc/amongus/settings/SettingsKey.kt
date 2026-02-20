@@ -107,6 +107,8 @@ data class SettingsKey<T : Any, S : SettingsType<T>>(
         val REVEAL_TEAM_COOLDOWN_INCREMENT = key("reveal.team.cooldown.increment", DurationSettingsType.min(0.seconds), 10.seconds)
         val REVEAL_TEAM_DISTANCE = key("reveal.team.distance", EnumSettingsType.create<DistanceEnum>(), DistanceEnum.NORMAL)
         val ARSONIST_DOUSE_DISTANCE = key("arsonist.douse.distance", EnumSettingsType.create<DistanceEnum>(), DistanceEnum.NORMAL)
+        val CAMOUFLAGE_COOLDOWN = key("roles.camouflage.cooldown", DurationSettingsType.min(1.seconds), 30.seconds)
+        val CAMOUFLAGE_DURATION = key("roles.camouflage.duration", DurationSettingsType.min(1.seconds), 10.seconds)
     }
 
     object KILL : SettingsGroup("kill", Material.BONE) {
