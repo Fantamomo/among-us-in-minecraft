@@ -18,7 +18,7 @@ class AbilityContext(
 
     internal lateinit var abilityItem: AbilityItem
 
-    private val timers = mutableMapOf<String, AbilityTimer>()
+    internal val timers = mutableMapOf<String, AbilityTimer>()
 
     fun timer(id: String, duration: Duration): AbilityTimer =
         timers.getOrPut(id) { AbilityTimer(id, duration) }

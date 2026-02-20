@@ -7,7 +7,7 @@ import org.bukkit.inventory.ItemStack
 class DSLAbilityItem(
     ability: AssignedAbility<*, *>,
     id: String,
-    private val ctx: AbilityContext,
+    internal val ctx: AbilityContext,
     private val states: Map<AbilityItemState, AbilityItemStateDefinition>,
     private val conditions: List<AbilityCondition>
 ) : AbilityItem(ability, id) {
