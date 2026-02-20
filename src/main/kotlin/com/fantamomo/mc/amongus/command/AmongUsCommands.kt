@@ -110,11 +110,14 @@ object AmongUsCommands {
         @Suppress("UNCHECKED_CAST")
         val targets = EntityArgument.getPlayers(context as CommandContext<CommandSourceStack>, "targets")
 
-        if (targets.size == 1 && senderAuPlayer?.assignedRole?.definition?.team == Team.IMPOSTERS) {
+        if (targets.size == 1) {
             val target = PlayerManager.getPlayer(targets.first().bukkitEntity)
-            if (target?.assignedRole?.definition?.team == Team.IMPOSTERS) {
-                sender.sendMessage(Component.translatable("command.error.msg.to_imposter"))
-                return 0
+            if (target === senderAuPlayer) return runOriginal()
+            if (senderAuPlayer?.assignedRole?.definition?.team == Team.IMPOSTERS) {
+                if (target?.assignedRole?.definition?.team == Team.IMPOSTERS) {
+                    sender.sendMessage(Component.translatable("command.error.msg.to_imposter"))
+                    return 0
+                }
             }
         }
 
