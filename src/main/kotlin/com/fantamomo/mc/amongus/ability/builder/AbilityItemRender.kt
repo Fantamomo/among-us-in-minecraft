@@ -22,7 +22,7 @@ class AbilityItemRender<M : ItemMeta>(
     val ctx: AbilityContext
 ) {
     lateinit var itemType: ItemType.Typed<M>
-    private var displayNameObject: Any? = null
+    private var displayNameObject: Any? = ctx.getBlockReason()?.defaultBlockMessage
     var displayName: Component
         get() = when (val obj = displayNameObject) {
             is Component -> obj
