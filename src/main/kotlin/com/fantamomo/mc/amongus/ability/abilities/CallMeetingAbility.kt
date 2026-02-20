@@ -8,7 +8,7 @@ import com.fantamomo.mc.amongus.ability.builder.abilityItem
 import com.fantamomo.mc.amongus.manager.MeetingManager
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.settings.SettingsKey
-import org.bukkit.Material
+import org.bukkit.inventory.ItemType
 
 object CallMeetingAbility :
     Ability<CallMeetingAbility, CallMeetingAbility.AssignedCallMeetingAbility> {
@@ -24,6 +24,7 @@ object CallMeetingAbility :
 
         override val definition = CallMeetingAbility
 
+        @Suppress("UnstableApiUsage")
         override val items = listOf(
             abilityItem("call_meeting") {
 
@@ -55,7 +56,7 @@ object CallMeetingAbility :
                 state(AbilityItemState.ACTIVE) {
 
                     render {
-                        material = Material.BELL
+                        itemType = ItemType.BELL
                         translationKey = "ability.call_meeting.call_meeting.active"
                     }
 
@@ -70,30 +71,16 @@ object CallMeetingAbility :
                 state(AbilityItemState.BLOCKED) {
 
                     render {
-                        material = Material.BARRIER
-                        translationKey = when (ctx.getBlockReason()) {
+                        itemType = ItemType.BARRIER
+                        when (ctx.getBlockReason()) {
                             BlockReason.InMeeting ->
-                                "ability.call_meeting.call_meeting.already_in_meeting"
-
-                            BlockReason.Sabotage ->
-                                "ability.general.disabled.sabotage"
-
-                            BlockReason.InVent ->
-                                "ability.general.disabled.in_vent"
+                                translationKey = "ability.call_meeting.call_meeting.already_in_meeting"
 
                             BlockReason.LimitReached ->
-                                "ability.call_meeting.call_meeting.button_limit_reached"
+                                translationKey = "ability.call_meeting.call_meeting.button_limit_reached"
 
-                            else ->
-                                "ability.call_meeting.call_meeting.error"
+                            else -> {}
                         }
-                    }
-                }
-
-                state(AbilityItemState.COOLDOWN) {
-                    render {
-                        material = Material.BARRIER
-                        translationKey = "ability.general.disabled.cooldown"
                     }
                 }
             }

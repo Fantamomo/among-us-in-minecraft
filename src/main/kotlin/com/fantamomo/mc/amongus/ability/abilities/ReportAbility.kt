@@ -7,7 +7,7 @@ import com.fantamomo.mc.amongus.ability.builder.BlockReason
 import com.fantamomo.mc.amongus.ability.builder.abilityItem
 import com.fantamomo.mc.amongus.manager.MeetingManager
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
-import org.bukkit.Material
+import org.bukkit.inventory.ItemType
 
 object ReportAbility :
     Ability<ReportAbility, ReportAbility.AssignedReportAbility> {
@@ -23,6 +23,7 @@ object ReportAbility :
 
         override val definition = ReportAbility
 
+        @Suppress("UnstableApiUsage")
         override val items = listOf(
             abilityItem("report") {
 
@@ -58,7 +59,7 @@ object ReportAbility :
                 state(AbilityItemState.ACTIVE) {
 
                     render {
-                        material = Material.FIREWORK_ROCKET
+                        itemType = ItemType.FIREWORK_ROCKET
                         translationKey = "ability.report.report.active"
                     }
 
@@ -75,16 +76,9 @@ object ReportAbility :
                 state(AbilityItemState.BLOCKED) {
 
                     render {
-                        material = Material.BARRIER
-                        translationKey = when (val reason = ctx.getBlockReason()) {
-
-                            BlockReason.InMeeting ->
-                                "ability.general.disabled.in_meeting"
-
-                            BlockReason.InVent ->
-                                "ability.general.disabled.in_vent"
-
-                            is BlockReason.Custom -> when (reason.id) {
+                        itemType = ItemType.BARRIER
+                        when (val reason = ctx.getBlockReason()) {
+                            is BlockReason.Custom -> translationKey = when (reason.id) {
                                 "notNearCorpse" ->
                                     "ability.report.report.deactivate"
 
@@ -95,18 +89,8 @@ object ReportAbility :
                                     "ability.report.report.deactivate"
                             }
 
-                            else ->
-                                "ability.report.report.deactivate"
+                            else -> {}
                         }
-                    }
-                }
-
-                // ---------- COOLDOWN ----------
-
-                state(AbilityItemState.COOLDOWN) {
-                    render {
-                        material = Material.BARRIER
-                        translationKey = "ability.general.disabled.cooldown"
                     }
                 }
             }

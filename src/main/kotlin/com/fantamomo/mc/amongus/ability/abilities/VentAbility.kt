@@ -7,7 +7,7 @@ import com.fantamomo.mc.amongus.ability.builder.BlockReason
 import com.fantamomo.mc.amongus.ability.builder.abilityItem
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.settings.SettingsKey
-import org.bukkit.Material
+import org.bukkit.inventory.ItemType
 import kotlin.time.Duration.Companion.seconds
 
 object VentAbility :
@@ -24,6 +24,7 @@ object VentAbility :
 
         override val definition = VentAbility
 
+        @Suppress("UnstableApiUsage")
         override val items = listOf(
             abilityItem("vent") {
 
@@ -60,7 +61,7 @@ object VentAbility :
                 state(AbilityItemState.ACTIVE) {
 
                     render {
-                        material = Material.TRIPWIRE_HOOK
+                        itemType = ItemType.TRIPWIRE_HOOK
                         translationKey =
                             if (player.isVented())
                                 "ability.vent.vent.out"
@@ -89,29 +90,13 @@ object VentAbility :
                 state(AbilityItemState.BLOCKED) {
 
                     render {
-                        material = Material.BARRIER
-                        translationKey = when (ctx.getBlockReason()) {
-                            BlockReason.InMeeting ->
-                                "ability.general.disabled.in_meeting"
-
-                            BlockReason.GhostForm ->
-                                "ability.general.disabled.ghost_form"
-
+                        itemType = ItemType.BARRIER
+                        when (ctx.getBlockReason()) {
                             is BlockReason.Custom ->
-                                "ability.vent.vent.deactivate"
+                                translationKey = "ability.vent.vent.deactivate"
 
-                            else ->
-                                "ability.vent.vent.deactivate"
+                            else -> {}
                         }
-                    }
-                }
-
-                // ---------- COOLDOWN ----------
-
-                state(AbilityItemState.COOLDOWN) {
-                    render {
-                        material = Material.BARRIER
-                        translationKey = "ability.general.disabled.cooldown"
                     }
                 }
             }

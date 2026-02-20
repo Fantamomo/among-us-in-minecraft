@@ -8,7 +8,7 @@ import com.fantamomo.mc.amongus.ability.builder.abilityItem
 import com.fantamomo.mc.amongus.manager.CameraManager
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.sabotage.SabotageType
-import org.bukkit.Material
+import org.bukkit.inventory.ItemType
 
 object RemoteCameraAbility :
     Ability<RemoteCameraAbility, RemoteCameraAbility.AssignedCameraAbility> {
@@ -26,6 +26,7 @@ object RemoteCameraAbility :
 
         override val definition = RemoteCameraAbility
 
+        @Suppress("UnstableApiUsage")
         override val items = listOf(
             abilityItem("camera") {
 
@@ -66,7 +67,7 @@ object RemoteCameraAbility :
                 state(AbilityItemState.ACTIVE) {
 
                     render {
-                        material = Material.ENDER_EYE
+                        itemType = ItemType.ENDER_EYE
                         translationKey = "ability.remote_camera.camera.active"
                     }
 
@@ -87,36 +88,17 @@ object RemoteCameraAbility :
                 state(AbilityItemState.BLOCKED) {
 
                     render {
-                        material = Material.BARRIER
-                        translationKey = when (val reason = ctx.getBlockReason()) {
-
-                            BlockReason.Sabotage ->
-                                "ability.general.disabled.sabotage"
-
-                            BlockReason.InVent ->
-                                "ability.general.disabled.in_vent"
-
-                            BlockReason.InMeeting ->
-                                "ability.general.disabled.in_meeting"
+                        itemType = ItemType.BARRIER
+                        when (val reason = ctx.getBlockReason()) {
 
                             is BlockReason.Custom if (reason.id == "inCams") ->
-                                "ability.remote_camera.camera.already_in_cams"
+                                translationKey = "ability.remote_camera.camera.already_in_cams"
 
                             is BlockReason.Custom if (reason.id == "sneaking") ->
-                                "ability.remote_camera.camera.sneaking"
+                                translationKey = "ability.remote_camera.camera.sneaking"
 
-                            else ->
-                                "ability.remote_camera.camera.already_in_cams"
+                            else -> {}
                         }
-                    }
-                }
-
-                // ---------- COOLDOWN (unused but present) ----------
-
-                state(AbilityItemState.COOLDOWN) {
-                    render {
-                        material = Material.BARRIER
-                        translationKey = "ability.general.disabled.cooldown"
                     }
                 }
             }

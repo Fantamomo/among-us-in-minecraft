@@ -5,10 +5,10 @@ import com.fantamomo.mc.amongus.ability.AssignedAbility
 import com.fantamomo.mc.amongus.ability.builder.AbilityItemState
 import com.fantamomo.mc.amongus.ability.builder.BlockReason
 import com.fantamomo.mc.amongus.ability.builder.abilityItem
+import com.fantamomo.mc.amongus.ability.builder.itemType
 import com.fantamomo.mc.amongus.ability.item.AbilityItem
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.sabotage.Sabotage
-import org.bukkit.Material
 
 object SabotageAbility :
     Ability<SabotageAbility, SabotageAbility.AssignedSabotageAbility> {
@@ -61,7 +61,7 @@ object SabotageAbility :
             state(AbilityItemState.ACTIVE) {
 
                 render {
-                    material = sabotage.sabotageType.activeMaterial
+                    itemType(sabotage.sabotageType.activeItemType)
                     translationKey = "ability.sabotage.${sabotage.sabotageType.id}.active"
 
                 }
@@ -75,30 +75,7 @@ object SabotageAbility :
 
             state(AbilityItemState.BLOCKED) {
                 render {
-                    material = sabotage.sabotageType.deactivateMaterial
-                    translationKey = when (ctx.getBlockReason()) {
-
-                        BlockReason.Sabotage ->
-                            "ability.sabotage.disabled"
-
-                        BlockReason.InMeeting ->
-                            "ability.general.disabled.in_meeting"
-
-                        BlockReason.InVent ->
-                            "ability.general.disabled.in_vent"
-
-                        else ->
-                            "ability.sabotage.disabled"
-                    }
-                }
-            }
-
-            // ---------- COOLDOWN ----------
-
-            state(AbilityItemState.COOLDOWN) {
-                render {
-                    material = Material.BARRIER
-                    translationKey = "ability.general.disabled.cooldown"
+                    itemType(sabotage.sabotageType.deactivateMaterial)
                 }
             }
         }

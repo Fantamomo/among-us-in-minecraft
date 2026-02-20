@@ -13,6 +13,7 @@ import io.papermc.paper.datacomponent.DataComponentTypes
 import net.kyori.adventure.text.Component
 import org.bukkit.Material
 import org.bukkit.inventory.ItemStack
+import org.bukkit.inventory.ItemType
 
 object GhostFormAbility : Ability<GhostFormAbility, GhostFormAbility.AssignedGhostFormAbility> {
     override val id: String = "ghost_form"
@@ -21,6 +22,7 @@ object GhostFormAbility : Ability<GhostFormAbility, GhostFormAbility.AssignedGho
 
     class AssignedGhostFormAbility(override val player: AmongUsPlayer) : AssignedAbility<GhostFormAbility, AssignedGhostFormAbility> {
         override val definition = GhostFormAbility
+        @Suppress("UnstableApiUsage")
         override val items: List<AbilityItem> = listOf(
             abilityItem("ghost_form") {
                 val ghostCooldown = timer(
@@ -88,29 +90,13 @@ object GhostFormAbility : Ability<GhostFormAbility, GhostFormAbility.AssignedGho
                 state(AbilityItemState.BLOCKED) {
 
                     render {
-                        material = Material.BARRIER
-                        translationKey = when (ctx.getBlockReason()) {
+                        itemType = ItemType.BARRIER
+                        when (ctx.getBlockReason()) {
                             BlockReason.Dead ->
-                                "ability.kill.kill.dead"
-                            BlockReason.InVent ->
-                                "ability.general.disabled.in_vent"
+                                translationKey = "ability.kill.kill.dead"
 
-                            BlockReason.InMeeting ->
-                                "ability.general.disabled.in_meeting"
-
-                            else ->
-                                "ability.ghost_form.ghost_form.deactivate"
+                            else -> {}
                         }
-                    }
-                }
-
-                // ---------- COOLDOWN ----------
-
-                state(AbilityItemState.COOLDOWN) {
-
-                    render {
-                        material = Material.BARRIER
-                        translationKey = "ability.general.disabled.cooldown"
                     }
                 }
             }

@@ -7,7 +7,7 @@ import com.fantamomo.mc.amongus.ability.builder.BlockReason
 import com.fantamomo.mc.amongus.ability.builder.abilityItem
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.settings.SettingsKey
-import org.bukkit.Material
+import org.bukkit.inventory.ItemType
 
 object KillAbility :
     Ability<KillAbility, KillAbility.AssignedKillAbility> {
@@ -23,6 +23,7 @@ object KillAbility :
 
         override val definition = KillAbility
 
+        @Suppress("UnstableApiUsage")
         override val items = listOf(
             abilityItem("kill") {
 
@@ -63,7 +64,7 @@ object KillAbility :
                 state(AbilityItemState.ACTIVE) {
 
                     render {
-                        material = Material.NETHER_STAR
+                        itemType = ItemType.NETHER_STAR
                         translationKey = "ability.kill.kill.active"
                     }
 
@@ -79,32 +80,16 @@ object KillAbility :
                 state(AbilityItemState.BLOCKED) {
 
                     render {
-                        material = Material.BARRIER
-                        translationKey = when (ctx.getBlockReason()) {
+                        itemType = ItemType.BARRIER
+                        when (ctx.getBlockReason()) {
                             BlockReason.Dead ->
-                                "ability.kill.kill.dead"
-                            BlockReason.InVent ->
-                                "ability.general.disabled.in_vent"
+                                translationKey = "ability.kill.kill.dead"
 
-                            BlockReason.InMeeting ->
-                                "ability.general.disabled.in_meeting"
 
                             is BlockReason.Custom ->
-                                "ability.kill.kill.deactivate"
-
-                            else ->
-                                "ability.kill.kill.deactivate"
+                                translationKey = "ability.kill.kill.deactivate"
+                            else -> {}
                         }
-                    }
-                }
-
-                // ---------- COOLDOWN ----------
-
-                state(AbilityItemState.COOLDOWN) {
-
-                    render {
-                        material = Material.BARRIER
-                        translationKey = "ability.general.disabled.cooldown"
                     }
                 }
             }

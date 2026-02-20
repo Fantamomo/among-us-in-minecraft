@@ -10,7 +10,7 @@ import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.role.neutral.ArsonistRole
 import com.fantamomo.mc.amongus.role.neutral.ArsonistRole.AssignedArsonistRole
 import com.fantamomo.mc.amongus.settings.SettingsKey
-import org.bukkit.Material
+import org.bukkit.inventory.ItemType
 
 object ArsonistAbility : Ability<ArsonistAbility, ArsonistAbility.AssignedArsonistAbility> {
     override val id: String = "arsonist"
@@ -25,6 +25,7 @@ object ArsonistAbility : Ability<ArsonistAbility, ArsonistAbility.AssignedArsoni
         private val arsonist: AssignedArsonistRole
             get() = player.assignedRole as? AssignedArsonistRole ?: error("Player does not have assigned Arsonist role")
 
+        @Suppress("UnstableApiUsage")
         override val items: List<AbilityItem> = listOf(
             abilityItem("douse") {
 
@@ -57,7 +58,7 @@ object ArsonistAbility : Ability<ArsonistAbility, ArsonistAbility.AssignedArsoni
                 state(AbilityItemState.ACTIVE) {
 
                     render {
-                        material = Material.FLINT_AND_STEEL
+                        itemType = ItemType.FLINT_AND_STEEL
                         translationKey = "ability.arsonist.douse.active"
                     }
 
@@ -72,32 +73,16 @@ object ArsonistAbility : Ability<ArsonistAbility, ArsonistAbility.AssignedArsoni
                 state(AbilityItemState.BLOCKED) {
 
                     render {
-                        material = Material.BARRIER
-                        translationKey = when (ctx.getBlockReason()) {
+                        itemType = ItemType.BARRIER
+                        when (ctx.getBlockReason()) {
                             BlockReason.Dead ->
-                                "ability.arsonist.douse.dead"
-                            BlockReason.InVent ->
-                                "ability.general.disabled.in_vent"
-
-                            BlockReason.InMeeting ->
-                                "ability.general.disabled.in_meeting"
+                                translationKey = "ability.arsonist.douse.dead"
 
                             is BlockReason.Custom ->
-                                "ability.arsonist.douse.deactivate.not_near_undoused_player"
+                                translationKey = "ability.arsonist.douse.deactivate.not_near_undoused_player"
 
-                            else ->
-                                "ability.arsonist.douse.deactivate"
+                            else -> {}
                         }
-                    }
-                }
-
-                // ---------- COOLDOWN ----------
-
-                state(AbilityItemState.COOLDOWN) {
-
-                    render {
-                        material = Material.BARRIER
-                        translationKey = "ability.general.disabled.cooldown"
                     }
                 }
             }
