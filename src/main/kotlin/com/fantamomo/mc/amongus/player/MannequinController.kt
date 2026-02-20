@@ -203,7 +203,9 @@ class MannequinController(
         }
 
         val display = colorDisplays.getOrPut(color) {
-            val nameToDisplay = owner.game.morphManager.getMorphedPlayer(owner)?.target?.name ?: owner.name
+            val morphManager = owner.game.morphManager
+            val nameToDisplay =
+                (morphManager.camouflageTarget() ?: morphManager.getMorphedPlayer(owner)?.target ?: owner).name
 
             mannequin.world.spawn(mannequin.location, TextDisplay::class.java) {
                 it.text(Component.text(nameToDisplay, color))
@@ -423,6 +425,11 @@ class MannequinController(
 
     fun restoreAppearance() {
         copyAppearanceFrom(owner)
+    }
+
+    fun restoreAppearanceFromOriginalOrMorph() {
+        val target = owner.game.morphManager.getMorphedPlayer(owner)?.target ?: owner
+        copyAppearanceFrom(target)
     }
 
     @Suppress("UnstableApiUsage")
