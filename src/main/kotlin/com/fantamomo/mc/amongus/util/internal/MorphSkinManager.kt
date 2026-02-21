@@ -7,6 +7,7 @@ import com.fantamomo.mc.amongus.data.AmongUsSecrets
 import com.fantamomo.mc.amongus.util.safeCreateDirectories
 import com.fantamomo.mc.amongus.util.skinblender.SkinBlender
 import com.fantamomo.mc.amongus.util.skinblender.VirusSkinBlender
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
@@ -14,7 +15,8 @@ import kotlinx.serialization.json.encodeToStream
 import org.mineskin.JsoupRequestHandler
 import org.mineskin.MineSkinClient
 import org.mineskin.data.JobInfo
-import org.mineskin.data.Visibility
+import org.mineskin.data.User
+import org.mineskin.exception.MineSkinRequestException
 import org.mineskin.request.GenerateRequest
 import org.slf4j.LoggerFactory
 import java.awt.image.BufferedImage
@@ -25,11 +27,17 @@ import java.util.*
 import java.util.concurrent.CompletableFuture
 import javax.imageio.ImageIO
 import kotlin.io.path.exists
+import kotlin.jvm.optionals.getOrDefault
+import kotlin.jvm.optionals.getOrNull
+import kotlin.uuid.Uuid
+import org.mineskin.data.Visibility as MineSkinVisibility
 
-@Suppress("OPT_IN_USAGE")
+@OptIn(ExperimentalSerializationApi::class)
 object MorphSkinManager {
-
+    private const val INVALID_API_KEY_MESSAGE = "Invalid API Key"
+    private const val AVERAGE_SKIN_GENERATION_TIME = 1.5
     private val logger = LoggerFactory.getLogger("AmongUs-MorphSkinManager")
+    private val mineskinLogger = LoggerFactory.getLogger("AmongUs-MineSkin")
 
     private val baseDir = AmongUs.dataPath.resolve("morph_cache")
     internal val skinDir = baseDir.resolve("skins")
@@ -45,6 +53,15 @@ object MorphSkinManager {
             .build()
     }
 
+    private var initializing: Boolean = false
+    private var initialized: Boolean? = null
+        set(value) {
+            if (value == null) throw IllegalArgumentException("Can not set initialized to null")
+            field = value
+            initializing = false
+        }
+    private var visibility: MineSkinVisibility = MineSkinVisibility.UNLISTED
+
     private val blender: SkinBlender by lazy {
         val selected = AmongUsConfig.MorphBlender.blender
         SkinBlender.blenders.firstOrNull { it.id == selected } ?: VirusSkinBlender
@@ -55,16 +72,134 @@ object MorphSkinManager {
         ignoreUnknownKeys = true
     }
 
-    init {
-        try {
-            skinDir.safeCreateDirectories()
-            dataDir.safeCreateDirectories()
-        } catch (e: Exception) {
-            logger.error("Failed to create skin or data directories", e)
+    internal fun init() {
+        if (!AmongUsConfig.MorphBlender.enabled) return
+        if (initialized != null || initializing) return
+        initializing = true
+
+        if (API_KEY.isEmpty()) {
+            mineskinLogger.error("It seams like you enabled MorphBlender but didn't set your MineSkin API Key.")
+            mineskinLogger.error("Please check your secrets.properties file and set the 'mineskin' variable to your API Key.")
+            mineskinLogger.error("If you don't have an API Key, you can get one here: https://account.mineskin.org/keys/")
+            mineskinLogger.error("If you don't want to use MorphBlender, disable it in the config.yml file.")
+            initialized = false
+            return
         }
+
+        AmongUs.server.scheduler.runTaskAsynchronously(AmongUs, ::asyncInit)
     }
 
-    fun isValid() = API_KEY.isNotBlank() && AmongUsConfig.MorphBlender.enabled
+    private fun asyncInit() {
+        client.misc().user
+            .thenAccept { user ->
+                val user = user.user
+                printUser(user)
+
+                val privateSkinsPermission = user.grants().getBoolean("private_skins").getOrDefault(false)
+                val configVisibility = AmongUsConfig.MorphBlender.visibility
+
+                visibility = when (configVisibility) {
+                    MorphSkinManager.Visibility.PRIVATE if (!privateSkinsPermission) -> {
+                        mineskinLogger.warn("You selected the visibility 'private' in config.yml")
+                        mineskinLogger.warn("But your MineSkin plan doesn't allow private skins.")
+                        mineskinLogger.warn("Falling back to visibility 'unlisted'")
+                        MineSkinVisibility.UNLISTED
+                    }
+                    MorphSkinManager.Visibility.AUTO -> if (privateSkinsPermission) MineSkinVisibility.PRIVATE else MineSkinVisibility.UNLISTED
+                    else -> configVisibility.handle!!
+                }
+
+                skinDir.safeCreateDirectories()
+                dataDir.safeCreateDirectories()
+
+                initialized = true
+            }.exceptionally { ex ->
+                val cause = ex.cause
+                if (cause is MineSkinRequestException) {
+                    val message = cause.message
+                    if (message == INVALID_API_KEY_MESSAGE) {
+                        mineskinLogger.error("Invalid MineSkin API Key")
+                        mineskinLogger.error("Please check your secrets.properties file")
+                        mineskinLogger.error("MorphBlender will not work without a valid API Key")
+                        mineskinLogger.error("If you don't have an API Key, you can get one here: https://account.mineskin.org/keys/")
+                        initialized = false
+                        return@exceptionally null
+                    }
+                    mineskinLogger.error("Failed to authenticate with MineSkin API: $message")
+                    val response = cause.response
+                    mineskinLogger.error("Status: ${response.status}")
+                    response.errors.forEach { mineskinLogger.error("Error: ${it.message}") }
+                    response.warnings.forEach { mineskinLogger.error("Warning: ${it.message}") }
+                    response.messages.forEach { mineskinLogger.error("Message: ${it.message}") }
+                } else {
+                    mineskinLogger.error("Unexpected exception while trying to authenticate with MineSkin API", cause)
+                }
+                initialized = false
+                null
+            }
+    }
+
+    private fun printUser(user: User) {
+        val uuid = user.uuid().let { Uuid.parseOrNull(it)?.toString() ?: it }
+        var maskedSize = 19
+        val maskedUuid = uuid.mapIndexed { index, ch ->
+            when {
+                ch == '-' -> '-'.also { maskedSize++ }
+                index > maskedSize -> ch
+                else -> '*'
+            }
+        }.joinToString("")
+        mineskinLogger.info("Successfully authenticated as $maskedUuid")
+
+        val grants = user.grants()
+        val delayStr = grants.getString("delay").getOrNull()
+        val perMinuteStr = grants.getString("per_minute").getOrNull()
+        val concurrencyStr = grants.getString("concurrency").getOrNull()
+        val priority = grants.getString("priority").getOrNull() ?: "<unknown>"
+        val privateSkins = grants.getBoolean("private_skins").getOrDefault(false)
+
+        mineskinLogger.info(
+            "Grants[delay=$delayStr, perMinute=$perMinuteStr, concurrency=$concurrencyStr, priority=$priority, privateSkins=$privateSkins]"
+        )
+
+        val missingValues = mutableListOf<String>()
+
+        val c = concurrencyStr?.toDoubleOrNull()
+            ?: run { missingValues.add("concurrency"); null }
+
+        val r = perMinuteStr?.toDoubleOrNull()
+            ?: run { missingValues.add("per_minute"); null }
+
+        val d = delayStr?.toDoubleOrNull()
+            ?: run { missingValues.add("delay"); null }
+
+        if (missingValues.isNotEmpty()) {
+            mineskinLogger.info(
+                "Cannot estimate Morph Animation generation time: missing or invalid values: ${
+                    missingValues.joinToString(", ")
+                }"
+            )
+            return
+        }
+
+        if (c!! <= 0 || r!! <= 0 || d!! < 0) {
+            mineskinLogger.info(
+                "Cannot estimate Morph Animation generation time: invalid numeric values (concurrency=$c, perMinute=$r, delay=$d)"
+            )
+            return
+        }
+
+        val n = 8
+
+        val estimatedSeconds = (n / c) * (AVERAGE_SKIN_GENERATION_TIME + d)
+
+        mineskinLogger.info(
+            "Estimated Morph Animation generation time ($n frames): ~%.2f seconds (~%.2f minutes)"
+                .format(estimatedSeconds, estimatedSeconds / 60.0)
+        )
+    }
+
+    fun isValid() = initialized == true && AmongUsConfig.MorphBlender.enabled && API_KEY.isNotBlank()
 
     private fun checkValid() = require(isValid()) { "MineSkin API key cannot be blank or MorphBlender disabled" }
 
@@ -82,13 +217,13 @@ object MorphSkinManager {
                     val baseSkin = fetchSkinFromProfile(baseProfile)
                     val targetSkin = fetchSkinFromProfile(targetProfile)
 
-                    val baseId = baseProfile.id.toString()
-                    val targetId = targetProfile.id.toString()
+                    val baseId = baseProfile.textures.skin?.toString() ?: baseProfile.id.toString()
+                    val targetId = targetProfile.textures.skin?.toString() ?: targetProfile.id.toString()
 
                     pregenerate(baseSkin, targetSkin, baseId, targetId, variants, baseProfile, targetProfile).join()
                 } catch (e: Exception) {
                     logger.error("Failed to pregenerate skins from profiles", e)
-                    emptyList<Skin>()
+                    emptyList()
                 }
             }
         } catch (e: Exception) {
@@ -196,7 +331,7 @@ object MorphSkinManager {
         return try {
             val request = GenerateRequest.upload(file)
                 .name("Morph-$hash".take(20))
-                .visibility(Visibility.PUBLIC)
+                .visibility(visibility)
 
             client.queue().submit(request)
                 .thenCompose { queueResponse ->
@@ -279,6 +414,7 @@ object MorphSkinManager {
 
     sealed interface Skin {
         val t: Float
+
         data class PlayerProfileSkin(val profile: PlayerProfile, override val t: Float) : Skin
         data class GeneratedSkin(
             val hash: String,
@@ -287,6 +423,17 @@ object MorphSkinManager {
             val value: String,
             val signature: String
         ) : Skin
+    }
+
+    enum class Visibility(val handle: MineSkinVisibility?) {
+        PUBLIC(MineSkinVisibility.PUBLIC),
+        UNLISTED(MineSkinVisibility.UNLISTED),
+        PRIVATE(MineSkinVisibility.PRIVATE),
+        AUTO(null);
+
+        companion object {
+            fun getOrNull(name: String) = name.uppercase().let { name -> entries.find { it.name == name } }
+        }
     }
 
     private fun ByteArray.toHexString(): String = joinToString("") { "%02x".format(it) }
