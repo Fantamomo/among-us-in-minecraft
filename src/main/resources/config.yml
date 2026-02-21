@@ -37,3 +37,6 @@ morph-blender:
   # - fade: Fade blending
   # - checker: Checkerboard blending
   blender: virus
+
+# Should we animate the scoreboard?
+animate-scoreboard: true
