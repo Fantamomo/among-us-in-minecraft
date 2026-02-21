@@ -333,6 +333,7 @@ class MorphManager(val game: Game) {
         val selectedPlayer = game.players.random()
         camouflageTarget = selectedPlayer
         for (player in game.players) {
+            player.statistics.camouflaged.increment()
             player.mannequinController.copyAppearanceFrom(selectedPlayer)
         }
     }
