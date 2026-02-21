@@ -20,4 +20,6 @@ object AmongUsConfig {
         val enabled = section.getBoolean("enabled", false)
         val blender = section.getString("blender", VirusSkinBlender.id)
     }
+
+    val animateScoreboard = config.getBoolean("animate-scoreboard", true)
 }

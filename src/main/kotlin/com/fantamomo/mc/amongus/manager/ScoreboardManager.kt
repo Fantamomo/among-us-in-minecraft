@@ -3,6 +3,7 @@ package com.fantamomo.mc.amongus.manager
 import com.fantamomo.mc.adventure.text.args
 import com.fantamomo.mc.adventure.text.textComponent
 import com.fantamomo.mc.adventure.text.translatable
+import com.fantamomo.mc.amongus.data.AmongUsConfig
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.game.GamePhase
 import com.fantamomo.mc.amongus.languages.component
@@ -24,10 +25,6 @@ import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Bukkit
 import org.bukkit.scoreboard.Criteria
 import org.bukkit.scoreboard.DisplaySlot
-import org.bukkit.scoreboard.Score
-import kotlin.contracts.ExperimentalContracts
-import kotlin.contracts.InvocationKind
-import kotlin.contracts.contract
 
 /**
  * Manages scoreboards for an Among Us game session.
@@ -84,9 +81,9 @@ class ScoreboardManager(private val game: Game) {
     inner class AmongUsScoreboard(private val player: AmongUsPlayer) {
         private val scoreboard = Bukkit.getScoreboardManager().newScoreboard
 
-        /**
-         * Team used to render dead players as translucent ("ghost-like").
-         */
+        private val animate: Boolean get() = AmongUsConfig.animateScoreboard
+
+        /** Team used to render dead players as translucent ("ghost-like"). */
         val ghostTeam = (scoreboard.getTeam(TEAM_GHOST) ?: scoreboard.registerNewTeam(TEAM_GHOST)).apply {
             setCanSeeFriendlyInvisibles(true)
         }
@@ -99,13 +96,24 @@ class ScoreboardManager(private val game: Game) {
 
         private val previous = player.player?.scoreboard
 
-        private val usedEntries = mutableSetOf<String>()
         private val animatedLines = mutableMapOf<String, AnimatedLine>()
+
+        private val lastSentComponent = mutableMapOf<String, Component>()
+
+        private val lastSentScore = mutableMapOf<String, Int>()
+
+        private val lastSentNumberFormat = mutableMapOf<String, NumberFormat>()
+
+        private val charSplitCache = mutableMapOf<Component, List<Component>>()
+
+        private val usedEntries = mutableSetOf<String>()
         private val renderOrder = mutableListOf<String>()
 
         private var initialRender = true
         private var initialIndex = 0
         private var lineDelay = 0
+
+        private var boardDirty = false
 
         fun show() {
             player.player?.scoreboard = scoreboard
@@ -118,23 +126,25 @@ class ScoreboardManager(private val game: Game) {
         }
 
         fun update() {
+            val previousEntries = usedEntries.toSet()
             usedEntries.clear()
             renderOrder.clear()
+            boardDirty = false
+
+            charSplitCache.clear()
 
             if (game.phase == GamePhase.LOBBY || game.phase == GamePhase.STARTING) renderLobby()
             else renderGame()
 
-            animateInitialSequence()
-            cleanup()
+            if (animate) animateInitialSequence()
+            cleanup(previousEntries)
         }
 
         private fun renderLobby() {
             renderGameCode()
             renderSpacer(SCORE_LOBBY_SPACER_1)
-
             renderLobbyInfo()
             renderSpacer(SCORE_LOBBY_SPACER_2)
-
             renderRecentSettings()
         }
 
@@ -148,15 +158,12 @@ class ScoreboardManager(private val game: Game) {
         private fun renderGameCode() {
             val id = ENTRY_LOBBY_CODE
             register(id)
-
             score(
                 id,
                 SCORE_LOBBY_CODE,
                 textComponent {
                     translatable("scoreboard.lobby.code") {
-                        args {
-                            string("code", game.code)
-                        }
+                        args { string("code", game.code) }
                     }
                 }
             )
@@ -206,41 +213,35 @@ class ScoreboardManager(private val game: Game) {
                 val id = "$ENTRY_LOBBY_SETTING#$index"
                 register(id)
 
+                val representation = key.type.componentRepresentation(game.settings[key])
+                val nf = NumberFormat.fixed(textComponent {
+                    translatable("scoreboard.lobby.settings.value") {
+                        args { component("value", representation) }
+                    }
+                })
                 score(
                     id,
                     SCORE_LOBBY_SETTINGS_START - index,
                     textComponent {
                         translatable("scoreboard.lobby.settings.name") {
-                            args {
-                                component("name", key.settingsDisplayName)
-                            }
+                            args { component("name", key.settingsDisplayName) }
                         }
-                    }
-                ) {
-                    val representation = key.type.componentRepresentation(game.settings[key])
-                    val numberFormat = NumberFormat.fixed(textComponent {
-                        translatable("scoreboard.lobby.settings.value") {
-                            args {
-                                component("value", representation)
-                            }
-                        }
-                    })
-                    numberFormat(numberFormat)
-                }
+                    },
+                    numberFormat = nf
+                )
             }
         }
 
         private fun renderRole() {
-
             register(ENTRY_ROLE)
-
             score(
                 ENTRY_ROLE,
                 SCORE_ROLE_HEADER,
                 textComponent {
                     translatable("scoreboard.role") {
                         args {
-                            component("role",
+                            component(
+                                "role",
                                 player.assignedRole?.name
                                     ?: Component.translatable("scoreboard.role.none")
                             )
@@ -249,46 +250,27 @@ class ScoreboardManager(private val game: Game) {
                 }
             )
 
-            val desc = player.assignedRole
-                ?.description
-                ?: return
+            val desc = player.assignedRole?.description ?: return
 
             wrapComponent(desc.translateTo(player.locale))
                 .forEachIndexed { index, line ->
-
                     val id = "$ENTRY_ROLE_DESC#$index"
-
                     register(id)
-
-                    score(
-                        id,
-                        SCORE_ROLE_DESC_START - index,
-                        line
-                    )
+                    score(id, SCORE_ROLE_DESC_START - index, line)
                 }
+
             val roleLine = player.assignedRole?.scoreboardLine()
             if (roleLine != null) {
                 register(ENTRY_ROLE_CUSTOM)
-                score(
-                    ENTRY_ROLE_CUSTOM,
-                    SCORE_ROLE_CUSTOM,
-                    roleLine
-                )
+                score(ENTRY_ROLE_CUSTOM, SCORE_ROLE_CUSTOM, roleLine)
             }
         }
 
         private fun renderDeath() {
             if (!player.isAlive) {
-
                 val id = "$ENTRY_DEATH#0"
-
                 register(id)
-
-                score(
-                    id,
-                    SCORE_DEATH,
-                    textComponent { translatable("scoreboard.death") }
-                )
+                score(id, SCORE_DEATH, textComponent { translatable("scoreboard.death") })
             }
         }
 
@@ -298,59 +280,37 @@ class ScoreboardManager(private val game: Game) {
             if (commsSabotaged) {
                 val id = "$ENTRY_TASK#sabotage"
                 register(id)
-                score(
-                    id,
-                    SCORE_TASK_START + 1,
-                    COMMUNICATIONS_SABOTAGED_SCOREBOARD_LINE
-                )
+                score(id, SCORE_TASK_START + 1, COMMUNICATIONS_SABOTAGED_SCOREBOARD_LINE)
             }
 
             player.tasks
                 .sortedBy { it.completed }
                 .forEachIndexed { index, task ->
-
                     val id = "$ENTRY_TASK#$index"
-
                     register(id)
 
                     if (commsSabotaged) {
                         score(
                             id,
                             SCORE_TASK_START - index,
-                            COMMUNICATIONS_SABOTAGED_SCOREBOARD_LINE_REPLACEMENT
-                        ) {
-                            numberFormat(TaskState.COMMUNICATIONS_SABOTAGED.numberFormat)
-                        }
+                            COMMUNICATIONS_SABOTAGED_SCOREBOARD_LINE_REPLACEMENT,
+                            numberFormat = TaskState.COMMUNICATIONS_SABOTAGED.numberFormat
+                        )
                         return@forEachIndexed
                     }
 
                     val (defaultStyle, format) = task.state()
-
                     val style = if (task.completed) COMPLETED_TASK_STYLE else defaultStyle
-
                     val line = task.task.scoreboardLine(style)
 
-                    score(
-                        id,
-                        SCORE_TASK_START - index,
-                        line
-                    ) {
-                        numberFormat(format)
-                    }
+                    score(id, SCORE_TASK_START - index, line, numberFormat = format)
                 }
         }
 
-        private fun renderSpacer(score: Int) {
-
-            val id = "$ENTRY_SPACER#$score"
-
+        private fun renderSpacer(scoreValue: Int) {
+            val id = "$ENTRY_SPACER#$scoreValue"
             register(id)
-
-            score(
-                id,
-                score,
-                Component.empty()
-            )
+            score(id, scoreValue, Component.empty())
         }
 
         private fun register(id: String) {
@@ -359,23 +319,35 @@ class ScoreboardManager(private val game: Game) {
             }
         }
 
-        @OptIn(ExperimentalContracts::class)
-        private inline fun score(
+        private fun score(
             id: String,
             value: Int,
             component: Component,
             translate: Boolean = true,
-            block: Score.() -> Unit = {}
+            numberFormat: NumberFormat = NumberFormat.blank()
         ) {
-            contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
-
             val shown = score0(id, translate, component)
 
-            objective.getScore(id).apply {
-                score = value
-                customName(shown)
-                numberFormat(NumberFormat.blank())
-                block()
+            val componentChanged = lastSentComponent[id] != shown
+            val scoreChanged = lastSentScore[id] != value
+            val numberFormatChanged = lastSentNumberFormat[id] != numberFormat
+
+            if (!componentChanged && !scoreChanged && !numberFormatChanged) return
+
+            boardDirty = true
+            val entry = objective.getScore(id)
+
+            if (scoreChanged) {
+                entry.score = value
+                lastSentScore[id] = value
+            }
+            if (componentChanged) {
+                entry.customName(shown)
+                lastSentComponent[id] = shown
+            }
+            if (componentChanged || numberFormatChanged) {
+                entry.numberFormat(numberFormat)
+                lastSentNumberFormat[id] = numberFormat
             }
         }
 
@@ -388,11 +360,18 @@ class ScoreboardManager(private val game: Game) {
 
             val translated = if (translate) component.translateTo(player.locale) else component
 
-            val chars = splitToChars(translated)
+            if (!animate) {
+                animatedLines.remove(id)
+
+                val chars = charSplitCache.getOrPut(translated) { splitToChars(translated) }
+                return if (chars.size > MAX_LINE_LENGTH) buildTruncated(chars) else translated
+            }
+
+            val chars = charSplitCache.getOrPut(translated) { splitToChars(translated) }
 
             val existing = animatedLines[id]
-            val line =
-                existing ?: AnimatedLine.createInitial(translated, chars, initialRender, forceAnimate = true).also {
+            val line = existing
+                ?: AnimatedLine.createInitial(translated, chars, initialRender, forceAnimate = true).also {
                     animatedLines[id] = it
                 }
 
@@ -405,15 +384,18 @@ class ScoreboardManager(private val game: Game) {
                 }
             }
 
-            val canAnimate =
-                !initialRender || renderOrder.getOrNull(initialIndex) == id
-
+            val canAnimate = !initialRender || renderOrder.getOrNull(initialIndex) == id
             if (canAnimate) {
                 animatedLines[id]?.advance(ANIMATION_SPEED)
             }
 
-            val shown = animatedLines[id]?.shown() ?: Component.empty()
-            return shown
+            return animatedLines[id]?.shown() ?: Component.empty()
+        }
+
+        private fun buildTruncated(chars: List<Component>): Component {
+            var current = Component.empty()
+            chars.take(MAX_LINE_LENGTH).forEach { current = current.append(it) }
+            return current
         }
 
         private fun animateInitialSequence() {
@@ -428,7 +410,6 @@ class ScoreboardManager(private val game: Game) {
 
             if (line.isFinished()) {
                 lineDelay++
-
                 if (lineDelay >= 3) {
                     lineDelay = 0
                     initialIndex++
@@ -436,13 +417,18 @@ class ScoreboardManager(private val game: Game) {
             }
         }
 
-        private fun cleanup() {
-            scoreboard.entries
-                .filterNot { it in usedEntries }
-                .forEach {
-                    scoreboard.resetScores(it)
-                    animatedLines.remove(it)
-                }
+        private fun cleanup(previousEntries: Set<String>) {
+            val removed = previousEntries - usedEntries
+            if (removed.isEmpty()) return
+
+            boardDirty = true
+            removed.forEach { id ->
+                scoreboard.resetScores(id)
+                animatedLines.remove(id)
+                lastSentComponent.remove(id)
+                lastSentScore.remove(id)
+                lastSentNumberFormat.remove(id)
+            }
         }
     }
 
@@ -474,9 +460,7 @@ class ScoreboardManager(private val game: Game) {
                     initialRender -> 0f
                     else -> chars.size.toFloat()
                 }
-
                 val needsScrolling = chars.size > MAX_LINE_LENGTH
-
                 return AnimatedLine(
                     full = full,
                     chars = chars,
@@ -492,58 +476,40 @@ class ScoreboardManager(private val game: Game) {
         }
 
         fun isFinished(): Boolean {
-            if (cursorMode) {
-                return cursorPhase == 1 && cursorProgress >= (cursorEnd - cursorStart)
-            }
-
-            if (scrollMode && progress >= MAX_LINE_LENGTH.coerceAtMost(chars.size)) {
-                return true
-            }
-
+            if (cursorMode) return cursorPhase == 1 && cursorProgress >= (cursorEnd - cursorStart)
+            if (scrollMode && progress >= MAX_LINE_LENGTH.coerceAtMost(chars.size)) return true
             return progress >= chars.size
         }
 
         fun advance(speed: Float) {
             if (cursorMode) {
-                advanceCursorMode(speed)
-                return
+                advanceCursorMode(speed); return
             }
 
             if (!isFinished()) {
                 val targetSize = if (scrollMode) MAX_LINE_LENGTH.coerceAtMost(chars.size) else chars.size
                 val remaining = targetSize - progress
                 val step = (remaining * speed).coerceAtLeast(0.15f)
-                progress += step
-                if (progress > targetSize) progress = targetSize.toFloat()
+                progress = (progress + step).coerceAtMost(targetSize.toFloat())
                 return
             }
 
-            if (scrollMode) {
-                advanceScrolling()
-            }
+            if (scrollMode) advanceScrolling()
         }
 
         private fun advanceScrolling() {
             if (chars.size <= MAX_LINE_LENGTH) {
-                scrollMode = false
-                return
+                scrollMode = false; return
             }
-
             if (scrollPauseCounter > 0) {
-                scrollPauseCounter--
-                return
+                scrollPauseCounter--; return
             }
 
-            scrollDelay++
-            if (scrollDelay < SCROLL_DELAY_TICKS) {
-                return
-            }
+            if (++scrollDelay < SCROLL_DELAY_TICKS) return
             scrollDelay = 0
-
             scrollOffset++
 
             val maxOffset = chars.size - MAX_LINE_LENGTH + ELLIPSIS.length
-
             if (scrollOffset > maxOffset) {
                 scrollPauseCounter = SCROLL_PAUSE_END
                 scrollOffset = 0
@@ -558,22 +524,19 @@ class ScoreboardManager(private val game: Game) {
                 return
             }
 
+            val step = (1 + (totalChanged * speed).toInt()).coerceAtLeast(1)
+
             if (cursorPhase == 0) {
-                val step = (1 + (totalChanged * speed).toInt()).coerceAtLeast(1)
                 cursorProgress += step
                 if (cursorProgress >= totalChanged) {
-                    cursorPhase = 1
-                    cursorProgress = 0
+                    cursorPhase = 1; cursorProgress = 0
                 }
             } else {
-                val step = (1 + (totalChanged * speed).toInt()).coerceAtLeast(1)
                 cursorProgress += step
                 if (cursorProgress >= totalChanged) {
                     val mutable = chars.toMutableList()
-                    @Suppress("EmptyRange")
-                    for (i in cursorStart until cursorEnd) {
-                        mutable[i] = targetChars[i]
-                    }
+                    @Suppress("EmptyRange") // no clue why IntelliJ says that
+                    for (i in cursorStart until cursorEnd) mutable[i] = targetChars[i]
                     chars = mutable.toList()
                     cursorMode = false
                     progress = chars.size.toFloat()
@@ -586,17 +549,14 @@ class ScoreboardManager(private val game: Game) {
             var firstDiff = -1
             var lastDiff = -1
             for (i in 0 until size) {
-                val a = chars[i].toString()
-                val b = newChars[i].toString()
-                if (a != b) {
+                if (chars[i] != newChars[i]) {
                     if (firstDiff == -1) firstDiff = i
                     lastDiff = i
                 }
             }
 
             if (firstDiff == -1) {
-                full = newFull
-                targetChars = newChars
+                full = newFull; targetChars = newChars
                 scrollMode = newChars.size > MAX_LINE_LENGTH
                 return
             }
@@ -604,40 +564,24 @@ class ScoreboardManager(private val game: Game) {
             val diffLength = lastDiff - firstDiff + 1
             val threshold = (size * 0.8).toInt().coerceAtLeast(1)
             if (diffLength >= threshold) {
-                full = newFull
-                chars = newChars
-                progress = 0f
-                cursorMode = false
-                targetChars = newChars
+                full = newFull; chars = newChars; progress = 0f
+                cursorMode = false; targetChars = newChars
                 scrollMode = newChars.size > MAX_LINE_LENGTH
                 scrollOffset = 0
                 scrollPauseCounter = if (scrollMode) SCROLL_PAUSE_START else 0
                 return
             }
 
-            full = newFull
-            targetChars = newChars
-            cursorMode = true
-            cursorStart = firstDiff
-            cursorEnd = lastDiff + 1
-            cursorPhase = 0
-            cursorProgress = 0
+            full = newFull; targetChars = newChars
+            cursorMode = true; cursorStart = firstDiff; cursorEnd = lastDiff + 1
+            cursorPhase = 0; cursorProgress = 0
         }
 
-        fun shown(): Component {
-            if (cursorMode) {
-                return buildCursorShown()
-            }
-
-            if (progress < (if (scrollMode) MAX_LINE_LENGTH.coerceAtMost(chars.size) else chars.size)) {
-                return buildInitialAnimation()
-            }
-
-            if (scrollMode && chars.size > MAX_LINE_LENGTH) {
-                return buildScrollingLine()
-            }
-
-            return buildNormalLine()
+        fun shown(): Component = when {
+            cursorMode -> buildCursorShown()
+            progress < (if (scrollMode) MAX_LINE_LENGTH.coerceAtMost(chars.size) else chars.size) -> buildInitialAnimation()
+            scrollMode && chars.size > MAX_LINE_LENGTH -> buildScrollingLine()
+            else -> buildNormalLine()
         }
 
         private fun buildInitialAnimation(): Component {
@@ -645,23 +589,16 @@ class ScoreboardManager(private val game: Game) {
             val count = progress.toInt().coerceAtMost(targetSize)
             if (chars.isEmpty()) return Component.empty()
 
-            val revealed = chars.take(count)
-            val unrevealed = chars.drop(count).take(targetSize - count)
-
             var current = Component.empty()
-            revealed.forEach { current = current.append(it) }
-
-            unrevealed.forEach { part ->
-                val style = part.style()
-                current = current.append(Component.space().style(style))
+            chars.take(count).forEach { current = current.append(it) }
+            chars.drop(count).take(targetSize - count).forEach { part ->
+                current = current.append(Component.space().style(part.style()))
             }
-
             return current
         }
 
         private fun buildScrollingLine(): Component {
             var current = Component.empty()
-
             val hasStartEllipsis = scrollOffset > 0
             val ellipsisLength = if (hasStartEllipsis) ELLIPSIS.length else 0
             val visibleTextLength = MAX_LINE_LENGTH - ellipsisLength
@@ -673,21 +610,13 @@ class ScoreboardManager(private val game: Game) {
 
             val startIndex = scrollOffset
             val endIndex = (startIndex + visibleTextLength).coerceAtMost(chars.size)
+            for (i in startIndex until endIndex) current = current.append(chars[i])
 
-            for (i in startIndex until endIndex) {
-                current = current.append(chars[i])
-            }
-
-            val actualLength = ellipsisLength + (endIndex - startIndex)
-            val paddingNeeded = MAX_LINE_LENGTH - actualLength
-
+            val paddingNeeded = MAX_LINE_LENGTH - (ellipsisLength + (endIndex - startIndex))
             if (paddingNeeded > 0) {
                 val style = chars.lastOrNull()?.style() ?: Style.empty()
-                repeat(paddingNeeded) {
-                    current = current.append(Component.space().style(style))
-                }
+                repeat(paddingNeeded) { current = current.append(Component.space().style(style)) }
             }
-
             return current
         }
 
@@ -701,61 +630,39 @@ class ScoreboardManager(private val game: Game) {
         private fun buildCursorShown(): Component {
             val prefix = chars.subList(0, cursorStart)
             val suffix = chars.subList(cursorEnd, chars.size)
+            val totalChanged = cursorEnd - cursorStart
 
             var current = Component.empty()
             prefix.forEach { current = current.append(it) }
 
-            val totalChanged = cursorEnd - cursorStart
-
             if (cursorPhase == 0) {
                 for (i in 0 until totalChanged) {
-                    val pos = cursorStart + i
-                    val original = chars[pos]
-                    val style = original.style()
-                    val erased = i < cursorProgress
-                    val part = if (erased) {
-                        Component.space().style(style)
-                    } else {
-                        original
-                    }
+                    val original = chars[cursorStart + i]
+                    val part = if (i < cursorProgress) Component.space().style(original.style()) else original
                     current = current.append(part)
                 }
             } else {
                 for (i in 0 until totalChanged) {
-                    val pos = cursorStart + i
-                    val target = targetChars[pos]
-                    val style = target.style()
-                    val showTyped = i < cursorProgress
-                    val part = if (showTyped) {
-                        target
-                    } else {
-                        Component.space().style(style)
-                    }
+                    val target = targetChars[cursorStart + i]
+                    val part = if (i < cursorProgress) target else Component.space().style(target.style())
                     current = current.append(part)
                 }
             }
 
             suffix.forEach { current = current.append(it) }
 
-            val currentCount = countCharsInComponent(current)
-            val targetCount = chars.size
-            if (currentCount < targetCount) {
-                val padCount = targetCount - currentCount
-                val padStyle = if (chars.isNotEmpty()) chars.last().style() else Component.empty().style()
-                repeat(padCount) {
-                    current = current.append(Component.space().style(padStyle))
-                }
+            val padCount = chars.size - countCharsInComponent(current)
+            if (padCount > 0) {
+                val padStyle = chars.lastOrNull()?.style() ?: Style.empty()
+                repeat(padCount) { current = current.append(Component.space().style(padStyle)) }
             }
-
             return current
         }
 
         private fun countCharsInComponent(component: Component): Int {
             var count = 0
             component.iterable(ComponentIteratorType.BREADTH_FIRST).forEach { part ->
-                if (part is TextComponent) {
-                    count += part.content().length
-                }
+                if (part is TextComponent) count += part.content().length
             }
             return count
         }
@@ -763,17 +670,13 @@ class ScoreboardManager(private val game: Game) {
 
     private fun splitToChars(component: Component): List<Component> {
         val result = mutableListOf<Component>()
-
         component.iterable(ComponentIteratorType.BREADTH_FIRST).forEach { part ->
             if (part !is TextComponent) return@forEach
-
             val style = part.style()
-
             part.content().forEach { c ->
                 result += Component.text(c.toString()).style(style)
             }
         }
-
         return result
     }
 
@@ -810,7 +713,6 @@ class ScoreboardManager(private val game: Game) {
         private const val SCORE_LOBBY_SETTINGS_START = 600
 
         private const val ANIMATION_SPEED = 0.18f
-
         private const val MAX_LINE_LENGTH = 32
         private const val SCROLL_DELAY_TICKS = 3
         private const val SCROLL_PAUSE_START = 40
@@ -822,6 +724,7 @@ class ScoreboardManager(private val game: Game) {
         private val COMMUNICATIONS_SABOTAGED_SCOREBOARD_LINE_REPLACEMENT =
             textComponent { translatable("scoreboard.communications_sabotaged") }
 
-        private val COMPLETED_TASK_STYLE = Style.style(NamedTextColor.GREEN, TextDecoration.STRIKETHROUGH)
+        private val COMPLETED_TASK_STYLE =
+            Style.style(NamedTextColor.GREEN, TextDecoration.STRIKETHROUGH)
     }
 }
