@@ -3,6 +3,7 @@ package com.fantamomo.mc.amongus.manager
 import com.fantamomo.mc.adventure.text.args
 import com.fantamomo.mc.adventure.text.textComponent
 import com.fantamomo.mc.adventure.text.translatable
+import com.fantamomo.mc.amongus.data.AmongUsConfig
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.game.GamePhase
 import com.fantamomo.mc.amongus.languages.component
@@ -80,6 +81,8 @@ class ScoreboardManager(private val game: Game) {
     inner class AmongUsScoreboard(private val player: AmongUsPlayer) {
         private val scoreboard = Bukkit.getScoreboardManager().newScoreboard
 
+        private val animate: Boolean get() = AmongUsConfig.animateScoreboard
+
         /** Team used to render dead players as translucent ("ghost-like"). */
         val ghostTeam = (scoreboard.getTeam(TEAM_GHOST) ?: scoreboard.registerNewTeam(TEAM_GHOST)).apply {
             setCanSeeFriendlyInvisibles(true)
@@ -133,7 +136,7 @@ class ScoreboardManager(private val game: Game) {
             if (game.phase == GamePhase.LOBBY || game.phase == GamePhase.STARTING) renderLobby()
             else renderGame()
 
-            animateInitialSequence()
+            if (animate) animateInitialSequence()
             cleanup(previousEntries)
         }
 
@@ -357,6 +360,13 @@ class ScoreboardManager(private val game: Game) {
 
             val translated = if (translate) component.translateTo(player.locale) else component
 
+            if (!animate) {
+                animatedLines.remove(id)
+
+                val chars = charSplitCache.getOrPut(translated) { splitToChars(translated) }
+                return if (chars.size > MAX_LINE_LENGTH) buildTruncated(chars) else translated
+            }
+
             val chars = charSplitCache.getOrPut(translated) { splitToChars(translated) }
 
             val existing = animatedLines[id]
@@ -380,6 +390,12 @@ class ScoreboardManager(private val game: Game) {
             }
 
             return animatedLines[id]?.shown() ?: Component.empty()
+        }
+
+        private fun buildTruncated(chars: List<Component>): Component {
+            var current = Component.empty()
+            chars.take(MAX_LINE_LENGTH).forEach { current = current.append(it) }
+            return current
         }
 
         private fun animateInitialSequence() {
