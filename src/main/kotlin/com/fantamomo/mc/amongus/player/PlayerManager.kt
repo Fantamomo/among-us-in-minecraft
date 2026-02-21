@@ -46,9 +46,11 @@ object PlayerManager {
             (it as CraftPlayer).handle.connection?.send(ClientboundPlayerInfoUpdatePacket.createSinglePlayerInitializing(nmsPlayer, true))
         }
         player.teleportAsync(game.area.lobbySpawn ?: throw IllegalStateException("Lobby spawn not set"))
+            .thenAccept {
+                auPlayer.wardrobeMannequin?.let { player.showEntity(AmongUs, it) }
+            }
         player.inventory.clear()
 
-        auPlayer.wardrobeMannequin?.let { player.showEntity(AmongUs, it) }
         auPlayer.color = auPlayer.color
         return auPlayer
     }
