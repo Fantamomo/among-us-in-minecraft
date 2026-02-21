@@ -9,6 +9,7 @@ object Listeners {
         CameraListener,
         ChatListener,
         CommandListener,
+        EntityListener,
         MeetingListener,
         PlayerListener,
         RoleListener,
