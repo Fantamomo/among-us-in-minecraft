@@ -14,6 +14,7 @@ object Listeners {
         PlayerListener,
         RoleListener,
         SabotageListener,
+        ServerListener,
         SettingsListener,
         TaskListener,
         VentListener
