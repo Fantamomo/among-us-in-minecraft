@@ -239,6 +239,7 @@ class AmongUsPlayer internal constructor(
             mannequinController.updateNameTag(p)
         }
 
+        player?.closeInventory()
         statistics.onGameStart()
         wardrobeMannequin?.remove()
         wardrobeMannequin = null
