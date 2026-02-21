@@ -33,10 +33,20 @@ morph-blender:
 
   # Blender to use
   # Available blenders:
-  # - virus: Virus blending (default)
+  # - virus: Virus blending
   # - fade: Fade blending
   # - checker: Checkerboard blending
+  # default: virus
   blender: virus
+
+  # Sets the visibility of the skins on https://mineskin.org/skins
+  # Available visibilities:
+  # - public: Anyone can see the skin (not recommended)
+  # - unlisted: It won't be shown in the skin list, but everyone with the link can access it
+  # - private: Only you can see and access the skin
+  # - auto: if your MineSkin Plan allows private skins, it will be private, otherwise it will be unlisted
+  # default: auto
+  visibility: auto
 
 # Should we animate the scoreboard?
 animate-scoreboard: true

@@ -4,7 +4,6 @@ import com.fantamomo.mc.adventure.text.args
 import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.ability.builder.AbilityTimer
-import com.fantamomo.mc.amongus.data.AmongUsConfig
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
@@ -199,58 +198,30 @@ class MorphManager(val game: Game) {
     fun morph(player: AmongUsPlayer, target: AmongUsPlayer, abilityTimer: AbilityTimer? = null) {
         if (isMorphed(player)) return
 
-        if (!AmongUsConfig.MorphBlender.enabled) {
-            val morphed = MorphedPlayer(player, target)
-            morphs[player] = morphed
+        if (!MorphSkinManager.isValid()) {
+            morphs[player] = MorphedPlayer(player, target, abilityTimer)
             player.mannequinController.copyAppearanceFrom(target)
             return
         }
 
-        val baseId = player.uuid.toString()
-        val targetId = target.uuid.toString()
-
         val variants = 10
-
-        val expectedHashes = (0..variants + 1).map {
-            if (it == 0 || it == variants + 1) return@map null
-            val t = it.toFloat() / (variants + 1)
-            MorphSkinManager.buildHash(baseId, targetId, t)
-        }
-
-        val cached = expectedHashes.all { it == null || MorphSkinManager.getTexture(it) != null }
-
         val morphed = MorphedPlayer(player, target, abilityTimer)
         morphs[player] = morphed
 
-        if (cached) {
-            val frames = expectedHashes.mapIndexed { index, hash ->
-                if (hash == null) {
-                    return@mapIndexed if (index == 0) MorphSkinManager.Skin.PlayerProfileSkin(player.profile, 0f)
-                    else MorphSkinManager.Skin.PlayerProfileSkin(target.profile, 1f)
-                }
-                val data = MorphSkinManager.getTexture(hash)!!
-                MorphSkinManager.Skin.GeneratedSkin(
-                    hash,
-                    index.toFloat() / (variants + 1),
-                    MorphSkinManager.skinDir.resolve("$hash.png").toFile(),
-                    data.value,
-                    data.signature
-                )
-            }
-            morphed.frames = frames
+        val cachedFrames = MorphSkinManager.getCachedFrames(player.profile, target.profile, variants)
+        if (cachedFrames != null) {
+            morphed.frames = cachedFrames
             morphed.playForwardAnimation()
-        } else {
-            if (camouflageStart == null) player.mannequinController.copyAppearanceFrom(target)
+            return
+        }
 
-            MorphSkinManager.pregenerateFromProfiles(
-                player.profile,
-                target.profile,
-                variants
-            ).thenAccept { frames ->
+        if (camouflageStart == null) player.mannequinController.copyAppearanceFrom(target)
+
+        MorphSkinManager.pregenerateFromProfiles(player.profile, target.profile, variants)
+            .thenAccept { frames ->
                 morphed.frames = frames
                 logger.debug("Morph cache generated for ${player.name}")
             }
-        }
     }
 
     fun showMorphInventory(amongUsPlayer: AmongUsPlayer, callback: (Boolean) -> Unit) {

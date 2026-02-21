@@ -1,6 +1,7 @@
 package com.fantamomo.mc.amongus.data
 
 import com.fantamomo.mc.amongus.AmongUs
+import com.fantamomo.mc.amongus.util.internal.MorphSkinManager
 import com.fantamomo.mc.amongus.util.skinblender.VirusSkinBlender
 
 object AmongUsConfig {
@@ -19,6 +20,7 @@ object AmongUsConfig {
     object MorphBlender : ConfigSection("morph-blender") {
         val enabled = section.getBoolean("enabled", false)
         val blender = section.getString("blender", VirusSkinBlender.id)
+        val visibility = section.getString("visibility")?.let(MorphSkinManager.Visibility::getOrNull) ?: MorphSkinManager.Visibility.AUTO
     }
 
     val animateScoreboard = config.getBoolean("animate-scoreboard", true)
