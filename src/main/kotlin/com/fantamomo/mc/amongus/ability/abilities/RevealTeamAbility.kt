@@ -77,8 +77,10 @@ object RevealTeamAbility : Ability<RevealTeamAbility, RevealTeamAbility.Assigned
                         }
                         if (nearestPlayer == null) return@onRightClick
                         revealedPlayers.add(nearestPlayer)
-                        val color = (nearestPlayer.assignedRole?.definition?.team ?: Team.CREWMATES).textColor
-                        val p = this@AssignedRevealTeamAbility.player.player
+                        val team = (nearestPlayer.assignedRole?.definition?.team ?: Team.CREWMATES)
+                        val color = team.textColor
+                        player.statistics.seerRevealedTeams[team]?.increment()
+                        val p = player.player
                         if (p != null) {
                             nearestPlayer.mannequinController.setNameColorFor(p, color)
                         } else {
