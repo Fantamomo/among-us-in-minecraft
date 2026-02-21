@@ -47,6 +47,7 @@ object CamouflageAbility : Ability<CamouflageAbility, CamouflageAbility.Assigned
                         restartCooldown = false
                         val morphManager = player.game.morphManager
                         if (morphManager.isCamouflageMode()) return@onRightClick
+                        player.statistics.camouflagerActivated.increment()
                         morphManager.camouflageMode()
                         camouflageCooldown.start(player.game.settings[SettingsKey.ROLES.CAMOUFLAGE.COOLDOWN] + player.game.settings[SettingsKey.ROLES.CAMOUFLAGE.DURATION])
                     }

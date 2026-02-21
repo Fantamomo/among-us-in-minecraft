@@ -35,6 +35,7 @@ class PlayerStatistics(uuid: Uuid) {
     val killsAsImposterWhileSabotage = statistics.counter("kills_as_imposter_while_sabotage")
     val killsWhileMorphed = statistics.counter("kills_while_morphed")
     val killsInGhostForm = statistics.counter("kills_in_ghost_form")
+    val killsWhileCamouflaged = statistics.counter("kills_while_camouflaged")
 
     val killedByImposterWhileSabotage = statistics.counter("killed_by_imposter_while_sabotage")
     val killedByMorphedPlayer = statistics.counter("killed_by_morphed_player")
@@ -43,11 +44,16 @@ class PlayerStatistics(uuid: Uuid) {
     val killedAsSheriffCorrect = statistics.counter("killed_as_sheriff_correct")
     val killedAsSheriffWrong = statistics.counter("killed_as_sheriff_wrong")
     val killedByPlayerInGhostForm = statistics.counter("killed_by_player_in_ghost_form")
+    val killedWhileCamouflaged = statistics.counter("killed_while_camouflaged")
 
     val cannibalEatenBodies = statistics.counter("cannibal_eaten_bodies")
     val minerCreatedVents = statistics.counter("miner_created_vents")
     val arsonistDousedPlayers = statistics.counter("arsonist_doused_players")
     val arsonistDoused = statistics.counter("arsonist_doused")
+    val seerRevealedTeams: Map<Team, CounterStatistic> = Team.teams.associateWith { statistics.counter("seer_revealed_team_${it.id}") }
+
+    val camouflaged = statistics.counter("camouflaged")
+    val camouflagerActivated = statistics.counter("camouflager_activated")
 
     val ejected = statistics.counter("ejected")
     val ejectedWrong = statistics.counter("ejected_wrong")

@@ -70,21 +70,12 @@ class KillManager(val game: Game) {
         }
         val location = target.livingEntity.location
 
-        imposter.statistics.kills[imposter.assignedRole?.definition]?.increment()
-        target.statistics.killed[imposter.assignedRole?.definition]?.increment()
-        target.statistics.timeUntilKilled.timerStop()
         if (game.sabotageManager.isCurrentlySabotage()) {
             imposter.statistics.killsAsImposterWhileSabotage.increment()
             target.statistics.killedByImposterWhileSabotage.increment()
         }
-        if (imposter.isInGhostForm()) {
-            imposter.statistics.killsInGhostForm.increment()
-            target.statistics.killedByPlayerInGhostForm.increment()
-        }
-        if (game.morphManager.isMorphed(imposter)) {
-            imposter.statistics.killsWhileMorphed.increment()
-            target.statistics.killedByMorphedPlayer.increment()
-        }
+
+        updateStatistics(target, imposter)
 
         imposter.player?.also { p ->
             val clone = location.clone()
@@ -131,7 +122,7 @@ class KillManager(val game: Game) {
             val location = player.mannequinController.getEntity()?.location ?: player.livingEntityOrNull?.location ?: continue
             if (loc.distanceSquared(location) < distance * distance) return true
         }
-        return true
+        return false
     }
 
     fun canKillAsImposter(player: AmongUsPlayer): Boolean {
@@ -293,17 +284,7 @@ class KillManager(val game: Game) {
         }
         val location = target.livingEntity.location
 
-        sheriff.statistics.kills[sheriff.assignedRole?.definition]?.increment()
-        target.statistics.killed[sheriff.assignedRole?.definition]?.increment()
-        target.statistics.timeUntilKilled.timerStop()
-        if (sheriff.isInGhostForm()) {
-            sheriff.statistics.killsInGhostForm.increment()
-            target.statistics.killedByPlayerInGhostForm.increment()
-        }
-        if (game.morphManager.isMorphed(sheriff)) {
-            sheriff.statistics.killsWhileMorphed.increment()
-            target.statistics.killedByMorphedPlayer.increment()
-        }
+        updateStatistics(target, sheriff)
 
         val sheriffLoc = sheriff.livingEntity.location
 
@@ -358,6 +339,25 @@ class KillManager(val game: Game) {
             sheriff.statistics.killedAsSheriffCorrect.increment()
         }
         game.checkWin()
+    }
+
+    private fun updateStatistics(target: AmongUsPlayer, killer: AmongUsPlayer) {
+        killer.statistics.kills[killer.assignedRole?.definition]?.increment()
+        target.statistics.killed[killer.assignedRole?.definition]?.increment()
+        target.statistics.timeUntilKilled.timerStop()
+        if (killer.isInGhostForm()) {
+            killer.statistics.killsInGhostForm.increment()
+            target.statistics.killedByPlayerInGhostForm.increment()
+        }
+        if (game.morphManager.isMorphed(killer)) {
+            killer.statistics.killsWhileMorphed.increment()
+            target.statistics.killedByMorphedPlayer.increment()
+        }
+
+        if (game.morphManager.isCamouflageMode()) {
+            killer.statistics.killsWhileCamouflaged.increment()
+            target.statistics.killedWhileCamouflaged.increment()
+        }
     }
 
     fun eatCorpse(player: AmongUsPlayer) {
