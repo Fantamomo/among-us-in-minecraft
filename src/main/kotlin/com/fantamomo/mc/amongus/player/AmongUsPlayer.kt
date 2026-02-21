@@ -112,7 +112,7 @@ class AmongUsPlayer internal constructor(
             persistencePlayerData.color = value
             val helmet = value.toItemStack(armorTrim)
             player?.inventory?.helmet = helmet
-            wardrobeMannequin?.equipment?.helmet = helmet
+            if (_wardrobeMannequin is Mannequin) wardrobeMannequin?.equipment?.helmet = helmet
             if (!game.morphManager.isMorphed(this)) {
                 mannequinController.getEntity()?.equipment?.helmet = helmet
             }
@@ -239,6 +239,7 @@ class AmongUsPlayer internal constructor(
             mannequinController.updateNameTag(p)
         }
 
+        player?.closeInventory()
         statistics.onGameStart()
         wardrobeMannequin?.remove()
         wardrobeMannequin = null
