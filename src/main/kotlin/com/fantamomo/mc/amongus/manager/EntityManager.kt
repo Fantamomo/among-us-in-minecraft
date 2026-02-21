@@ -1,9 +1,13 @@
 package com.fantamomo.mc.amongus.manager
 
+import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.manager.EntityManager.addEntityToRemoveOnEnd
 import com.fantamomo.mc.amongus.manager.EntityManager.addEntityToRemoveOnStop
+import com.fantamomo.mc.amongus.manager.EntityManager.dispose
+import org.bukkit.NamespacedKey
 import org.bukkit.entity.Entity
+import org.bukkit.persistence.PersistentDataType
 import org.slf4j.LoggerFactory
 
 /**
@@ -18,21 +22,37 @@ object EntityManager {
     private val logger = LoggerFactory.getLogger("AmongUsEntityManager")
     private val removeOnEnd: MutableMap<Game, MutableList<Entity>> = mutableMapOf()
     private val removeOnStop: MutableList<Entity> = mutableListOf()
-    
+    val RUNTIME_ID_KEY = NamespacedKey(AmongUs, "runtime_id")
+    /**
+     * Represents a unique identifier for the current runtime session.
+     *
+     * This ID is generated at the time of variable initialization using the system's current timestamp.
+     * It is used to differentiate between runtime sessions and help in cleanup procedures,
+     * removing entities from previous sessions in cases where the [dispose] function is not called.
+     *
+     * @see com.fantamomo.mc.amongus.listeners.EntityListener.onLoadEntities
+     */
+    val CURRENT_RUNTIME_ID: Long = System.currentTimeMillis()
+
     /**
      * Adds an entity to a list to be removed when the game ends.
      *
      * @param game The game within which the entity is to be removed at the end.
      * @param entity The entity to be added to the removal list.
      */
-    fun addEntityToRemoveOnEnd(game: Game, entity: Entity) = removeOnEnd.getOrPut(game) { mutableListOf() }.add(entity)
+    fun addEntityToRemoveOnEnd(game: Game, entity: Entity) =
+        removeOnEnd.getOrPut(game) { mutableListOf() }.add(entity.addRuntimeId())
 
     /**
      * Adds the specified entity to a list of entities that will be removed when the stop operation is triggered.
      *
      * @param entity The entity to be added to the list for removal upon stop.
      */
-    fun addEntityToRemoveOnStop(entity: Entity) = removeOnStop.add(entity)
+    fun addEntityToRemoveOnStop(entity: Entity) = removeOnStop.add(entity.addRuntimeId())
+
+    private fun Entity.addRuntimeId(): Entity = apply {
+        persistentDataContainer.set(RUNTIME_ID_KEY, PersistentDataType.LONG, CURRENT_RUNTIME_ID)
+    }
 
     /**
      * Disposes of a game instance by removing all associated resources.
