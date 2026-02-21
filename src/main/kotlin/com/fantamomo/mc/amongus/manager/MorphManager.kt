@@ -4,7 +4,6 @@ import com.fantamomo.mc.adventure.text.args
 import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.ability.builder.AbilityTimer
-import com.fantamomo.mc.amongus.data.AmongUsConfig
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
@@ -199,15 +198,15 @@ class MorphManager(val game: Game) {
     fun morph(player: AmongUsPlayer, target: AmongUsPlayer, abilityTimer: AbilityTimer? = null) {
         if (isMorphed(player)) return
 
-        if (!AmongUsConfig.MorphBlender.enabled) {
+        if (!MorphSkinManager.isValid()) {
             val morphed = MorphedPlayer(player, target)
             morphs[player] = morphed
             player.mannequinController.copyAppearanceFrom(target)
             return
         }
 
-        val baseId = player.uuid.toString()
-        val targetId = target.uuid.toString()
+        val baseId = player.profile.textures.skin?.toString() ?: player.uuid.toString()
+        val targetId = target.profile.textures.skin?.toString() ?: target.uuid.toString()
 
         val variants = 10
 
