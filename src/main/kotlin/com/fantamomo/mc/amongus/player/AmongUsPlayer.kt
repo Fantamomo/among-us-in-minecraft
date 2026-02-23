@@ -14,9 +14,13 @@ import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.game.GamePhase
 import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.manager.EntityManager
+import com.fantamomo.mc.amongus.modification.AssignedModification
+import com.fantamomo.mc.amongus.modification.Modification
+import com.fantamomo.mc.amongus.modification.modifications.TorchModification
 import com.fantamomo.mc.amongus.role.AssignedRole
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.role.crewmates.CrewmateRole
+import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.task.TaskManager
 import com.fantamomo.mc.amongus.util.CustomPersistentDataTypes
 import com.fantamomo.mc.amongus.util.RefPersistentDataType
@@ -130,6 +134,8 @@ class AmongUsPlayer internal constructor(
         ?: throw IllegalStateException("No profile available")
     var assignedRole: AssignedRole<*, *>? = null
         internal set
+    var modification: AssignedModification<*, *>? = null
+        internal set
     val tasks: MutableSet<TaskManager.RegisteredTask>
         get() = game.taskManager.get(this)
     var isAlive: Boolean = true
@@ -200,7 +206,7 @@ class AmongUsPlayer internal constructor(
 
     fun isInGhostForm(): Boolean = game.ghostFormManager.isInGhostForm(this)
 
-    fun canSeeWhenLightsSabotage(): Boolean = assignedRole?.definition?.team == Team.IMPOSTERS
+    fun canSeeWhenLightsSabotage(): Boolean = assignedRole?.definition?.team == Team.IMPOSTERS || modification?.definition === TorchModification
 
     fun addGhostImprovements() {
         if (isAlive) return
@@ -217,6 +223,13 @@ class AmongUsPlayer internal constructor(
             statistics.assignedRole[Team.CREWMATES.defaultRole]?.increment()
             statistics.assignedTeam[Team.CREWMATES]?.increment()
         }
+        var modification = modification
+        if (modification == null && game.settings[SettingsKey.MODIFIER.ENABLED]) {
+            modification = Modification.randomModification(this)
+            this.modification = modification
+        }
+        modification?.onGameStart()
+        modification?.onStart()
         addNewAbility(ReportAbility)
         role.definition.defaultAbilities.forEach { addNewAbility(it) }
         player?.sendTitlePart(TitlePart.TIMES, Title.DEFAULT_TIMES)

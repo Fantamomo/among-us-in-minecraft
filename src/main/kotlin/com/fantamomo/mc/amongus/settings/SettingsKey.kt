@@ -33,7 +33,7 @@ data class SettingsKey<T : Any, S : SettingsType<T>>(
 
         private val keys: MutableSet<SettingsKey<*, *>> = mutableSetOf()
 
-        val groups: List<SettingsGroup> = listOf(VENT, MEETING, TASK, ROLES, KILL, MESSAGES, UTILS, DEV)
+        val groups: List<SettingsGroup> = listOf(VENT, MEETING, TASK, ROLES, KILL, MESSAGES, UTILS, MODIFIER, DEV)
 
         fun fromKey(key: String): SettingsKey<*, *>? = keys.find { it.key == key }
         fun keys(): Set<SettingsKey<*, *>> = keys
@@ -144,6 +144,10 @@ data class SettingsKey<T : Any, S : SettingsType<T>>(
     object UTILS : SettingsGroup("utils", Material.COMPARATOR) {
         val CAMERA_SWITCH_SAFE_COOLDOWN = key("camera.switch.safe.cooldown", IntSettingsType.range(0, 1000), 750)
         val SABOTAGE_CRISIS_COOLDOWN = key("sabotage.crisis.cooldown", IntSettingsType.range(10, 300), 60)
+    }
+
+    object MODIFIER : SettingsGroup("modifier", Material.POTION) {
+        val ENABLED = key("modifier.enabled", BooleanSettingsType, false)
     }
 
     object DEV : SettingsGroup("dev", Material.REDSTONE) {
