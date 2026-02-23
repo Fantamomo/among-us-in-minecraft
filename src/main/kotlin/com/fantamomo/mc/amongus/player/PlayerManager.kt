@@ -59,16 +59,18 @@ object PlayerManager {
         val auPlayer = getPlayer(player.uniqueId) ?: return
         auPlayer.restorePlayer()
 
-        auPlayer.player = null
-
         if (auPlayer.game.phase.onDisconnectRemove) {
+            auPlayer.modification?.onEnd()
             auPlayer.mannequinController.despawn()
             players.remove(auPlayer)
         }
+        auPlayer.player = null
         auPlayer.game.onDisconnected(auPlayer)
     }
 
     internal fun gameEnds(amongUsPlayer: AmongUsPlayer) {
+        amongUsPlayer.modification?.onGameEnd()
+        amongUsPlayer.modification?.onEnd()
         amongUsPlayer.player?.inventory?.clear()
         amongUsPlayer.player = null
         amongUsPlayer.mannequinController.despawn()
