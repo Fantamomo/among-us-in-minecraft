@@ -154,10 +154,6 @@ class Game(
         if (ticks % 20 == 0 && settings[SettingsKey.DEV.DO_WIN_CHECK_ON_TICK]) {
             checkWin()
         }
-        for (player in players) {
-            player.player?.saturation = 5.0f
-            player.player?.foodLevel = 20
-        }
         ventManager.tick()
         cameraManager.tick()
         waypointManager.tick()
@@ -173,6 +169,9 @@ class Game(
         val now = Clock.System.now()
 
         for (player in players) {
+            player.player?.saturation = 5.0f
+            player.player?.foodLevel = 20
+            player.modification?.onTick()
             player.mannequinController.syncFromPlayer()
             val disconnectedAt = player.disconnectedAt ?: continue
             if (now - disconnectedAt < MAX_DISCONNECT_TIME) continue
@@ -260,6 +259,7 @@ class Game(
         waypointManager.onPlayerRejoin(amongUsPlayer)
         scoreboardManager.onPlayerRejoin(amongUsPlayer)
         killManager.onPlayerRejoin(amongUsPlayer)
+        amongUsPlayer.modification?.onStart()
         if (!amongUsPlayer.isAlive) amongUsPlayer.addGhostImprovements()
     }
 
