@@ -5,8 +5,10 @@ import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.manager.EntityManager
 import com.fantamomo.mc.amongus.manager.WaypointManager
+import com.fantamomo.mc.amongus.modification.modifications.TorchModification
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.player.PlayerHelpPreferences
+import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.util.centerLocationOf
 import com.fantamomo.mc.amongus.util.isBetween
 import com.fantamomo.mc.amongus.util.sendComponent
@@ -85,8 +87,14 @@ class LightsSabotage internal constructor(override val game: Game) :
             if (!it.canSeeWhenLightsSabotage()) {
                 it.player?.addPotionEffect(potionEffect)
             } else {
-                it.player?.sendComponent {
-                    translatable("sabotage.lights.imposter.info")
+                if (it.assignedRole?.definition?.team === Team.IMPOSTERS) {
+                    it.player?.sendComponent {
+                        translatable("sabotage.lights.imposter.info")
+                    }
+                } else if (it.modification?.definition === TorchModification) {
+                    it.player?.sendComponent {
+                        translatable("sabotage.lights.torch.info")
+                    }
                 }
             }
             for (waypoint in waypoints) {
