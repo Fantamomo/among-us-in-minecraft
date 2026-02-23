@@ -3,6 +3,7 @@ package com.fantamomo.mc.amongus.player
 import com.destroystokyo.paper.profile.ProfileProperty
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.manager.EntityManager
+import com.fantamomo.mc.amongus.modification.modifications.LaggyModification
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.role.crewmates.SnitchRole
 import io.papermc.paper.datacomponent.item.ResolvableProfile
@@ -11,6 +12,7 @@ import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextColor
 import org.bukkit.Bukkit
 import org.bukkit.Location
+import org.bukkit.attribute.Attribute
 import org.bukkit.entity.*
 import org.bukkit.util.Transformation
 import java.util.*
@@ -329,9 +331,27 @@ class MannequinController(
         }
 
         if (!frozen) {
-            syncLocation(player, mannequin, force)
-            syncRotation(player, mannequin)
-            syncPose(player, mannequin)
+            val modification = owner.modification
+            if (modification !is LaggyModification.AssignedLaggyModification || modification.shouldSync()) {
+                syncLocation(player, mannequin, force)
+                syncRotation(player, mannequin)
+                syncPose(player, mannequin)
+                syncAttributes(player, mannequin)
+            }
+        }
+    }
+
+    private fun syncAttributes(player: Player, mannequin: Mannequin) {
+        SYNC_ATTRIBUTES.forEach { attribute ->
+            val instance = player.getAttribute(attribute)
+            if (instance != null) {
+                var mannequinAttribute = mannequin.getAttribute(attribute)
+                if (mannequinAttribute == null) {
+                    mannequin.registerAttribute(attribute)
+                    mannequinAttribute = mannequin.getAttribute(attribute)
+                }
+                mannequinAttribute?.baseValue = instance.value
+            }
         }
     }
 
@@ -462,4 +482,10 @@ class MannequinController(
     }
 
     fun getEntity(): Mannequin? = mannequin
+
+    companion object {
+        private val SYNC_ATTRIBUTES = setOf(
+            Attribute.SCALE
+        )
+    }
 }
