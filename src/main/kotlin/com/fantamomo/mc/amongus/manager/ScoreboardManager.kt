@@ -43,9 +43,11 @@ import org.bukkit.scoreboard.DisplaySlot
 class ScoreboardManager(private val game: Game) {
 
     private val scoreboards = mutableMapOf<AmongUsPlayer, AmongUsScoreboard>()
+    private var ticks = 0
 
     fun tick() {
         if (scoreboards.isEmpty()) return
+        ticks++
         scoreboards.values.forEach { it.update() }
     }
 
@@ -149,7 +151,7 @@ class ScoreboardManager(private val game: Game) {
         }
 
         private fun renderGame() {
-            renderRole()
+            renderRoleOrModification()
             renderDeath()
             renderSpacer(SPACER_ROLE)
             renderTasks()
@@ -232,8 +234,41 @@ class ScoreboardManager(private val game: Game) {
             }
         }
 
-        private fun renderRole() {
+        private fun renderRoleOrModification() {
             register(ENTRY_ROLE)
+            val modification = player.modification
+            if (modification != null && ticks % 1000 >= 500) {
+                score(
+                    ENTRY_ROLE,
+                    SCORE_ROLE_HEADER,
+                    textComponent {
+                        translatable("scoreboard.modification") {
+                            args {
+                                component(
+                                    "modification",
+                                    modification.name
+                                )
+                            }
+                        }
+                    }
+                )
+
+                val desc = modification.description
+
+                wrapComponent(desc.translateTo(player.locale))
+                    .forEachIndexed { index, line ->
+                        val id = "$ENTRY_ROLE_DESC#$index"
+                        register(id)
+                        score(id, SCORE_ROLE_DESC_START - index, line)
+                    }
+
+                val modificationLine = modification.scoreboardLine()
+                if (modificationLine != null) {
+                    register(ENTRY_ROLE_CUSTOM)
+                    score(ENTRY_ROLE_CUSTOM, SCORE_ROLE_CUSTOM, modificationLine)
+                }
+                return
+            }
             score(
                 ENTRY_ROLE,
                 SCORE_ROLE_HEADER,
@@ -250,14 +285,16 @@ class ScoreboardManager(private val game: Game) {
                 }
             )
 
-            val desc = player.assignedRole?.description ?: return
+            val desc = player.assignedRole?.description
 
-            wrapComponent(desc.translateTo(player.locale))
-                .forEachIndexed { index, line ->
-                    val id = "$ENTRY_ROLE_DESC#$index"
-                    register(id)
-                    score(id, SCORE_ROLE_DESC_START - index, line)
-                }
+            if (desc != null) {
+                wrapComponent(desc.translateTo(player.locale))
+                    .forEachIndexed { index, line ->
+                        val id = "$ENTRY_ROLE_DESC#$index"
+                        register(id)
+                        score(id, SCORE_ROLE_DESC_START - index, line)
+                    }
+            }
 
             val roleLine = player.assignedRole?.scoreboardLine()
             if (roleLine != null) {
