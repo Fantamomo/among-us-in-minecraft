@@ -4,6 +4,8 @@ import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.ability.AbilityManager
 import com.fantamomo.mc.amongus.ability.abilities.VentAbility
 import com.fantamomo.mc.amongus.game.Game
+import com.fantamomo.mc.amongus.manager.waypoint.FixedWaypointPosProvider
+import com.fantamomo.mc.amongus.manager.waypoint.WaypointManager
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.util.getClosestLocationOnLine
@@ -165,12 +167,18 @@ class VentManager(val game: Game) {
                 return vents.toMutableList().apply { remove(this@Vent) }
             }
         val normalizedLocation = location.clone().add(0.5, 0.0, 0.5)
-        val ironTrapDoor = if (minerCreated) location.world.spawn(location.clone().subtract(0.0, 0.1, 0.0), BlockDisplay::class.java) { display ->
+        val ironTrapDoor = if (minerCreated) location.world.spawn(
+            location.clone().subtract(0.0, 0.1, 0.0),
+            BlockDisplay::class.java
+        ) { display ->
             display.block = Material.IRON_TRAPDOOR.createBlockData()
             display.isVisibleByDefault = true
             EntityManager.addEntityToRemoveOnEnd(game, display)
         } else null
-        val displayEntity = location.world.spawn(if (minerCreated) location.clone().add(0.0, 0.1, 0.0) else location, BlockDisplay::class.java) { display ->
+        val displayEntity = location.world.spawn(
+            if (minerCreated) location.clone().add(0.0, 0.1, 0.0) else location,
+            BlockDisplay::class.java
+        ) { display ->
             display.block = Material.STONE.createBlockData()
             display.isGlowing = true
             display.glowColorOverride = Color.RED
@@ -185,7 +193,10 @@ class VentManager(val game: Game) {
             }
         }.also { EntityManager.addEntityToRemoveOnEnd(game, it) }
         val displayEntityVisible: MutableSet<UUID> = mutableSetOf()
-        val waypoint = WaypointManager.Waypoint("actionbar.vent.next", Color.BLUE, location)
+        val waypoint = WaypointManager.Waypoint(
+            Component.translatable("actionbar.vent.next"), Color.BLUE,
+            FixedWaypointPosProvider(location)
+        )
     }
 
     private fun ventGroup(id: Int) = groups.first { it.groupId == id }
@@ -410,6 +421,7 @@ class VentManager(val game: Game) {
                 }
             }
         }
+
         private const val BAR_LENGTH = 20
 
         private const val BAR_FILLED = "▌"

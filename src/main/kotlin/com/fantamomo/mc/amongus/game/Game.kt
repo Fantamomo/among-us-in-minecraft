@@ -9,6 +9,7 @@ import com.fantamomo.mc.amongus.area.GameArea
 import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.manager.*
+import com.fantamomo.mc.amongus.manager.waypoint.WaypointManager
 import com.fantamomo.mc.amongus.player.*
 import com.fantamomo.mc.amongus.role.RoleManager
 import com.fantamomo.mc.amongus.role.Team

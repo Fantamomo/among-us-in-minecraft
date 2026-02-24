@@ -7,7 +7,8 @@ import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.languages.numeric
 import com.fantamomo.mc.amongus.manager.EntityManager
-import com.fantamomo.mc.amongus.manager.WaypointManager
+import com.fantamomo.mc.amongus.manager.waypoint.MutableWaypointPosProvider
+import com.fantamomo.mc.amongus.manager.waypoint.WaypointManager
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.sabotage.SabotageType
 import com.fantamomo.mc.amongus.settings.SettingsKey
@@ -234,8 +235,14 @@ class TaskManager(val game: Game) {
             display.glowColorOverride = Color.YELLOW
         }.also { EntityManager.addEntityToRemoveOnEnd(game, it) }
 
+        val mutableLocation = MutableWaypointPosProvider(task.location)
+
         val waypoint: WaypointManager.Waypoint =
-            WaypointManager.Waypoint("tasks.${task.task.id}.waypoint", Color.YELLOW, task.location)
+            WaypointManager.Waypoint(
+                Component.translatable("tasks.${task.task.id}.waypoint"),
+                Color.YELLOW,
+                mutableLocation
+            )
 
         init {
             game.waypointManager.assignWaypoint(task.player, waypoint)
@@ -244,7 +251,7 @@ class TaskManager(val game: Game) {
         fun update() {
             display.teleport(task.location)
             display.block = task.location.block.blockData
-            waypoint.setLocation(task.location)
+            mutableLocation.location = task.location
         }
 
         fun hide() {

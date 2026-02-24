@@ -8,9 +8,11 @@ import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.languages.numeric
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.manager.EntityManager
-import com.fantamomo.mc.amongus.manager.WaypointManager
+import com.fantamomo.mc.amongus.manager.waypoint.FixedWaypointPosProvider
+import com.fantamomo.mc.amongus.manager.waypoint.WaypointManager
 import com.fantamomo.mc.amongus.sabotage.SabotageType.SeismicStabilizers
 import com.fantamomo.mc.amongus.util.Cooldown
+import net.kyori.adventure.text.Component
 import org.bukkit.Color
 import org.bukkit.Location
 import org.bukkit.Particle
@@ -38,8 +40,16 @@ class SeismicStabilizersSabotage(override val game: Game) :
     val seismicStabilizerDisplay2 = createDisplay(seismicStabilizers2)
 
     override val waypoints: Set<WaypointManager.Waypoint> = setOf(
-        WaypointManager.Waypoint("sabotage.waypoint.seismic_stabilizers", Color.RED, seismicStabilizers1.location),
-        WaypointManager.Waypoint("sabotage.waypoint.seismic_stabilizers", Color.RED, seismicStabilizers2.location)
+        WaypointManager.Waypoint(
+            Component.translatable("sabotage.waypoint.seismic_stabilizers"),
+            Color.RED,
+            FixedWaypointPosProvider(seismicStabilizers1.location)
+        ),
+        WaypointManager.Waypoint(
+            Component.translatable("sabotage.waypoint.seismic_stabilizers"),
+            Color.RED,
+            FixedWaypointPosProvider(seismicStabilizers2.location)
+        )
     )
 
     private fun createDisplay(block: Block): BlockDisplay {
@@ -120,7 +130,9 @@ class SeismicStabilizersSabotage(override val game: Game) :
                 numeric(
                     "count",
                     if ((seismicStabilizers1.blockData as? Switch)?.isPowered == true
-                            || (seismicStabilizers2.blockData as? Switch)?.isPowered == true) 1 else 0)
+                        || (seismicStabilizers2.blockData as? Switch)?.isPowered == true
+                    ) 1 else 0
+                )
             }
         }
     }
