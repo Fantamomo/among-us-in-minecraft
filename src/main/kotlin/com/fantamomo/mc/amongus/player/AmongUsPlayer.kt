@@ -118,6 +118,8 @@ class AmongUsPlayer internal constructor(
         }
     val visibleColor: PlayerColor
         get() {
+            val camouflageTarget = game.morphManager.camouflageTarget()
+            if (camouflageTarget != null) return camouflageTarget.color
             val morphPlayer = game.morphManager.getMorphedPlayer(this)
             return morphPlayer?.target?.color ?: color
         }
