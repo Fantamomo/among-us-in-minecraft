@@ -2,6 +2,7 @@ package com.fantamomo.mc.amongus.command
 
 import com.fantamomo.mc.adventure.text.*
 import com.fantamomo.mc.amongus.area.GameArea
+import com.fantamomo.mc.amongus.command.Permissions.required
 import com.fantamomo.mc.amongus.command.arguments.*
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.game.GameManager
@@ -39,6 +40,7 @@ fun PaperCommand.gameCommand() = literal("game") {
 }
 
 private fun PaperCommand.playerInfoGameCommand() = literal("info") {
+    Permissions.ADMIN_GAME_INFO.required()
     argument("target", AmongUsPlayerArgumentType.SINGLE) {
         execute {
             val targetResolver = arg<AmongUsPlayerSelectorArgumentResolver>("target")
@@ -315,6 +317,7 @@ private fun PaperCommand.playerInfoGameCommand() = literal("info") {
 }
 
 private fun PaperCommand.roleGameCommand() = literal("role") {
+    Permissions.ADMIN_GAME_ROLE.required()
     guard {
         val targetResolver = optionalArg<AmongUsPlayerSelectorArgumentResolver>("target")
 
@@ -481,6 +484,7 @@ private fun PaperCommand.roleSubCommand(
 }
 
 private fun PaperCommand.killPlayerGameCommand() = literal("kill") {
+    Permissions.ADMIN_GAME_KILL.required()
     argument("target", AmongUsPlayerArgumentType.SINGLE) {
         argument("corpse", BoolArgumentType.bool()) {
             killPlayerGamCommandExecute()
@@ -560,6 +564,7 @@ private fun KtCommandBuilder<CommandSourceStack, *>.killPlayerGamCommandExecute(
 }
 
 private fun PaperCommand.letWinGameCommand() = literal("letwin") {
+    Permissions.ADMIN_GAME_LET_WIN.required()
     Team.teams.forEach(::letWinGameCommandArgument)
 }
 
@@ -639,6 +644,7 @@ private fun KtCommandBuilder<CommandSourceStack, *>.letWinGameCommandExecute(tea
 }
 
 private fun PaperCommand.taskGameCommand() = literal("task") {
+    Permissions.ADMIN_GAME_TASK.required()
     argument("players", AmongUsPlayerArgumentType.MANY) {
         literal("assign") {
             literalExecute("all") {
@@ -939,8 +945,12 @@ private fun PaperCommand.taskGameCommand() = literal("task") {
 }
 
 private fun PaperCommand.startGameCommand() = literal("start") {
+    Permissions.ADMIN_GAME_START.required()
     argument("game", GameArgumentType.INSTANCE) {
         requires { executor is Player }
+        argument("force", BoolArgumentType.bool()) {
+            startGameCommandExecute()
+        }
         startGameCommandExecute()
     }
     startGameCommandExecute()
@@ -949,6 +959,8 @@ private fun PaperCommand.startGameCommand() = literal("start") {
 private fun KtCommandBuilder<CommandSourceStack, *>.startGameCommandExecute() = execute {
     var game = optionalArg<Game>("game")
     val sender = source.sender
+
+    val force = optionalArg<Boolean>("force") ?: false
 
     if (game == null) {
         val execute = source.executor as? Player
@@ -997,14 +1009,22 @@ private fun KtCommandBuilder<CommandSourceStack, *>.startGameCommandExecute() = 
         return@execute 0
     }
 
-    game.startStartCooldown()
-    sendMessage {
-        translatable("command.success.admin.game.start")
+    if (force) {
+        game.start()
+        sendMessage {
+            translatable("command.success.admin.game.start.force")
+        }
+    } else {
+        game.startStartCooldown()
+        sendMessage {
+            translatable("command.success.admin.game.start")
+        }
     }
     SINGLE_SUCCESS
 }
 
 private fun PaperCommand.listGameCommand() = literal("list") {
+    Permissions.ADMIN_GAME_LIST.required()
     execute {
         val games = GameManager.getGames()
         if (games.isEmpty()) {
@@ -1038,7 +1058,7 @@ private fun PaperCommand.listGameCommand() = literal("list") {
 }
 
 private fun PaperCommand.joinGameCommand() = literal("join") {
-    requires { executor is Player }
+    Permissions.ADMIN_GAME_JOIN.required()
     argument("game", GameArgumentType.INSTANCE) {
         val gameRef = argRef()
         argument("targets", ArgumentTypes.players()) {
@@ -1146,6 +1166,7 @@ private fun PaperCommand.joinGameCommand() = literal("join") {
 }
 
 private fun PaperCommand.createGameCommand() = literal("create") {
+    Permissions.ADMIN_GAME_CREATE.required()
     argument("area", GameAreaArgumentType) {
         argument("world", ArgumentTypes.world()) {
             argument("maxPlayers", IntegerArgumentType.integer(1, 16)) {
