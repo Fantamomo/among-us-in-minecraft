@@ -22,6 +22,7 @@ fun GameArea.toDTO(): GameAreaDTO {
     return GameAreaDTO(
         name = name,
         uuid = uuid.toString(),
+        worldId = worldId.toString(),
         minCorner = minCorner?.let(::fromBukkit),
         maxCorner = maxCorner?.let(::fromBukkit),
         lobbySpawn = lobbySpawn?.let(::fromBukkit),
@@ -57,7 +58,7 @@ fun GameArea.toDTO(): GameAreaDTO {
 
 @Suppress("DuplicatedCode")
 fun GameAreaDTO.toGameArea(): GameArea {
-    val area = GameArea(name, UUID.fromString(uuid))
+    val area = GameArea(name, UUID.fromString(uuid), UUID.fromString(worldId))
 
     area.minCorner = minCorner?.toBukkit()
     area.maxCorner = maxCorner?.toBukkit()

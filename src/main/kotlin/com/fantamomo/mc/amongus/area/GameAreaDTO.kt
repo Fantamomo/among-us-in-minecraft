@@ -7,6 +7,7 @@ import kotlinx.serialization.Serializable
 data class GameAreaDTO(
     val name: String,
     val uuid: String,
+    val worldId: String,
 
     val minCorner: SerializableLocation?,
     val maxCorner: SerializableLocation?,
