@@ -51,7 +51,7 @@ object PlayerManager {
             }
         player.inventory.clear()
 
-        auPlayer.color = auPlayer.color
+        auPlayer.updateHelmet()
         return auPlayer
     }
 
