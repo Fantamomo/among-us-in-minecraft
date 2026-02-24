@@ -3,6 +3,7 @@ package com.fantamomo.mc.amongus
 import com.fantamomo.mc.amongus.area.GameAreaManager
 import com.fantamomo.mc.amongus.command.AmongUsCommands
 import com.fantamomo.mc.amongus.command.Permissions
+import com.fantamomo.mc.amongus.data.AmongUsConfig
 import com.fantamomo.mc.amongus.data.AmongUsSecrets
 import com.fantamomo.mc.amongus.languages.LanguageManager
 import com.fantamomo.mc.amongus.listeners.Listeners
@@ -29,6 +30,7 @@ object AmongUs : JavaPlugin() {
 
     override fun onEnable() {
         saveDefaultConfig()
+        AmongUsConfig.init()
         if (IN_DEVELOPMENT) with(slF4JLogger) {
             info("This Plugin is running in development mode!")
             info("In developing mode, some features work not as expected.")
