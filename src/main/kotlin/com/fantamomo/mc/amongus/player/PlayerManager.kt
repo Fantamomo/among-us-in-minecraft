@@ -8,6 +8,7 @@ import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.game.GamePhase
 import com.fantamomo.mc.amongus.util.internal.NMS
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket
+import org.bukkit.Bukkit
 import org.bukkit.craftbukkit.entity.CraftPlayer
 import org.bukkit.entity.Mannequin
 import org.bukkit.entity.Player
@@ -15,7 +16,6 @@ import java.util.*
 
 object PlayerManager {
     private val players = mutableListOf<AmongUsPlayer>()
-    private var taskId = -1
 
     fun getPlayers(): List<AmongUsPlayer> = players
 
@@ -76,6 +76,23 @@ object PlayerManager {
         amongUsPlayer.mannequinController.despawn()
         amongUsPlayer.statistics.onGameStop()
         players.remove(amongUsPlayer)
+    }
+
+    fun leaveGame(player: AmongUsPlayer, teleport: Boolean = true) {
+        val game = player.game
+        if (game.phase != GamePhase.LOBBY) return
+        game.leavePlayer(player, teleport)
+        val p = player.player
+        if (p != null) {
+            p.inventory.clear()
+            for (online in Bukkit.getOnlinePlayers()) {
+                online.showPlayer(AmongUs, p)
+            }
+        }
+        player.player = null
+        player.wardrobeMannequin?.remove()
+        player.mannequinController.despawn()
+        players.remove(player)
     }
 
     @NMS
