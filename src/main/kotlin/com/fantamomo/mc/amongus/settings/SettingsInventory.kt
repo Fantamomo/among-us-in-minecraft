@@ -10,12 +10,14 @@ import com.fantamomo.mc.amongus.util.textComponent
 import com.fantamomo.mc.amongus.util.translateTo
 import io.papermc.paper.datacomponent.DataComponentTypes
 import io.papermc.paper.datacomponent.item.ItemLore
+import io.papermc.paper.datacomponent.item.TooltipDisplay
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
+import org.bukkit.Registry
 import org.bukkit.event.inventory.ClickType
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.inventory.Inventory
@@ -31,10 +33,17 @@ class SettingsInventory(
     private val settings = owner.game.settings
     private lateinit var inv: Inventory
 
+    @Suppress("UnstableApiUsage")
     companion object {
         val KEY_SETTINGS = NamespacedKey(AmongUs, "settings/key")
         val KEY_GROUP = NamespacedKey(AmongUs, "settings/group")
         val KEY_BACK = NamespacedKey(AmongUs, "settings/back")
+        private val SHOWN_COMPONENTS = setOf(DataComponentTypes.CUSTOM_NAME, DataComponentTypes.ITEM_NAME, DataComponentTypes.LORE)
+        private val TOOLTIP_DISPLAY = TooltipDisplay.tooltipDisplay()
+            .hiddenComponents(
+                Registry.DATA_COMPONENT_TYPE.filterTo(mutableSetOf()) { it !in SHOWN_COMPONENTS }
+            )
+            .build()
     }
 
     override fun getInventory(): Inventory {
@@ -98,17 +107,25 @@ class SettingsInventory(
     private fun buildGroupItem(g: SettingsGroup): ItemStack {
         val item = ItemStack(g.material)
 
-        item.setData(
-            DataComponentTypes.ITEM_NAME,
-            Component.translatable(g.displayName).translateTo(owner.locale)
-        )
+        val itemName = Component.translatable(g.displayName).translateTo(owner.locale)
+        if (g.useCustomName) {
+            item.setData(
+                DataComponentTypes.CUSTOM_NAME,
+                itemName.decoration(TextDecoration.ITALIC, false)
+            )
+        } else {
+            item.setData(
+                DataComponentTypes.ITEM_NAME,
+                itemName
+            )
+        }
 
         val descLines = splitLinesPreserveStyles(
             Component.translatable(g.displayDescription)
                 .translateTo(owner.locale)
-                .decoration(TextDecoration.ITALIC, false)
-        )
+        ).map { it.decoration(TextDecoration.ITALIC, false) }
         item.setData(DataComponentTypes.LORE, ItemLore.lore(descLines))
+        item.setData(DataComponentTypes.TOOLTIP_DISPLAY, TOOLTIP_DISPLAY)
 
         item.editPersistentDataContainer {
             it.set(KEY_GROUP, PersistentDataType.STRING, g.name)
