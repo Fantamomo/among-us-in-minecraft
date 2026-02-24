@@ -413,6 +413,8 @@ class Game(
         }
 
         EntityManager.dispose(this)
+
+        GameManager.gameEnd(this)
     }
 
     internal fun leavePlayer(amongUsPlayer: AmongUsPlayer, teleport: Boolean = true) {
