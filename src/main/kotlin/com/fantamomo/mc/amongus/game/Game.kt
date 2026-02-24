@@ -414,6 +414,13 @@ class Game(
         EntityManager.dispose(this)
     }
 
+    internal fun leavePlayer(amongUsPlayer: AmongUsPlayer, teleport: Boolean = true) {
+        if (phase != GamePhase.LOBBY) return
+        if (amongUsPlayer !in players) return
+        removePlayer0(amongUsPlayer)
+        if (teleport) amongUsPlayer.player?.teleport(amongUsPlayer.locationBeforeGame)
+    }
+
     companion object {
         val MAX_DISCONNECT_TIME = 30.seconds
         const val DEFAULT_MAX_PLAYERS = 16
