@@ -48,7 +48,10 @@ object PlayerManager {
         player.teleportAsync(game.area.lobbySpawn ?: throw IllegalStateException("Lobby spawn not set"))
             .thenAccept {
                 auPlayer.wardrobeMannequin?.let { player.showEntity(AmongUs, it) }
-                auPlayer.mannequinController.hideFromSelf()
+                AmongUs.server.scheduler.runTaskLater(AmongUs, { ->
+                    auPlayer.mannequinController.showToSelf()
+                    auPlayer.mannequinController.hideFromSelf()
+                }, 2L)
             }
         player.inventory.clear()
 
