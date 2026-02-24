@@ -1,6 +1,7 @@
 package com.fantamomo.mc.amongus.role
 
 import com.fantamomo.mc.amongus.ability.Ability
+import com.fantamomo.mc.amongus.data.AmongUsConfig
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.role.crewmates.*
 import com.fantamomo.mc.amongus.role.imposters.*
@@ -25,7 +26,11 @@ interface Role<R : Role<R, A>, A : AssignedRole<R, A>> {
     fun assignTo(player: AmongUsPlayer): A
 
     companion object {
-        val crewmates: Set<Role<*, *>> = setOf(
+
+        private fun createSet(vararg roles: Role<*, *>) =
+            roles.filter { it.id !in AmongUsConfig.Roles.disabled }.toSet()
+
+        val crewmates: Set<Role<*, *>> = createSet(
             CrewmateRole,
             CameraManRole,
             EngineerRole,
@@ -37,14 +42,14 @@ interface Role<R : Role<R, A>, A : AssignedRole<R, A>> {
             SheriffRole,
             SeerRole
         )
-        val imposters: Set<Role<*, *>> = setOf(
+        val imposters: Set<Role<*, *>> = createSet(
             ImposterRole,
             MinerRole,
             MorphlingRole,
             PhantomRole,
             CamouflagerRole
         )
-        val neutrals: Set<Role<*, *>> = setOf(
+        val neutrals: Set<Role<*, *>> = createSet(
             JesterRole,
             CannibalRole,
             ArsonistRole
