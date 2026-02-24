@@ -30,7 +30,7 @@ import org.bukkit.Location
 import org.bukkit.entity.Player
 
 val AmongUsAdminCommand = paperCommand("amongusadmin") {
-    requires { sender.hasPermission(Permissions.ADMIN) }
+    Permissions.ADMIN.required()
     areaCommand()
     settingsCommand()
     gameCommand()
@@ -206,6 +206,7 @@ private fun PaperCommand.testCommand() {
 }
 
 private fun PaperCommand.areaCommand() {
+    Permissions.AREA.required()
     literal("area") {
         argument("area", StringArgumentType.word()) {
             val areaRef = argRef()
