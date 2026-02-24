@@ -6,7 +6,8 @@ import org.bukkit.Material
 open class SettingsGroup(
     val name: String,
     val material: Material,
-    val parent: SettingsGroup? = null
+    val parent: SettingsGroup? = null,
+    val useCustomName: Boolean = false
 ) {
     internal val directKeys: MutableList<SettingsKey<*, *>> = mutableListOf()
     val subGroups: MutableList<SettingsGroup> = mutableListOf()
