@@ -146,7 +146,7 @@ data class SettingsKey<T : Any, S : SettingsType<T>>(
         val SABOTAGE_CRISIS_COOLDOWN = key("sabotage.crisis.cooldown", IntSettingsType.range(10, 300), 60)
     }
 
-    object MODIFIER : SettingsGroup("modifier", Material.POTION) {
+    object MODIFIER : SettingsGroup("modifier", Material.POTION, useCustomName = true) {
         val ENABLED = key("modifier.enabled", BooleanSettingsType, false)
     }
 
