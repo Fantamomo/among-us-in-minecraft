@@ -1211,20 +1211,20 @@ private fun KtArgumentCommandBuilder<CommandSourceStack, *>.createGameCommandExe
 
     val maxPlayers = optionalArg<Int>("maxPlayers") ?: Game.DEFAULT_MAX_PLAYERS
 
-    val game = Game(area, world, maxPlayers)
-
-    GameManager.addGame(game)
-
-    sendMessage {
-        translatable("command.success.admin.game.create") {
-            args {
-                string("area", area.name)
-                numeric("max_players", maxPlayers)
-                string("world", world.name)
-                string("code", game.code)
+    val game = GameManager.createGame(area, maxPlayers)
+    if (game != null) {
+        sendMessage {
+            translatable("command.success.admin.game.create") {
+                args {
+                    string("area", area.name)
+                    numeric("max_players", maxPlayers)
+                    string("world", game.world.name.substringAfterLast('/'))
+                    string("code", game.code)
+                }
             }
         }
+        SINGLE_SUCCESS
     }
 
-    SINGLE_SUCCESS
+    return@execute NO_SUCCESS
 }
