@@ -2,6 +2,7 @@ package com.fantamomo.mc.amongus.command
 
 import com.fantamomo.mc.adventure.text.args
 import com.fantamomo.mc.adventure.text.translatable
+import com.fantamomo.mc.amongus.command.arguments.GameArgumentType
 import com.fantamomo.mc.amongus.command.arguments.PlayerColorArgumentType
 import com.fantamomo.mc.amongus.command.arguments.RegistryArgumentType
 import com.fantamomo.mc.amongus.game.GamePhase
@@ -27,6 +28,100 @@ val AmongUsCommand = paperCommand("amongus") {
     statsCommand()
     colorCommand()
     trimCommand()
+    joinCommand()
+    leaveCommand()
+}
+
+private fun PaperCommand.leaveCommand() = literal("leave") {
+    execute {
+        val executor = source.executor as? Player
+        if (executor == null) {
+            sendMessage {
+                translatable("command.error.leave.not_player")
+            }
+            return@execute 0
+        }
+        val amongUsPlayer = PlayerManager.getPlayer(executor)
+        if (amongUsPlayer == null) {
+            sendMessage {
+                translatable("command.error.leave.not_joined")
+            }
+            return@execute 0
+        }
+        val game = amongUsPlayer.game
+        if (game.phase != GamePhase.LOBBY) {
+            sendMessage {
+                translatable("command.error.leave.not_in_lobby")
+            }
+            return@execute 0
+        }
+
+        PlayerManager.leaveGame(amongUsPlayer)
+
+        sendMessage {
+            translatable("command.success.leave")
+        }
+
+        SINGLE_SUCCESS
+    }
+}
+
+private fun PaperCommand.joinCommand() = literal("join") {
+    argument("game", GameArgumentType.INSTANCE) {
+        val gameRef = argRef()
+        execute {
+            val sender = source.sender
+            val executor = source.executor as? Player
+            if (executor == null) {
+                sendMessage {
+                    translatable("command.error.admin.game.join.not_a_player")
+                }
+                return@execute 0
+            }
+            val game = gameRef.get()
+
+            if (game.players.size >= game.maxPlayers) {
+                sendMessage {
+                    translatable("command.error.admin.game.join.full")
+                }
+                return@execute 0
+            }
+            if (PlayerManager.exists(executor.uniqueId)) {
+                sendMessage {
+                    if (sender == executor) {
+                        translatable("command.error.admin.game.join.already_joined")
+                    } else {
+                        translatable("command.error.admin.game.join.already_joined_other") {
+                            args {
+                                string("player", executor.name)
+                            }
+                        }
+                    }
+                }
+                return@execute 0
+            }
+            val success = game.addPlayer(executor)
+            if (!success) {
+                sendMessage {
+                    translatable("command.error.admin.game.join.unknown")
+                }
+                return@execute 0
+            }
+            sendMessage {
+                if (sender == executor) {
+                    translatable("command.success.admin.game.join")
+                } else {
+                    translatable("command.success.admin.game.join_other") {
+                        args {
+                            string("player", executor.name)
+                        }
+                    }
+                }
+            }
+
+            SINGLE_SUCCESS
+        }
+    }
 }
 
 private fun PaperCommand.trimCommand() {
