@@ -2,6 +2,7 @@ package com.fantamomo.mc.amongus.modification
 
 import com.fantamomo.mc.amongus.data.AmongUsConfig
 import com.fantamomo.mc.amongus.modification.modifications.LaggyModification
+import com.fantamomo.mc.amongus.modification.modifications.RadarModification
 import com.fantamomo.mc.amongus.modification.modifications.SmallModification
 import com.fantamomo.mc.amongus.modification.modifications.TorchModification
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
@@ -23,7 +24,8 @@ interface Modification<M : Modification<M, A>, A : AssignedModification<M, A>> {
         val modifications: List<Modification<*, *>> = listOf(
             TorchModification,
             LaggyModification,
-            SmallModification
+            SmallModification,
+            RadarModification
         ).filter { it.id !in AmongUsConfig.Modifications.disabled }
 
         private val sharedShuffledModification = modifications.toMutableList()
