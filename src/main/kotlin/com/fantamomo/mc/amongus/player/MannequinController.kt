@@ -363,7 +363,7 @@ class MannequinController(
         val loc = player.location
         val last = lastLocation
 
-        if (force || last == null || last.distanceSquared(loc) > 0.0025) {
+        if (force || last == null || last.world !== loc.world || last.distanceSquared(loc) > 0.0025) {
             mannequin.teleport(loc)
             lastLocation = loc.clone()
         }
