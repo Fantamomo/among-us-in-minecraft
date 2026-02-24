@@ -2,6 +2,7 @@ package com.fantamomo.mc.amongus.command
 
 import com.fantamomo.mc.adventure.text.args
 import com.fantamomo.mc.adventure.text.translatable
+import com.fantamomo.mc.amongus.command.Permissions.required
 import com.fantamomo.mc.amongus.command.arguments.GameArgumentType
 import com.fantamomo.mc.amongus.command.arguments.PlayerColorArgumentType
 import com.fantamomo.mc.amongus.command.arguments.RegistryArgumentType
@@ -33,6 +34,7 @@ val AmongUsCommand = paperCommand("amongus") {
 }
 
 private fun PaperCommand.leaveCommand() = literal("leave") {
+    Permissions.PLAYER_LEAVE.required()
     execute {
         val executor = source.executor as? Player
         if (executor == null) {
@@ -67,6 +69,7 @@ private fun PaperCommand.leaveCommand() = literal("leave") {
 }
 
 private fun PaperCommand.joinCommand() = literal("join") {
+    Permissions.PLAYER_JOIN.required()
     argument("game", GameArgumentType.INSTANCE) {
         val gameRef = argRef()
         execute {
@@ -124,143 +127,140 @@ private fun PaperCommand.joinCommand() = literal("join") {
     }
 }
 
-private fun PaperCommand.trimCommand() {
-    literal("trim") {
-        requires { sender.hasPermission(Permissions.SET_PLAYER_TRIM) }
+private fun PaperCommand.trimCommand() = literal("trim") {
+    Permissions.SET_PLAYER_TRIM.required()
 
-        guard {
-            val targetResolver = optionalArg<PlayerSelectorArgumentResolver>("target")
+    guard {
+        val targetResolver = optionalArg<PlayerSelectorArgumentResolver>("target")
 
-            val target = targetResolver?.resolve(source)?.firstOrNull() ?: source.sender as? Player
+        val target = targetResolver?.resolve(source)?.firstOrNull() ?: source.sender as? Player
 
-            if (target == null) {
-                sendMessage {
-                    translatable("command.error.set_trim.not_player")
-                }
-                return@guard abort()
+        if (target == null) {
+            sendMessage {
+                translatable("command.error.set_trim.not_player")
             }
-            val amongUsPlayer = PlayerManager.getPlayer(target)
-            if (amongUsPlayer == null) {
+            return@guard abort()
+        }
+        val amongUsPlayer = PlayerManager.getPlayer(target)
+        if (amongUsPlayer == null) {
+            sendMessage {
+                if (target === source.sender) translatable("command.error.set_trim.not_joined")
+                else translatable("command.error.set_trim.not_joined.other") {
+                    args {
+                        string("player", target.name)
+                    }
+                }
+            }
+            return@guard abort()
+        }
+
+        if (amongUsPlayer.game.phase != GamePhase.LOBBY && amongUsPlayer.game.phase != GamePhase.STARTING) {
+            sendMessage {
+                translatable("command.error.set_trim.game_not_lobby")
+            }
+            return@guard abort()
+        }
+
+        continueCommand()
+    }
+
+    argument("material", RegistryArgumentType(RegistryKey.TRIM_MATERIAL)) {
+        val materialArg = argRef()
+        argument("pattern", RegistryArgumentType(RegistryKey.TRIM_PATTERN)) {
+            val patternArg = argRef()
+
+            argument("target", ArgumentTypes.player()) {
+                requires { sender.hasPermission(Permissions.SET_PLAYER_TRIM_OTHER) }
+                execute {
+                    val material = materialArg.get()
+                    val pattern = patternArg.get()
+                    val targetResolver = arg<PlayerSelectorArgumentResolver>("target")
+                    val targets = targetResolver.resolve(source).first()
+                    val amongUsPlayer = PlayerManager.getPlayer(targets)!!
+                    amongUsPlayer.armorTrim = ArmorTrim(material, pattern)
+
+                    sendMessage {
+                        translatable("command.success.set_trim.other") {
+                            args {
+                                component("material", material.description())
+                                component("pattern", pattern.description())
+                                string("player", targets.name)
+                            }
+                        }
+                    }
+
+                    SINGLE_SUCCESS
+                }
+            }
+
+            execute {
+                val material = materialArg.get()
+                val pattern = patternArg.get()
+                val amongUsPlayer = PlayerManager.getPlayer(source.sender as Player)!!
+                amongUsPlayer.armorTrim = ArmorTrim(material, pattern)
+
                 sendMessage {
-                    if (target === source.sender) translatable("command.error.set_trim.not_joined")
-                    else translatable("command.error.set_trim.not_joined.other") {
+                    translatable("command.success.set_trim") {
+                        args {
+                            component("material", material.description())
+                            component("pattern", pattern.description())
+                        }
+                    }
+                }
+
+                SINGLE_SUCCESS
+            }
+        }
+    }
+
+    literal("remove") {
+        argument("target", ArgumentTypes.player()) {
+            requires { sender.hasPermission(Permissions.SET_PLAYER_TRIM_OTHER) }
+            execute {
+                val targetResolver = arg<PlayerSelectorArgumentResolver>("target")
+                val target = targetResolver.resolve(source).first()
+                val amongUsPlayer = PlayerManager.getPlayer(target)!!
+                amongUsPlayer.armorTrim = null
+                sendMessage {
+                    translatable("command.success.remove_trim.other") {
                         args {
                             string("player", target.name)
                         }
                     }
                 }
-                return@guard abort()
-            }
-
-            if (amongUsPlayer.game.phase != GamePhase.LOBBY && amongUsPlayer.game.phase != GamePhase.STARTING) {
-                sendMessage {
-                    translatable("command.error.set_trim.game_not_lobby")
-                }
-                return@guard abort()
-            }
-
-            continueCommand()
-        }
-
-        argument("material", RegistryArgumentType(RegistryKey.TRIM_MATERIAL)) {
-            val materialArg = argRef()
-            argument("pattern", RegistryArgumentType(RegistryKey.TRIM_PATTERN)) {
-                val patternArg = argRef()
-
-                argument("target", ArgumentTypes.player()) {
-                    requires { sender.hasPermission(Permissions.SET_PLAYER_TRIM_OTHER) }
-                    execute {
-                        val material = materialArg.get()
-                        val pattern = patternArg.get()
-                        val targetResolver = arg<PlayerSelectorArgumentResolver>("target")
-                        val targets = targetResolver.resolve(source).first()
-                        val amongUsPlayer = PlayerManager.getPlayer(targets)!!
-                        amongUsPlayer.armorTrim = ArmorTrim(material, pattern)
-
-                        sendMessage {
-                            translatable("command.success.set_trim.other") {
-                                args {
-                                    component("material", material.description())
-                                    component("pattern", pattern.description())
-                                    string("player", targets.name)
-                                }
-                            }
-                        }
-
-                        SINGLE_SUCCESS
-                    }
-                }
-
-                execute {
-                    val material = materialArg.get()
-                    val pattern = patternArg.get()
-                    val amongUsPlayer = PlayerManager.getPlayer(source.sender as Player)!!
-                    amongUsPlayer.armorTrim = ArmorTrim(material, pattern)
-
-                    sendMessage {
-                        translatable("command.success.set_trim") {
-                            args {
-                                component("material", material.description())
-                                component("pattern", pattern.description())
-                            }
-                        }
-                    }
-
-                    SINGLE_SUCCESS
-                }
-            }
-        }
-
-        literal("remove") {
-            argument("target", ArgumentTypes.player()) {
-                requires { sender.hasPermission(Permissions.SET_PLAYER_TRIM_OTHER) }
-                execute {
-                    val targetResolver = arg<PlayerSelectorArgumentResolver>("target")
-                    val target = targetResolver.resolve(source).first()
-                    val amongUsPlayer = PlayerManager.getPlayer(target)!!
-                    amongUsPlayer.armorTrim = null
-                    sendMessage {
-                        translatable("command.success.remove_trim.other") {
-                            args {
-                                string("player", target.name)
-                            }
-                        }
-                    }
-                    SINGLE_SUCCESS
-                }
-            }
-            execute {
-                val amongUsPlayer = PlayerManager.getPlayer(source.sender as Player)!!
-                amongUsPlayer.armorTrim = null
-                sendMessage {
-                    translatable("command.success.remove_trim")
-                }
                 SINGLE_SUCCESS
             }
+        }
+        execute {
+            val amongUsPlayer = PlayerManager.getPlayer(source.sender as Player)!!
+            amongUsPlayer.armorTrim = null
+            sendMessage {
+                translatable("command.success.remove_trim")
+            }
+            SINGLE_SUCCESS
         }
     }
 }
 
-private fun PaperCommand.colorCommand() {
-    literal("color") {
-        argument("color", PlayerColorArgumentType) {
-            argument("target", ArgumentTypes.player()) {
-                requires { sender.hasPermission(Permissions.SET_PLAYER_COLOR_OTHER) }
-                argument("force", BoolArgumentType.bool()) {
-                    requires { sender.hasPermission(Permissions.SET_PLAYER_COLOR_FORCE) }
-                    setColorCommand()
-                }
+private fun PaperCommand.colorCommand() = literal("color") {
+    Permissions.SET_PLAYER_COLOR.required()
+    argument("color", PlayerColorArgumentType) {
+        argument("target", ArgumentTypes.player()) {
+            requires { sender.hasPermission(Permissions.SET_PLAYER_COLOR_OTHER) }
+            argument("force", BoolArgumentType.bool()) {
+                requires { sender.hasPermission(Permissions.SET_PLAYER_COLOR_FORCE) }
                 setColorCommand()
             }
             setColorCommand()
         }
-        literal("random") {
-            argument("target", ArgumentTypes.player()) {
-                requires { sender.hasPermission(Permissions.SET_PLAYER_COLOR_OTHER) }
-                setColorCommand()
-            }
+        setColorCommand()
+    }
+    literal("random") {
+        argument("target", ArgumentTypes.player()) {
+            requires { sender.hasPermission(Permissions.SET_PLAYER_COLOR_OTHER) }
             setColorCommand()
         }
+        setColorCommand()
     }
 }
 
@@ -341,137 +341,136 @@ private fun KtCommandBuilder<CommandSourceStack, *>.setColorCommand() = execute 
     SINGLE_SUCCESS
 }
 
-private fun PaperCommand.statsCommand() {
-    literal("stats") {
-        guard {
-            val sender = source.sender as? Player
-            if (sender == null) {
-                sendMessage {
-                    translatable("command.error.statistics.not_player")
-                }
-                return@guard abort()
+private fun PaperCommand.statsCommand() = literal("stats") {
+    Permissions.PLAYER_STATS.required()
+    guard {
+        val sender = source.sender as? Player
+        if (sender == null) {
+            sendMessage {
+                translatable("command.error.statistics.not_player")
             }
-            if (PlayerManager.getPlayer(sender) != null) {
-                sendMessage {
-                    translatable("command.error.statistics.in_game")
-                }
-                return@guard abort()
-            }
-            val map = StatisticsManager.createOrLoad("player", sender.uniqueId.toKotlinUuid())
-            setArgument("map", map)
-            continueCommand()
+            return@guard abort()
         }
-        for ((key, type) in PlayerStatistics.statistics) {
-            literal(key) {
-                guard {
-                    val map = arg<StatisticMap>("map")
-                    val value = map.get(key)
-                    if (value == null) {
-                        sendMessage {
-                            translatable("command.error.statistics.no_data") {
-                                args {
-                                    string("key", key)
-                                }
+        if (PlayerManager.getPlayer(sender) != null) {
+            sendMessage {
+                translatable("command.error.statistics.in_game")
+            }
+            return@guard abort()
+        }
+        val map = StatisticsManager.createOrLoad("player", sender.uniqueId.toKotlinUuid())
+        setArgument("map", map)
+        continueCommand()
+    }
+    for ((key, type) in PlayerStatistics.statistics) {
+        literal(key) {
+            guard {
+                val map = arg<StatisticMap>("map")
+                val value = map.get(key)
+                if (value == null) {
+                    sendMessage {
+                        translatable("command.error.statistics.no_data") {
+                            args {
+                                string("key", key)
                             }
                         }
-                        return@guard abort()
                     }
-                    setArgument("stats", value)
-
-                    if (value is ListStatistic && value.isEmpty()) {
-                        sendMessage {
-                            translatable("command.error.statistics.list.empty") {
-                                args {
-                                    string("key", key)
-                                }
-                            }
-                        }
-                        return@guard abort()
-                    }
-                    continueCommand()
+                    return@guard abort()
                 }
-                when (type) {
-                    AverageStatistic::class -> execute {
-                        val stats = arg<AverageStatistic>("stats")
+                setArgument("stats", value)
+
+                if (value is ListStatistic && value.isEmpty()) {
+                    sendMessage {
+                        translatable("command.error.statistics.list.empty") {
+                            args {
+                                string("key", key)
+                            }
+                        }
+                    }
+                    return@guard abort()
+                }
+                continueCommand()
+            }
+            when (type) {
+                AverageStatistic::class -> execute {
+                    val stats = arg<AverageStatistic>("stats")
+                    sendMessage {
+                        translatable("command.success.statistics.average") {
+                            args {
+                                numeric("average", stats.value)
+                            }
+                        }
+                    }
+                    SINGLE_SUCCESS
+                }
+
+                CounterStatistic::class -> execute {
+                    val stats = arg<CounterStatistic>("stats")
+                    sendMessage {
+                        translatable("command.success.statistics.counter") {
+                            args {
+                                numeric("count", stats.value)
+                            }
+                        }
+                    }
+                    SINGLE_SUCCESS
+                }
+
+                TimerStatistic::class -> execute {
+                    val stats = arg<TimerStatistic>("stats")
+                    sendMessage {
+                        translatable("command.success.statistics.timer") {
+                            args {
+                                string("time", stats.totalMillis.milliseconds.toString())
+                            }
+                        }
+                    }
+                    SINGLE_SUCCESS
+                }
+
+                ListStatistic::class -> {
+                    literalExecute("min") {
+                        val stats = arg<ListStatistic>("stats")
                         sendMessage {
-                            translatable("command.success.statistics.average") {
+                            translatable("command.success.statistics.list.min") {
                                 args {
-                                    numeric("average", stats.value)
+                                    numeric("min", stats.min)
                                 }
                             }
                         }
                         SINGLE_SUCCESS
                     }
-
-                    CounterStatistic::class -> execute {
-                        val stats = arg<CounterStatistic>("stats")
+                    literalExecute("max") {
+                        val stats = arg<ListStatistic>("stats")
                         sendMessage {
-                            translatable("command.success.statistics.counter") {
+                            translatable("command.success.statistics.list.max") {
                                 args {
-                                    numeric("count", stats.value)
+                                    numeric("max", stats.max)
                                 }
                             }
                         }
                         SINGLE_SUCCESS
                     }
-
-                    TimerStatistic::class -> execute {
-                        val stats = arg<TimerStatistic>("stats")
+                    literalExecute("average") {
+                        val stats = arg<ListStatistic>("stats")
                         sendMessage {
-                            translatable("command.success.statistics.timer") {
+                            translatable("command.success.statistics.list.average") {
                                 args {
-                                    string("time", stats.totalMillis.milliseconds.toString())
+                                    numeric("average", stats.average)
                                 }
                             }
                         }
                         SINGLE_SUCCESS
                     }
-
-                    ListStatistic::class -> {
-                        literalExecute("min") {
-                            val stats = arg<ListStatistic>("stats")
-                            sendMessage {
-                                translatable("command.success.statistics.list.min") {
-                                    args {
-                                        numeric("min", stats.min)
-                                    }
+                    literalExecute("count") {
+                        val stats = arg<ListStatistic>("stats")
+                        sendMessage {
+                            translatable("command.success.statistics.list.count") {
+                                args {
+                                    numeric("count", stats.data.size)
                                 }
                             }
-                            SINGLE_SUCCESS
                         }
-                        literalExecute("max") {
-                            val stats = arg<ListStatistic>("stats")
-                            sendMessage {
-                                translatable("command.success.statistics.list.max") {
-                                    args {
-                                        numeric("max", stats.max)
-                                    }
-                                }
-                            }
-                            SINGLE_SUCCESS
-                        }
-                        literalExecute("average") {
-                            val stats = arg<ListStatistic>("stats")
-                            sendMessage {
-                                translatable("command.success.statistics.list.average") {
-                                    args {
-                                        numeric("average", stats.average)
-                                    }
-                                }
-                            }
-                            SINGLE_SUCCESS
-                        }
-                        literalExecute("count") {
-                            val stats = arg<ListStatistic>("stats")
-                            sendMessage {
-                                translatable("command.success.statistics.list.count") {
-                                    args {
-                                        numeric("count", stats.data.size)
-                                    }
-                                }
-                            }
-                            SINGLE_SUCCESS
-                        }
+                        SINGLE_SUCCESS
                     }
                 }
             }
