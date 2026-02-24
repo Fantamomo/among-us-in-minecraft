@@ -3,6 +3,7 @@ package com.fantamomo.mc.amongus.area
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.util.SerializableLocation
 import kotlinx.serialization.json.Json
+import org.bukkit.World
 import org.slf4j.LoggerFactory
 import java.nio.file.Path
 import java.util.*
@@ -29,7 +30,7 @@ object GameAreaManager {
         // only on first real use.
         json.encodeToString(
             GameAreaDTO(
-                "dummy", "no-uuid",
+                "dummy", "no-uuid", "no-uuid",
                 SerializableLocation(0.0, 0.0, 0.0, 0f, 0f),
                 null, null, null,
                 null, null, null,
@@ -88,9 +89,9 @@ object GameAreaManager {
         saveArea(area)
     }
 
-    fun createNewArea(name: String): Boolean {
+    fun createNewArea(name: String, world: World): Boolean {
         if (areas.values.any { it.name == name }) return false
-        val area = GameArea(name, UUID.randomUUID())
+        val area = GameArea(name, UUID.randomUUID(), world.uid)
         registerArea(area)
         return true
     }
