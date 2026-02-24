@@ -4,7 +4,8 @@ import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.manager.EntityManager
-import com.fantamomo.mc.amongus.manager.WaypointManager
+import com.fantamomo.mc.amongus.manager.waypoint.FixedWaypointPosProvider
+import com.fantamomo.mc.amongus.manager.waypoint.WaypointManager
 import com.fantamomo.mc.amongus.modification.modifications.TorchModification
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.player.PlayerHelpPreferences
@@ -34,7 +35,11 @@ class LightsSabotage internal constructor(override val game: Game) :
         game.area.lightPosMax ?: throw IllegalStateException("Lights sabotage requires light max position")
 
     override val waypoints: Set<WaypointManager.Waypoint> = setOf(
-        WaypointManager.Waypoint("sabotage.waypoint.lights", Color.RED, centerLocationOf(min, max))
+        WaypointManager.Waypoint(
+            Component.translatable("sabotage.waypoint.lights"),
+            Color.RED,
+            FixedWaypointPosProvider(centerLocationOf(min, max))
+        )
     )
     val levers: Map<Block, BlockDisplay> =
         game.area.lightLevers.filter { it.isBetween(min, max) }.map { it.block }.associateWith(::createBlockDisplay)

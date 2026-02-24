@@ -1,21 +1,23 @@
-package com.fantamomo.mc.amongus.manager
+package com.fantamomo.mc.amongus.manager.waypoint
 
 import com.fantamomo.mc.amongus.game.Game
+import com.fantamomo.mc.amongus.manager.ActionBarManager
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.util.internal.NMS
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.ComponentLike
 import net.kyori.adventure.text.format.TextColor
 import net.minecraft.core.Vec3i
 import net.minecraft.network.protocol.game.ClientboundTrackedWaypointPacket
-import net.minecraft.network.protocol.game.ClientboundTrackedWaypointPacket.addWaypointPosition
 import net.minecraft.resources.ResourceKey
 import net.minecraft.world.waypoints.Waypoint.Icon
 import net.minecraft.world.waypoints.WaypointStyleAssets
 import org.bukkit.Color
-import org.bukkit.Location
 import org.bukkit.craftbukkit.entity.CraftPlayer
 import java.util.*
 import kotlin.math.abs
+import kotlin.math.atan2
+import kotlin.math.sqrt
 
 class WaypointManager(val game: Game) {
     private val waypointData: MutableSet<WaypointData> = mutableSetOf()
@@ -93,10 +95,24 @@ class WaypointManager(val game: Game) {
     }
 
     class Waypoint(
-        val translationKey: String,
+        val display: ComponentLike,
         val color: Int,
-        vector: Vec3i
+        val locationProvider: WaypointPosProvider
     ) {
+        private var lastDisplay: Component? = null
+        val textColor = TextColor.color(color)
+        var cachedDisplay: Component = display.asComponent().color(textColor)
+            get() {
+                val newDisplay = display.asComponent()
+                if (lastDisplay != newDisplay) {
+                    lastDisplay = newDisplay
+                    field = newDisplay.color(textColor)
+                }
+                return field
+            }
+            private set
+
+        var showDisplay = true
         internal var lastVisible: Boolean = true
         var isVisible: Boolean = true
             set(value) {
@@ -106,35 +122,30 @@ class WaypointManager(val game: Game) {
         val uuid: UUID = UUID.randomUUID()
         val icon = createIcon(color)
         var dirty: Boolean = false
-        var vector: Vec3i = vector
-            set(value) {
-                field = value
-                setDirty()
+        private var lastVector: Vec3i? = null
+        val vector: Vec3i
+            get() {
+                val newVector = locationProvider.pos()
+                if (lastVector != newVector) {
+                    lastVector = newVector
+                    setDirty()
+                }
+                return newVector
             }
 
-        constructor(translationKey: String, color: Int, location: Location) : this(
-            translationKey = translationKey,
-            color = color,
-            vector = Vec3i(location.blockX, location.blockY, location.blockZ)
-        )
-
-        constructor(translationKey: String, color: Color, location: Location) : this(
-            translationKey = translationKey,
+        constructor(display: ComponentLike, color: Color, locationProvider: WaypointPosProvider) : this(
+            display = display,
             color = color.asARGB(),
-            location = location
+            locationProvider = locationProvider
         )
 
         fun setDirty() {
             dirty = true
         }
 
-        fun setLocation(location: Location) {
-            vector = Vec3i(location.blockX, location.blockY, location.blockZ)
-        }
-
         @NMS
         fun createAddPacket(): ClientboundTrackedWaypointPacket =
-            addWaypointPosition(uuid, icon, vector)
+            ClientboundTrackedWaypointPacket.addWaypointPosition(uuid, icon, vector)
 
         @NMS
         fun createRemovePacket(): ClientboundTrackedWaypointPacket =
@@ -205,12 +216,13 @@ class WaypointManager(val game: Game) {
             if (!waypoint.isVisible) continue
 
             val v = waypoint.vector
+            if (!waypoint.showDisplay) continue
             val dx = v.x + 0.5 - px
             val dy = v.y + 0.5 - py
             val dz = v.z + 0.5 - pz
 
             val distSq = dx * dx + dy * dy + dz * dz
-            val angleTo = Math.toDegrees(kotlin.math.atan2(-dx, dz))
+            val angleTo = Math.toDegrees(atan2(-dx, dz))
             val diff = yawDifference(playerYaw, angleTo)
 
             if (diff < bestAngle - 0.5 ||
@@ -224,12 +236,12 @@ class WaypointManager(val game: Game) {
 
         val waypoint = bestWaypoint ?: return null
 
-        val distance = kotlin.math.sqrt(bestDistSq)
+        val distance = sqrt(bestDistSq)
         val allowedAngle = allowedAngleForDistance(distance)
 
         if (bestAngle > allowedAngle) return null
 
-        return Component.translatable(waypoint.translationKey).color(TextColor.color(waypoint.color))
+        return waypoint.cachedDisplay
     }
 
     private fun allowedAngleForDistance(distance: Double): Double {

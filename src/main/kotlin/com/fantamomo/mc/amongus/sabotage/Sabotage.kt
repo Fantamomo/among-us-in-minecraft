@@ -1,7 +1,7 @@
 package com.fantamomo.mc.amongus.sabotage
 
 import com.fantamomo.mc.amongus.game.Game
-import com.fantamomo.mc.amongus.manager.WaypointManager
+import com.fantamomo.mc.amongus.manager.waypoint.WaypointManager
 import net.kyori.adventure.text.Component
 
 interface Sabotage<S : SabotageType<S, A>, A : Sabotage<S, A>> {

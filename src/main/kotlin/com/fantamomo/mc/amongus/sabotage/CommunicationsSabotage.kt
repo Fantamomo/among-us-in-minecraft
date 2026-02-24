@@ -12,7 +12,8 @@ import com.fantamomo.mc.amongus.languages.numeric
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.manager.ActionBarManager
 import com.fantamomo.mc.amongus.manager.EntityManager
-import com.fantamomo.mc.amongus.manager.WaypointManager
+import com.fantamomo.mc.amongus.manager.waypoint.FixedWaypointPosProvider
+import com.fantamomo.mc.amongus.manager.waypoint.WaypointManager
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.player.PlayerHelpPreferences
 import com.fantamomo.mc.amongus.util.accuracyToColor
@@ -42,9 +43,9 @@ class CommunicationsSabotage(
 
     override val waypoints = setOf(
         WaypointManager.Waypoint(
-            "sabotage.waypoint.communications",
+            Component.translatable("sabotage.waypoint.communications"),
             Color.RED,
-            position
+            FixedWaypointPosProvider(position)
         )
     )
 
