@@ -30,6 +30,10 @@ enum class PlayerColor(val color: Color, val helmet: ItemType.Typed<out ArmorMet
     FUCHSIA(Color.FUCHSIA),
     PURPLE(Color.PURPLE),
     ORANGE(Color.ORANGE),
+    PINK(Color.fromRGB(255, 105, 180)),
+    BROWN(Color.fromRGB(101, 67, 33)),
+    MINT(Color.fromRGB(152, 255, 152)),
+    SKY(Color.fromRGB(135, 206, 235)),
 
     TURTLE(Color.GREEN, ItemType.TURTLE_HELMET, true),
     CHAINMAIL(Color.SILVER, ItemType.CHAINMAIL_HELMET, true),
