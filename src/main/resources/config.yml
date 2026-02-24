@@ -48,5 +48,17 @@ morph-blender:
   # default: auto
   visibility: auto
 
+roles:
+  # List of roles that will be disabled and hidden in the game.
+  # Any role listed here will not be accessible in the game.
+  disabled:
+  #  - phantom
+
+modifications:
+  # List of modifications that will be disabled and hidden in the game.
+  # Any modification listed here will not be accessible in the game.
+  disabled:
+  #  - small
+
 # Should we animate the scoreboard?
 animate-scoreboard: true
