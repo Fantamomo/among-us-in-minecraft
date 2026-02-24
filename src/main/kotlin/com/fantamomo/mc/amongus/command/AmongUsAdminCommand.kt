@@ -388,7 +388,7 @@ private fun KtArgumentCommandBuilder<CommandSourceStack, String>.areaCreateComma
 ) {
     val name = arg<String>("area")
 
-    val success = GameAreaManager.createNewArea(name)
+    val success = GameAreaManager.createNewArea(name, source.location.world)
 
     if (success) {
         source.sender.sendComponent {
