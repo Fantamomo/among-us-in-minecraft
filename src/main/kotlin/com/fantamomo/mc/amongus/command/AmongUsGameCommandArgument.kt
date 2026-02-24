@@ -22,7 +22,6 @@ import com.mojang.brigadier.arguments.IntegerArgumentType
 import io.papermc.paper.command.brigadier.CommandSourceStack
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes
 import net.kyori.adventure.text.format.NamedTextColor
-import org.bukkit.World
 import org.bukkit.entity.Player
 import java.util.*
 
@@ -1207,8 +1206,6 @@ private fun KtArgumentCommandBuilder<CommandSourceStack, *>.createGameCommandExe
         return@execute 0
     }
 
-    val world = optionalArg<World>("world") ?: source.location.world
-
     val maxPlayers = optionalArg<Int>("maxPlayers") ?: Game.DEFAULT_MAX_PLAYERS
 
     val game = GameManager.createGame(area, maxPlayers)
@@ -1218,7 +1215,7 @@ private fun KtArgumentCommandBuilder<CommandSourceStack, *>.createGameCommandExe
                 args {
                     string("area", area.name)
                     numeric("max_players", maxPlayers)
-                    string("world", game.world.name.substringAfterLast('/'))
+                    string("world", game.world.name.replace('\\', '/').substringAfterLast('/'))
                     string("code", game.code)
                 }
             }
