@@ -107,20 +107,14 @@ class AmongUsPlayer internal constructor(
             field = value
             persistencePlayerData.trimMaterial = value?.material
             persistencePlayerData.trimPattern = value?.pattern
-            color = color
+            updateHelmet()
         }
     var color: PlayerColor = persistencePlayerData.color?.takeIf { color -> game.players.none { it.color == color } }
         ?: game.randomPlayerColor()
         set(value) {
             field = value
             persistencePlayerData.color = value
-            val helmet = value.toItemStack(armorTrim)
-            player?.inventory?.helmet = helmet
-            if (_wardrobeMannequin is Mannequin) wardrobeMannequin?.equipment?.helmet = helmet
-            if (!game.morphManager.isMorphed(this)) {
-                mannequinController.getEntity()?.equipment?.helmet = helmet
-            }
-            game.updateAllWardrobeInventories()
+            updateHelmet()
         }
     val visibleColor: PlayerColor
         get() {
@@ -149,6 +143,16 @@ class AmongUsPlayer internal constructor(
 
     private fun checkGameRunning() {
         if (game.phase != GamePhase.RUNNING) throw IllegalStateException("Cannot perform this action in this phase")
+    }
+
+    internal fun updateHelmet() {
+        val helmet = color.toItemStack(armorTrim)
+        player?.inventory?.helmet = helmet
+        if (_wardrobeMannequin is Mannequin) wardrobeMannequin?.equipment?.helmet = helmet
+        if (!game.morphManager.isMorphed(this)) {
+            mannequinController.getEntity()?.equipment?.helmet = helmet
+        }
+        game.updateAllWardrobeInventories()
     }
 
     internal fun notifyAbilityItemChange(item: AbilityItem) {
