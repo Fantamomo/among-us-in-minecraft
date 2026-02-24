@@ -3,19 +3,16 @@
 package com.fantamomo.mc.amongus.command
 
 import com.fantamomo.mc.adventure.text.*
-import com.fantamomo.mc.amongus.ability.abilities.*
 import com.fantamomo.mc.amongus.area.GameArea
 import com.fantamomo.mc.amongus.area.GameAreaManager
 import com.fantamomo.mc.amongus.area.VentGroup
-import com.fantamomo.mc.amongus.game.Game
-import com.fantamomo.mc.amongus.game.GameManager
+import com.fantamomo.mc.amongus.command.Permissions.required
 import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.settings.SettingsInventory
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.settings.SettingsType
-import com.fantamomo.mc.amongus.task.Task
 import com.fantamomo.mc.amongus.util.sendComponent
 import com.fantamomo.mc.brigadier.*
 import com.mojang.brigadier.arguments.IntegerArgumentType
@@ -30,7 +27,7 @@ import org.bukkit.Location
 import org.bukkit.entity.Player
 
 val AmongUsAdminCommand = paperCommand("amongusadmin") {
-    requires { sender.hasPermission(Permissions.ADMIN) }
+    Permissions.ADMIN.required()
     areaCommand()
     settingsCommand()
     gameCommand()
@@ -168,44 +165,8 @@ private fun PaperCommand.settingsCommand() = literal("settings") {
     }
 }
 
-private fun PaperCommand.testCommand() {
-    literal("test") {
-        literalExecute("createGame") {
-            val game = Game(GameAreaManager.getArea("test")!!, (source.sender as Player).world, 16)
-            GameManager.addGame(game)
-            SINGLE_SUCCESS
-        }
-        literalExecute("join") {
-            val game = GameManager.getGames().last()
-            game.addPlayer(source.sender as Player)
-            SINGLE_SUCCESS
-        }
-        literalExecute("get") {
-            val player = source.sender as Player
-            val amongUsPlayer = PlayerManager.getPlayer(player)!!
-
-            amongUsPlayer.addNewAbility(KillAbility)
-            amongUsPlayer.addNewAbility(VentAbility)
-            amongUsPlayer.addNewAbility(SabotageAbility)
-            amongUsPlayer.addNewAbility(RemoteCameraAbility)
-            amongUsPlayer.addNewAbility(CallMeetingAbility)
-
-            SINGLE_SUCCESS
-        }
-        literalExecute("assign") {
-            val player = source.sender as Player
-            val amongUsPlayer = PlayerManager.getPlayer(player)!!
-
-            Task.tasks.forEach {
-                amongUsPlayer.game.taskManager.assignTask(amongUsPlayer, it)
-            }
-
-            SINGLE_SUCCESS
-        }
-    }
-}
-
 private fun PaperCommand.areaCommand() {
+    Permissions.AREA.required()
     literal("area") {
         argument("area", StringArgumentType.word()) {
             val areaRef = argRef()
