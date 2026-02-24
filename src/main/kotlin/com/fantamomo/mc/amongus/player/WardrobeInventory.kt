@@ -1,6 +1,7 @@
 package com.fantamomo.mc.amongus.player
 
 import com.fantamomo.mc.amongus.AmongUs
+import com.fantamomo.mc.amongus.command.Permissions
 import com.fantamomo.mc.amongus.task.GuiAssignedTask
 import com.fantamomo.mc.amongus.util.RefPersistentDataType
 import com.fantamomo.mc.amongus.util.hideTooltip
@@ -75,13 +76,21 @@ class WardrobeInventory private constructor(
     }
 
     private fun buildMain() {
-        val colorItem = owner.color.rawItemStack()
-        colorItem.editPersistentDataContainer {
-            it.set(KEY_MAIN, RefPersistentDataType.refPersistentDataType(), RefPersistentDataType.newRef(Type.COLOR))
+        if (owner.player?.hasPermission(Permissions.SET_PLAYER_COLOR) == true) {
+            val colorItem = owner.color.rawItemStack()
+            colorItem.editPersistentDataContainer {
+                it.set(
+                    KEY_MAIN,
+                    RefPersistentDataType.refPersistentDataType(),
+                    RefPersistentDataType.newRef(Type.COLOR)
+                )
+            }
+            colorItem.setData(DataComponentTypes.TOOLTIP_DISPLAY, ARMOR_HIDDEN_COMPONENT)
+            colorItem.setData(DataComponentTypes.ITEM_NAME, owner.color.capitalizeColoredName)
+            inv.setItem(3, colorItem)
         }
-        colorItem.setData(DataComponentTypes.TOOLTIP_DISPLAY, ARMOR_HIDDEN_COMPONENT)
-        colorItem.setData(DataComponentTypes.ITEM_NAME, owner.color.capitalizeColoredName)
-        inv.setItem(3, colorItem)
+        if (owner.player?.hasPermission(Permissions.SET_PLAYER_TRIM) != true) return
+
         val armorTrim = owner.armorTrim
         val (materialItem, patternItem) = if (armorTrim != null) {
             val materialItem = (MATERIAL_TO_ITEM_TYPE[armorTrim.material]?.createItemStack()
