@@ -5,6 +5,7 @@ import com.fantamomo.mc.adventure.text.content
 import com.fantamomo.mc.adventure.text.textComponent
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.game.Game
+import com.fantamomo.mc.amongus.game.GameManager
 import com.fantamomo.mc.amongus.game.GamePhase
 import com.fantamomo.mc.amongus.util.internal.NMS
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket
@@ -43,7 +44,12 @@ object PlayerManager {
         player.server.onlinePlayers.forEach {
             it.hidePlayer(AmongUs, player)
             @Suppress("UNNECESSARY_SAFE_CALL")
-            (it as CraftPlayer).handle.connection?.send(ClientboundPlayerInfoUpdatePacket.createSinglePlayerInitializing(nmsPlayer, true))
+            (it as CraftPlayer).handle.connection?.send(
+                ClientboundPlayerInfoUpdatePacket.createSinglePlayerInitializing(
+                    nmsPlayer,
+                    true
+                )
+            )
         }
         player.teleportAsync(game.area.lobbySpawn ?: throw IllegalStateException("Lobby spawn not set"))
             .thenAccept {
@@ -89,15 +95,15 @@ object PlayerManager {
     fun leaveGame(player: AmongUsPlayer, teleport: Boolean = true) {
         val game = player.game
         if (game.phase != GamePhase.LOBBY) return
-        game.leavePlayer(player, teleport)
         val p = player.player
+        val clearPlayer = game.leavePlayer(player, teleport)
         if (p != null) {
             p.inventory.clear()
             for (online in Bukkit.getOnlinePlayers()) {
                 online.showPlayer(AmongUs, p)
             }
         }
-        player.player = null
+        if (clearPlayer) player.player = null
         player.wardrobeMannequin?.remove()
         player.mannequinController.despawn()
         players.remove(player)
@@ -117,7 +123,15 @@ object PlayerManager {
                 )
             )
         }
-        val amongUsPlayer = getPlayer(player.uniqueId) ?: return
+        val amongUsPlayer = getPlayer(player)
+
+        if (amongUsPlayer == null) {
+            if (GameManager.isGameWorld(player.world)) {
+                player.teleportAsync(AmongUs.server.respawnWorld.spawnLocation)
+            }
+            return
+        }
+
         val game = amongUsPlayer.game
         if (game.phase == GamePhase.FINISHED) {
             player.sendMessage(textComponent {
@@ -129,7 +143,6 @@ object PlayerManager {
             players.remove(amongUsPlayer)
             return
         }
-        amongUsPlayer.player = player
         for (onlinePlayer in player.server.onlinePlayers) {
             onlinePlayer.hidePlayer(AmongUs, player)
             @Suppress("UNNECESSARY_SAFE_CALL")
