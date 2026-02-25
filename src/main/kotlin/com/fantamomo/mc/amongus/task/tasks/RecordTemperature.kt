@@ -33,6 +33,7 @@ object RecordTemperature : Task<RecordTemperature, RecordTemperature.AssignedRec
         private var started = false
         private var currentTemp = Random.nextInt(32, 69)
         private val targetTemp = Random.nextInt(currentTemp - 30, currentTemp + 30)
+            .takeUnless { currentTemp == it } ?: (currentTemp + 1)
 
         override fun setupInventory() {
             updateInventory()
