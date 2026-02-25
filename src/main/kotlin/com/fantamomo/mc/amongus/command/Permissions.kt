@@ -23,6 +23,7 @@ object Permissions {
     val SET_PLAYER_TRIM = perm("set_player_trim", PermissionDefault.TRUE)
     val SET_PLAYER_TRIM_OTHER = perm("set_player_trim_other", PermissionDefault.OP)
 
+    val PLAYER_START = perm("player.start", PermissionDefault.TRUE)
     val PLAYER_STATS = perm("player.stats", PermissionDefault.TRUE)
     val PLAYER_LEAVE = perm("player.leave", PermissionDefault.TRUE)
     val PLAYER_JOIN = perm("player.join", PermissionDefault.TRUE)
