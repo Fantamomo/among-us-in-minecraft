@@ -2,6 +2,7 @@ package com.fantamomo.mc.amongus.game
 
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.area.GameArea
+import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.util.safeCreateDirectories
 import org.bukkit.NamespacedKey
 import org.bukkit.WorldCreator
@@ -49,7 +50,13 @@ object GameManager {
             taskId = -1
         }
         if (markedForRemove.isNotEmpty()) {
-            markedForRemove.forEach(::gameEnd)
+            markedForRemove.forEach {
+                for (player in it.players.toList()) {
+                    it.removePlayer0(player)
+                    PlayerManager.gameEnds(player, false)
+                }
+                gameEnd(it)
+            }
             games.removeAll(markedForRemove)
             gamesByCode.values.removeAll(markedForRemove)
             markedForRemove.clear()
