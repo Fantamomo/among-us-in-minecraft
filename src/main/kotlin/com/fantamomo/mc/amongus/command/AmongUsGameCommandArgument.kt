@@ -22,7 +22,6 @@ import com.mojang.brigadier.arguments.IntegerArgumentType
 import io.papermc.paper.command.brigadier.CommandSourceStack
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes
 import net.kyori.adventure.text.format.NamedTextColor
-import org.bukkit.World
 import org.bukkit.entity.Player
 import java.util.*
 
@@ -1168,10 +1167,7 @@ private fun PaperCommand.joinGameCommand() = literal("join") {
 private fun PaperCommand.createGameCommand() = literal("create") {
     Permissions.ADMIN_GAME_CREATE.required()
     argument("area", GameAreaArgumentType) {
-        argument("world", ArgumentTypes.world()) {
-            argument("maxPlayers", IntegerArgumentType.integer(1, 16)) {
-                createGameCommandExecute()
-            }
+        argument("maxPlayers", IntegerArgumentType.integer(1, 16)) {
             createGameCommandExecute()
         }
         createGameCommandExecute()
@@ -1189,11 +1185,8 @@ private fun KtArgumentCommandBuilder<CommandSourceStack, *>.createGameCommandExe
                     component("missing") {
                         var first = true
                         for (missedLocation in missedLocations) {
-                            if (first) {
-                                first = false
-                            } else {
-                                text(", ", NamedTextColor.GRAY)
-                            }
+                            if (first) first = false
+                            else text(", ", NamedTextColor.GRAY)
                             translatable("area.location.name.$missedLocation") {
                                 hoverEvent(KHoverEventType.ShowText) {
                                     translatable("area.location.description.$missedLocation")
@@ -1207,24 +1200,34 @@ private fun KtArgumentCommandBuilder<CommandSourceStack, *>.createGameCommandExe
         return@execute 0
     }
 
-    val world = optionalArg<World>("world") ?: source.location.world
-
     val maxPlayers = optionalArg<Int>("maxPlayers") ?: Game.DEFAULT_MAX_PLAYERS
 
-    val game = Game(area, world, maxPlayers)
-
-    GameManager.addGame(game)
-
     sendMessage {
-        translatable("command.success.admin.game.create") {
+        translatable("command.success.admin.game.create.creating") {
             args {
                 string("area", area.name)
-                numeric("max_players", maxPlayers)
-                string("world", world.name)
-                string("code", game.code)
             }
         }
     }
 
-    SINGLE_SUCCESS
+    GameManager.createGame(area, maxPlayers) { game ->
+        if (game != null) {
+            sendMessage {
+                translatable("command.success.admin.game.create") {
+                    args {
+                        string("area", area.name)
+                        numeric("max_players", maxPlayers)
+                        string("world", game.world.name.replace('\\', '/').substringAfterLast('/'))
+                        string("code", game.code)
+                    }
+                }
+            }
+        } else {
+            sendMessage {
+                translatable("command.error.admin.game.create.failed")
+            }
+        }
+    }
+
+    return@execute SINGLE_SUCCESS
 }

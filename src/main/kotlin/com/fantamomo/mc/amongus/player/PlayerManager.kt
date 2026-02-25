@@ -48,6 +48,10 @@ object PlayerManager {
         player.teleportAsync(game.area.lobbySpawn ?: throw IllegalStateException("Lobby spawn not set"))
             .thenAccept {
                 auPlayer.wardrobeMannequin?.let { player.showEntity(AmongUs, it) }
+                AmongUs.server.scheduler.runTaskLater(AmongUs, { ->
+                    auPlayer.mannequinController.showToSelf()
+                    auPlayer.mannequinController.hideFromSelf()
+                }, 2L)
             }
         player.inventory.clear()
 
@@ -68,11 +72,15 @@ object PlayerManager {
         auPlayer.game.onDisconnected(auPlayer)
     }
 
-    internal fun gameEnds(amongUsPlayer: AmongUsPlayer) {
+    internal fun gameEnds(amongUsPlayer: AmongUsPlayer, teleport: Boolean = true) {
         amongUsPlayer.modification?.onGameEnd()
         amongUsPlayer.modification?.onEnd()
-        amongUsPlayer.player?.inventory?.clear()
-        amongUsPlayer.player = null
+        val player = amongUsPlayer.player
+        if (player != null) {
+            if (teleport) player.teleportAsync(amongUsPlayer.locationBeforeGame)
+            player.inventory.clear()
+            amongUsPlayer.player = null
+        }
         amongUsPlayer.mannequinController.despawn()
         amongUsPlayer.statistics.onGameStop()
         players.remove(amongUsPlayer)
