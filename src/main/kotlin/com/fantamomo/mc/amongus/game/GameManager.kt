@@ -18,6 +18,7 @@ object GameManager {
     private var taskId = -1
     private val worldsPath = AmongUs.dataPath.resolve("worlds")
     private val logger = LoggerFactory.getLogger("AmongUsGameManager")
+    private val markedForRemove: MutableSet<Game> = mutableSetOf()
 
     fun getGames(): List<Game> = games
 
@@ -46,6 +47,12 @@ object GameManager {
         if (games.isEmpty()) {
             AmongUs.server.scheduler.cancelTask(taskId)
             taskId = -1
+        }
+        if (markedForRemove.isNotEmpty()) {
+            markedForRemove.forEach(::gameEnd)
+            games.removeAll(markedForRemove)
+            gamesByCode.values.removeAll(markedForRemove)
+            markedForRemove.clear()
         }
         games.forEach(Game::tick)
     }
@@ -108,5 +115,15 @@ object GameManager {
             player.inventory.clear()
         }
         AmongUs.server.unloadWorld(world, false)
+    }
+
+    fun removeGame(game: Game) {
+        games.remove(game)
+        gamesByCode.remove(game.code)
+        gameEnd(game)
+    }
+
+    internal fun markForRemove(game: Game) {
+        markedForRemove.add(game)
     }
 }
