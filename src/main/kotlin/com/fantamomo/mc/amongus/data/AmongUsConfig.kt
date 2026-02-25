@@ -13,7 +13,7 @@ object AmongUsConfig {
     }
 
     fun init() {
-        listOf(MsgCommandBlocker, MorphBlender, Roles, Modifications)
+        listOf(MsgCommandBlocker, MorphBlender, Roles, Modifications, GameCreation)
     }
 
     object MsgCommandBlocker : ConfigSection("msg-command-blocker") {
@@ -34,6 +34,12 @@ object AmongUsConfig {
 
     object Modifications : ConfigSection("modifications") {
         val disabled = section.getStringList("disabled").map { it.lowercase() }.toSet()
+    }
+
+    object GameCreation : ConfigSection("game-creation") {
+        val everyoneCanCreate = section.getBoolean("everyone-can-create", false)
+        val maxGames = section.getInt("max-games", 10)
+        val ignoreAdmins = section.getBoolean("ignore-admins", true)
     }
 
     val animateScoreboard = config.getBoolean("animate-scoreboard", true)
