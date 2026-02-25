@@ -73,6 +73,7 @@ class AmongUsPlayer internal constructor(
                             RefPersistentDataType.refPersistentDataType(),
                             RefPersistentDataType.newRef(this)
                         )
+                        mannequin.equipment.helmet = color.toItemStack(armorTrim)
                         EntityManager.addEntityToRemoveOnEnd(game, mannequin)
                     }
                 }
