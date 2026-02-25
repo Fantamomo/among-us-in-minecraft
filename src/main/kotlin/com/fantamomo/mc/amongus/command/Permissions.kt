@@ -26,7 +26,10 @@ object Permissions {
     val PLAYER_STATS = perm("player.stats", PermissionDefault.TRUE)
     val PLAYER_LEAVE = perm("player.leave", PermissionDefault.TRUE)
     val PLAYER_JOIN = perm("player.join", PermissionDefault.TRUE)
+    val PLAYER_CREATE = perm("player.create", PermissionDefault.TRUE)
+    val PLAYER_SETTINGS = perm("player.settings", PermissionDefault.TRUE)
 
+    val ADMIN_GAME_SWITCH_HOST = perm("admin.game.switch_host", PermissionDefault.OP)
     val ADMIN_GAME_INFO = perm("admin.game.info", PermissionDefault.OP)
     val ADMIN_GAME_ROLE = perm("admin.game.role", PermissionDefault.OP)
     val ADMIN_GAME_KILL = perm("admin.game.kill", PermissionDefault.OP)
