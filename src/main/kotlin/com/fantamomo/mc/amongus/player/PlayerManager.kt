@@ -72,12 +72,12 @@ object PlayerManager {
         auPlayer.game.onDisconnected(auPlayer)
     }
 
-    internal fun gameEnds(amongUsPlayer: AmongUsPlayer) {
+    internal fun gameEnds(amongUsPlayer: AmongUsPlayer, teleport: Boolean = true) {
         amongUsPlayer.modification?.onGameEnd()
         amongUsPlayer.modification?.onEnd()
         val player = amongUsPlayer.player
         if (player != null) {
-            player.teleportAsync(amongUsPlayer.locationBeforeGame)
+            if (teleport) player.teleportAsync(amongUsPlayer.locationBeforeGame)
             player.inventory.clear()
             amongUsPlayer.player = null
         }
