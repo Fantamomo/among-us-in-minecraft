@@ -36,6 +36,46 @@ fun PaperCommand.gameCommand() = literal("game") {
     killPlayerGameCommand()
     roleGameCommand()
     playerInfoGameCommand()
+    switchHostGameCommand()
+}
+
+private fun PaperCommand.switchHostGameCommand() = literal("switch_host") {
+    Permissions.ADMIN_GAME_SWITCH_HOST.required()
+    argument("game", GameArgumentType(false)) {
+        val gameRef = argRef()
+        argument("target", AmongUsPlayerArgumentType.SINGLE) {
+            val targetResolverRef = argRef()
+            execute {
+                val game = gameRef.get()
+                val target = targetResolverRef.get().resolve(source).first()
+
+                if (target.game !== game) {
+                    sendMessage {
+                        translatable("command.error.admin.game.switch_host.not_in_same_game")
+                    }
+                    return@execute NO_SUCCESS
+                }
+
+                if (target.isHost()) {
+                    sendMessage {
+                        translatable("command.error.admin.game.switch_host.already_host")
+                    }
+                }
+
+                game.host = target
+
+                sendMessage {
+                    translatable("command.success.admin.game.switch_host") {
+                        args {
+                            string("player", target.name)
+                        }
+                    }
+                }
+
+                SINGLE_SUCCESS
+            }
+        }
+    }
 }
 
 private fun PaperCommand.playerInfoGameCommand() = literal("info") {

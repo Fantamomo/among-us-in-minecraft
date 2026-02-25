@@ -5,6 +5,7 @@ import com.fantamomo.mc.amongus.area.GameArea
 import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.util.safeCreateDirectories
 import org.bukkit.NamespacedKey
+import org.bukkit.World
 import org.bukkit.WorldCreator
 import org.slf4j.LoggerFactory
 import java.nio.file.LinkOption
@@ -20,6 +21,7 @@ object GameManager {
     private val worldsPath = AmongUs.dataPath.resolve("worlds")
     private val logger = LoggerFactory.getLogger("AmongUsGameManager")
     private val markedForRemove: MutableSet<Game> = mutableSetOf()
+    private val worlds: MutableSet<World> = mutableSetOf()
 
     fun getGames(): List<Game> = games
 
@@ -107,6 +109,7 @@ object GameManager {
                     callback(null)
                     return@Runnable
                 }
+                worlds.add(newWorld)
                 newWorld.isAutoSave = false
                 val game = Game(area, newWorld, maxPlayers)
                 addGame(game)
@@ -114,6 +117,8 @@ object GameManager {
             })
         })
     }
+
+    fun isGameWorld(world: World) = world in worlds
 
     fun gameEnd(game: Game) {
         val world = game.world

@@ -2,10 +2,15 @@ package com.fantamomo.mc.amongus.command
 
 import com.fantamomo.mc.adventure.text.args
 import com.fantamomo.mc.adventure.text.translatable
+import com.fantamomo.mc.amongus.area.GameArea
 import com.fantamomo.mc.amongus.command.Permissions.required
+import com.fantamomo.mc.amongus.command.arguments.GameAreaArgumentType
 import com.fantamomo.mc.amongus.command.arguments.GameArgumentType
 import com.fantamomo.mc.amongus.command.arguments.PlayerColorArgumentType
 import com.fantamomo.mc.amongus.command.arguments.RegistryArgumentType
+import com.fantamomo.mc.amongus.data.AmongUsConfig
+import com.fantamomo.mc.amongus.game.Game
+import com.fantamomo.mc.amongus.game.GameManager
 import com.fantamomo.mc.amongus.game.GamePhase
 import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.languages.numeric
@@ -13,6 +18,7 @@ import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.PlayerColor
 import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.player.PlayerStatistics
+import com.fantamomo.mc.amongus.settings.SettingsInventory
 import com.fantamomo.mc.amongus.statistics.*
 import com.fantamomo.mc.brigadier.*
 import com.mojang.brigadier.arguments.BoolArgumentType
@@ -31,6 +37,159 @@ val AmongUsCommand = paperCommand("amongus") {
     trimCommand()
     joinCommand()
     leaveCommand()
+    createCommand()
+    settingsCommand()
+    startCommand()
+}
+
+private fun PaperCommand.startCommand() = literal("start") {
+    requires {
+        sender is Player &&
+                sender.hasPermission(Permissions.ADMIN_GAME_START) ||
+                (AmongUsConfig.GameCreation.everyoneCanCreate && sender.hasPermission(Permissions.PLAYER_START))
+    }
+    execute {
+        val sender = source.sender as Player
+
+        val auPlayer = PlayerManager.getPlayer(sender)
+        if (auPlayer == null) {
+            sendMessage {
+                translatable("command.error.start.not_joined")
+            }
+            return@execute NO_SUCCESS
+        }
+
+        if (!auPlayer.isHost()) {
+            sendMessage {
+                translatable("command.error.start.not_host")
+            }
+            return@execute NO_SUCCESS
+        }
+
+        if (auPlayer.game.phase != GamePhase.LOBBY) {
+            sendMessage {
+                translatable("command.error.start.already_started") {
+                    args {
+                        string("game", auPlayer.game.code)
+                    }
+                }
+            }
+            return@execute NO_SUCCESS
+        }
+
+        auPlayer.game.startStartCooldown()
+
+        SINGLE_SUCCESS
+    }
+}
+
+private fun PaperCommand.settingsCommand() = literal("settings") {
+    requires {
+        sender is Player &&
+                sender.hasPermission(Permissions.ADMIN_GAME_CREATE) ||
+                (AmongUsConfig.GameCreation.everyoneCanCreate && sender.hasPermission(Permissions.PLAYER_SETTINGS))
+    }
+
+    execute {
+        val sender = source.sender as Player
+
+        val auPlayer = PlayerManager.getPlayer(sender)
+
+        if (auPlayer == null) {
+            sendMessage {
+                translatable("command.error.admin.settings.not_joined")
+            }
+            return@execute NO_SUCCESS
+        }
+
+        if (!auPlayer.isHost()) {
+            sendMessage {
+                translatable("command.error.settings.not_host")
+            }
+            return@execute NO_SUCCESS
+        }
+
+        val settingsInventory = SettingsInventory(auPlayer)
+        sender.openInventory(settingsInventory.inventory)
+
+        SINGLE_SUCCESS
+    }
+}
+
+private fun PaperCommand.createCommand() = literal("create") {
+    requires {
+        sender is Player &&
+                sender.hasPermission(Permissions.ADMIN_GAME_CREATE) ||
+                (sender.hasPermission(Permissions.PLAYER_CREATE) && AmongUsConfig.GameCreation.everyoneCanCreate)
+    }
+
+    argument("area", GameAreaArgumentType) {
+        execute {
+            val player = source.sender as Player
+            if (PlayerManager.getPlayer(player) != null) {
+                sendMessage {
+                    translatable("command.error.game.create.in_game")
+                }
+                return@execute 0
+            }
+
+            if (GameManager.getGames().size >= AmongUsConfig.GameCreation.maxGames && (!AmongUsConfig.GameCreation.ignoreAdmins || !player.hasPermission(Permissions.ADMIN_GAME_CREATE))) {
+                sendMessage {
+                    translatable("command.error.game.create.max_reached") {
+                        args {
+                            numeric("max", AmongUsConfig.GameCreation.maxGames)
+                        }
+                    }
+                }
+                return@execute 0
+            }
+
+            val area = arg<GameArea>("area")
+
+            val missedLocations = area.getMissedLocations()
+            if (missedLocations.isNotEmpty()) {
+                sendMessage {
+                    translatable("command.error.admin.game.create.failed")
+                }
+                return@execute 0
+            }
+
+            val maxPlayers = Game.DEFAULT_MAX_PLAYERS
+
+            sendMessage {
+                translatable("command.success.admin.game.create.creating") {
+                    args {
+                        string("area", area.name)
+                    }
+                }
+            }
+
+            GameManager.createGame(area, maxPlayers) { game ->
+                if (game != null) {
+                    sendMessage {
+                        translatable("command.success.admin.game.create") {
+                            args {
+                                string("area", area.name)
+                                numeric("max_players", maxPlayers)
+                                string("world", game.world.name.replace('\\', '/').substringAfterLast('/'))
+                                string("code", game.code)
+                            }
+                        }
+                    }
+                    if (game.addPlayer(player)) {
+                        val auPlayer = PlayerManager.getPlayer(player)!!
+                        game.host = auPlayer
+                    }
+                } else {
+                    sendMessage {
+                        translatable("command.error.admin.game.create.failed")
+                    }
+                }
+            }
+
+            return@execute SINGLE_SUCCESS
+        }
+    }
 }
 
 private fun PaperCommand.leaveCommand() = literal("leave") {

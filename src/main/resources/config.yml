@@ -60,5 +60,13 @@ modifications:
   disabled:
   #  - small
 
+game-creation:
+  # Should non-admins (players without permission: 'amongus.admin.game.create') be able to create games?
+  everyone-can-create: false
+  # Maximum number of games that can exist simultaneously.
+  max-games: 10
+  # Should admins (players with permission: 'amongus.admin.game.create') be able to ignore that max-games limit?
+  ignore-admins: true
+
 # Should we animate the scoreboard?
 animate-scoreboard: true

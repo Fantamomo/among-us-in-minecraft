@@ -44,6 +44,12 @@ class Game(
         this.area = area.withWorld(world)
     }
 
+    var host: AmongUsPlayer? = null
+        set(value) {
+            if (value != null && value.game !== this) throw IllegalArgumentException("Player is not in this game")
+            field = value
+        }
+
     private var lastPlayer: Long = -1
 
     val code: String = createRandomCode()
@@ -82,6 +88,9 @@ class Game(
 
     internal fun removePlayer0(player: AmongUsPlayer) {
         players.remove(player)
+        if (player === host) {
+            host = players.randomOrNull()
+        }
         ventManager.removePlayer0(player)
         cameraManager.leaveCams(player)
         waypointManager.removePlayer(player)
@@ -410,11 +419,19 @@ class Game(
         GameManager.gameEnd(this)
     }
 
-    internal fun leavePlayer(amongUsPlayer: AmongUsPlayer, teleport: Boolean = true) {
-        if (phase != GamePhase.LOBBY) return
-        if (amongUsPlayer !in players) return
-        removePlayer0(amongUsPlayer)
-        if (teleport) amongUsPlayer.player?.teleport(amongUsPlayer.locationBeforeGame)
+    internal fun leavePlayer(amongUsPlayer: AmongUsPlayer, teleport: Boolean = true): Boolean {
+        if (phase != GamePhase.LOBBY) return true
+        if (amongUsPlayer !in players) return true
+        players.remove(amongUsPlayer)
+        if (teleport) {
+            val future = amongUsPlayer.player?.teleportAsync(amongUsPlayer.locationBeforeGame)?.thenAccept {
+                removePlayer0(amongUsPlayer)
+                amongUsPlayer.player = null
+            }
+            if (future == null) removePlayer0(amongUsPlayer)
+            return future == null
+        } else removePlayer0(amongUsPlayer)
+        return true
     }
 
     companion object {
