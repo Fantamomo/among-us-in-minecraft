@@ -10,6 +10,7 @@ import com.fantamomo.mc.amongus.modification.modifications.TorchModification
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.player.PlayerHelpPreferences
 import com.fantamomo.mc.amongus.role.Team
+import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.util.centerLocationOf
 import com.fantamomo.mc.amongus.util.isBetween
 import com.fantamomo.mc.amongus.util.sendComponent
@@ -96,7 +97,7 @@ class LightsSabotage internal constructor(override val game: Game) :
                     it.player?.sendComponent {
                         translatable("sabotage.lights.imposter.info")
                     }
-                } else if (it.modification?.definition === TorchModification) {
+                } else if (game.settings[SettingsKey.MODIFIER.ENABLED] && it.modification?.definition === TorchModification) {
                     it.player?.sendComponent {
                         translatable("sabotage.lights.torch.info")
                     }
