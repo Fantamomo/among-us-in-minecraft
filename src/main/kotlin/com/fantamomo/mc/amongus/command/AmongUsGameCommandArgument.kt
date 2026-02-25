@@ -1167,10 +1167,7 @@ private fun PaperCommand.joinGameCommand() = literal("join") {
 private fun PaperCommand.createGameCommand() = literal("create") {
     Permissions.ADMIN_GAME_CREATE.required()
     argument("area", GameAreaArgumentType) {
-        argument("world", ArgumentTypes.world()) {
-            argument("maxPlayers", IntegerArgumentType.integer(1, 16)) {
-                createGameCommandExecute()
-            }
+        argument("maxPlayers", IntegerArgumentType.integer(1, 16)) {
             createGameCommandExecute()
         }
         createGameCommandExecute()
