@@ -144,9 +144,7 @@ class ScoreboardManager(private val game: Game) {
 
         private fun renderLobby() {
             renderGameCode()
-            renderSpacer(SCORE_LOBBY_SPACER_1)
             renderLobbyInfo()
-            renderSpacer(SCORE_LOBBY_SPACER_2)
             renderRecentSettings()
         }
 
@@ -172,11 +170,28 @@ class ScoreboardManager(private val game: Game) {
         }
 
         private fun renderLobbyInfo() {
+            val host = game.host
+            if (host != null) {
+                val hostId = "$ENTRY_LOBBY_INFO#host"
+                register(hostId)
+                score(
+                    hostId,
+                    SCORE_LOBBY_INFO_START,
+                    textComponent {
+                        translatable("scoreboard.lobby.host") {
+                            args {
+                                string("player", host.name)
+                            }
+                        }
+                    }
+                )
+            }
+
             val playersId = "$ENTRY_LOBBY_INFO#players"
             register(playersId)
             score(
                 playersId,
-                SCORE_LOBBY_INFO_START,
+                SCORE_LOBBY_INFO_START - 1,
                 textComponent {
                     translatable("scoreboard.lobby.players") {
                         args {
@@ -191,7 +206,7 @@ class ScoreboardManager(private val game: Game) {
             register(statusId)
             score(
                 statusId,
-                SCORE_LOBBY_INFO_START - 1,
+                SCORE_LOBBY_INFO_START - 2,
                 textComponent {
                     if (game.phase == GamePhase.LOBBY) {
                         translatable("scoreboard.lobby.status.waiting")
@@ -208,6 +223,9 @@ class ScoreboardManager(private val game: Game) {
 
         private fun renderRecentSettings() {
             val recentSettings = game.settings.getRecentlyChanged()
+
+            if (recentSettings.isEmpty()) return
+            renderSpacer(SCORE_LOBBY_SPACER_2)
 
             recentSettings.forEachIndexed { index, key ->
                 @Suppress("UNCHECKED_CAST")
