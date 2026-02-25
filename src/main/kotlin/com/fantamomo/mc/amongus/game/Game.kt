@@ -117,25 +117,6 @@ class Game(
                 val remainingTicks = startCooldownTicks - ticks
                 val remaining = (remainingTicks + 19) / 20
 
-                val tickInSecond = remainingTicks % 20
-                val chars = ('0'..'9') + ('A'..'Z')
-
-                val target = remaining.toString()
-                val length = target.length
-
-                val display = buildString {
-                    for (i in 0 until length) {
-
-                        val stopThreshold = 6 + (i * 4)
-
-                        if (tickInSecond > stopThreshold) {
-                            append(chars.random())
-                        } else {
-                            append(target[i])
-                        }
-                    }
-                }
-
                 val color = when {
                     remaining <= 3 -> NamedTextColor.DARK_RED
                     remaining <= 5 -> NamedTextColor.RED
@@ -143,7 +124,7 @@ class Game(
                 }
 
                 val title = Title.title(
-                    Component.text(display)
+                    Component.text(remaining.toString())
                         .color(color)
                         .decorate(TextDecoration.BOLD),
                     Component.empty(),
