@@ -9,8 +9,10 @@ import com.fantamomo.mc.amongus.languages.LanguageManager
 import com.fantamomo.mc.amongus.listeners.Listeners
 import com.fantamomo.mc.amongus.manager.EntityManager
 import com.fantamomo.mc.amongus.manager.MeetingManager
+import com.fantamomo.mc.amongus.modification.Modification
 import com.fantamomo.mc.amongus.player.PlayerDataManager
 import com.fantamomo.mc.amongus.player.PlayerManager
+import com.fantamomo.mc.amongus.role.Role
 import com.fantamomo.mc.amongus.statistics.StatisticsManager
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
 import org.bukkit.plugin.java.JavaPlugin
@@ -28,6 +30,7 @@ object AmongUs : JavaPlugin() {
 
     const val IN_DEVELOPMENT = true
 
+    @Suppress("UnusedExpression")
     override fun onEnable() {
         saveDefaultConfig()
         AmongUsConfig.init()
@@ -40,6 +43,9 @@ object AmongUs : JavaPlugin() {
         Listeners.registerAll()
         LanguageManager.init()
         AmongUsSecrets.init()
+
+        Role
+        Modification
 
         AmongUs.lifecycleManager.registerEventHandler(LifecycleEvents.COMMANDS) {
             AmongUsCommands.init(it.registrar())
