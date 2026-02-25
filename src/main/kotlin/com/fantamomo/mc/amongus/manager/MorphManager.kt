@@ -34,6 +34,7 @@ import kotlin.uuid.toKotlinUuid
 
 class MorphManager(val game: Game) {
     private val morphs: MutableMap<AmongUsPlayer, MorphedPlayer> = mutableMapOf()
+    private val morphsToRemove: MutableSet<AmongUsPlayer> = mutableSetOf()
     private var camouflageStart: Instant? = null
     private var camouflageTarget: AmongUsPlayer? = null
 
@@ -100,14 +101,14 @@ class MorphManager(val game: Game) {
                 playBackwardAnimation {
                     if (camouflageStart == null) player.mannequinController.restoreAppearance()
                     actionBar.remove()
-                    morphs.remove(player)
+                    morphsToRemove.add(player)
                     abilityTimer?.start(player.game.settings[SettingsKey.ROLES.MORPHLING.MORPH_COOLDOWN])
                 }
             } else {
                 abilityTimer?.start(player.game.settings[SettingsKey.ROLES.MORPHLING.MORPH_COOLDOWN])
                 if (camouflageStart == null) player.mannequinController.restoreAppearance()
                 actionBar.remove()
-                morphs.remove(player)
+                morphsToRemove.add(player)
             }
         }
 
@@ -189,6 +190,10 @@ class MorphManager(val game: Game) {
             }
         }
         if (morphs.isEmpty()) return
+        if (morphsToRemove.isNotEmpty()) {
+            morphs.keys.removeAll(morphsToRemove)
+            morphsToRemove.clear()
+        }
         for (morphedPlayer in morphs.values) {
             morphedPlayer.tick()
         }
@@ -237,6 +242,7 @@ class MorphManager(val game: Game) {
     fun unmorphAll() {
         morphs.values.forEach { it.unmorph(animation = false) }
         morphs.clear()
+        morphsToRemove.clear()
     }
 
     class MorphInventory(val player: AmongUsPlayer, private val callback: (Boolean) -> Unit) : InventoryHolder {
