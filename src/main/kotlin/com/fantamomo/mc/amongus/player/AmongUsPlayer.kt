@@ -215,6 +215,8 @@ class AmongUsPlayer internal constructor(
 
     fun canSeeWhenLightsSabotage(): Boolean = assignedRole?.definition?.team == Team.IMPOSTERS || modification?.definition === TorchModification
 
+    fun isHost() = game.host === this
+
     fun addGhostImprovements() {
         if (isAlive) return
         val player = player ?: return
