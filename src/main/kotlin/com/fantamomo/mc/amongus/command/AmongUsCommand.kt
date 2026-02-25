@@ -39,13 +39,55 @@ val AmongUsCommand = paperCommand("amongus") {
     leaveCommand()
     createCommand()
     settingsCommand()
+    startCommand()
+}
+
+private fun PaperCommand.startCommand() = literal("start") {
+    requires {
+        sender is Player &&
+                sender.hasPermission(Permissions.ADMIN_GAME_START) ||
+                (AmongUsConfig.GameCreation.everyoneCanCreate && sender.hasPermission(Permissions.PLAYER_START))
+    }
+    execute {
+        val sender = source.sender as Player
+
+        val auPlayer = PlayerManager.getPlayer(sender)
+        if (auPlayer == null) {
+            sendMessage {
+                translatable("command.error.start.not_joined")
+            }
+            return@execute NO_SUCCESS
+        }
+
+        if (!auPlayer.isHost()) {
+            sendMessage {
+                translatable("command.error.start.not_host")
+            }
+            return@execute NO_SUCCESS
+        }
+
+        if (auPlayer.game.phase != GamePhase.LOBBY) {
+            sendMessage {
+                translatable("command.error.start.already_started") {
+                    args {
+                        string("game", auPlayer.game.code)
+                    }
+                }
+            }
+            return@execute NO_SUCCESS
+        }
+
+        auPlayer.game.startStartCooldown()
+
+        SINGLE_SUCCESS
+    }
 }
 
 private fun PaperCommand.settingsCommand() = literal("settings") {
     requires {
         sender is Player &&
                 sender.hasPermission(Permissions.ADMIN_GAME_CREATE) ||
-                (sender.hasPermission(Permissions.PLAYER_SETTINGS) && AmongUsConfig.GameCreation.everyoneCanCreate)
+                (AmongUsConfig.GameCreation.everyoneCanCreate && sender.hasPermission(Permissions.PLAYER_SETTINGS))
     }
 
     execute {
