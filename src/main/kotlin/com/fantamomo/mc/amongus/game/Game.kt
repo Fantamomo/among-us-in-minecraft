@@ -44,6 +44,8 @@ class Game(
         this.area = area.withWorld(world)
     }
 
+    private var lastPlayer: Long = -1
+
     val code: String = createRandomCode()
     val uuid: Uuid = Uuid.random()
 
@@ -94,6 +96,16 @@ class Game(
         private set
 
     fun tick() {
+        if (world.playerCount == 0) {
+            val currentTimeMillis = System.currentTimeMillis()
+            if (lastPlayer == -1L) lastPlayer = currentTimeMillis
+            if (lastPlayer + 300000 < currentTimeMillis) { // 300000 = 5 minutes
+                GameManager.markForRemove(this)
+                return
+            }
+        } else {
+            lastPlayer = -1L
+        }
         ticks++
         if (phase == GamePhase.LOBBY || phase == GamePhase.STARTING) {
             for (player in players) {
