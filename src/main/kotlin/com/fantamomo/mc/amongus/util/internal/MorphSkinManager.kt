@@ -4,6 +4,7 @@ import com.destroystokyo.paper.profile.PlayerProfile
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.data.AmongUsConfig
 import com.fantamomo.mc.amongus.data.AmongUsSecrets
+import com.fantamomo.mc.amongus.util.internal.mineskin.HttpClientRequestHandler
 import com.fantamomo.mc.amongus.util.safeCreateDirectories
 import com.fantamomo.mc.amongus.util.skinblender.SkinBlender
 import com.fantamomo.mc.amongus.util.skinblender.VirusSkinBlender
@@ -12,7 +13,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.json.encodeToStream
-import org.mineskin.JsoupRequestHandler
 import org.mineskin.MineSkinClient
 import org.mineskin.data.JobInfo
 import org.mineskin.data.User
@@ -48,7 +48,7 @@ object MorphSkinManager {
 
     private val client: MineSkinClient by lazy {
         MineSkinClient.builder()
-            .requestHandler(::JsoupRequestHandler)
+            .requestHandler(::HttpClientRequestHandler)
             .userAgent("Fantamomo/among-us-in-minecraft/1.0")
             .apiKey(API_KEY)
             .build()

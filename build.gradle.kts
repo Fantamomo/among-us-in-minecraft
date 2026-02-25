@@ -30,7 +30,6 @@ dependencies {
     implementation("com.fantamomo.mc:brigadier-interception:1.0-SNAPSHOT")
 
     implementation("org.mineskin:java-client:3.2.1-SNAPSHOT")
-    implementation("org.mineskin:java-client-jsoup:3.2.1-SNAPSHOT")
 }
 
 val targetJavaVersion = 24
@@ -42,6 +41,16 @@ kotlin {
 }
 
 paperweight.reobfArtifactConfiguration = io.papermc.paperweight.userdev.ReobfArtifactConfiguration.MOJANG_PRODUCTION
+
+tasks.shadowJar {
+    dependencies {
+        exclude(dependency("com.google.guava:.*"))
+        exclude(dependency("io.papermc.paper:.*"))
+        exclude(dependency("org.bukkit:.*"))
+        exclude(dependency("net.kyori:.*"))
+        exclude(dependency("com.mojang:.*"))
+    }
+}
 
 tasks.build {
     dependsOn("shadowJar")
