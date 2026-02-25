@@ -3,10 +3,11 @@ package com.fantamomo.mc.amongus.game
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.area.GameArea
 import com.fantamomo.mc.amongus.util.safeCreateDirectories
-import org.bukkit.Bukkit
 import org.bukkit.NamespacedKey
 import org.bukkit.WorldCreator
 import org.slf4j.LoggerFactory
+import java.nio.file.LinkOption
+import java.nio.file.StandardCopyOption
 import kotlin.io.path.*
 import kotlin.uuid.Uuid
 
@@ -51,47 +52,61 @@ object GameManager {
 
     operator fun get(code: String): Game? = gamesByCode[code]
 
-    fun createGame(area: GameArea, maxPlayers: Int): Game? {
-        val world = Bukkit.getWorld(area.worldId) ?: throw IllegalArgumentException("World ${area.worldId} not found")
+    fun createGame(area: GameArea, maxPlayers: Int, callback: (Game?) -> Unit) {
+        val world = AmongUs.server.getWorld(area.worldId)
+            ?: throw IllegalArgumentException("World ${area.worldId} not found")
         val path = world.worldPath
         val uuid = Uuid.random()
         val gameWorldPath = worldsPath.resolve(uuid.toString())
-        try {
-            gameWorldPath.safeCreateDirectories()
-            path.copyToRecursively(gameWorldPath, { source, _, ex ->
-                if (source.name == "session.lock") OnErrorResult.SKIP_SUBTREE
-                else throw ex
-            }, followLinks = false, overwrite = true)
-        } catch (e: Exception) {
-            logger.error("Failed to copy world", e)
-            return null
-        }
-        gameWorldPath.resolve("uid.dat").deleteIfExists()
-        val worldContainer = AmongUs.server.worldContainer.toPath()
-        val creator =
-            WorldCreator(worldContainer.relativize(gameWorldPath).toString(), NamespacedKey("among-us", "world/$uuid"))
-        val newWorld = creator.createWorld() ?: return null
-        newWorld.isAutoSave = false
-        val game = Game(area, newWorld, maxPlayers)
-        addGame(game)
-        return game
+
+        AmongUs.server.scheduler.runTaskAsynchronously(AmongUs, Runnable {
+            try {
+                gameWorldPath.safeCreateDirectories()
+                path.copyToRecursively(gameWorldPath, { source, _, ex ->
+                    if (source.name == "session.lock") OnErrorResult.SKIP_SUBTREE
+                    else throw ex
+                }, followLinks = false) { src, dst ->
+                    if (src.name == "session.lock" || src.name == "uid.dat")
+                        return@copyToRecursively CopyActionResult.CONTINUE
+                    val dstIsDirectory = dst.isDirectory(LinkOption.NOFOLLOW_LINKS)
+                    val srcIsDirectory = src.isDirectory(LinkOption.NOFOLLOW_LINKS)
+                    if (!(srcIsDirectory && dstIsDirectory)) {
+                        if (dstIsDirectory) dst.deleteRecursively()
+                        src.copyTo(dst, LinkOption.NOFOLLOW_LINKS, StandardCopyOption.REPLACE_EXISTING)
+                    }
+                    CopyActionResult.CONTINUE
+                }
+            } catch (e: Exception) {
+                logger.error("Failed to copy world", e)
+                AmongUs.server.scheduler.runTask(AmongUs, Runnable { callback(null) })
+                return@Runnable
+            }
+
+            AmongUs.server.scheduler.runTask(AmongUs, Runnable {
+                val worldContainer = AmongUs.server.worldContainer.toPath()
+                val creator = WorldCreator(
+                    worldContainer.relativize(gameWorldPath).toString(),
+                    NamespacedKey("among-us", "world/$uuid")
+                )
+                val newWorld = creator.createWorld()
+                if (newWorld == null) {
+                    callback(null)
+                    return@Runnable
+                }
+                newWorld.isAutoSave = false
+                val game = Game(area, newWorld, maxPlayers)
+                addGame(game)
+                callback(game)
+            })
+        })
     }
 
     fun gameEnd(game: Game) {
         val world = game.world
         for (player in world.players) {
-            player.teleportAsync(Bukkit.getServer().worlds[0].spawnLocation)
+            player.teleportAsync(AmongUs.server.respawnWorld.spawnLocation)
             player.inventory.clear()
         }
-        val path = world.worldPath
-        Bukkit.unloadWorld(world, false)
-        AmongUs.server.scheduler.runTaskLater(AmongUs, { ->
-            try {
-                logger.info("Deleting world $path")
-                path.deleteRecursively()
-            } catch (e: Exception) {
-                logger.error("Failed to delete world", e)
-            }
-        }, 200L)
+        AmongUs.server.unloadWorld(world, false)
     }
 }
