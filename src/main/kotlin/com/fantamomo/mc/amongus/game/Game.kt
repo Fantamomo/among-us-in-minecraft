@@ -43,6 +43,11 @@ class Game(
         require(area.isValid()) { "Area ${area.name} is not valid" }
         this.area = area.withWorld(world)
     }
+    var host: AmongUsPlayer? = null
+        set(value) {
+            if (value != null && value.game !== this) throw IllegalArgumentException("Player is not in this game")
+            field = value
+        }
 
     private var lastPlayer: Long = -1
 
@@ -413,6 +418,9 @@ class Game(
     internal fun leavePlayer(amongUsPlayer: AmongUsPlayer, teleport: Boolean = true) {
         if (phase != GamePhase.LOBBY) return
         if (amongUsPlayer !in players) return
+        if (amongUsPlayer === host) {
+            host = players.randomOrNull()
+        }
         removePlayer0(amongUsPlayer)
         if (teleport) amongUsPlayer.player?.teleport(amongUsPlayer.locationBeforeGame)
     }
