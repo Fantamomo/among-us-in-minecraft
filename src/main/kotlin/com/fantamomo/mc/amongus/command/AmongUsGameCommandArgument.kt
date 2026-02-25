@@ -1188,11 +1188,8 @@ private fun KtArgumentCommandBuilder<CommandSourceStack, *>.createGameCommandExe
                     component("missing") {
                         var first = true
                         for (missedLocation in missedLocations) {
-                            if (first) {
-                                first = false
-                            } else {
-                                text(", ", NamedTextColor.GRAY)
-                            }
+                            if (first) first = false
+                            else text(", ", NamedTextColor.GRAY)
                             translatable("area.location.name.$missedLocation") {
                                 hoverEvent(KHoverEventType.ShowText) {
                                     translatable("area.location.description.$missedLocation")
@@ -1208,20 +1205,32 @@ private fun KtArgumentCommandBuilder<CommandSourceStack, *>.createGameCommandExe
 
     val maxPlayers = optionalArg<Int>("maxPlayers") ?: Game.DEFAULT_MAX_PLAYERS
 
-    val game = GameManager.createGame(area, maxPlayers)
-    if (game != null) {
-        sendMessage {
-            translatable("command.success.admin.game.create") {
-                args {
-                    string("area", area.name)
-                    numeric("max_players", maxPlayers)
-                    string("world", game.world.name.replace('\\', '/').substringAfterLast('/'))
-                    string("code", game.code)
-                }
+    sendMessage {
+        translatable("command.success.admin.game.create.creating") {
+            args {
+                string("area", area.name)
             }
         }
-        SINGLE_SUCCESS
     }
 
-    return@execute NO_SUCCESS
+    GameManager.createGame(area, maxPlayers) { game ->
+        if (game != null) {
+            sendMessage {
+                translatable("command.success.admin.game.create") {
+                    args {
+                        string("area", area.name)
+                        numeric("max_players", maxPlayers)
+                        string("world", game.world.name.replace('\\', '/').substringAfterLast('/'))
+                        string("code", game.code)
+                    }
+                }
+            }
+        } else {
+            sendMessage {
+                translatable("command.error.admin.game.create.failed")
+            }
+        }
+    }
+
+    return@execute SINGLE_SUCCESS
 }
