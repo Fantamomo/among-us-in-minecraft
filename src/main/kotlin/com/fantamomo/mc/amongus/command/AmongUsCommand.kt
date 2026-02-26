@@ -4,10 +4,7 @@ import com.fantamomo.mc.adventure.text.args
 import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.area.GameArea
 import com.fantamomo.mc.amongus.command.Permissions.required
-import com.fantamomo.mc.amongus.command.arguments.GameAreaArgumentType
-import com.fantamomo.mc.amongus.command.arguments.GameArgumentType
-import com.fantamomo.mc.amongus.command.arguments.PlayerColorArgumentType
-import com.fantamomo.mc.amongus.command.arguments.RegistryArgumentType
+import com.fantamomo.mc.amongus.command.arguments.*
 import com.fantamomo.mc.amongus.data.AmongUsConfig
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.game.GameManager
@@ -40,13 +37,81 @@ val AmongUsCommand = paperCommand("amongus") {
     createCommand()
     settingsCommand()
     startCommand()
+    banCommand()
+}
+
+private fun PaperCommand.banCommand() = literal("ban") {
+    requires {
+        sender is Player &&
+                (sender.hasPermission(Permissions.ADMIN) ||
+                        (AmongUsConfig.GameCreation.everyoneCanCreate && sender.hasPermission(Permissions.PLAYER_BAN)))
+    }
+    argument("player", AmongUsPlayerArgumentType.SINGLE) {
+        val targetRef = argRef()
+        execute {
+            val sender = source.sender as Player
+
+            val auPlayer = PlayerManager.getPlayer(sender)
+            if (auPlayer == null) {
+                sendMessage {
+                    translatable("command.error.ban.not_joined")
+                }
+                return@execute NO_SUCCESS
+            }
+
+            if (!auPlayer.isHost()) {
+                sendMessage {
+                    translatable("command.error.ban.not_host")
+                }
+                return@execute NO_SUCCESS
+            }
+
+            val game = auPlayer.game
+            if (game.phase != GamePhase.LOBBY) {
+                sendMessage {
+                    translatable("command.error.ban.not_in_lobby")
+                }
+                return@execute NO_SUCCESS
+            }
+
+            val target = targetRef.get().resolve(source).first()
+
+            if (target === auPlayer) {
+                sendMessage {
+                    translatable("command.error.ban.self")
+                }
+                return@execute NO_SUCCESS
+            }
+
+            if (game !== target.game) {
+                sendMessage {
+                    translatable("command.error.ban.not_in_same_game")
+                }
+                return@execute NO_SUCCESS
+            }
+
+            game.bannedPlayers.add(target.uuid)
+
+            PlayerManager.leaveGame(target)
+
+            sendMessage {
+                translatable("command.success.ban") {
+                    args {
+                        string("player", target.name)
+                    }
+                }
+            }
+
+            SINGLE_SUCCESS
+        }
+    }
 }
 
 private fun PaperCommand.startCommand() = literal("start") {
     requires {
         sender is Player &&
-                sender.hasPermission(Permissions.ADMIN_GAME_START) ||
-                (AmongUsConfig.GameCreation.everyoneCanCreate && sender.hasPermission(Permissions.PLAYER_START))
+                (sender.hasPermission(Permissions.ADMIN_GAME_START) ||
+                        (AmongUsConfig.GameCreation.everyoneCanCreate && sender.hasPermission(Permissions.PLAYER_START)))
     }
     execute {
         val sender = source.sender as Player
@@ -86,8 +151,8 @@ private fun PaperCommand.startCommand() = literal("start") {
 private fun PaperCommand.settingsCommand() = literal("settings") {
     requires {
         sender is Player &&
-                sender.hasPermission(Permissions.ADMIN_GAME_CREATE) ||
-                (AmongUsConfig.GameCreation.everyoneCanCreate && sender.hasPermission(Permissions.PLAYER_SETTINGS))
+                (sender.hasPermission(Permissions.ADMIN_GAME_CREATE) ||
+                        (AmongUsConfig.GameCreation.everyoneCanCreate && sender.hasPermission(Permissions.PLAYER_SETTINGS)))
     }
 
     execute {
@@ -119,8 +184,8 @@ private fun PaperCommand.settingsCommand() = literal("settings") {
 private fun PaperCommand.createCommand() = literal("create") {
     requires {
         sender is Player &&
-                sender.hasPermission(Permissions.ADMIN_GAME_CREATE) ||
-                (sender.hasPermission(Permissions.PLAYER_CREATE) && AmongUsConfig.GameCreation.everyoneCanCreate)
+                (sender.hasPermission(Permissions.ADMIN_GAME_CREATE) ||
+                        (sender.hasPermission(Permissions.PLAYER_CREATE) && AmongUsConfig.GameCreation.everyoneCanCreate))
     }
 
     argument("area", GameAreaArgumentType) {
@@ -133,7 +198,10 @@ private fun PaperCommand.createCommand() = literal("create") {
                 return@execute 0
             }
 
-            if (GameManager.getGames().size >= AmongUsConfig.GameCreation.maxGames && (!AmongUsConfig.GameCreation.ignoreAdmins || !player.hasPermission(Permissions.ADMIN_GAME_CREATE))) {
+            if (GameManager.getGames().size >= AmongUsConfig.GameCreation.maxGames && (!AmongUsConfig.GameCreation.ignoreAdmins || !player.hasPermission(
+                    Permissions.ADMIN_GAME_CREATE
+                ))
+            ) {
                 sendMessage {
                     translatable("command.error.game.create.max_reached") {
                         args {
@@ -259,6 +327,12 @@ private fun PaperCommand.joinCommand() = literal("join") {
                             }
                         }
                     }
+                }
+                return@execute 0
+            }
+            if (executor.uniqueId in game.bannedPlayers) {
+                sendMessage {
+                    translatable("command.error.admin.game.join.banned")
                 }
                 return@execute 0
             }
