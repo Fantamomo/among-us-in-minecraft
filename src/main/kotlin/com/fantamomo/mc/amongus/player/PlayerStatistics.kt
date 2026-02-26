@@ -6,6 +6,7 @@ import com.fantamomo.mc.amongus.role.marker.KillerRole
 import com.fantamomo.mc.amongus.statistics.CounterStatistic
 import com.fantamomo.mc.amongus.statistics.StatisticMap
 import com.fantamomo.mc.amongus.statistics.StatisticsManager
+import com.fantamomo.mc.amongus.task.Task
 import kotlin.uuid.Uuid
 
 class PlayerStatistics(uuid: Uuid) {
@@ -26,7 +27,9 @@ class PlayerStatistics(uuid: Uuid) {
     val winBySabotage = statistics.counter("win_by_sabotage")
     val loseBySabotage = statistics.counter("lose_by_sabotage")
 
-    val tasksCompleted = statistics.counter("tasks_completed")
+    val tasksCompleted = statistics.counter("complete_tasks")
+    val taskCompleted: Map<Task<*, *>, CounterStatistic> = Task.tasks.associateWith { statistics.counter("complete_task_${it.id}") }
+    val failedTasks: Map<Task<*, *>, CounterStatistic> = Task.tasks.associateWith { statistics.counter("fail_task_${it.id}") }
     val fullyCompleteTasks = statistics.counter("fully_complete_tasks")
 
     val kills: Map<Role<*, *>, CounterStatistic> = Role.roles.filter { it is KillerRole }.associateWith { statistics.counter("kill_as_${it.id}") }
