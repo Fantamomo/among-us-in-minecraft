@@ -16,6 +16,7 @@ import com.fantamomo.mc.amongus.player.PlayerColor
 import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.player.PlayerStatistics
 import com.fantamomo.mc.amongus.settings.SettingsInventory
+import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.statistics.*
 import com.fantamomo.mc.brigadier.*
 import com.mojang.brigadier.arguments.BoolArgumentType
@@ -131,15 +132,27 @@ private fun PaperCommand.startCommand() = literal("start") {
             return@execute NO_SUCCESS
         }
 
-        if (auPlayer.game.phase != GamePhase.LOBBY) {
+        val game = auPlayer.game
+        if (game.phase != GamePhase.LOBBY) {
             sendMessage {
                 translatable("command.error.start.already_started") {
                     args {
-                        string("game", auPlayer.game.code)
+                        string("game", game.code)
                     }
                 }
             }
             return@execute NO_SUCCESS
+        }
+
+        if (game.players.size < Game.NEEDED_PLAYERS_FOR_START && game.settings[SettingsKey.DEV.DO_WIN_CHECK]) {
+            sendMessage {
+                translatable("command.error.admin.game.start.not_enough_players") {
+                    args {
+                        string("game", game.code)
+                    }
+                }
+            }
+            return@execute 0
         }
 
         auPlayer.game.startStartCooldown()
