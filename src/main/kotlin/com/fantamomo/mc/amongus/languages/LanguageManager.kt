@@ -35,6 +35,9 @@ object LanguageManager {
         loadLanguageList()
         syncLanguagesFromInternal()
         loadExternalLanguages()
+
+        if (AmongUs.IN_DEVELOPMENT) checkKeyConsistency()
+
         registerLanguagesToGlobalTranslator()
 
         logger.info("LanguageManager initialized. Loaded {} languages", loadedLanguages.size)
@@ -156,6 +159,39 @@ object LanguageManager {
         val language = Language(locale, properties, MiniMessage.miniMessage())
         if (locale == ROOT_LOCALE) englishLanguage = language
         loadedLanguages[locale] = language
+    }
+
+    private fun checkKeyConsistency() {
+        logger.info("Checking key consistency across all language files...")
+
+        val keysByLocale: Map<Locale, Set<String>> = loadedLanguages.mapValues { (_, language) ->
+            language.keys()
+        }
+
+        if (keysByLocale.isEmpty()) return
+
+        val allKeys: Set<String> = keysByLocale.values.flatten().toSet()
+        val maxCount = allKeys.size
+
+        var inconsistenciesFound = false
+
+        keysByLocale.forEach { (locale, keys) ->
+            val missingKeys = allKeys - keys
+            if (missingKeys.isNotEmpty()) {
+                inconsistenciesFound = true
+                logger.warn(
+                    "Language '{}' is missing {}/{} keys: {}",
+                    locale.toLanguageTag(),
+                    missingKeys.size,
+                    maxCount,
+                    missingKeys.sorted().joinToString(", ")
+                )
+            }
+        }
+
+        if (!inconsistenciesFound) {
+            logger.info("All {} language files have consistent keys ({} keys each)", loadedLanguages.size, maxCount)
+        }
     }
 
     private fun Properties.getVersion() =
