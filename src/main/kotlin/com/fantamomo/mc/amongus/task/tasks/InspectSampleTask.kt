@@ -230,6 +230,7 @@ object InspectSampleTask :
             if (countdown.isRunning() || countdown.isFinished()) 4 else 0
 
         private fun resetState() {
+            player.game.taskManager.taskFailed(this)
             hopperIndex = null
             ticks = 0
             countdown.reset()

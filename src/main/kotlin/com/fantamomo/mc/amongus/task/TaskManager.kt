@@ -94,6 +94,7 @@ class TaskManager(val game: Game) {
         if (modifyStatistics) {
             val statistics = task.player.statistics
             statistics.tasksCompleted.increment()
+            statistics.taskCompleted[task.task]?.increment()
             val playerHasCompletedAllTasks = tasks[task.player]?.all { it.completed } ?: false
             if (!allTasksCompleted && playerHasCompletedAllTasks) statistics.fullyCompleteTasks.increment()
         }
@@ -120,6 +121,10 @@ class TaskManager(val game: Game) {
             removeMoveableItems(task.player)
             game.scoreboardManager.refresh(task.player)
         }
+    }
+
+    internal fun taskFailed(task: AssignedTask<*, *>) {
+        task.player.statistics.failedTasks[task.task]?.increment()
     }
 
     private fun removeMoveableItems(player: AmongUsPlayer) {

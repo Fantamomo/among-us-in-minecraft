@@ -197,6 +197,7 @@ object StartReaktorTask : Task<StartReaktorTask, StartReaktorTask.AssignedStartR
         }
 
         private fun startError() {
+            player.game.taskManager.taskFailed(this)
             phase = Phase.ERROR
             ticks = 0
             blinkOn = false

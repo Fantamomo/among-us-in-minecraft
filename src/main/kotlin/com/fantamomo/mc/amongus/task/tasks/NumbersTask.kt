@@ -52,6 +52,7 @@ object NumbersTask : Task<NumbersTask, NumbersTask.AssignedNumbersTask> {
                 val stack = currentItem.withType(Material.LIME_STAINED_GLASS_PANE)
                 inv.setItem(slot, stack)
             } else {
+                player.game.taskManager.taskFailed(this)
                 until = ticks + ERROR_TIME
                 currentNumber = 0
             }
