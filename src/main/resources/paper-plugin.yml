@@ -6,3 +6,5 @@ prefix: AmongUs
 load: STARTUP
 authors: [Fantamomo]
 bootstrapper: com.fantamomo.mc.amongus.AmongUsBootstrapper
+website: https://among-us-in-minecraft.docs.fantamomo.com
+description: A plugin for playing Among Us in Minecraft
