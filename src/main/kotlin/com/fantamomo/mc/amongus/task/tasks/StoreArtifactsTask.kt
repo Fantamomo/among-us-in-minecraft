@@ -50,7 +50,7 @@ object StoreArtifactsTask : Task<StoreArtifactsTask, StoreArtifactsTask.Assigned
         override fun onInventoryClick(event: InventoryClickEvent) {
             val item = event.currentItem?.takeIf { it.isMine() } ?: return
             if (!item.isMarkedWith("artefact")) return
-            shouldCheck = 10
+            shouldCheck = 20
         }
 
         override fun tick() {
