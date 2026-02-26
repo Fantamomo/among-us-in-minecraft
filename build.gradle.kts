@@ -53,12 +53,12 @@ dependencies {
 
     implementation("com.fantamomo.mc:kotlin-adventure:1.4-SNAPSHOT")
     implementation("com.fantamomo.mc:brigadier-kt:1.4-SNAPSHOT")
-    implementation("com.fantamomo.mc:brigadier-interception:1.0-SNAPSHOT")
+    implementation("com.fantamomo.mc:brigadier-interception:1.1-SNAPSHOT")
 
     implementation("org.mineskin:java-client:3.2.1-SNAPSHOT")
 }
 
-val targetJavaVersion = 24
+val targetJavaVersion = 21
 kotlin {
     jvmToolchain(targetJavaVersion)
     compilerOptions {
