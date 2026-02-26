@@ -1180,7 +1180,7 @@ private fun PaperCommand.joinGameCommand() = literal("join") {
                 }
                 return@execute 0
             }
-            val success = game.addPlayer(executor)
+            val success = game.addPlayer(executor, true)
             if (!success) {
                 sendMessage {
                     translatable("command.error.admin.game.join.unknown")

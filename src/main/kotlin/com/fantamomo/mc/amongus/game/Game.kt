@@ -71,14 +71,16 @@ class Game(
     val morphManager = MorphManager(this)
     val ghostFormManager = GhostFormManager(this)
 
-    internal val players = mutableListOf<AmongUsPlayer>()
+    internal val players: MutableList<AmongUsPlayer> = mutableListOf()
+    internal val bannedPlayers: MutableSet<UUID> = mutableSetOf()
     var phase: GamePhase = GamePhase.LOBBY
 
     var resultMessage: Component? = null
 
-    fun addPlayer(player: Player): Boolean {
+    fun addPlayer(player: Player, ignoreBanned: Boolean = false): Boolean {
         if (phase != GamePhase.LOBBY && phase != GamePhase.STARTING) return false
         if (players.size >= maxPlayers) return false
+        if (!ignoreBanned && player.uniqueId in bannedPlayers) return false
         if (PlayerManager.exists(player.uniqueId)) return false
         val newPlayer = PlayerManager.joinGame(player, this)
         scoreboardManager.addLobbyPlayer(newPlayer)
