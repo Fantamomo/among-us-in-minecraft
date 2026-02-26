@@ -109,7 +109,7 @@ class KillManager(val game: Game) {
     fun isNearCorpse(location: Location): Boolean =
         corpses.any { it.valid && it.mannequin.location.distanceSquared(location) <= 2 * 2 }
 
-    fun nearestCorpse(location: Location): Corpse? = corpses.minByOrNull { Double.MAX_VALUE.takeIf { _ -> !it.valid } ?: it.mannequin.location.distanceSquared(location) }
+    fun nearestCorpse(location: Location): Corpse? = corpses.minByOrNull { Double.MAX_VALUE.takeIf { _ -> !it.valid } ?: it.mannequin.location.distanceSquared(location) }?.takeIf { it.valid }
 
     fun canKillAsSheriff(sheriff: AmongUsPlayer): Boolean {
         val loc = sheriff.livingEntityOrNull?.location ?: return false
