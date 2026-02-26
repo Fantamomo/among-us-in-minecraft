@@ -136,6 +136,7 @@ object VerifyIdTask : Task<VerifyIdTask, VerifyIdTask.AssignedVerifyIdTask> {
         }
 
         private fun startError() {
+            player.game.taskManager.taskFailed(this)
             phase = Phase.ERROR
             ticks = 0
             val red = red()
