@@ -57,6 +57,7 @@ object PlayerManager {
                 AmongUs.server.scheduler.runTaskLater(AmongUs, { ->
                     auPlayer.mannequinController.showToSelf()
                     auPlayer.mannequinController.hideFromSelf()
+                    game.scoreboardManager.addLobbyPlayer(auPlayer)
                 }, 2L)
             }
         player.inventory.clear()

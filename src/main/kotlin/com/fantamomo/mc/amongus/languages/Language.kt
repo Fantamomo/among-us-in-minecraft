@@ -17,4 +17,6 @@ class Language(
     }
 
     override fun name(): Key = Key.key("amongus:lang_$locale")
+
+    fun keys(): Set<String> = properties.stringPropertyNames()
 }
