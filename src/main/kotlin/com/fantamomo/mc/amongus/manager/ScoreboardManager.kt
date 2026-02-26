@@ -96,8 +96,6 @@ class ScoreboardManager(private val game: Game) {
             textComponent { translatable("scoreboard.title") }
         ).apply { displaySlot = DisplaySlot.SIDEBAR }
 
-        private val previous = player.player?.scoreboard
-
         private val animatedLines = mutableMapOf<String, AnimatedLine>()
 
         private val lastSentComponent = mutableMapOf<String, Component>()
@@ -123,8 +121,7 @@ class ScoreboardManager(private val game: Game) {
         }
 
         fun hide() {
-            player.player?.scoreboard =
-                previous ?: Bukkit.getScoreboardManager().mainScoreboard
+            player.player?.scoreboard = Bukkit.getScoreboardManager().mainScoreboard
         }
 
         fun update() {
