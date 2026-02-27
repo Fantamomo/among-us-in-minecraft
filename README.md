@@ -1,117 +1,68 @@
 # Among Us in Minecraft
 
-A **fan-made Minecraft plugin inspired by the gameplay of Among Us**.
+> A fan-made Minecraft plugin that recreates the gameplay of Among Us — built entirely with Minecraft mechanics, no original assets used.
 
-> **Important Disclaimer:**
-> This project is **not affiliated with, endorsed by, or associated with** Innersloth.
-> All trademarks and IP related to **Among Us** belong to Innersloth.
+**[📖 Documentation](https://among-us-in-minecraft.docs.fantamomo.com/)** · **[🗺️ Map Setup](https://among-us-in-minecraft.docs.fantamomo.com/demo/map/)** · **[🎮 Demo Server](https://among-us-in-minecraft.docs.fantamomo.com/demo/demo)**
 
-This is an **independent, non-commercial fan project** created for educational and entertainment purposes.
-
----
-
-## Intellectual Property & Assets
-
-**No original Among Us assets are used**.
-
-This includes:
-
-* ❌ Textures
-* ❌ Sounds
-* ❌ Models
-* ❌ UI elements
-* ❌ Source code
-
-All visuals, mechanics, and interactions are **entirely recreated using Minecraft systems**.
+> [!WARNING]
+> This project is **not affiliated with, endorsed by, or associated with Innersloth**.
+> All trademarks and IP related to Among Us belong to Innersloth.
+> This is an independent, non-commercial fan project for educational and entertainment purposes.
 
 ---
 
-## 🧠 Naming & Inspiration
+## ✨ Features
 
-Some **names and terminology** (like task names) are inspired by Among Us to:
-
-* Clearly communicate gameplay intent
-* Make tasks recognizable to players familiar with the original
-
-⚠️ These names are **used descriptively only**.
-
-All tasks are:
-
-* Implemented **from scratch**
-* Built entirely using Minecraft mechanics (inventories, GUIs, blocks, interactions)
-* Visualized using **vanilla Minecraft items and interfaces**
-
-Example:
-
-* A task opens a **Minecraft inventory GUI**
-* Progress is tracked via **Minecraft events**
-* Visuals use **only Minecraft items and blocks**
+- **Multiple roles** — Crewmate, Impostor, and more
+- **Various tasks** — Inspired by Among Us (especially Polus), fully rebuilt in Minecraft
+- **Fully configurable** — Task locations, sabotage spots, spawn points
+- **Bring your own map** — Works with any Minecraft world you configure
 
 ---
 
-## Project Status
+## 🚀 Getting Started
 
-**Still under active development — but playable.**
+Full setup instructions are in the documentation:
 
-* Core systems are functional
-* Some features are incomplete or unbalanced
-* Expect bugs and edge cases
+👉 **[Getting Started](https://among-us-in-minecraft.docs.fantamomo.com/guides/getting-started/)**
 
-For full details, setup instructions, and the current state of development, see the documentation:
+In short, you'll need to:
+1. Add the plugin to your Minecraft server (`1.21.11`)
+2. Set up a map and place it in your server directory
+3. Configure task, sabotage, and spawn locations
 
-👉 [Among Us in Minecraft Documentation](https://among-us-in-minecraft.docs.fantamomo.com/)
-
----
-
-## Tasks & Roles
-
-* Multiple tasks and roles are already implemented
-* Some tasks are inspired by the Polus map
-* All tasks are configurable and adapted for Minecraft gameplay
-
-Future updates will include **more roles, tasks, and improvements**.
+A pre-built Polus map with a ready-to-use area config is available on the **[Map Setup page](https://among-us-in-minecraft.docs.fantamomo.com/demo/map/)**.
 
 ---
 
-## Customization
+## 🛠️ Project Status
 
-The plugin is **fully customizable**:
+**Actively developed — core gameplay is functional and playable.**
 
-* Task locations
-* Sabotage locations
-* Player spawn points
+Some features are still incomplete or being balanced. Expect occasional bugs.
 
-> **No map is included by default.**
-> You must provide your own Minecraft map and configure everything manually.
-
----
-
-## Map Setup
-
-* Create or download a Minecraft map
-* Manually configure all task, sabotage, and spawn locations
-
-This approach provides **maximum flexibility** for creating custom or recreated maps.
-Setup instructions are in the documentation:
-
-👉 [Area Documentation](https://among-us-in-minecraft.docs.fantamomo.com/guides/create-an-area/)
+**Planned:**
+- Bug fixes and stability improvements
+- Gameplay balancing and polish
 
 ---
 
-## Planned Improvements
+## 🧠 Intellectual Property
 
-* Bug fixes and stability enhancements
-* Additional tasks and roles
-* Expanded map support
-* Gameplay balancing and polish
+This project uses **no original Among Us assets** — no textures, sounds, models, UI elements, or source code.
+
+All gameplay is recreated from scratch using vanilla Minecraft systems:
+- Tasks use **Minecraft inventory GUIs**
+- Progress is tracked via **Minecraft events**
+- Visuals rely entirely on **Minecraft items and blocks**
+
+Some task and role names are borrowed from Among Us purely for recognizability and are used descriptively only.
 
 ---
 
-## Legal Notice
+## ⚖️ Legal Notice
 
-This project:
-
-* ❌ Is **not** an official Among Us product
-* ❌ Is **not** affiliated with Innersloth
-* ❌ Uses **no original Among Us assets**
-* ✅ Is a **fan-made recreation inspired by the gameplay**
+- ❌ Not an official Among Us product
+- ❌ Not affiliated with Innersloth
+- ❌ No original Among Us assets used
+- ✅ Fan-made recreation inspired by the gameplay
