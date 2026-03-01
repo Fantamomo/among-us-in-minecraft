@@ -28,13 +28,11 @@ import org.bukkit.plugin.java.JavaPlugin
  */
 object AmongUs : JavaPlugin() {
 
-    const val IN_DEVELOPMENT = true
-
     @Suppress("UnusedExpression")
     override fun onEnable() {
         saveDefaultConfig()
         AmongUsConfig.init()
-        if (IN_DEVELOPMENT) with(slF4JLogger) {
+        if (AmongUsConstants.IN_DEVELOPMENT) with(slF4JLogger) {
             info("This Plugin is running in development mode!")
             info("In developing mode, some features work not as expected.")
             info("This is for easier developing.")
