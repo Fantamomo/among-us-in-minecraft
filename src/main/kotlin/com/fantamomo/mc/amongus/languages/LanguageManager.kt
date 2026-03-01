@@ -1,6 +1,7 @@
 package com.fantamomo.mc.amongus.languages
 
 import com.fantamomo.mc.amongus.AmongUs
+import com.fantamomo.mc.amongus.AmongUsConstants
 import net.kyori.adventure.text.minimessage.MiniMessage
 import net.kyori.adventure.translation.GlobalTranslator
 import org.slf4j.LoggerFactory
@@ -36,7 +37,7 @@ object LanguageManager {
         syncLanguagesFromInternal()
         loadExternalLanguages()
 
-        if (AmongUs.IN_DEVELOPMENT) checkKeyConsistency()
+        if (AmongUsConstants.IN_DEVELOPMENT) checkKeyConsistency()
 
         registerLanguagesToGlobalTranslator()
 
@@ -98,7 +99,7 @@ object LanguageManager {
             val internalProps = Properties().apply { load(InputStreamReader(internalStream)) }
             val internalVersion = internalProps.getVersion()
 
-            if (AmongUs.IN_DEVELOPMENT) {
+            if (AmongUsConstants.IN_DEVELOPMENT) {
                 externalFile.outputStream().use { internalProps.store(it, null) }
                 logger.debug("Overwrote language file {} (DEV mode)", fileName)
                 return@forEach

@@ -1,6 +1,7 @@
 package com.fantamomo.mc.amongus.player
 
 import com.fantamomo.mc.amongus.AmongUs
+import com.fantamomo.mc.amongus.AmongUsConstants
 import com.fantamomo.mc.amongus.util.safeCreateDirectories
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
@@ -19,7 +20,7 @@ object PlayerDataManager {
     private val data: MutableMap<Uuid, PersistencePlayerData> = mutableMapOf()
 
     private val json = Json {
-        prettyPrint = AmongUs.IN_DEVELOPMENT
+        prettyPrint = AmongUsConstants.IN_DEVELOPMENT
         ignoreUnknownKeys = true
     }
 

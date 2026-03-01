@@ -2,6 +2,7 @@ package com.fantamomo.mc.amongus.util.internal
 
 import com.destroystokyo.paper.profile.PlayerProfile
 import com.fantamomo.mc.amongus.AmongUs
+import com.fantamomo.mc.amongus.AmongUsConstants
 import com.fantamomo.mc.amongus.data.AmongUsConfig
 import com.fantamomo.mc.amongus.data.AmongUsSecrets
 import com.fantamomo.mc.amongus.util.internal.mineskin.HttpClientRequestHandler
@@ -69,7 +70,7 @@ object MorphSkinManager {
     }
 
     private val json = Json {
-        prettyPrint = AmongUs.IN_DEVELOPMENT
+        prettyPrint = AmongUsConstants.IN_DEVELOPMENT
         ignoreUnknownKeys = true
     }
 
