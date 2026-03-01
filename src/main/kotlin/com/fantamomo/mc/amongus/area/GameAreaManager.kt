@@ -1,6 +1,7 @@
 package com.fantamomo.mc.amongus.area
 
 import com.fantamomo.mc.amongus.AmongUs
+import com.fantamomo.mc.amongus.AmongUsConstants
 import com.fantamomo.mc.amongus.util.SerializableLocation
 import kotlinx.serialization.json.Json
 import org.bukkit.World
@@ -16,7 +17,7 @@ object GameAreaManager {
     private val logger = LoggerFactory.getLogger("GameAreaManager")
 
     private val json = Json {
-        prettyPrint = AmongUs.IN_DEVELOPMENT
+        prettyPrint = AmongUsConstants.IN_DEVELOPMENT
         ignoreUnknownKeys = true
     }
 

@@ -1,6 +1,7 @@
 package com.fantamomo.mc.amongus.statistics
 
 import com.fantamomo.mc.amongus.AmongUs
+import com.fantamomo.mc.amongus.AmongUsConstants
 import com.fantamomo.mc.amongus.util.safeCreateDirectories
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
@@ -14,7 +15,7 @@ object StatisticsManager {
     private val directory = AmongUs.dataPath.resolve("statistics")
     private val statistics: MutableList<StatisticMap> = mutableListOf()
     private val json = Json {
-        prettyPrint = AmongUs.IN_DEVELOPMENT
+        prettyPrint = AmongUsConstants.IN_DEVELOPMENT
         ignoreUnknownKeys = true
     }
     internal val logger = LoggerFactory.getLogger("AmongUs-StatisticsManager")
