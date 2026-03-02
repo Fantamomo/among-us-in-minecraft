@@ -1,6 +1,7 @@
 package com.fantamomo.mc.amongus.game
 
 import com.fantamomo.mc.adventure.text.args
+import com.fantamomo.mc.adventure.text.newLine
 import com.fantamomo.mc.adventure.text.textComponent
 import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.AmongUs
@@ -11,6 +12,7 @@ import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.manager.*
 import com.fantamomo.mc.amongus.manager.waypoint.WaypointManager
 import com.fantamomo.mc.amongus.player.*
+import com.fantamomo.mc.amongus.player.info.DeadReason
 import com.fantamomo.mc.amongus.role.RoleManager
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.sabotage.SabotageManager
@@ -185,7 +187,7 @@ class Game(
     }
 
     private fun killPlayer(player: AmongUsPlayer) {
-        killManager.kill(player, false)
+        killManager.kill(player, DeadReason.Disconnected, false)
         taskManager.removePlayer(player)
         player.abilities.clear()
         player.disconnectedAt = null
@@ -383,6 +385,9 @@ class Game(
 
         roleManager.end()
 
+        val message = getWinMessage(team)
+        resultMessage = message
+
         for (player in players) {
             if (cameraManager.isInCams(player)) cameraManager.leaveCams(player)
             if (ventManager.isVented(player)) ventManager.ventOut(player)
@@ -408,6 +413,7 @@ class Game(
             }
             val p = player.player
             if (p != null) {
+                p.sendMessage(message)
                 p.sendTitlePart(TitlePart.SUBTITLE, subtitle)
                 for (online in Bukkit.getOnlinePlayers()) {
                     online.showPlayer(AmongUs, p)
@@ -424,6 +430,41 @@ class Game(
         EntityManager.dispose(this)
 
         GameManager.gameEnd(this)
+    }
+
+    private fun getWinMessage(team: Team): Component = textComponent {
+        val winners = players.filter { it.assignedRole?.definition?.team == team }
+        repeat(5) { newLine() }
+        translatable("win.${team.id}")
+        newLine()
+        translatable("win.message.winners") {
+            args {
+                component(
+                    "players",
+                    Component.join(
+                        JoinConfiguration.separator(Component.text(", ", NamedTextColor.GRAY)),
+                        winners.map { Component.text(it.name, NamedTextColor.GOLD) }
+                    )
+                )
+            }
+        }
+        newLine()
+        for (player in players) {
+            val alive = player.isAlive
+            val color = player.assignedRole?.definition?.team?.textColor ?: NamedTextColor.WHITE
+            val deadReason = player.deadReason
+            newLine()
+            translatable(if (alive) "win.message.player.alive" else "win.message.player.dead") {
+                args {
+                    component("player", Component.text(player.name, color))
+                    component(
+                        "role",
+                        player.assignedRole?.name?.color(color) ?: Component.text("None", NamedTextColor.GRAY)
+                    )
+                    if (deadReason != null) component("reason", deadReason.name)
+                }
+            }
+        }
     }
 
     internal fun leavePlayer(amongUsPlayer: AmongUsPlayer, teleport: Boolean = true): Boolean {
