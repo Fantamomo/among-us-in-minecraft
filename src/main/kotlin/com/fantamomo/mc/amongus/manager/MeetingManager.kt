@@ -11,6 +11,7 @@ import com.fantamomo.mc.amongus.languages.numeric
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.player.PlayerManager
+import com.fantamomo.mc.amongus.player.info.DeadReason
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.role.crewmates.MayorRole
 import com.fantamomo.mc.amongus.role.neutral.JesterRole
@@ -643,7 +644,7 @@ class MeetingManager(private val game: Game) : Listener {
                 player.mannequinController.getEntity()?.let { mannequin ->
                     mannequin.fireTicks = 0
                 }
-                game.killManager.kill(player, false)
+                game.killManager.kill(player, DeadReason.Ejected, false)
             }
 
             recipes.clear()

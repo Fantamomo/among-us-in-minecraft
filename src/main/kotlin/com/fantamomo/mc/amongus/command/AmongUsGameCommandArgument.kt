@@ -12,6 +12,7 @@ import com.fantamomo.mc.amongus.languages.numeric
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.player.PlayerManager
+import com.fantamomo.mc.amongus.player.info.DeadReason
 import com.fantamomo.mc.amongus.role.Role
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.settings.SettingsKey
@@ -597,7 +598,7 @@ private fun KtCommandBuilder<CommandSourceStack, *>.killPlayerGamCommandExecute(
         }
     }
 
-    game.killManager.kill(amongUsPlayer, corpse)
+    game.killManager.kill(amongUsPlayer, DeadReason.Command, corpse)
 
     SINGLE_SUCCESS
 }

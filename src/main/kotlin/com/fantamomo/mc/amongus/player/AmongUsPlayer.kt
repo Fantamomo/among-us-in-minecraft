@@ -17,6 +17,7 @@ import com.fantamomo.mc.amongus.manager.EntityManager
 import com.fantamomo.mc.amongus.modification.AssignedModification
 import com.fantamomo.mc.amongus.modification.Modification
 import com.fantamomo.mc.amongus.modification.modifications.TorchModification
+import com.fantamomo.mc.amongus.player.info.DeadReason
 import com.fantamomo.mc.amongus.role.AssignedRole
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.role.crewmates.CrewmateRole
@@ -140,6 +141,8 @@ class AmongUsPlayer internal constructor(
     val canDoTasks: Boolean
         get() = assignedRole?.definition?.canDoTask != false
     internal var disconnectedAt: Instant? = null
+    var deadReason: DeadReason? = null
+        internal set
 
     val statistics = PlayerStatistics(uuid.toKotlinUuid())
     val helpPreferences = persistencePlayerData.helpPreferences

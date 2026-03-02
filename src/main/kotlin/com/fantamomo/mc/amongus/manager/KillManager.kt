@@ -5,6 +5,7 @@ import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import com.fantamomo.mc.amongus.player.info.DeadReason
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.role.crewmates.TheDamnedRole
 import com.fantamomo.mc.amongus.role.neutral.CannibalRole.AssignedCannibalRole
@@ -90,7 +91,7 @@ class KillManager(val game: Game) {
             p.closeInventory()
             p.sendHurtAnimation(0f)
         }
-        markAsDead(target)
+        markAsDead(target, DeadReason.Murdered(imposter))
         if (target.assignedRole?.definition == TheDamnedRole) {
             game.meetingManager.callMeeting(
                 imposter,
@@ -157,7 +158,7 @@ class KillManager(val game: Game) {
         if (nearest != null) killByImposter(imposter, nearest)
     }
 
-    fun kill(target: AmongUsPlayer, corpse: Boolean = false) {
+    fun kill(target: AmongUsPlayer, reason: DeadReason, corpse: Boolean = false) {
         if (target.isInCams()) {
             game.cameraManager.leaveCams(target)
         }
@@ -165,7 +166,7 @@ class KillManager(val game: Game) {
             val location = target.livingEntity.location
             showCorpse(target, location)
         }
-        markAsDead(target)
+        markAsDead(target, reason)
         showGhosts(target)
         game.checkWin()
     }
@@ -193,8 +194,9 @@ class KillManager(val game: Game) {
      * - Ghosts always see each other.
      * - Visibility is handled entirely server-side without packet hacks.
      */
-    private fun markAsDead(target: AmongUsPlayer) {
+    private fun markAsDead(target: AmongUsPlayer, reason: DeadReason) {
         target.isAlive = false
+        target.deadReason = reason
         target.statistics.timeUntilDead.timerStop()
         target.mannequinController.hideFromAll()
         target.mannequinController.showToSeeingPlayers()
@@ -301,7 +303,7 @@ class KillManager(val game: Game) {
             p.closeInventory()
             p.sendHurtAnimation(0f)
         }
-        markAsDead(target)
+        markAsDead(target, DeadReason.Murdered(sheriff))
 
         if (target.assignedRole?.definition?.team?.canByKilledBySheriff != true) {
             target.statistics.killedBySheriffWrong.increment()
@@ -333,7 +335,7 @@ class KillManager(val game: Game) {
                 p.addPotionEffect(blindnessEffect)
                 p.sendHurtAnimation(0f)
             }
-            markAsDead(sheriff)
+            markAsDead(sheriff, DeadReason.Suicide)
         } else {
             target.statistics.killedBySheriffCorrect.increment()
             sheriff.statistics.killedAsSheriffCorrect.increment()
