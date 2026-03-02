@@ -187,5 +187,17 @@ class SabotageManager(private val game: Game) {
         }
     }
 
+    internal fun onDisconnect(player: AmongUsPlayer) {
+        currentSabotage?.pauseFor(player)
+    }
+
+    internal fun onPlayerRejoin(player: AmongUsPlayer) {
+        if (!isCurrentlySabotage()) return
+        if (!isSabotagePaused()) currentSabotage?.resumeFor(player)
+        player.player?.let { bossBar.addViewer(it) }
+    }
+
+    fun isSabotagePaused() = isCurrentlySabotage() && game.meetingManager.isCurrentlyAMeeting()
+
     fun isSabotage(type: SabotageType<*, *>): Boolean = currentSabotageType() == type
 }

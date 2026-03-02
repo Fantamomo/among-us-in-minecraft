@@ -133,12 +133,22 @@ class LightsSabotage internal constructor(override val game: Game) :
         }
     }
 
+    override fun pauseFor(player: AmongUsPlayer) {
+        player.player?.removePotionEffect(potionEffect.type)
+    }
+
     override fun resume() {
         game.players.forEach {
             if (!it.canSeeWhenLightsSabotage()) {
                 it.player?.addPotionEffect(potionEffect)
             }
         }
+    }
+
+    override fun resumeFor(player: AmongUsPlayer) {
+        if (player.canSeeWhenLightsSabotage() || game.sabotageManager.isSabotagePaused()) return
+
+        player.player?.addPotionEffect(potionEffect)
     }
 
     fun onLightLeverFlip(location: Location, amongUsPlayer: AmongUsPlayer): Boolean {

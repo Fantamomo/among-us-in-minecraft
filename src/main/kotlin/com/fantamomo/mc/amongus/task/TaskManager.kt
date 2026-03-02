@@ -223,6 +223,12 @@ class TaskManager(val game: Game) {
         tasks.clear()
     }
 
+    internal fun onPlayerRejoin(amongUsPlayer: AmongUsPlayer) {
+        if (game.settings[SettingsKey.TASK.TASK_BAR_UPDATE] != TaskBarUpdateEnum.NONE) {
+            amongUsPlayer.player?.let { bossbar.addViewer(it) }
+        }
+    }
+
     inner class RegisteredTask(
         val task: AssignedTask<*, *>,
         val fake: Boolean = false
