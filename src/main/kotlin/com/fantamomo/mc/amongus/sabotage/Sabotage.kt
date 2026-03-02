@@ -2,6 +2,7 @@ package com.fantamomo.mc.amongus.sabotage
 
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.manager.waypoint.WaypointManager
+import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import net.kyori.adventure.text.Component
 
 interface Sabotage<S : SabotageType<S, A>, A : Sabotage<S, A>> {
@@ -21,6 +22,8 @@ interface Sabotage<S : SabotageType<S, A>, A : Sabotage<S, A>> {
     fun bossbarName(): Component? = null
 
     fun pause() {}
+    fun pauseFor(player: AmongUsPlayer) {}
 
     fun resume() {}
+    fun resumeFor(player: AmongUsPlayer) {}
 }
