@@ -229,6 +229,9 @@ class Game(
         }
 
         meetingManager.meeting?.voteInventories?.remove(player)
+
+        sabotageManager.onDisconnect(player)
+
         if (phase.onDisconnectRemove) removePlayer0(player)
     }
 
@@ -264,6 +267,7 @@ class Game(
         waypointManager.onPlayerRejoin(amongUsPlayer)
         scoreboardManager.onPlayerRejoin(amongUsPlayer)
         killManager.onPlayerRejoin(amongUsPlayer)
+        sabotageManager.onPlayerRejoin(amongUsPlayer)
         taskManager.onPlayerRejoin(amongUsPlayer)
         amongUsPlayer.modification?.onStart()
         if (!amongUsPlayer.isAlive) amongUsPlayer.addGhostImprovements()
