@@ -264,6 +264,7 @@ class Game(
         waypointManager.onPlayerRejoin(amongUsPlayer)
         scoreboardManager.onPlayerRejoin(amongUsPlayer)
         killManager.onPlayerRejoin(amongUsPlayer)
+        taskManager.onPlayerRejoin(amongUsPlayer)
         amongUsPlayer.modification?.onStart()
         if (!amongUsPlayer.isAlive) amongUsPlayer.addGhostImprovements()
     }
