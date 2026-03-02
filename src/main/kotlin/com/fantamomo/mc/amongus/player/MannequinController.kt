@@ -183,11 +183,11 @@ class MannequinController(
         updateNameTag(player)
     }
 
-    fun updateNameTag(player: AmongUsPlayer) {
-        updateNameTag(player.player ?: return)
+    fun updateNameTag(player: AmongUsPlayer, force: Boolean = false) {
+        updateNameTag(player.player ?: return, force)
     }
 
-    fun updateNameTag(player: Player) {
+    fun updateNameTag(player: Player, force: Boolean = false) {
         val mannequin = mannequin ?: return
         if (!player.canSee(mannequin)) return
 
@@ -196,7 +196,7 @@ class MannequinController(
         val color = viewerColors[player.uniqueId]
             ?: determineDefaultColorFor(player, amongUsPlayer)
 
-        if (colorDisplays[color]?.let { player.canSee(it) } == true) {
+        if (!force && colorDisplays[color]?.let { player.canSee(it) } == true) {
             return
         }
 
@@ -212,7 +212,7 @@ class MannequinController(
             mannequin.world.spawn(mannequin.location, TextDisplay::class.java) {
                 it.text(Component.text(nameToDisplay, color))
                 modifyTextDisplay(it)
-                it.isVisibleByDefault = false
+                it.isVisibleByDefault = color == NamedTextColor.WHITE
                 mannequin.addPassenger(it)
                 EntityManager.addEntityToRemoveOnEnd(owner.game, it)
             }

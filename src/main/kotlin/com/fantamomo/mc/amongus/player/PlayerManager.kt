@@ -114,6 +114,7 @@ object PlayerManager {
     internal fun onPlayerJoin(player: Player) {
         val connection = (player as CraftPlayer).handle.connection
         for (playingPlayer in players) {
+            playingPlayer.mannequinController.updateNameTag(player, force = true)
             val bukkitPlayer = playingPlayer.player ?: continue
             player.hidePlayer(AmongUs, bukkitPlayer)
             @Suppress("UNNECESSARY_SAFE_CALL")
@@ -145,6 +146,7 @@ object PlayerManager {
             return
         }
         for (onlinePlayer in player.server.onlinePlayers) {
+            amongUsPlayer.mannequinController.updateNameTag(onlinePlayer, force = true)
             onlinePlayer.hidePlayer(AmongUs, player)
             @Suppress("UNNECESSARY_SAFE_CALL")
             (onlinePlayer as CraftPlayer).handle.connection?.send(
