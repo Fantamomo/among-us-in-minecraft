@@ -1,8 +1,8 @@
 # Among Us in Minecraft
 
-> A fan-made Minecraft plugin that recreates the gameplay of Among Us — built entirely with Minecraft mechanics, no original assets used.
+> A fan-made Minecraft plugin that brings the gameplay of Among Us to Minecraft.
 
-**[📖 Documentation](https://among-us-in-minecraft.docs.fantamomo.com/)** · **[🗺️ Map Setup](https://among-us-in-minecraft.docs.fantamomo.com/demo/map/)** · **[🎮 Demo Server](https://among-us-in-minecraft.docs.fantamomo.com/demo/demo)**
+**[🕮 Documentation](https://among-us-in-minecraft.docs.fantamomo.com/)** · **[🗺️ Map Setup](https://among-us-in-minecraft.docs.fantamomo.com/demo/map/)** · **[🎮 Demo Server](https://among-us-in-minecraft.docs.fantamomo.com/demo/demo)**
 
 > [!WARNING]
 > This project is **not affiliated with, endorsed by, or associated with Innersloth**.
@@ -11,43 +11,48 @@
 
 ---
 
-## ✨ Features
+## Features
 
-- **Multiple roles** — Crewmate, Impostor, and more
-- **Various tasks** — Inspired by Among Us (especially Polus), fully rebuilt in Minecraft
-- **Fully configurable** — Task locations, sabotage spots, spawn points
-- **Bring your own map** — Works with any Minecraft world you configure
+- **18+ Roles** - And more coming soon. ([List](https://among-us-in-minecraft.docs.fantamomo.com/roles/roles))
+- **Fully Customizable** – Play on every map – customize where tasks, sabotages, vents, cameras, and much more is.
+- **Various tasks** – Inspired by Among Us (especially Polus), fully rebuilt in Minecraft.
+- **Maps** – Create your own maps or use the pre-built one.
 
----
-
-## 🚀 Getting Started
-
-Full setup instructions are in the documentation:
-
-👉 **[Getting Started](https://among-us-in-minecraft.docs.fantamomo.com/guides/getting-started/)**
-
-In short, you'll need to:
-1. Add the plugin to your Minecraft server (`1.21.11`)
-2. Set up a map and place it in your server directory
-3. Configure task, sabotage, and spawn locations
-
-A pre-built Polus map with a ready-to-use area config is available on the **[Map Setup page](https://among-us-in-minecraft.docs.fantamomo.com/demo/map/)**.
+Check out the [documentation](https://among-us-in-minecraft.docs.fantamomo.com/) for more information.
 
 ---
 
-## 🛠️ Project Status
+## Getting Started
 
-**Actively developed — core gameplay is functional and playable.**
+Visit the [documentation](https://among-us-in-minecraft.docs.fantamomo.com/guides/getting-started) for more information.
 
-Some features are still incomplete or being balanced. Expect occasional bugs.
-
-**Planned:**
-- Bug fixes and stability improvements
-- Gameplay balancing and polish
+In short, you'll need:
+1. A Minecraft server. (Paper: `1.21.11`)
+2. Place the plugin in your `/plugins` folder.
+3. Set up a map or download the [pre-built](https://among-us-in-minecraft.docs.fantamomo.com/demo/map) one.
+4. Play with your friends!
 
 ---
 
-## 🧠 Intellectual Property
+## Project Status
+
+**This plugin is still in active development.**
+
+The core functionality is complete, and the plugin can be played with.
+
+But some features are still incomplete and being worked on.
+
+Also, there are some known bugs that are being worked on.
+
+---
+
+## Demo
+
+We have a demo server running the plugin. [Check it out](https://among-us-in-minecraft.docs.fantamomo.com/demo/demo)
+
+---
+
+## Intellectual Property
 
 This project uses **no original Among Us assets** — no textures, sounds, models, UI elements, or source code.
 
@@ -60,9 +65,9 @@ Some task and role names are borrowed from Among Us purely for recognizability a
 
 ---
 
-## ⚖️ Legal Notice
+## Legal Notice
 
-- ❌ Not an official Among Us product
-- ❌ Not affiliated with Innersloth
-- ❌ No original Among Us assets used
-- ✅ Fan-made recreation inspired by the gameplay
+- Not an official Among Us product
+- Not affiliated with Innersloth LLC.
+- No original Among Us assets used
+- Fan-made recreation inspired by the gameplay
