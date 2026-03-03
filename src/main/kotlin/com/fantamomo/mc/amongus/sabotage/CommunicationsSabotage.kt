@@ -24,8 +24,19 @@ import net.kyori.adventure.title.TitlePart
 import org.bukkit.Color
 import org.bukkit.Location
 import org.bukkit.Particle
+import org.bukkit.block.BlockFace
+import org.bukkit.block.Skull
+import org.bukkit.block.data.Directional
+import org.bukkit.block.data.Rotatable
+import org.bukkit.block.data.type.WallSkull
 import org.bukkit.entity.BlockDisplay
+import org.bukkit.entity.Display
+import org.bukkit.entity.ItemDisplay
+import org.bukkit.entity.ItemDisplay.ItemDisplayTransform
 import org.bukkit.entity.Player
+import org.bukkit.inventory.ItemType
+import org.bukkit.util.Transformation
+import kotlin.math.atan2
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
 import kotlin.random.Random
@@ -52,12 +63,61 @@ class CommunicationsSabotage(
     private val fixingPlayers = mutableSetOf<FixingPlayer>()
     private var fixedPlayer: FixingPlayer? = null
 
-    private val display: BlockDisplay = position.world.spawn(position, BlockDisplay::class.java) {
-        it.block = position.block.blockData
-        it.isVisibleByDefault = false
-        it.isGlowing = true
-        it.glowColorOverride = Color.RED
-        EntityManager.addEntityToRemoveOnEnd(game, it)
+    private val display: Display = createDisplay(position)
+
+    @Suppress("UnstableApiUsage")
+    private fun createDisplay(position: Location): Display {
+        val block = position.block
+        val state = block.state
+        val blockData = state.blockData
+        return if (state !is Skull) {
+            position.world.spawn(position, BlockDisplay::class.java) {
+                it.block = blockData
+                it.isVisibleByDefault = false
+                it.isGlowing = true
+                it.glowColorOverride = Color.RED
+                EntityManager.addEntityToRemoveOnEnd(game, it)
+            }
+        } else {
+            @Suppress("DEPRECATION")
+            val profile = state.playerProfile
+            val item = ItemType.PLAYER_HEAD.createItemStack {
+                it.playerProfile = profile
+            }
+
+            val spawnLocation = position.clone().add(0.5, 0.5, 0.5)
+
+            spawnLocation.yaw = when (blockData) {
+                is Rotatable -> blockData.rotation.direction.run { Math.toDegrees(atan2(x, z)).toFloat() }
+                is Directional -> when (blockData.facing) {
+                    BlockFace.NORTH -> 0f
+                    BlockFace.SOUTH -> 180f
+                    BlockFace.WEST -> 270f
+                    BlockFace.EAST -> 90f
+                    else -> 0f
+                }
+
+                else -> 0f
+            }
+
+            position.world.spawn(spawnLocation, ItemDisplay::class.java) {
+                it.setItemStack(item)
+                it.itemDisplayTransform = ItemDisplayTransform.HEAD
+                it.isVisibleByDefault = false
+                it.isGlowing = true
+                if (blockData is WallSkull) it.transformation =
+                    it.transformation.run {
+                        Transformation(
+                            translation.add(0f, 0.25f, 0.25f),
+                            leftRotation,
+                            scale,
+                            rightRotation
+                        )
+                    }
+                it.glowColorOverride = Color.RED
+                EntityManager.addEntityToRemoveOnEnd(game, it)
+            }
+        }
     }
 
     private val bossBarName = textComponent {
@@ -170,7 +230,12 @@ class CommunicationsSabotage(
             return
         }
         if (fixingPlayers.any { it.player == player }) return
-        player.player?.let { player.helpPreferences.showHelp(PlayerHelpPreferences.PlayerHelpMessage.COMMUNICATIONS, it) }
+        player.player?.let {
+            player.helpPreferences.showHelp(
+                PlayerHelpPreferences.PlayerHelpMessage.COMMUNICATIONS,
+                it
+            )
+        }
         fixingPlayers += FixingPlayer(player)
     }
 
