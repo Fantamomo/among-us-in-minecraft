@@ -16,26 +16,14 @@ repositories {
     maven("https://repo.inventivetalent.org/repository/public/") {
         name = "inventive-repo"
     }
+    github("brigadier-interception")
+    github("kotlin-adventure")
+    github("brigadier-kt")
+}
+
+fun RepositoryHandler.github(repo: String) {
     maven {
-        url = uri("https://maven.pkg.github.com/Fantamomo/brigadier-interception")
-        credentials {
-            username = project.findProperty("gpr.user") as String?
-                ?: System.getenv("GITHUB_USERNAME")
-            password = project.findProperty("gpr.key") as String?
-                ?: System.getenv("GITHUB_TOKEN")
-        }
-    }
-    maven {
-        url = uri("https://maven.pkg.github.com/Fantamomo/kotlin-adventure")
-        credentials {
-            username = project.findProperty("gpr.user") as String?
-                ?: System.getenv("GITHUB_USERNAME")
-            password = project.findProperty("gpr.key") as String?
-                ?: System.getenv("GITHUB_TOKEN")
-        }
-    }
-    maven {
-        url = uri("https://maven.pkg.github.com/Fantamomo/brigadier-kt")
+        url = uri("https://maven.pkg.github.com/Fantamomo/$repo")
         credentials {
             username = project.findProperty("gpr.user") as String?
                 ?: System.getenv("GITHUB_USERNAME")
