@@ -83,11 +83,13 @@ object GameManager {
     operator fun get(code: String): Game? = gamesByCode[code]
 
     fun createGame(area: GameArea, maxPlayers: Int, callback: (Game?) -> Unit) {
-        val world = AmongUs.server.getWorld(area.worldId)
-            ?: throw IllegalArgumentException("World ${area.worldId} not found")
-        val path = world.worldPath
+        val worldFolder = area.worldFolder
+        if (worldFolder.isEmpty()) throw IllegalArgumentException("Area ${area.name} has no world folder")
+        val worldContainer = AmongUs.server.worldContainer.toPath().toAbsolutePath()
+        val path = worldContainer.resolve(worldFolder).toAbsolutePath()
+        if (worldContainer == path) throw IllegalArgumentException("Area ${area.name} is in the same directory as the server")
         val uuid = Uuid.random()
-        val gameWorldPath = worldsPath.resolve(uuid.toString())
+        val gameWorldPath = worldsPath.resolve(uuid.toString()).toAbsolutePath()
 
         AmongUs.server.scheduler.runTaskAsynchronously(AmongUs, Runnable {
             try {
@@ -113,7 +115,7 @@ object GameManager {
             }
 
             AmongUs.server.scheduler.runTask(AmongUs, Runnable {
-                val worldContainer = AmongUs.server.worldContainer.toPath()
+                val worldContainer = worldContainer
                 val creator = WorldCreator(
                     worldContainer.relativize(gameWorldPath).toString(),
                     NamespacedKey("among-us", "world/$uuid")

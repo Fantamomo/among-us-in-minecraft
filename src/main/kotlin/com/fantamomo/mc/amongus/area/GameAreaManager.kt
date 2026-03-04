@@ -31,7 +31,7 @@ object GameAreaManager {
         // only on first real use.
         json.encodeToString(
             GameAreaDTO(
-                "dummy", "no-uuid", "no-uuid",
+                "dummy", "no-uuid", "no-uuid", "",
                 SerializableLocation(0.0, 0.0, 0.0, 0f, 0f),
                 null, null, null,
                 null, null, null,
@@ -81,6 +81,8 @@ object GameAreaManager {
 
     fun getArea(uuid: UUID): GameArea? = areas[uuid]
 
+    fun getAreas(world: World): List<GameArea> = areas.values.filter { it.worldId == world.uid }
+
     fun getArea(name: String): GameArea? = areas.values.find { it.name == name }
 
     fun getAreas(): Collection<GameArea> = areas.values
@@ -92,7 +94,11 @@ object GameAreaManager {
 
     fun createNewArea(name: String, world: World): Boolean {
         if (areas.values.any { it.name == name }) return false
-        val area = GameArea(name, UUID.randomUUID(), world.uid)
+        val worldContainer = AmongUs.server.worldContainer.toPath().toAbsolutePath()
+        val area = GameArea(
+            name, UUID.randomUUID(), world.uid,
+            worldContainer.relativize(world.worldPath.toAbsolutePath()).toString()
+        )
         registerArea(area)
         return true
     }

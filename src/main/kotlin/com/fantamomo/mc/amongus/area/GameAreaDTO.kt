@@ -8,6 +8,7 @@ data class GameAreaDTO(
     val name: String,
     val uuid: String,
     val worldId: String,
+    val worldFolder: String = "",
 
     val minCorner: SerializableLocation?,
     val maxCorner: SerializableLocation?,

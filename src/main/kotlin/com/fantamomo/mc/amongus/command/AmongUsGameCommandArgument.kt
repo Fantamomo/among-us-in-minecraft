@@ -1,6 +1,7 @@
 package com.fantamomo.mc.amongus.command
 
 import com.fantamomo.mc.adventure.text.*
+import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.area.GameArea
 import com.fantamomo.mc.amongus.command.Permissions.required
 import com.fantamomo.mc.amongus.command.arguments.*
@@ -1333,6 +1334,16 @@ private fun KtArgumentCommandBuilder<CommandSourceStack, *>.createGameCommandExe
             }
         }
         return@execute 0
+    }
+
+    val worldFolder = area.worldFolder
+    val worldContainer = AmongUs.server.worldContainer.toPath().toAbsolutePath()
+    val path = worldContainer.resolve(worldFolder).toAbsolutePath()
+    if (worldFolder.isEmpty() || path == worldContainer) {
+        sendMessage {
+            translatable("command.error.admin.game.create.missing_world_location")
+        }
+        return@execute NO_SUCCESS
     }
 
     val maxPlayers = optionalArg<Int>("maxPlayers") ?: Game.DEFAULT_MAX_PLAYERS

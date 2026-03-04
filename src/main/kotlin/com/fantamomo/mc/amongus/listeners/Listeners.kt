@@ -17,7 +17,8 @@ object Listeners {
         ServerListener,
         SettingsListener,
         TaskListener,
-        VentListener
+        VentListener,
+        WorldListener
     )
 
     fun registerAll() {
