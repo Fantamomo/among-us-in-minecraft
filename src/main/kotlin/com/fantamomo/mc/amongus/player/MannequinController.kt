@@ -103,7 +103,7 @@ class MannequinController(
     private val colorDisplays: MutableMap<TextColor, TextDisplay> = mutableMapOf()
     private val viewerColors: MutableMap<UUID, TextColor> = mutableMapOf()
 
-    private val visibleTo: MutableSet<UUID> = mutableSetOf()
+    private val hiddenFrom: MutableSet<UUID> = mutableSetOf()
 
     private var frozen = false
     private var static = false
@@ -135,7 +135,7 @@ class MannequinController(
 
         lastLocation = player.location.clone()
 
-        visibleTo.clear()
+        hiddenFrom.clear()
         viewerColors.clear()
         colorDisplays.clear()
 
@@ -164,7 +164,7 @@ class MannequinController(
         viewerColors.clear()
 
         lastLocation = null
-        visibleTo.clear()
+        hiddenFrom.clear()
     }
 
     fun isSpawned(): Boolean = mannequin != null
@@ -177,10 +177,10 @@ class MannequinController(
         if (invisible) return
         mannequin?.let {
             player.showEntity(AmongUs, it)
-            visibleTo += player.uniqueId
+            hiddenFrom -= player.uniqueId
         }
 
-        updateNameTag(player)
+        updateNameTag(player, true)
     }
 
     fun updateNameTag(player: AmongUsPlayer, force: Boolean = false) {
@@ -215,6 +215,7 @@ class MannequinController(
                 it.isVisibleByDefault = color == NamedTextColor.WHITE
                 mannequin.addPassenger(it)
                 EntityManager.addEntityToRemoveOnEnd(owner.game, it)
+                if (it.isVisibleByDefault) owner.player?.hideEntity(AmongUs, it)
             }
         }
 
@@ -265,11 +266,17 @@ class MannequinController(
     fun hideFrom(player: Player) {
         mannequin?.let {
             player.hideEntity(AmongUs, it)
-            visibleTo -= player.uniqueId
+            hiddenFrom += player.uniqueId
         }
 
-        viewerColors[player.uniqueId]?.let { color ->
+        val textColor = viewerColors[player.uniqueId]
+        textColor?.let { color ->
             colorDisplays[color]?.let {
+                player.hideEntity(AmongUs, it)
+            }
+        }
+        if (textColor != NamedTextColor.WHITE) {
+            colorDisplays[NamedTextColor.WHITE]?.let {
                 player.hideEntity(AmongUs, it)
             }
         }
@@ -278,9 +285,7 @@ class MannequinController(
     }
 
     fun hideFromAll() {
-        visibleTo.toList().forEach { uuid ->
-            Bukkit.getPlayer(uuid)?.let { hideFrom(it) }
-        }
+        Bukkit.getOnlinePlayers().forEach { hideFrom(it) }
     }
 
     fun showToAll(players: Iterable<Player>) {
@@ -300,14 +305,14 @@ class MannequinController(
             return
         }
         for (player in owner.game.players) {
-            if (owner == player) continue
+            if (owner === player) continue
             if (player.isAlive) continue
             player.player?.let(::showTo)
         }
     }
 
     fun isVisibleTo(player: Player): Boolean =
-        visibleTo.contains(player.uniqueId)
+        !hiddenFrom.contains(player.uniqueId)
 
     fun setInvisible(value: Boolean) {
         if (invisible == value) return
