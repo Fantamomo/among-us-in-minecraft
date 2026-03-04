@@ -3,7 +3,7 @@ package com.fantamomo.mc.amongus
 import io.papermc.paper.plugin.bootstrap.BootstrapContext
 import kotlin.io.path.exists
 
-@Suppress("UnstableApiUsage", "PropertyName")
+@Suppress("PropertyName")
 sealed interface AmongUsConstants {
     val IN_DEVELOPMENT: Boolean
 
@@ -14,6 +14,7 @@ sealed interface AmongUsConstants {
 
         override val IN_DEVELOPMENT get() = impl.IN_DEVELOPMENT
 
+        @Suppress("UnstableApiUsage")
         internal class Impl(private val context: BootstrapContext) : AmongUsConstants {
             init {
                 if (delegate != null) throw IllegalStateException("AmongUsConstants already initialized")
