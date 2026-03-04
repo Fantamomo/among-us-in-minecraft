@@ -5,6 +5,7 @@ import com.fantamomo.mc.adventure.text.textComponent
 import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.data.AmongUsConfig
 import com.fantamomo.mc.amongus.game.Game
+import com.fantamomo.mc.amongus.game.GameManager
 import com.fantamomo.mc.amongus.game.GamePhase
 import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.languages.numeric
@@ -43,11 +44,9 @@ import org.bukkit.scoreboard.DisplaySlot
 class ScoreboardManager(private val game: Game) {
 
     private val scoreboards = mutableMapOf<AmongUsPlayer, AmongUsScoreboard>()
-    private var ticks = 0
 
     fun tick() {
         if (scoreboards.isEmpty()) return
-        ticks++
         scoreboards.values.forEach { it.update() }
     }
 
@@ -210,7 +209,7 @@ class ScoreboardManager(private val game: Game) {
                     } else {
                         translatable("scoreboard.lobby.status.starting") {
                             args {
-                                numeric("time", (game.startCooldownTicks - game.ticks + 19) / 20)
+                                numeric("time", (game.startCooldownTicks - GameManager.currentTick.ticks + 19) / 20)
                             }
                         }
                     }
@@ -252,7 +251,7 @@ class ScoreboardManager(private val game: Game) {
         private fun renderRoleOrModification() {
             register(ENTRY_ROLE)
             val modification = player.modification
-            if (modification != null && ticks % 1000 >= 500) {
+            if (modification != null && GameManager.currentTick.ticks % 1000 >= 500) {
                 score(
                     ENTRY_ROLE,
                     SCORE_ROLE_HEADER,

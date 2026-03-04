@@ -38,8 +38,6 @@ class MorphManager(val game: Game) {
     private var camouflageStart: Instant? = null
     private var camouflageTarget: AmongUsPlayer? = null
 
-    private var ticks: Int = 0
-
     inner class MorphedPlayer(
         val player: AmongUsPlayer,
         val target: AmongUsPlayer,
@@ -197,7 +195,6 @@ class MorphManager(val game: Game) {
         for (morphedPlayer in morphs.values) {
             morphedPlayer.tick()
         }
-        ticks++
     }
 
     fun morph(player: AmongUsPlayer, target: AmongUsPlayer, abilityTimer: AbilityTimer? = null) {

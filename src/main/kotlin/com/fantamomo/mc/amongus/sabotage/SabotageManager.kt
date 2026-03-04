@@ -8,6 +8,7 @@ import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.util.Cooldown
+import com.fantamomo.mc.amongus.util.TickContext
 import com.fantamomo.mc.amongus.util.internal.NMS
 import net.kyori.adventure.bossbar.BossBar
 import net.kyori.adventure.text.Component
@@ -41,8 +42,6 @@ class SabotageManager(private val game: Game) {
         warningTime = 2
         warningBlocks = 300000000
     }
-
-    private var ticks: Int = 0
 
     fun currentSabotage(): Sabotage<*, *>? = currentSabotage
     fun currentSabotageType(): SabotageType<*, *>? = currentSabotage?.sabotageType
@@ -80,20 +79,17 @@ class SabotageManager(private val game: Game) {
             }
         }
 
-        ticks = 0
-
         updateBossbarViewerAndWaypoints()
         return true
     }
 
-    fun tick() {
+    fun tick(tickContext: TickContext) {
         val sabotage = currentSabotage ?: return
         sabotage.tick()
         updateBossbar()
-        ticks++
         if (sabotage.sabotageType.isCrisis) {
-            if (ticks % 15 == 0) {
-                sendWorldBorder(ticks % 30 == 0)
+            tickContext.every(15) {
+                sendWorldBorder(tickContext.isBy(30))
             }
         }
     }
