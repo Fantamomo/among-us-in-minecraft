@@ -76,7 +76,8 @@ object MeetingListener : Listener {
         event.isCancelled = true
         val item = event.currentItem ?: return
         if (item.persistentDataContainer.has(MeetingManager.VOTING_KEY)) {
-            val target = item.persistentDataContainer.get(MeetingManager.VOTING_KEY, PersistentDataType.STRING) ?: return
+            val target =
+                item.persistentDataContainer.get(MeetingManager.VOTING_KEY, PersistentDataType.STRING) ?: return
             if (target == "close") {
                 player.closeInventory()
                 meeting.voteInventories.values.remove(view)
@@ -118,11 +119,12 @@ object MeetingListener : Listener {
 
     @EventHandler
     fun onKick(event: PlayerKickEvent) {
-        if (event.cause != PlayerKickEvent.Cause.FLYING_PLAYER) return
+        if (event.cause != PlayerKickEvent.Cause.FLYING_PLAYER && event.cause != PlayerKickEvent.Cause.SELF_INTERACTION) return
+
         val player = event.player
         val amongUsPlayer = PlayerManager.getPlayer(player) ?: return
-        val meeting = amongUsPlayer.game.meetingManager.meeting ?: return
-        if (meeting.currentlyEjecting) {
+
+        if (amongUsPlayer.game.meetingManager.meeting?.currentlyEjecting == true) {
             event.isCancelled = true
         }
     }
