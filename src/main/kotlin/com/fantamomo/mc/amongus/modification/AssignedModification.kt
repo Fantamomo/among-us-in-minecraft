@@ -1,6 +1,7 @@
 package com.fantamomo.mc.amongus.modification
 
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import com.fantamomo.mc.amongus.util.TickContext
 import net.kyori.adventure.text.Component
 
 interface AssignedModification<M : Modification<M, A>, A : AssignedModification<M, A>> {
@@ -17,7 +18,7 @@ interface AssignedModification<M : Modification<M, A>, A : AssignedModification<
     fun onStart() {}
     fun onGameStart() {}
 
-    fun onTick() {}
+    fun onTick(tickContext: TickContext) {}
 
     fun onGameEnd() {}
     fun onEnd() {}

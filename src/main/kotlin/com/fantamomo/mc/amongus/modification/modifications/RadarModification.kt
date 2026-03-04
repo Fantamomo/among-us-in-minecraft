@@ -10,6 +10,7 @@ import com.fantamomo.mc.amongus.manager.waypoint.WaypointManager
 import com.fantamomo.mc.amongus.modification.AssignedModification
 import com.fantamomo.mc.amongus.modification.Modification
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import com.fantamomo.mc.amongus.util.TickContext
 import net.kyori.adventure.text.Component
 import org.bukkit.Color
 import kotlin.math.roundToInt
@@ -50,7 +51,7 @@ object RadarModification : Modification<RadarModification, RadarModification.Ass
             shown = true
         }
 
-        override fun onTick() {
+        override fun onTick(tickContext: TickContext) {
             if (!shown) return
             val thisLoc = (player.mannequinController.getEntity() ?: player.livingEntity).location
             var nearestDistance = Double.MAX_VALUE

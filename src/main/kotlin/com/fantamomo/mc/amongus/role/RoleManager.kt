@@ -4,6 +4,7 @@ import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.player.editStatistics
 import com.fantamomo.mc.amongus.settings.SettingsKey
+import com.fantamomo.mc.amongus.util.TickContext
 import kotlin.random.Random
 
 class RoleManager(private val game: Game) {
@@ -35,7 +36,7 @@ class RoleManager(private val game: Game) {
 
     fun end() = game.players.forEach { it.assignedRole?.onGameEnd() }
 
-    fun tick() = game.players.forEach { it.assignedRole?.tick() }
+    fun tick(tickContext: TickContext) = game.players.forEach { it.assignedRole?.tick(tickContext) }
 
     private fun phase1AssignForced(unassigned: MutableList<AmongUsPlayer>) {
         forcedRoles.forEach { (player, role) ->

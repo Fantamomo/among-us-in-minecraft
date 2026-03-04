@@ -8,6 +8,7 @@ import com.fantamomo.mc.amongus.manager.waypoint.FixedWaypointPosProvider
 import com.fantamomo.mc.amongus.manager.waypoint.WaypointManager
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.settings.SettingsKey
+import com.fantamomo.mc.amongus.util.TickContext
 import com.fantamomo.mc.amongus.util.getClosestLocationOnLine
 import com.fantamomo.mc.amongus.util.internal.EntityIdManager
 import net.kyori.adventure.text.Component
@@ -297,11 +298,9 @@ class VentManager(val game: Game) {
         ventedPlayer.setActive(targetVent)
     }
 
-    private var tickCounter = 0
-    fun tick() {
+    fun tick(tickContext: TickContext) {
         // if (game.phase != GamePhase.RUNNING) return // todo: uncommit it
-        tickCounter++
-        if (tickCounter % 2 != 0) return
+        if (!tickContext.isBy(2)) return
         for (amongUsPlayer in game.players) {
             val player = amongUsPlayer.player ?: continue
             if (amongUsPlayer.hasAbility(VentAbility)) {
@@ -319,7 +318,7 @@ class VentManager(val game: Game) {
             }
         }
         for (creatingVentPlayer in creatingVentPlayers) {
-            creatingVentPlayer.value.tick()
+            creatingVentPlayer.value.tick(tickContext)
         }
     }
 
@@ -366,8 +365,8 @@ class VentManager(val game: Game) {
             }
         }
 
-        fun tick() {
-            if (tickCounter % 4 == 0) {
+        fun tick(tickContext: TickContext) {
+            tickContext.every(4) {
                 state = (state + 0.05f).coerceIn(0.0f, 1.0f)
             }
             if (state >= 1.0f) {

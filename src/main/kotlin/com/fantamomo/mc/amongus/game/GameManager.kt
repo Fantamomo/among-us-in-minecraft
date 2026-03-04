@@ -3,6 +3,7 @@ package com.fantamomo.mc.amongus.game
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.area.GameArea
 import com.fantamomo.mc.amongus.player.PlayerManager
+import com.fantamomo.mc.amongus.util.TickContext
 import com.fantamomo.mc.amongus.util.safeCreateDirectories
 import org.bukkit.NamespacedKey
 import org.bukkit.World
@@ -22,6 +23,10 @@ object GameManager {
     private val logger = LoggerFactory.getLogger("AmongUsGameManager")
     private val markedForRemove: MutableSet<Game> = mutableSetOf()
     private val worlds: MutableSet<World> = mutableSetOf()
+    private var ticks: Long = 0
+
+    var currentTick = TickContext(0)
+        private set
 
     fun getGames(): List<Game> = games
 
@@ -51,6 +56,9 @@ object GameManager {
             AmongUs.server.scheduler.cancelTask(taskId)
             taskId = -1
         }
+        ticks++
+        val tickContext = TickContext(ticks)
+        currentTick = tickContext
         if (markedForRemove.isNotEmpty()) {
             markedForRemove.forEach {
                 for (player in it.players.toList()) {
@@ -63,7 +71,13 @@ object GameManager {
             gamesByCode.values.removeAll(markedForRemove)
             markedForRemove.clear()
         }
-        games.forEach(Game::tick)
+        for (game in games) {
+            try {
+                game.tick(tickContext)
+            } catch (e: Exception) {
+                logger.error("Failed to tick game ${game.code}", e)
+            }
+        }
     }
 
     operator fun get(code: String): Game? = gamesByCode[code]

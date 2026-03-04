@@ -10,6 +10,7 @@ import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.settings.SettingsKey
+import com.fantamomo.mc.amongus.util.TickContext
 import com.fantamomo.mc.amongus.util.internal.NMS
 import org.bukkit.Location
 import org.bukkit.Material
@@ -200,11 +201,11 @@ class CameraManager(val game: Game) {
         cameraPlayer.camera = getNextCamera(cameraPlayer.camera)
     }
 
-    fun tick() {
+    fun tick(tickContext: TickContext) {
         val millis = System.currentTimeMillis()
         val cameraSwitchCooldown = game.settings[SettingsKey.UTILS.CAMERA_SWITCH_SAFE_COOLDOWN]
         for (cameraPlayer in playersInCamera) {
-            if (millis % 200 == 0L && millis - cameraPlayer.lastCameraChange > cameraSwitchCooldown) {
+            if (tickContext.isBy(5) && millis - cameraPlayer.lastCameraChange > cameraSwitchCooldown) {
                 cameraPlayer.player.player?.sendBlockChange(
                     cameraPlayer.camera.location,
                     Material.BARRIER.createBlockData()

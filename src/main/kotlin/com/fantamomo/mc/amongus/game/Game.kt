@@ -19,6 +19,7 @@ import com.fantamomo.mc.amongus.sabotage.SabotageManager
 import com.fantamomo.mc.amongus.settings.Settings
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.task.TaskManager
+import com.fantamomo.mc.amongus.util.TickContext
 import com.fantamomo.mc.amongus.util.toSmartString
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.JoinConfiguration
@@ -105,10 +106,7 @@ class Game(
         morphManager.removePlayer(player)
     }
 
-    internal var ticks = 0
-        private set
-
-    fun tick() {
+    fun tick(tickContext: TickContext) {
         if (world.playerCount == 0) {
             val currentTimeMillis = System.currentTimeMillis()
             if (lastPlayer == -1L) lastPlayer = currentTimeMillis
@@ -119,15 +117,14 @@ class Game(
         } else {
             lastPlayer = -1L
         }
-        ticks++
         if (phase == GamePhase.LOBBY || phase == GamePhase.STARTING) {
             for (player in players) {
                 player.mannequinController.syncFromPlayer()
             }
             scoreboardManager.tick()
 
-            if (startCooldownTicks > ticks) {
-                val remainingTicks = startCooldownTicks - ticks
+            if (startCooldownTicks > tickContext.ticks) {
+                val remainingTicks = startCooldownTicks - tickContext.ticks
                 val remaining = (remainingTicks + 19) / 20
 
                 val color = when {
@@ -150,7 +147,7 @@ class Game(
                     val p = player.player ?: continue
                     p.showTitle(title)
                 }
-            } else if (startCooldownTicks == ticks) {
+            } else if (startCooldownTicks == tickContext.ticks) {
                 startCooldownTicks = -1
                 start()
             }
@@ -158,18 +155,18 @@ class Game(
             return
         }
         if (phase == GamePhase.FINISHED) return
-        if (ticks % 20 == 0 && settings[SettingsKey.DEV.DO_WIN_CHECK_ON_TICK]) {
-            checkWin()
+        tickContext.every(20) {
+            if (settings[SettingsKey.DEV.DO_WIN_CHECK_ON_TICK]) checkWin()
         }
-        ventManager.tick()
-        cameraManager.tick()
+        ventManager.tick(tickContext)
+        cameraManager.tick(tickContext)
         waypointManager.tick()
         actionBarManager.tick()
-        sabotageManager.tick()
+        sabotageManager.tick(tickContext)
         taskManager.tick()
         meetingManager.tick()
         scoreboardManager.tick()
-        roleManager.tick()
+        roleManager.tick(tickContext)
         morphManager.tick()
         ghostFormManager.tick()
 
@@ -178,7 +175,7 @@ class Game(
         for (player in players) {
             player.player?.saturation = 5.0f
             player.player?.foodLevel = 20
-            player.modification?.onTick()
+            player.modification?.onTick(tickContext)
             player.mannequinController.syncFromPlayer()
             val disconnectedAt = player.disconnectedAt ?: continue
             if (now - disconnectedAt < MAX_DISCONNECT_TIME) continue
@@ -287,13 +284,13 @@ class Game(
         AbilityManager.invalidateAll(this)
     }
 
-    internal var startCooldownTicks = -1
+    internal var startCooldownTicks: Long = -1
         private set
 
     fun startStartCooldown() {
         if (phase != GamePhase.LOBBY) return
         phase = GamePhase.STARTING
-        startCooldownTicks = ticks + 200
+        startCooldownTicks = GameManager.currentTick.ticks + 200
     }
 
     fun abortStartCooldown() {

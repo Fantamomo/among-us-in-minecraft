@@ -13,6 +13,7 @@ import com.fantamomo.mc.amongus.role.AssignedRole
 import com.fantamomo.mc.amongus.role.Role
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.settings.SettingsKey
+import com.fantamomo.mc.amongus.util.TickContext
 import net.kyori.adventure.text.Component
 import org.bukkit.Color
 
@@ -33,7 +34,7 @@ object CannibalRole : Role<CannibalRole, CannibalRole.AssignedCannibalRole> {
             get() = player.game.settings[SettingsKey.ROLES.CANNIBAL.BODIES_TO_EAT]
         var eatenBodies: Int = 0
             private set
-        private var ticks = -1
+        private var doTick = false
         private var lastSeenCorpse = false
 
         val mutableLocation = MutableWaypointPosProvider(player.livingEntity.location)
@@ -50,13 +51,12 @@ object CannibalRole : Role<CannibalRole, CannibalRole.AssignedCannibalRole> {
 
         override fun onGameStart() {
             player.game.waypointManager.assignWaypoint(player, waypoint)
-            ticks = 0
+            doTick = true
         }
 
-        override fun tick() {
-            if (ticks <= -1) return
-            ticks++
-            if (ticks % 20 != 0) return
+        override fun tick(tickContext: TickContext) {
+            if (!doTick) return
+            if (tickContext.isBy(20)) return
             val nearestCorpse = player.game.killManager.nearestCorpse(player.livingEntity.location)
             if (lastSeenCorpse != (nearestCorpse != null)) {
                 lastSeenCorpse = nearestCorpse != null
@@ -68,7 +68,7 @@ object CannibalRole : Role<CannibalRole, CannibalRole.AssignedCannibalRole> {
         }
 
         override fun onGameEnd() {
-            ticks = -1
+            doTick = false
             player.game.waypointManager.removeWaypoint(player, waypoint)
         }
 

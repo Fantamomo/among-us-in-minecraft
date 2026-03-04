@@ -7,6 +7,7 @@ import com.fantamomo.mc.amongus.player.PlayerColor
 import com.fantamomo.mc.amongus.role.AssignedRole
 import com.fantamomo.mc.amongus.role.Role
 import com.fantamomo.mc.amongus.role.Team
+import com.fantamomo.mc.amongus.util.TickContext
 import org.bukkit.Location
 import org.bukkit.Particle
 
@@ -25,14 +26,12 @@ object DetectiveRole : Role<DetectiveRole, DetectiveRole.AssignedDetectiveRole> 
 
         private data class TrailPoint(
             val location: Location,
-            val expireTick: Int,
+            val expireTick: Long,
             val color: PlayerColor
         )
 
         private val trails = mutableMapOf<AmongUsPlayer, ArrayDeque<TrailPoint>>()
         private val particleBuilder = ParticleBuilder(Particle.DUST)
-
-        private var currentTick = 0
 
         override fun onGameStart() {
             trails.clear()
@@ -47,9 +46,8 @@ object DetectiveRole : Role<DetectiveRole, DetectiveRole.AssignedDetectiveRole> 
             trails.clear()
         }
 
-        override fun tick() {
-            currentTick++
-            if (currentTick % 2 != 0) return
+        override fun tick(tickContext: TickContext) {
+            if (tickContext.isBy(2)) return
 
             val viewer = player.player ?: return
             val viewerLoc = viewer.location
@@ -64,13 +62,13 @@ object DetectiveRole : Role<DetectiveRole, DetectiveRole.AssignedDetectiveRole> 
                     trail.addLast(
                         TrailPoint(
                             entityLoc.clone(),
-                            currentTick + TTL,
+                            tickContext.ticks + TTL,
                             other.visibleColor
                         )
                     )
                 }
 
-                while (trail.isNotEmpty() && trail.first().expireTick <= currentTick) {
+                while (trail.isNotEmpty() && trail.first().expireTick <= tickContext.ticks) {
                     trail.removeFirst()
                 }
 
