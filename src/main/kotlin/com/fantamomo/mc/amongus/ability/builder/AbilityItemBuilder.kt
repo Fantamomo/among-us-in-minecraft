@@ -19,6 +19,8 @@ class AbilityItemBuilder(
 
     internal val conditions = mutableListOf<AbilityCondition>()
 
+    var clickDelay: Boolean = false
+
     init {
         AbilityItemState.entries.forEach {
             states[it] = it.createDefault()
@@ -46,6 +48,7 @@ class AbilityItemBuilder(
             id,
             ctx,
             states,
-            conditions
+            conditions,
+            clickDelay
         )
 }
