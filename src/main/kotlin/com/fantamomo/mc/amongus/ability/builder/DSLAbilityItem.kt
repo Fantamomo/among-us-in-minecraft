@@ -9,10 +9,13 @@ class DSLAbilityItem(
     id: String,
     internal val ctx: AbilityContext,
     private val states: Map<AbilityItemState, AbilityItemStateDefinition>,
-    private val conditions: List<AbilityCondition>
+    private val conditions: List<AbilityCondition>,
+    private val clickDelay: Boolean
 ) : AbilityItem(ability, id) {
 
     private var lastState: AbilityItemState? = null
+
+    private var lastClick: Long = -1
 
     init {
         ctx.abilityItem = this
@@ -46,6 +49,12 @@ class DSLAbilityItem(
     }
 
     override fun onRightClick() {
+        if (clickDelay) {
+            val now = System.currentTimeMillis()
+            if (now - lastClick < DEFAULT_CLICK_DELAY) return
+            lastClick = now
+        }
+
         val (state, _) = computeState()
 
         ctx.restartCooldown = true
@@ -60,6 +69,11 @@ class DSLAbilityItem(
     }
 
     override fun onLeftClick() {
+        if (clickDelay) {
+            val now = System.currentTimeMillis()
+            if (now - lastClick < DEFAULT_CLICK_DELAY) return
+            lastClick = now
+        }
 
         val (state, _) = computeState()
 
@@ -70,5 +84,9 @@ class DSLAbilityItem(
 
     override fun startCooldown() {
         ctx.startTimers()
+    }
+
+    companion object {
+        private const val DEFAULT_CLICK_DELAY = 200
     }
 }
