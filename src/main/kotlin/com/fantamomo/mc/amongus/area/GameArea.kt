@@ -8,7 +8,8 @@ import kotlin.reflect.KMutableProperty1
 data class GameArea(
     val name: String,
     val uuid: UUID,
-    val worldId: UUID
+    val worldId: UUID,
+    var worldFolder: String
 ) {
     var minCorner: Location? = null
     var maxCorner: Location? = null
