@@ -26,6 +26,7 @@ object ReportAbility :
         @Suppress("UnstableApiUsage")
         override val items = listOf(
             abilityItem("report") {
+                clickDelay = true
 
                 // ---------- CONDITIONS ----------
 
