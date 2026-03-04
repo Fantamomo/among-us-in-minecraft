@@ -94,10 +94,10 @@ object GameAreaManager {
 
     fun createNewArea(name: String, world: World): Boolean {
         if (areas.values.any { it.name == name }) return false
-        val worldContainer = AmongUs.server.worldContainer.toPath()
+        val worldContainer = AmongUs.server.worldContainer.toPath().toAbsolutePath()
         val area = GameArea(
             name, UUID.randomUUID(), world.uid,
-            worldContainer.relativize(world.worldPath).toString()
+            worldContainer.relativize(world.worldPath.toAbsolutePath()).toString()
         )
         registerArea(area)
         return true

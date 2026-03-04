@@ -11,9 +11,9 @@ object WorldListener : Listener {
     fun onWorldLoad(event: WorldInitEvent) {
         val world = event.world
         val areas = GameAreaManager.getAreas(world)
-        val worldContainer = AmongUs.server.worldContainer.toPath()
+        val worldContainer = AmongUs.server.worldContainer.toPath().toAbsolutePath()
         areas.forEach { area ->
-            area.worldFolder = worldContainer.relativize(world.worldPath).toString()
+            area.worldFolder = worldContainer.relativize(world.worldPath.toAbsolutePath()).toString()
         }
     }
 }

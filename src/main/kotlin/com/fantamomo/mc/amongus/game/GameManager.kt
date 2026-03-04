@@ -89,7 +89,7 @@ object GameManager {
         val path = worldContainer.resolve(worldFolder).toAbsolutePath()
         if (worldContainer == path) throw IllegalArgumentException("Area ${area.name} is in the same directory as the server")
         val uuid = Uuid.random()
-        val gameWorldPath = worldsPath.resolve(uuid.toString())
+        val gameWorldPath = worldsPath.resolve(uuid.toString()).toAbsolutePath()
 
         AmongUs.server.scheduler.runTaskAsynchronously(AmongUs, Runnable {
             try {
