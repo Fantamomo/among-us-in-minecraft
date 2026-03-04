@@ -29,6 +29,7 @@ object RemoteCameraAbility :
         @Suppress("UnstableApiUsage")
         override val items = listOf(
             abilityItem("camera") {
+                clickDelay = true
 
                 // ---------- CONDITIONS ----------
 

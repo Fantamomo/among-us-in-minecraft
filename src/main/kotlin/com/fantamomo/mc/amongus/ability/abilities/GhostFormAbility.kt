@@ -20,11 +20,15 @@ object GhostFormAbility : Ability<GhostFormAbility, GhostFormAbility.AssignedGho
 
     override fun assignTo(player: AmongUsPlayer) = AssignedGhostFormAbility(player)
 
-    class AssignedGhostFormAbility(override val player: AmongUsPlayer) : AssignedAbility<GhostFormAbility, AssignedGhostFormAbility> {
+    class AssignedGhostFormAbility(override val player: AmongUsPlayer) :
+        AssignedAbility<GhostFormAbility, AssignedGhostFormAbility> {
         override val definition = GhostFormAbility
+
         @Suppress("UnstableApiUsage")
         override val items: List<AbilityItem> = listOf(
             abilityItem("ghost_form") {
+                clickDelay = true
+
                 val ghostCooldown = timer(
                     "cooldown",
                     player.game.settings[SettingsKey.ROLES.GHOST.FORM_COOLDOWN]
@@ -60,7 +64,8 @@ object GhostFormAbility : Ability<GhostFormAbility, GhostFormAbility.AssignedGho
                         if (ghostPlayer == null) {
                             item.setData(
                                 DataComponentTypes.ITEM_NAME,
-                                Component.translatable("ability.ghost_form.ghost_form.active").translateTo(player.locale)
+                                Component.translatable("ability.ghost_form.ghost_form.active")
+                                    .translateTo(player.locale)
                             )
                         } else {
                             item.setData(
