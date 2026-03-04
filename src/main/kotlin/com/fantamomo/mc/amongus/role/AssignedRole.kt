@@ -1,6 +1,7 @@
 package com.fantamomo.mc.amongus.role
 
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import com.fantamomo.mc.amongus.util.TickContext
 import net.kyori.adventure.text.Component
 
 interface AssignedRole<R : Role<R, A>, A : AssignedRole<R, A>> {
@@ -14,7 +15,7 @@ interface AssignedRole<R : Role<R, A>, A : AssignedRole<R, A>> {
 
     fun onGameStart() {}
     fun onGameEnd() {}
-    fun tick() {}
+    fun tick(tickContext: TickContext) {}
 
     fun scoreboardLine(): Component? = null
 
