@@ -22,7 +22,9 @@ import com.fantamomo.mc.amongus.util.textComponent
 import io.papermc.paper.datacomponent.DataComponentTypes
 import io.papermc.paper.datacomponent.item.ResolvableProfile
 import net.kyori.adventure.bossbar.BossBar
+import net.kyori.adventure.key.Key
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.title.TitlePart
 import net.kyori.adventure.util.TriState
@@ -40,6 +42,7 @@ import org.bukkit.inventory.MenuType.STONECUTTER
 import org.bukkit.inventory.StonecuttingRecipe
 import org.bukkit.inventory.view.StonecutterView
 import org.bukkit.persistence.PersistentDataType
+import java.util.*
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
 
@@ -372,6 +375,7 @@ class MeetingManager(private val game: Game) : Listener {
             ejectedPlayer = calculateVoteResult()
             respawnLocation = ejectedPlayer?.livingEntity?.location
             showVoteResult(ejectedPlayer)
+            showVoteDetails()
 
             votes.entries.forEach { (voter, vote) ->
                 val player = voter.player
@@ -485,6 +489,90 @@ class MeetingManager(private val game: Game) : Listener {
             } ?: Component.translatable("meeting.result.skip")
 
             game.sendTitle(TitlePart.TITLE, component)
+        }
+
+        private fun showVoteDetails() {
+            if (!game.settings[SettingsKey.MEETING.SHOW_VOTES]) return
+
+            val anonymous = game.settings[SettingsKey.MEETING.ANONYMOUS_VOTING]
+
+            val playerVotes: MutableMap<AmongUsPlayer, MutableList<Voter>> = mutableMapOf()
+            val skipVoters: MutableList<Voter> = mutableListOf()
+
+            votes.entries.shuffled().forEach { (voter, vote) ->
+                when (vote) {
+                    Vote.Skip -> skipVoters.add(voter)
+                    is Vote.For -> playerVotes
+                        .getOrPut(vote.target) { mutableListOf() }
+                        .add(voter)
+                }
+            }
+
+            fun KComponentBuilder<*, *>.voterComponent(voter: Voter) {
+                objectComponent {
+                    when (voter) {
+                        is Voter.MayorVoter -> {
+                            sprite(Key.key("minecraft:map_decorations"), Key.key("target_x"))
+                            hoverEvent(KHoverEventType.ShowText, textComponent(Locale.US) {
+                                translatable("meeting.votes.mayor")
+                            })
+                        }
+
+                        is Voter.NormalPlayer -> {
+                            playerHead { id(voter.player.uuid) }
+                            hoverEvent(KHoverEventType.ShowText, Component.text(voter.player.name))
+                        }
+                    }
+                }
+            }
+
+            val sortedEntries = playerVotes.entries.sortedByDescending { it.value.size }
+
+            val message = textComponent {
+                repeat(3) { newLine() }
+                translatable("meeting.votes.header")
+
+                for ((target, voters) in sortedEntries) {
+                    newLine()
+
+                    objectComponent { playerHead { id(target.uuid) } }
+                    space()
+                    if (target == ejectedPlayer) text(target.name, NamedTextColor.RED)
+                    else text(target.name)
+
+                    translatable("meeting.votes.entry") {
+                        args { numeric("count", voters.size) }
+                    }
+
+                    if (!anonymous && voters.isNotEmpty()) {
+                        space()
+                        for (voter in voters) {
+                            voterComponent(voter)
+                        }
+                    }
+                }
+
+                if (skipVoters.isNotEmpty()) {
+                    newLine()
+
+                    objectComponent {
+                        sprite(Key.key("minecraft:items"), Key.key("item/structure_void"))
+                    }
+                    space()
+
+                    translatable("meeting.votes.skip") {
+                        args { numeric("count", skipVoters.size) }
+                    }
+
+                    if (!anonymous) {
+                        for (voter in skipVoters) {
+                            space()
+                            voterComponent(voter)
+                        }
+                    }
+                }
+            }
+            game.sendChatMessage(message)
         }
 
         @NMS
