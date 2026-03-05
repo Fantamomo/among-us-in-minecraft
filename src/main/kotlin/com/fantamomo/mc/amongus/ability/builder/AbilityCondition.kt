@@ -1,5 +1,7 @@
 package com.fantamomo.mc.amongus.ability.builder
 
+import net.kyori.adventure.text.Component
+
 fun interface AbilityCondition {
     fun AbilityContext.check(): BlockReason?
 
@@ -17,6 +19,18 @@ interface BooleanAbilityCondition : AbilityCondition {
         override val reason: BlockReason,
         private val block: AbilityContext.() -> Boolean
     ) : BooleanAbilityCondition {
+        override fun blocked(ctx: AbilityContext): Boolean = ctx.block()
+    }
+}
+
+interface TooltipAbilityCondition : BooleanAbilityCondition {
+    val tooltip: Component
+
+    class Impl(
+        override val reason: BlockReason,
+        override val tooltip: Component,
+        private val block: AbilityContext.() -> Boolean
+    ) : TooltipAbilityCondition {
         override fun blocked(ctx: AbilityContext): Boolean = ctx.block()
     }
 }
