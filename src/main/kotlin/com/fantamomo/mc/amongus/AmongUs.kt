@@ -10,6 +10,7 @@ import com.fantamomo.mc.amongus.listeners.Listeners
 import com.fantamomo.mc.amongus.manager.EntityManager
 import com.fantamomo.mc.amongus.manager.MeetingManager
 import com.fantamomo.mc.amongus.modification.Modification
+import com.fantamomo.mc.amongus.player.LastPlayerLocationManager
 import com.fantamomo.mc.amongus.player.PlayerDataManager
 import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.role.Role
@@ -71,6 +72,7 @@ object AmongUs : JavaPlugin() {
         saveRun { StatisticsManager.saveAll() }
         saveRun { GameAreaManager.saveAll() }
         saveRun { PlayerDataManager.saveAll() }
+        saveRun { LastPlayerLocationManager.save() }
 
         val ex = classNotFoundExceptions
         if (ex.isNotEmpty()) {

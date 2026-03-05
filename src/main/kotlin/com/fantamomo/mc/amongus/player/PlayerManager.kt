@@ -14,6 +14,7 @@ import org.bukkit.craftbukkit.entity.CraftPlayer
 import org.bukkit.entity.Mannequin
 import org.bukkit.entity.Player
 import java.util.*
+import kotlin.uuid.toKotlinUuid
 
 object PlayerManager {
     private val players = mutableListOf<AmongUsPlayer>()
@@ -32,6 +33,7 @@ object PlayerManager {
     internal fun joinGame(player: Player, game: Game): AmongUsPlayer {
         if (exists(player.uniqueId)) throw IllegalStateException("Player already in a game")
         val auPlayer = AmongUsPlayer(player.uniqueId, player.name, game, player.location)
+        LastPlayerLocationManager.set(player.uniqueId, player.location)
         auPlayer.player = player
 
         auPlayer.mannequinController.spawn()
@@ -141,6 +143,7 @@ object PlayerManager {
                 append(game.resultMessage ?: textComponent { content("No result") })
             })
             player.teleportAsync(player.world.spawnLocation)
+            LastPlayerLocationManager.remove(amongUsPlayer.uuid.toKotlinUuid())
             amongUsPlayer.mannequinController.despawn()
             players.remove(amongUsPlayer)
             return
@@ -169,7 +172,10 @@ object PlayerManager {
 
     fun stop() {
         for (player in players) {
+            player.player?.teleportAsync(player.locationBeforeGame)
+            player.player?.inventory?.clear()
             player.restorePlayer()
         }
+        players.clear()
     }
 }

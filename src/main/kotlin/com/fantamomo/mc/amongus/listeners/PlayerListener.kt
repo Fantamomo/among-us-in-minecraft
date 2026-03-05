@@ -1,14 +1,12 @@
 package com.fantamomo.mc.amongus.listeners
 
 import com.fantamomo.mc.amongus.game.GamePhase
-import com.fantamomo.mc.amongus.player.AmongUsPlayer
-import com.fantamomo.mc.amongus.player.PlayerColor
-import com.fantamomo.mc.amongus.player.PlayerManager
-import com.fantamomo.mc.amongus.player.WardrobeInventory
+import com.fantamomo.mc.amongus.player.*
 import com.fantamomo.mc.amongus.sabotage.SabotageType
 import com.fantamomo.mc.amongus.util.RefPersistentDataType
 import com.fantamomo.mc.amongus.util.isSameBlockPosition
 import io.papermc.paper.event.entity.EntityKnockbackEvent
+import io.papermc.paper.event.player.AsyncPlayerSpawnLocationEvent
 import org.bukkit.GameMode
 import org.bukkit.entity.Mannequin
 import org.bukkit.entity.Player
@@ -24,8 +22,20 @@ import org.bukkit.event.player.PlayerInteractEntityEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
+import kotlin.uuid.toKotlinUuid
 
 object PlayerListener : Listener {
+
+    @EventHandler
+    @Suppress("UnstableApiUsage")
+    fun onPlayerSpawnEvent(event: AsyncPlayerSpawnLocationEvent) {
+        val id = event.connection.profile.id?.toKotlinUuid() ?: return
+        val lastPlayerLocation = LastPlayerLocationManager.get(id) ?: return
+        val location = lastPlayerLocation.toLocation()
+        if (!location.isWorldLoaded) return
+        event.spawnLocation = location
+        LastPlayerLocationManager.remove(id)
+    }
 
     @EventHandler
     fun onPlayerJoin(event: PlayerJoinEvent) {
@@ -102,7 +112,10 @@ object PlayerListener : Listener {
         val rightClicked = event.rightClicked
         if (rightClicked !is Mannequin) return
         if (!rightClicked.persistentDataContainer.has(AmongUsPlayer.WARDROBE_MANNEQUIN_OWNER)) return
-        val owner = rightClicked.persistentDataContainer.get(AmongUsPlayer.WARDROBE_MANNEQUIN_OWNER, RefPersistentDataType.refPersistentDataType<AmongUsPlayer>())?.getOrNull() ?: return
+        val owner = rightClicked.persistentDataContainer.get(
+            AmongUsPlayer.WARDROBE_MANNEQUIN_OWNER,
+            RefPersistentDataType.refPersistentDataType<AmongUsPlayer>()
+        )?.getOrNull() ?: return
         if (usPlayer !== owner) return
         player.openInventory(WardrobeInventory(owner).inventory)
         usPlayer.game.updateAllWardrobeInventories()
