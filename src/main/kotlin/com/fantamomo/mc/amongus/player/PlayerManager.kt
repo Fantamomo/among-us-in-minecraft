@@ -172,7 +172,10 @@ object PlayerManager {
 
     fun stop() {
         for (player in players) {
+            player.player?.teleportAsync(player.locationBeforeGame)
+            player.player?.inventory?.clear()
             player.restorePlayer()
         }
+        players.clear()
     }
 }
