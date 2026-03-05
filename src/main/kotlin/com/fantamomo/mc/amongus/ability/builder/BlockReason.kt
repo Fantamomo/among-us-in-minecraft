@@ -19,7 +19,7 @@ sealed interface BlockReason {
     }
 
     data object Dead : BlockReason {
-        override val tooltipMessage = Component.translatable("ability.general.tooltip.dead")
+        override val tooltipMessage = Component.translatable("ability.general.tooltip.alive")
     }
     data object LimitReached : BlockReason
     data object GhostForm : BlockReason {
