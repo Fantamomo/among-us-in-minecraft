@@ -3,6 +3,7 @@ package com.fantamomo.mc.amongus.ability.builder
 import com.fantamomo.mc.amongus.ability.AssignedAbility
 import com.fantamomo.mc.amongus.ability.item.AbilityItem
 import com.fantamomo.mc.amongus.util.Cooldown
+import net.kyori.adventure.text.Component
 import java.util.*
 import kotlin.time.Duration
 
@@ -38,8 +39,21 @@ class AbilityItemBuilder(
         states[state]!!.apply(block)
     }
 
-    fun condition(reason: BlockReason, block: AbilityContext.() -> Boolean) {
-        condition(BooleanAbilityCondition.Impl(reason, block))
+    /**
+     * Adds a condition that determines whether the assigned ability should be blocked based on custom logic.
+     *
+     * @param reason The reason for blocking the ability. This can be one of the predefined block reasons
+     * (e.g., `InMeeting`, `Sabotage`, `Dead`) or a custom-defined reason.
+     * @param tooltip An optional tooltip message displayed to indicate the reason for blocking.
+     * @param block The lambda function containing the logic to determine whether the ability should be blocked.
+     * The function should return `true` if the ability should be blocked given the current `AbilityContext`, or
+     * `false` otherwise.
+     */
+    fun condition(reason: BlockReason, tooltip: Component? = null, block: AbilityContext.() -> Boolean) {
+        val conditionImpl = if (tooltip != null)
+            TooltipAbilityCondition.Impl(reason, tooltip, block)
+        else BooleanAbilityCondition.Impl(reason, block)
+        condition(conditionImpl)
     }
 
     fun condition(block: AbilityCondition) {
