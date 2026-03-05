@@ -3,12 +3,12 @@ package com.fantamomo.mc.amongus.ability.builder
 import com.fantamomo.mc.adventure.text.*
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.util.textComponent
-import com.fantamomo.mc.amongus.util.translateTo
 import io.papermc.paper.datacomponent.DataComponentTypes
 import io.papermc.paper.datacomponent.item.ItemLore
 import io.papermc.paper.datacomponent.item.UseCooldown
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.TranslatableComponent
+import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.text.minimessage.translation.Argument
 import org.bukkit.inventory.ItemStack
@@ -98,14 +98,15 @@ class AbilityItemRender<M : ItemMeta>(
             val booleanCondition = condition as? BooleanAbilityCondition ?: continue
             val blocked = booleanCondition.blocked(ctx)
             val reason = booleanCondition.reason
-            val tooltipMessage = reason.tooltipMessage ?: continue
+            val tooltipMessage = (booleanCondition as? TooltipAbilityCondition)?.tooltip ?: reason.tooltipMessage ?: continue
             lore.addLine(textComponent(ctx.player.locale) {
                 if (blocked) translatable("ability.general.util.no")
                 else translatable("ability.general.util.yes")
                 space()
                 append(tooltipMessage)
                 italic(TextDecoration.State.FALSE)
-            }.translateTo(ctx.player.locale))
+                color(if (blocked) NamedTextColor.RED else NamedTextColor.GREEN)
+            })
         }
 
         val hasCooldown = timer != null
@@ -130,6 +131,7 @@ class AbilityItemRender<M : ItemMeta>(
                 space()
                 italic(TextDecoration.State.FALSE)
                 translatable("ability.general.tooltip.cooldown")
+                color(if (isCooldownActive) NamedTextColor.RED else NamedTextColor.GREEN)
             })
         }
 
