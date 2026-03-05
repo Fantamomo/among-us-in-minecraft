@@ -35,6 +35,7 @@ object ArsonistRole : Role<ArsonistRole, ArsonistRole.AssignedArsonistRole> {
             for (otherPlayer in player.game.players) {
                 if (otherPlayer === player) continue
                 if (!otherPlayer.isAlive) continue
+                if (otherPlayer.isVented()) continue
                 if (otherPlayer in dousedPlayers) continue
                 val loc = (otherPlayer.mannequinController.getEntity() ?: otherPlayer.livingEntity).location
                 if (thisLoc.distanceSquared(loc) < douseDistanceSquared) return true
@@ -53,6 +54,7 @@ object ArsonistRole : Role<ArsonistRole, ArsonistRole.AssignedArsonistRole> {
             for (otherPlayer in player.game.players) {
                 if (otherPlayer === player) continue
                 if (!otherPlayer.isAlive) continue
+                if (otherPlayer.isVented()) continue
                 if (otherPlayer in dousedPlayers) continue
                 val loc = (otherPlayer.mannequinController.getEntity() ?: otherPlayer.livingEntity).location
                 val distanceSquared = thisLoc.distanceSquared(loc)
