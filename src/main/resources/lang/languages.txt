@@ -1,2 +1,2 @@
-en_US
-de_DE
+en_US:en
+de_DE:de
