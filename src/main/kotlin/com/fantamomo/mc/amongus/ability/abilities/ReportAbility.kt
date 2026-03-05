@@ -2,9 +2,7 @@ package com.fantamomo.mc.amongus.ability.abilities
 
 import com.fantamomo.mc.amongus.ability.Ability
 import com.fantamomo.mc.amongus.ability.AssignedAbility
-import com.fantamomo.mc.amongus.ability.builder.AbilityItemState
-import com.fantamomo.mc.amongus.ability.builder.BlockReason
-import com.fantamomo.mc.amongus.ability.builder.abilityItem
+import com.fantamomo.mc.amongus.ability.builder.*
 import com.fantamomo.mc.amongus.manager.MeetingManager
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import org.bukkit.inventory.ItemType
@@ -30,17 +28,9 @@ object ReportAbility :
 
                 // ---------- CONDITIONS ----------
 
-                condition {
-                    if (game.meetingManager.isCurrentlyAMeeting())
-                        BlockReason.InMeeting
-                    else null
-                }
+                requiresNotInMeeting()
 
-                condition {
-                    if (player.isVented())
-                        BlockReason.InVent
-                    else null
-                }
+                requiresNotInVent()
 
                 condition {
                     val loc = player.livingEntity.location
@@ -49,11 +39,7 @@ object ReportAbility :
                     else null
                 }
 
-                condition {
-                    if (!player.isAlive)
-                        BlockReason.custom("notAlive")
-                    else null
-                }
+                requiresAlive()
 
                 // ---------- ACTIVE ----------
 
@@ -79,12 +65,12 @@ object ReportAbility :
                     render {
                         itemType = ItemType.BARRIER
                         when (val reason = ctx.getBlockReason()) {
+                            BlockReason.Dead ->
+                                translationKey = "ability.report.report.deactivate.dead"
+
                             is BlockReason.Custom -> translationKey = when (reason.id) {
                                 "notNearCorpse" ->
                                     "ability.report.report.deactivate"
-
-                                "notAlive" ->
-                                    "ability.report.report.deactivate.dead"
 
                                 else ->
                                     "ability.report.report.deactivate"

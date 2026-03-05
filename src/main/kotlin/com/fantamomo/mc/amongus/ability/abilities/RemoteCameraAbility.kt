@@ -2,9 +2,7 @@ package com.fantamomo.mc.amongus.ability.abilities
 
 import com.fantamomo.mc.amongus.ability.Ability
 import com.fantamomo.mc.amongus.ability.AssignedAbility
-import com.fantamomo.mc.amongus.ability.builder.AbilityItemState
-import com.fantamomo.mc.amongus.ability.builder.BlockReason
-import com.fantamomo.mc.amongus.ability.builder.abilityItem
+import com.fantamomo.mc.amongus.ability.builder.*
 import com.fantamomo.mc.amongus.manager.CameraManager
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.sabotage.SabotageType
@@ -39,17 +37,9 @@ object RemoteCameraAbility :
                     else null
                 }
 
-                condition {
-                    if (player.isVented())
-                        BlockReason.InVent
-                    else null
-                }
+                requiresNotInVent()
 
-                condition {
-                    if (game.meetingManager.isCurrentlyAMeeting())
-                        BlockReason.InMeeting
-                    else null
-                }
+                requiresNotInMeeting()
 
                 condition {
                     if (game.cameraManager.isInCams(player))

@@ -3,8 +3,9 @@ package com.fantamomo.mc.amongus.ability.abilities
 import com.fantamomo.mc.amongus.ability.Ability
 import com.fantamomo.mc.amongus.ability.AssignedAbility
 import com.fantamomo.mc.amongus.ability.builder.AbilityItemState
-import com.fantamomo.mc.amongus.ability.builder.BlockReason
 import com.fantamomo.mc.amongus.ability.builder.abilityItem
+import com.fantamomo.mc.amongus.ability.builder.requiresNotInMeeting
+import com.fantamomo.mc.amongus.ability.builder.requiresNotInVent
 import com.fantamomo.mc.amongus.ability.item.AbilityItem
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.settings.SettingsKey
@@ -33,17 +34,9 @@ object MorphAbility : Ability<MorphAbility, MorphAbility.AssignedMorphAbility> {
                     player.game.settings[SettingsKey.ROLES.MORPHLING.MORPH_COOLDOWN]
                 )
 
-                condition {
-                    if (game.meetingManager.isCurrentlyAMeeting())
-                        BlockReason.InMeeting
-                    else null
-                }
+                requiresNotInMeeting()
 
-                condition {
-                    if (player.isVented())
-                        BlockReason.InVent
-                    else null
-                }
+                requiresNotInVent()
 
                 state(AbilityItemState.ACTIVE) {
                     @Suppress("UnstableApiUsage")

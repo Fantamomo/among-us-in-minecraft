@@ -2,9 +2,7 @@ package com.fantamomo.mc.amongus.ability.abilities
 
 import com.fantamomo.mc.amongus.ability.Ability
 import com.fantamomo.mc.amongus.ability.AssignedAbility
-import com.fantamomo.mc.amongus.ability.builder.AbilityItemState
-import com.fantamomo.mc.amongus.ability.builder.BlockReason
-import com.fantamomo.mc.amongus.ability.builder.abilityItem
+import com.fantamomo.mc.amongus.ability.builder.*
 import com.fantamomo.mc.amongus.ability.item.AbilityItem
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.role.neutral.CannibalRole
@@ -24,22 +22,15 @@ object EatBodyAbility : Ability<EatBodyAbility, EatBodyAbility.AssignedEatBodyAb
         @Suppress("UnstableApiUsage")
         override val items: List<AbilityItem> = listOf(
             abilityItem("eat_body") {
-                condition {
-                    if (game.meetingManager.isCurrentlyAMeeting())
-                        BlockReason.InMeeting
-                    else null
-                }
+
+                requiresNotInMeeting()
+
+                requiresAlive()
 
                 condition {
                     val loc = player.livingEntity.location
                     if (!game.killManager.isNearCorpse(loc))
                         BlockReason.custom("notNearCorpse")
-                    else null
-                }
-
-                condition {
-                    if (!player.isAlive)
-                        BlockReason.custom("notAlive")
                     else null
                 }
 

@@ -5,6 +5,7 @@ import com.fantamomo.mc.amongus.ability.AssignedAbility
 import com.fantamomo.mc.amongus.ability.builder.AbilityItemState
 import com.fantamomo.mc.amongus.ability.builder.BlockReason
 import com.fantamomo.mc.amongus.ability.builder.abilityItem
+import com.fantamomo.mc.amongus.ability.builder.requiresNotInMeeting
 import com.fantamomo.mc.amongus.ability.item.AbilityItem
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.role.Team
@@ -30,11 +31,7 @@ object RevealTeamAbility : Ability<RevealTeamAbility, RevealTeamAbility.Assigned
                     player.game.settings[SettingsKey.ROLES.REVEAL_TEAM.START_COOLDOWN]
                 )
 
-                condition {
-                    if (game.meetingManager.isCurrentlyAMeeting())
-                        BlockReason.InMeeting
-                    else null
-                }
+                requiresNotInMeeting()
 
                 condition {
                     val thisLoc = (player.mannequinController.getEntity() ?: player.livingEntity).location
