@@ -3,7 +3,9 @@ package com.fantamomo.mc.amongus.command.arguments
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.util.internal.NMS
+import com.mojang.brigadier.LiteralMessage
 import com.mojang.brigadier.exceptions.CommandSyntaxException
+import com.mojang.brigadier.exceptions.SimpleCommandExceptionType
 import io.papermc.paper.command.brigadier.CommandSourceStack
 import it.unimi.dsi.fastutil.objects.ObjectArrayList
 import net.minecraft.advancements.criterion.MinMaxBounds
@@ -14,10 +16,11 @@ import net.minecraft.server.level.ServerPlayer
 import net.minecraft.server.permissions.Permissions
 import net.minecraft.util.Util
 import net.minecraft.world.entity.Entity
-import net.minecraft.world.flag.FeatureFlagSet
 import net.minecraft.world.level.entity.EntityTypeTest
 import net.minecraft.world.phys.AABB
 import net.minecraft.world.phys.Vec3
+import org.bukkit.Bukkit
+import org.bukkit.entity.Player
 import java.lang.reflect.Field
 import java.util.*
 import java.util.function.BiConsumer
@@ -98,23 +101,24 @@ class AmongUsPlayerSelectorArgumentResolver(
     private fun getPlayers(source: net.minecraft.commands.CommandSourceStack): List<AmongUsPlayer> {
         this.checkPermissions(source)
         if (this.playerName != null) {
-            return listOfNotNull(PlayerManager.getPlayer(playerName))
+            return listOfNotNull(resolvePlayer(playerName)?.getOrThrow())
         } else if (this.entityUUID != null) {
-            return listOfNotNull(PlayerManager.getPlayer(this.entityUUID))
+            return listOfNotNull(resolvePlayer(this.entityUUID)?.getOrThrow())
         } else {
+            val maxResults = maxResults.takeIf { this.order === EntitySelector.ORDER_ARBITRARY } ?: Int.MAX_VALUE
             val vec3 = this.position.apply(source.position)
             val absoluteAabb: AABB? = this.getAbsoluteAabb(vec3)
-            val predicate = this.getPredicate(vec3, absoluteAabb, null)
+            val predicate = this.getPredicate(vec3, absoluteAabb/*, null*/)
             if (this.currentEntity) {
                 val serverPlayer = source.entity
                 return if (serverPlayer is ServerPlayer && predicate.test(serverPlayer))
-                    listOfNotNull(PlayerManager.getPlayer(serverPlayer.bukkitEntity))
+                    listOfNotNull(resolvePlayer(serverPlayer.bukkitEntity).getOrThrow())
                 else listOf()
             } else {
                 val players = ObjectArrayList<AmongUsPlayer>()
 
-                for (usPlayer in PlayerManager.getPlayers()) {
-                    players.add(usPlayer)
+                for (auPlayer in PlayerManager.getPlayers()) {
+                    players.add(auPlayer)
                     if (players.size >= maxResults) {
                         return players
                     }
@@ -125,20 +129,20 @@ class AmongUsPlayerSelectorArgumentResolver(
         }
     }
 
-    private fun getPredicate(pos: Vec3, box: AABB?, enabledFeatures: FeatureFlagSet?): Predicate<Entity> {
-        val flag = enabledFeatures != null
+    private fun getPredicate(pos: Vec3, box: AABB?/*, enabledFeatures: FeatureFlagSet?*/): Predicate<Entity> {
+//        val flag = enabledFeatures != null
         val flag1 = box != null
         val flag2 = this.range != null
-        val i = (if (flag) 1 else 0) + (if (flag1) 1 else 0) + (if (flag2) 1 else 0)
+        val i = (/*if (flag) 1 else*/ 0) + (if (flag1) 1 else 0) + (if (flag2) 1 else 0)
         val list: List<Predicate<Entity>>
         if (i == 0) {
             list = this.contextFreePredicates
         } else {
             val list1: MutableList<Predicate<Entity>> = ObjectArrayList(this.contextFreePredicates.size + i)
             list1.addAll(this.contextFreePredicates)
-            if (flag) {
-                list1.add(Predicate { entity: Entity -> entity.type.isEnabled(enabledFeatures) })
-            }
+//            if (flag) {
+//                list1.add(Predicate { entity: Entity -> entity.type.isEnabled() })
+//            }
 
             if (flag1) {
                 list1.add(Predicate { entity: Entity -> box.intersects(entity.boundingBox) })
@@ -195,6 +199,36 @@ class AmongUsPlayerSelectorArgumentResolver(
     }
 
     companion object {
+        private val NOT_AN_AMONG_US_PLAYER = SimpleCommandExceptionType(
+            LiteralMessage("Player is not an Among Us player")
+        )
+
         private val fields: MutableMap<String, Field> = mutableMapOf()
+
+        private fun resolvePlayer(uuid: UUID): ResolvedPlayer? {
+            val player = Bukkit.getPlayer(uuid) ?: return null
+            return resolvePlayer(player)
+        }
+
+        private fun resolvePlayer(name: String): ResolvedPlayer? {
+            val player = Bukkit.getPlayer(name) ?: return null
+            return resolvePlayer(player)
+        }
+
+        private fun resolvePlayer(player: Player): ResolvedPlayer {
+            val amongUsPlayer = PlayerManager.getPlayer(player)
+            if (amongUsPlayer != null) return ResolvedPlayer.AmongUs(amongUsPlayer)
+            return ResolvedPlayer.Bukkit(player)
+        }
+    }
+
+    private sealed interface ResolvedPlayer {
+        data class AmongUs(val player: AmongUsPlayer) : ResolvedPlayer
+        data class Bukkit(val player: Player) : ResolvedPlayer
+
+        fun getOrThrow(): AmongUsPlayer = when (this) {
+            is AmongUs -> player
+            else -> throw NOT_AN_AMONG_US_PLAYER.create()
+        }
     }
 }
