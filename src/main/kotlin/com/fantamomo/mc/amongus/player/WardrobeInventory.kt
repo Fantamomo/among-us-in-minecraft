@@ -16,10 +16,7 @@ import org.bukkit.Bukkit
 import org.bukkit.Keyed
 import org.bukkit.NamespacedKey
 import org.bukkit.event.inventory.InventoryClickEvent
-import org.bukkit.inventory.Inventory
-import org.bukkit.inventory.InventoryHolder
-import org.bukkit.inventory.ItemStack
-import org.bukkit.inventory.ItemType
+import org.bukkit.inventory.*
 import org.bukkit.inventory.meta.trim.ArmorTrim
 import org.bukkit.inventory.meta.trim.TrimMaterial
 import org.bukkit.inventory.meta.trim.TrimPattern
@@ -100,12 +97,18 @@ class WardrobeInventory private constructor(
                 armorTrim.material.description()
             )
 
-            val patternItem = PATTERN_TO_ITEM_TYPE[armorTrim.pattern]?.createItemStack()
+            val type = PATTERN_TO_ITEM_TYPE[armorTrim.pattern]
                 ?: throw IllegalStateException("Armor pattern not found for ${armorTrim.pattern}")
+            val patternItem = FAKE_PATTERN_ITEM_TYPE.createItemStack()
+            patternItem.setData(
+                DataComponentTypes.ITEM_MODEL,
+                type.key()
+            )
             patternItem.setData(
                 DataComponentTypes.ITEM_NAME,
                 armorTrim.pattern.description()
             )
+            patternItem.setData(DataComponentTypes.RARITY, ItemRarity.COMMON)
 
             materialItem to patternItem
         } else {
@@ -170,8 +173,12 @@ class WardrobeInventory private constructor(
     private fun buildPattern() {
         val middleSlots = GuiAssignedTask.getMiddleItemSlots(type.size)
         var index = 0
-        PATTERN_TO_ITEM_TYPE.forEach { (pattern, itemType) ->
-            val item = createItemStack(itemType, pattern, owner.armorTrim?.pattern)
+        PATTERN_TO_ITEM_TYPE.forEach { (pattern, patternType) ->
+            val item = createItemStack(FAKE_PATTERN_ITEM_TYPE, pattern, owner.armorTrim?.pattern)
+            item.setData(
+                DataComponentTypes.ITEM_MODEL,
+                patternType.key()
+            )
             item.setData(DataComponentTypes.ITEM_NAME, pattern.description())
             item.editPersistentDataContainer {
                 it.set(
@@ -180,6 +187,7 @@ class WardrobeInventory private constructor(
                     RefPersistentDataType.newRef(pattern)
                 )
             }
+            item.setData(DataComponentTypes.RARITY, ItemRarity.COMMON)
             inv.setItem(middleSlots[index], item)
             index++
         }
@@ -276,6 +284,8 @@ class WardrobeInventory private constructor(
         private val ARMOR_HIDDEN_COMPONENT = TooltipDisplay.tooltipDisplay()
             .addHiddenComponents(DataComponentTypes.DYED_COLOR, DataComponentTypes.ATTRIBUTE_MODIFIERS)
             .build()
+
+        private val FAKE_PATTERN_ITEM_TYPE = ItemType.BARRIER
 
         private val PATTERN_TO_ITEM_TYPE: Map<TrimPattern, ItemType> = mapOf(
             TrimPattern.BOLT to ItemType.BOLT_ARMOR_TRIM_SMITHING_TEMPLATE,
