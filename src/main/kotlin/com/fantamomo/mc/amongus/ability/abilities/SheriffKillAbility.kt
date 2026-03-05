@@ -6,6 +6,7 @@ import com.fantamomo.mc.amongus.ability.builder.*
 import com.fantamomo.mc.amongus.ability.item.AbilityItem
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.settings.SettingsKey
+import net.kyori.adventure.text.Component
 import org.bukkit.inventory.ItemType
 
 object SheriffKillAbility : Ability<SheriffKillAbility, SheriffKillAbility.AssignedSheriffKillAbility> {
@@ -31,10 +32,11 @@ object SheriffKillAbility : Ability<SheriffKillAbility, SheriffKillAbility.Assig
 
                 requiresNotInMeeting()
 
-                condition {
-                    if (!game.killManager.canKillAsSheriff(player))
-                        BlockReason.custom("notNearVictim")
-                    else null
+                condition(
+                    BlockReason.custom("notNearVictim"),
+                    Component.translatable("ability.sheriff_kill.sheriff_kill.tooltip")
+                ) {
+                    !game.killManager.canKillAsSheriff(player)
                 }
 
                 // ---------- ACTIVE ----------

@@ -6,6 +6,7 @@ import com.fantamomo.mc.amongus.ability.builder.*
 import com.fantamomo.mc.amongus.manager.MeetingManager
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.settings.SettingsKey
+import net.kyori.adventure.text.Component
 import org.bukkit.inventory.ItemType
 
 object CallMeetingAbility :
@@ -32,11 +33,11 @@ object CallMeetingAbility :
 
                 requiresNotInVent()
 
-                condition {
-                    if (
-                        player.meetingButtonsPressed >=
-                        game.settings[SettingsKey.MEETING.MEETING_BUTTONS]
-                    ) BlockReason.LimitReached else null
+                condition(
+                    BlockReason.LimitReached,
+                    Component.translatable("ability.call_meeting.call_meeting.tooltip")
+                ) {
+                    player.meetingButtonsPressed >= game.settings[SettingsKey.MEETING.MEETING_BUTTONS]
                 }
 
                 state(AbilityItemState.ACTIVE) {

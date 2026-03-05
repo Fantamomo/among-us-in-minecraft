@@ -6,6 +6,7 @@ import com.fantamomo.mc.amongus.ability.builder.*
 import com.fantamomo.mc.amongus.ability.item.AbilityItem
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.role.neutral.CannibalRole
+import net.kyori.adventure.text.Component
 import org.bukkit.inventory.ItemType
 
 object EatBodyAbility : Ability<EatBodyAbility, EatBodyAbility.AssignedEatBodyAbility> {
@@ -27,11 +28,12 @@ object EatBodyAbility : Ability<EatBodyAbility, EatBodyAbility.AssignedEatBodyAb
 
                 requiresAlive()
 
-                condition {
+                condition(
+                    BlockReason.custom("notNearCorpse"),
+                    Component.translatable("ability.eat_body.eat_body.tooltip")
+                ) {
                     val loc = player.livingEntity.location
-                    if (!game.killManager.isNearCorpse(loc))
-                        BlockReason.custom("notNearCorpse")
-                    else null
+                    !game.killManager.isNearCorpse(loc)
                 }
 
                 state(AbilityItemState.ACTIVE) {

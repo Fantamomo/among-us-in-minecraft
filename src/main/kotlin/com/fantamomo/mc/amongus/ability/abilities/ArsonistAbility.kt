@@ -8,6 +8,7 @@ import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.role.neutral.ArsonistRole
 import com.fantamomo.mc.amongus.role.neutral.ArsonistRole.AssignedArsonistRole
 import com.fantamomo.mc.amongus.settings.SettingsKey
+import net.kyori.adventure.text.Component
 import org.bukkit.inventory.ItemType
 
 object ArsonistAbility : Ability<ArsonistAbility, ArsonistAbility.AssignedArsonistAbility> {
@@ -17,7 +18,8 @@ object ArsonistAbility : Ability<ArsonistAbility, ArsonistAbility.AssignedArsoni
 
     override fun assignTo(player: AmongUsPlayer) = AssignedArsonistAbility(player)
 
-    class AssignedArsonistAbility(override val player: AmongUsPlayer) : AssignedAbility<ArsonistAbility, AssignedArsonistAbility> {
+    class AssignedArsonistAbility(override val player: AmongUsPlayer) :
+        AssignedAbility<ArsonistAbility, AssignedArsonistAbility> {
         override val definition = ArsonistAbility
 
         private val arsonist: AssignedArsonistRole
@@ -38,10 +40,11 @@ object ArsonistAbility : Ability<ArsonistAbility, ArsonistAbility.AssignedArsoni
 
                 requiresNotInMeeting()
 
-                condition {
-                    if (!arsonist.nearUndousedPlayer())
-                        BlockReason.Custom("notNearUndousedPlayer")
-                    else null
+                condition(
+                    BlockReason.Custom("notNearUndousedPlayer"),
+                    Component.translatable("ability.arsonist.douse.tooltip")
+                ) {
+                    !arsonist.nearUndousedPlayer()
                 }
 
                 // ---------- ACTIVE ----------

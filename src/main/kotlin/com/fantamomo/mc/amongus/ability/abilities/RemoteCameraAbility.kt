@@ -6,6 +6,7 @@ import com.fantamomo.mc.amongus.ability.builder.*
 import com.fantamomo.mc.amongus.manager.CameraManager
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.sabotage.SabotageType
+import net.kyori.adventure.text.Component
 import org.bukkit.inventory.ItemType
 
 object RemoteCameraAbility :
@@ -31,26 +32,29 @@ object RemoteCameraAbility :
 
                 // ---------- CONDITIONS ----------
 
-                condition {
-                    if (game.sabotageManager.isSabotage(SabotageType.Communications))
-                        BlockReason.Sabotage
-                    else null
+                condition(
+                    BlockReason.Sabotage,
+                    Component.translatable("ability.remote_camera.camera.tooltip.sabotaged")
+                ) {
+                    game.sabotageManager.isSabotage(SabotageType.Communications)
                 }
 
                 requiresNotInVent()
 
                 requiresNotInMeeting()
 
-                condition {
-                    if (game.cameraManager.isInCams(player))
-                        BlockReason.custom("inCams")
-                    else null
+                condition(
+                    BlockReason.custom("inCams"),
+                    Component.translatable("ability.remote_camera.camera.tooltip.in_cams")
+                ) {
+                    game.cameraManager.isInCams(player)
                 }
 
-                condition {
-                    if (player.player?.isSneaking == true)
-                        BlockReason.Custom("sneaking")
-                    else null
+                condition(
+                    BlockReason.custom("sneaking"),
+                    Component.translatable("ability.remote_camera.camera.tooltip.sneaking")
+                ) {
+                    player.player?.isSneaking == true
                 }
 
                 // ---------- ACTIVE ----------
