@@ -1,6 +1,8 @@
 package com.fantamomo.mc.amongus.command
 
+import com.fantamomo.mc.adventure.text.KClickEventType
 import com.fantamomo.mc.adventure.text.args
+import com.fantamomo.mc.adventure.text.clickEvent
 import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.area.GameArea
@@ -19,6 +21,7 @@ import com.fantamomo.mc.amongus.player.PlayerStatistics
 import com.fantamomo.mc.amongus.settings.SettingsInventory
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.statistics.*
+import com.fantamomo.mc.amongus.util.sendComponent
 import com.fantamomo.mc.brigadier.*
 import com.mojang.brigadier.arguments.BoolArgumentType
 import io.papermc.paper.command.brigadier.CommandSourceStack
@@ -40,6 +43,86 @@ val AmongUsCommand = paperCommand("amongus") {
     settingsCommand()
     startCommand()
     banCommand()
+    inviteCommand()
+}
+
+private fun PaperCommand.inviteCommand() = literal("invite") {
+    requires {
+        sender is Player &&
+                (sender.hasPermission(Permissions.ADMIN) ||
+                        (AmongUsConfig.GameCreation.everyoneCanCreate && sender.hasPermission(Permissions.PLAYER_INVITE)))
+    }
+
+    argument("player", ArgumentTypes.player()) {
+        val targetRef = argRef()
+        execute {
+            val sender = source.sender as Player
+
+            val auPlayer = PlayerManager.getPlayer(sender)
+            if (auPlayer == null) {
+                sendMessage {
+                    translatable("command.error.invite.not_joined")
+                }
+                return@execute NO_SUCCESS
+            }
+
+            if (!auPlayer.isHost()) {
+                sendMessage {
+                    translatable("command.error.invite.not_host")
+                }
+                return@execute NO_SUCCESS
+            }
+
+            val game = auPlayer.game
+            if (game.phase != GamePhase.LOBBY) {
+                sendMessage {
+                    translatable("command.error.invite.not_in_lobby")
+                }
+                return@execute NO_SUCCESS
+            }
+
+            val target = targetRef.get().resolve(source).first()
+
+            if (target === sender) {
+                sendMessage {
+                    translatable("command.error.invite.self")
+                }
+                return@execute NO_SUCCESS
+            }
+
+            if (PlayerManager.getPlayer(target) != null) {
+                sendMessage {
+                    translatable("command.error.invite.already_in_game") {
+                        args {
+                            string("player", target.name)
+                        }
+                    }
+                }
+                return@execute NO_SUCCESS
+            }
+
+            sendMessage {
+                translatable("command.success.invite") {
+                    args {
+                        string("player", target.name)
+                    }
+                }
+            }
+
+            target.sendComponent {
+                translatable("command.success.invite.message") {
+                    args {
+                        string("player", sender.name)
+                    }
+                }
+                clickEvent(KClickEventType.RunCommand) {
+                    command("/amongus:amongus join ${game.code}")
+                }
+            }
+
+            SINGLE_SUCCESS
+        }
+    }
 }
 
 private fun PaperCommand.banCommand() = literal("ban") {
