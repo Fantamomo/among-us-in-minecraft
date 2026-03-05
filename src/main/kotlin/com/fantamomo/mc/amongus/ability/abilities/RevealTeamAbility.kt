@@ -5,10 +5,12 @@ import com.fantamomo.mc.amongus.ability.AssignedAbility
 import com.fantamomo.mc.amongus.ability.builder.AbilityItemState
 import com.fantamomo.mc.amongus.ability.builder.BlockReason
 import com.fantamomo.mc.amongus.ability.builder.abilityItem
+import com.fantamomo.mc.amongus.ability.builder.requiresNotInMeeting
 import com.fantamomo.mc.amongus.ability.item.AbilityItem
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.settings.SettingsKey
+import net.kyori.adventure.text.Component
 import org.bukkit.inventory.ItemType
 import kotlin.time.Duration
 
@@ -30,13 +32,12 @@ object RevealTeamAbility : Ability<RevealTeamAbility, RevealTeamAbility.Assigned
                     player.game.settings[SettingsKey.ROLES.REVEAL_TEAM.START_COOLDOWN]
                 )
 
-                condition {
-                    if (game.meetingManager.isCurrentlyAMeeting())
-                        BlockReason.InMeeting
-                    else null
-                }
+                requiresNotInMeeting()
 
-                condition {
+                condition(
+                    BlockReason.Custom("not_near_player"),
+                    Component.translatable("ability.reveal_team.reveal_team.tooltip")
+                ) {
                     val thisLoc = (player.mannequinController.getEntity() ?: player.livingEntity).location
                     val maxDistance = player.game.settings[SettingsKey.ROLES.REVEAL_TEAM.DISTANCE].distance.let { it * it }
                     for (player in game.players) {
@@ -45,10 +46,10 @@ object RevealTeamAbility : Ability<RevealTeamAbility, RevealTeamAbility.Assigned
                         if (player.isVented()) continue
                         if (player in revealedPlayers) continue
                         val loc = (player.mannequinController.getEntity() ?: player.livingEntity).location
-                        if (thisLoc.distanceSquared(loc) < maxDistance) return@condition null
+                        if (thisLoc.distanceSquared(loc) < maxDistance) return@condition false
                     }
 
-                    BlockReason.custom("not_near_player")
+                    true
                 }
 
                 state(AbilityItemState.ACTIVE) {

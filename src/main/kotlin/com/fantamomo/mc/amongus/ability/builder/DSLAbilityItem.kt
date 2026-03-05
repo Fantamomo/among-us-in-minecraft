@@ -23,7 +23,7 @@ class DSLAbilityItem(
 
     private fun computeState(): Pair<AbilityItemState, BlockReason?> {
 
-        val reason = conditions.firstNotNullOfOrNull { ctx.it() }
+        val reason = conditions.firstNotNullOfOrNull { it.checkInternal(ctx) }
 
         if (reason != null)
             return AbilityItemState.BLOCKED to reason

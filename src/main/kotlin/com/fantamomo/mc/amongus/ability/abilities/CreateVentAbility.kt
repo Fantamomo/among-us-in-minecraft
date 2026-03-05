@@ -2,12 +2,11 @@ package com.fantamomo.mc.amongus.ability.abilities
 
 import com.fantamomo.mc.amongus.ability.Ability
 import com.fantamomo.mc.amongus.ability.AssignedAbility
-import com.fantamomo.mc.amongus.ability.builder.AbilityItemState
-import com.fantamomo.mc.amongus.ability.builder.BlockReason
-import com.fantamomo.mc.amongus.ability.builder.abilityItem
+import com.fantamomo.mc.amongus.ability.builder.*
 import com.fantamomo.mc.amongus.ability.item.AbilityItem
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.settings.SettingsKey
+import net.kyori.adventure.text.Component
 import org.bukkit.block.Block
 import org.bukkit.inventory.ItemType
 import kotlin.time.Duration.Companion.seconds
@@ -17,8 +16,10 @@ object CreateVentAbility : Ability<CreateVentAbility, CreateVentAbility.Assigned
 
     override fun assignTo(player: AmongUsPlayer) = AssignedCreateVentAbility(player)
 
-    class AssignedCreateVentAbility(override val player: AmongUsPlayer) : AssignedAbility<CreateVentAbility, AssignedCreateVentAbility> {
+    class AssignedCreateVentAbility(override val player: AmongUsPlayer) :
+        AssignedAbility<CreateVentAbility, AssignedCreateVentAbility> {
         override val definition = CreateVentAbility
+
         @Suppress("UnstableApiUsage")
         override val items: List<AbilityItem> = listOf(
             abilityItem("create_vent") {
@@ -29,37 +30,28 @@ object CreateVentAbility : Ability<CreateVentAbility, CreateVentAbility.Assigned
 
                 val blockReasonNotOnGround = BlockReason.custom("noBlockBeneath")
 
-                condition {
-                    if (!player.isAlive)
-                        BlockReason.Dead
-                    else null
+                requiresAlive()
+
+                requiresNotInMeeting()
+
+                requiresNotInVent()
+
+                condition(
+                    BlockReason.custom("nearVent"),
+                    Component.translatable("ability.create_vent.create_vent.tooltip.near_vent")
+                ) {
+                    player.isNearVent()
                 }
 
-                condition {
-                    if (game.meetingManager.isCurrentlyAMeeting())
-                        BlockReason.InMeeting
-                    else null
-                }
-
-                condition {
-                    if (player.isVented())
-                        BlockReason.InVent
-                    else null
-                }
-
-                condition {
-                    if (player.isNearVent())
-                        BlockReason.custom("nearVent")
-                    else null
-                }
-
-                condition {
-                    val p = player.player ?: return@condition null
+                condition(
+                    blockReasonNotOnGround,
+                    Component.translatable("ability.create_vent.create_vent.tooltip.not_on_ground")
+                ) {
+                    val p = player.player ?: return@condition false
                     @Suppress("DEPRECATION")
-                    if (!p.isOnGround) return@condition blockReasonNotOnGround
+                    if (!p.isOnGround) return@condition true
                     val blockBeneath: Block = p.location.subtract(0.0, 0.1, 0.0).block
-                    if (blockBeneath.type.isSolid()) null
-                    else blockReasonNotOnGround
+                    !blockBeneath.type.isSolid()
                 }
 
                 state(AbilityItemState.ACTIVE) {
@@ -96,6 +88,7 @@ object CreateVentAbility : Ability<CreateVentAbility, CreateVentAbility.Assigned
 
                             is BlockReason.Custom if (reason.id == "noBlockBeneath") ->
                                 translationKey = "ability.create_vent.create_vent.deactivate.no_block_beneath"
+
                             else -> {}
                         }
                     }

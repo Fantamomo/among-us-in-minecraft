@@ -2,11 +2,10 @@ package com.fantamomo.mc.amongus.ability.abilities
 
 import com.fantamomo.mc.amongus.ability.Ability
 import com.fantamomo.mc.amongus.ability.AssignedAbility
-import com.fantamomo.mc.amongus.ability.builder.AbilityItemState
-import com.fantamomo.mc.amongus.ability.builder.BlockReason
-import com.fantamomo.mc.amongus.ability.builder.abilityItem
+import com.fantamomo.mc.amongus.ability.builder.*
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.settings.SettingsKey
+import net.kyori.adventure.text.Component
 import org.bukkit.inventory.ItemType
 
 object KillAbility :
@@ -36,27 +35,17 @@ object KillAbility :
 
                 // ---------- BLOCK CONDITIONS ----------
 
-                condition {
-                    if (!player.isAlive) BlockReason.Dead
-                    else null
-                }
+                requiresAlive()
 
-                condition {
-                    if (game.meetingManager.isCurrentlyAMeeting())
-                        BlockReason.InMeeting
-                    else null
-                }
+                requiresNotInMeeting()
 
-                condition {
-                    if (player.isVented())
-                        BlockReason.InVent
-                    else null
-                }
+                requiresNotInVent()
 
-                condition {
-                    if (!game.killManager.canKillAsImposter(player))
-                        BlockReason.custom("notNearVictim")
-                    else null
+                condition(
+                    BlockReason.custom("notNearVictim"),
+                    Component.translatable("ability.kill.kill.tooltip")
+                ) {
+                    !game.killManager.canKillAsImposter(player)
                 }
 
                 // ---------- ACTIVE ----------

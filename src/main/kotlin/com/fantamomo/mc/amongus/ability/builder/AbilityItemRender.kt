@@ -1,14 +1,15 @@
 package com.fantamomo.mc.amongus.ability.builder
 
-import com.fantamomo.mc.adventure.text.append
-import com.fantamomo.mc.adventure.text.args
-import com.fantamomo.mc.adventure.text.translatable
+import com.fantamomo.mc.adventure.text.*
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.util.textComponent
 import io.papermc.paper.datacomponent.DataComponentTypes
+import io.papermc.paper.datacomponent.item.ItemLore
 import io.papermc.paper.datacomponent.item.UseCooldown
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.TranslatableComponent
+import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.text.minimessage.translation.Argument
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.ItemType
@@ -91,6 +92,26 @@ class AbilityItemRender<M : ItemMeta>(
             }
         )
 
+        val lore = ItemLore.lore()
+
+        for (condition in ctx.builder.conditions) {
+            val booleanCondition = condition as? BooleanAbilityCondition ?: continue
+            val blocked = booleanCondition.blocked(ctx)
+            val reason = booleanCondition.reason
+            val tooltipMessage = (booleanCondition as? TooltipAbilityCondition)?.tooltip ?: reason.tooltipMessage ?: continue
+            lore.addLine(textComponent(ctx.player.locale) {
+                if (blocked) translatable("ability.general.util.no")
+                else translatable("ability.general.util.yes")
+                space()
+                append(tooltipMessage)
+                italic(TextDecoration.State.FALSE)
+                color(if (blocked) NamedTextColor.RED else NamedTextColor.GREEN)
+            })
+        }
+
+        val hasCooldown = timer != null
+        var isCooldownActive = false
+
         if (remainingSeconds != null && remainingSeconds > 0) {
             if (!overrideAmount) item.amount = remainingSeconds.coerceAtLeast(1)
             item.setData(
@@ -98,9 +119,26 @@ class AbilityItemRender<M : ItemMeta>(
                 UseCooldown.useCooldown(Float.MAX_VALUE / 2).cooldownGroup(ctx.cooldownKey)
             )
             ctx.player.player?.setCooldown(ctx.cooldownKey, Int.MAX_VALUE / 2)
+            isCooldownActive = true
         } else {
             ctx.player.player?.setCooldown(ctx.cooldownKey, 0)
         }
+
+        if (hasCooldown) {
+            lore.addLine(textComponent(ctx.player.locale) {
+                if (isCooldownActive) translatable("ability.general.util.no")
+                else translatable("ability.general.util.yes")
+                space()
+                italic(TextDecoration.State.FALSE)
+                translatable("ability.general.tooltip.cooldown")
+                color(if (isCooldownActive) NamedTextColor.RED else NamedTextColor.GREEN)
+            })
+        }
+
+        item.setData(
+            DataComponentTypes.LORE,
+            lore
+        )
 
         return item
     }

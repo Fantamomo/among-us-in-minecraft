@@ -2,11 +2,10 @@ package com.fantamomo.mc.amongus.ability.abilities
 
 import com.fantamomo.mc.amongus.ability.Ability
 import com.fantamomo.mc.amongus.ability.AssignedAbility
-import com.fantamomo.mc.amongus.ability.builder.AbilityItemState
-import com.fantamomo.mc.amongus.ability.builder.BlockReason
-import com.fantamomo.mc.amongus.ability.builder.abilityItem
+import com.fantamomo.mc.amongus.ability.builder.*
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.settings.SettingsKey
+import net.kyori.adventure.text.Component
 import org.bukkit.inventory.ItemType
 import kotlin.time.Duration.Companion.seconds
 
@@ -34,27 +33,19 @@ object VentAbility :
 
                 // ---------- CONDITIONS ----------
 
-                condition {
-                    if (game.meetingManager.isCurrentlyAMeeting())
-                        BlockReason.InMeeting
-                    else null
-                }
+                requiresNotInMeeting()
 
-                condition {
+                condition(
+                    BlockReason.custom("notNearVent"),
+                    Component.translatable("ability.vent.vent.tooltip")
+                ) {
                     val ventManager = game.ventManager
 
-                    if (!ventManager.isVented(player) &&
+                    !ventManager.isVented(player) &&
                         !ventManager.isNearVent(player)
-                    )
-                        BlockReason.custom("notNearVent")
-                    else null
                 }
 
-                condition {
-                    if (player.isInGhostForm()) {
-                        BlockReason.GhostForm
-                    } else null
-                }
+                requiresNotInGhostForm()
 
                 // ---------- ACTIVE ----------
 

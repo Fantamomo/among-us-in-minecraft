@@ -2,12 +2,11 @@ package com.fantamomo.mc.amongus.ability.abilities
 
 import com.fantamomo.mc.amongus.ability.Ability
 import com.fantamomo.mc.amongus.ability.AssignedAbility
-import com.fantamomo.mc.amongus.ability.builder.AbilityItemState
-import com.fantamomo.mc.amongus.ability.builder.BlockReason
-import com.fantamomo.mc.amongus.ability.builder.abilityItem
+import com.fantamomo.mc.amongus.ability.builder.*
 import com.fantamomo.mc.amongus.manager.CameraManager
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.sabotage.SabotageType
+import net.kyori.adventure.text.Component
 import org.bukkit.inventory.ItemType
 
 object RemoteCameraAbility :
@@ -33,34 +32,29 @@ object RemoteCameraAbility :
 
                 // ---------- CONDITIONS ----------
 
-                condition {
-                    if (game.sabotageManager.isSabotage(SabotageType.Communications))
-                        BlockReason.Sabotage
-                    else null
+                condition(
+                    BlockReason.Sabotage,
+                    Component.translatable("ability.remote_camera.camera.tooltip.sabotaged")
+                ) {
+                    game.sabotageManager.isSabotage(SabotageType.Communications)
                 }
 
-                condition {
-                    if (player.isVented())
-                        BlockReason.InVent
-                    else null
+                requiresNotInVent()
+
+                requiresNotInMeeting()
+
+                condition(
+                    BlockReason.custom("inCams"),
+                    Component.translatable("ability.remote_camera.camera.tooltip.in_cams")
+                ) {
+                    game.cameraManager.isInCams(player)
                 }
 
-                condition {
-                    if (game.meetingManager.isCurrentlyAMeeting())
-                        BlockReason.InMeeting
-                    else null
-                }
-
-                condition {
-                    if (game.cameraManager.isInCams(player))
-                        BlockReason.custom("inCams")
-                    else null
-                }
-
-                condition {
-                    if (player.player?.isSneaking == true)
-                        BlockReason.Custom("sneaking")
-                    else null
+                condition(
+                    BlockReason.custom("sneaking"),
+                    Component.translatable("ability.remote_camera.camera.tooltip.sneaking")
+                ) {
+                    player.player?.isSneaking == true
                 }
 
                 // ---------- ACTIVE ----------

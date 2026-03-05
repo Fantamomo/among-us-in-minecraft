@@ -2,11 +2,10 @@ package com.fantamomo.mc.amongus.ability.abilities
 
 import com.fantamomo.mc.amongus.ability.Ability
 import com.fantamomo.mc.amongus.ability.AssignedAbility
-import com.fantamomo.mc.amongus.ability.builder.AbilityItemState
-import com.fantamomo.mc.amongus.ability.builder.BlockReason
-import com.fantamomo.mc.amongus.ability.builder.abilityItem
+import com.fantamomo.mc.amongus.ability.builder.*
 import com.fantamomo.mc.amongus.manager.MeetingManager
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import net.kyori.adventure.text.Component
 import org.bukkit.inventory.ItemType
 
 object ReportAbility :
@@ -30,30 +29,19 @@ object ReportAbility :
 
                 // ---------- CONDITIONS ----------
 
-                condition {
-                    if (game.meetingManager.isCurrentlyAMeeting())
-                        BlockReason.InMeeting
-                    else null
-                }
+                requiresNotInMeeting()
 
-                condition {
-                    if (player.isVented())
-                        BlockReason.InVent
-                    else null
-                }
+                requiresNotInVent()
 
-                condition {
+                condition(
+                    BlockReason.custom("notNearCorpse"),
+                    Component.translatable("ability.report.report.tooltip")
+                ) {
                     val loc = player.livingEntity.location
-                    if (!game.killManager.isNearCorpse(loc))
-                        BlockReason.custom("notNearCorpse")
-                    else null
+                    !game.killManager.isNearCorpse(loc)
                 }
 
-                condition {
-                    if (!player.isAlive)
-                        BlockReason.custom("notAlive")
-                    else null
-                }
+                requiresAlive()
 
                 // ---------- ACTIVE ----------
 
@@ -79,12 +67,12 @@ object ReportAbility :
                     render {
                         itemType = ItemType.BARRIER
                         when (val reason = ctx.getBlockReason()) {
+                            BlockReason.Dead ->
+                                translationKey = "ability.report.report.deactivate.dead"
+
                             is BlockReason.Custom -> translationKey = when (reason.id) {
                                 "notNearCorpse" ->
                                     "ability.report.report.deactivate"
-
-                                "notAlive" ->
-                                    "ability.report.report.deactivate.dead"
 
                                 else ->
                                     "ability.report.report.deactivate"

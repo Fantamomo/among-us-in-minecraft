@@ -7,7 +7,7 @@ import net.kyori.adventure.key.Key
 import kotlin.time.Duration
 
 class AbilityContext(
-    private val builder: AbilityItemBuilder,
+    internal val builder: AbilityItemBuilder,
     val ability: AssignedAbility<*, *>
 ) {
     internal val cooldownKey = Key.key("amongus:ability_cooldown/${ability.definition.id}/${builder.id}")
@@ -34,7 +34,7 @@ class AbilityContext(
         player.notifyAbilityItemChange(abilityItem)
     }
 
-    fun getBlockReason(): BlockReason? = builder.conditions.firstNotNullOfOrNull { it.invoke(this) }
+    fun getBlockReason(): BlockReason? = builder.conditions.firstNotNullOfOrNull { it.checkInternal(this) }
 
     fun setTimer(id: String, cooldown: Cooldown): AbilityTimer =
         timers.getOrPut(id) { AbilityTimer(id, cooldown) }
