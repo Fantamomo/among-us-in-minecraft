@@ -71,3 +71,15 @@ Some task and role names are borrowed from Among Us purely for recognizability a
 - Not affiliated with Innersloth LLC.
 - No original Among Us assets used
 - Fan-made recreation inspired by the gameplay
+
+---
+
+## Licence
+
+[Apache License 2.0](LICENSE)
+
+---
+
+## Author
+
+[Fantamomo](https://github.com/Fantamomo)
