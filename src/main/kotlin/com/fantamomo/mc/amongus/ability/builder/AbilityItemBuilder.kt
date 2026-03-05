@@ -38,6 +38,10 @@ class AbilityItemBuilder(
         states[state]!!.apply(block)
     }
 
+    fun condition(reason: BlockReason, block: AbilityContext.() -> Boolean) {
+        condition(BooleanAbilityCondition.Impl(reason, block))
+    }
+
     fun condition(block: AbilityCondition) {
         conditions += block
     }
@@ -48,7 +52,7 @@ class AbilityItemBuilder(
             id,
             ctx,
             states,
-            conditions,
+            conditions as List<AbilityCondition>,
             clickDelay
         )
 }
