@@ -53,6 +53,8 @@ data class SettingsKey<T : Any, S : SettingsType<T>>(
         val MEETING_BUTTONS = key("meeting.buttons", IntSettingsType.positive, 3)
         val MEETING_BUTTON_COOLDOWN =
             key("meeting.button.cooldown", DurationSettingsType.range(Duration.ZERO, 1.minutes), 15.seconds)
+        val SHOW_VOTES = key("meeting.show.votes", BooleanSettingsType, true)
+        val ANONYMOUS_VOTING = key("meeting.anonymous.voting", BooleanSettingsType, false)
     }
 
     object TASK : SettingsGroup("task", Material.PAPER) {
