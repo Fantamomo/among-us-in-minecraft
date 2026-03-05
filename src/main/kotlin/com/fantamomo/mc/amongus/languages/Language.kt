@@ -10,9 +10,10 @@ class Language(
     val properties: Properties,
     miniMessage: MiniMessage
 ) : MiniMessageTranslator(miniMessage) {
+
     override fun getMiniMessageString(key: String, locale: Locale): String? {
         if (key == LanguageManager.VERSION_KEY) return null
-        if (locale != this.locale && this.locale != LanguageManager.ROOT_LOCALE) return null
+        if (locale != this.locale) return null
         return properties.getProperty(key)
     }
 
