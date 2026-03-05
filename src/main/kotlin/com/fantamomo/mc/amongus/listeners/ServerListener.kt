@@ -1,6 +1,7 @@
 package com.fantamomo.mc.amongus.listeners
 
 import com.fantamomo.mc.amongus.AmongUs
+import com.fantamomo.mc.amongus.player.LastPlayerLocationManager
 import com.fantamomo.mc.amongus.util.internal.MorphSkinManager
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
@@ -34,6 +35,8 @@ object ServerListener : Listener {
                 error("============================================")
                 error("")
             }
+        } else {
+            LastPlayerLocationManager.load()
         }
         MorphSkinManager.init()
     }
