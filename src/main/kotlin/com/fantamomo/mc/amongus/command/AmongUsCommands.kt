@@ -195,6 +195,7 @@ object AmongUsCommands {
             val unquotedString = parser.reader.readUnquotedString()
 
             if (!Game.validCode(unquotedString)) {
+                parser.reader.cursor = cursor
                 throw ILLEGAL_GAME_CODE.createWithContext(parser.reader)
             }
 
