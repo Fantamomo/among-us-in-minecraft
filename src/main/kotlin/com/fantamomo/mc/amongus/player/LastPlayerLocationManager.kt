@@ -9,6 +9,7 @@ import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.slf4j.LoggerFactory
 import java.util.*
+import kotlin.io.path.deleteIfExists
 import kotlin.io.path.notExists
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
@@ -45,6 +46,10 @@ object LastPlayerLocationManager {
         val respawnWorld = AmongUs.server.respawnWorld
         try {
             val file = direction.resolve("${respawnWorld.uid}.json")
+            if (data.isEmpty()) {
+                file.deleteIfExists()
+                return
+            }
             val content = json.encodeToString(data)
             file.writeText(content)
         } catch (e: Exception) {
