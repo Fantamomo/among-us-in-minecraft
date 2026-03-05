@@ -1,8 +1,10 @@
+import io.papermc.paperweight.userdev.ReobfArtifactConfiguration
+
 plugins {
     kotlin("jvm") version "2.3.20-Beta2"
+    kotlin("plugin.serialization") version "2.3.20-Beta2"
     id("com.gradleup.shadow") version "8.3.0"
     id("io.papermc.paperweight.userdev") version "2.0.0-beta.19"
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.3.20-Beta2"
 }
 
 group = "com.fantamomo.mc"
@@ -16,31 +18,27 @@ repositories {
     maven("https://repo.inventivetalent.org/repository/public/") {
         name = "inventive-repo"
     }
-    github("brigadier-interception")
-    github("kotlin-adventure")
-    github("brigadier-kt")
+    github(repo = "brigadier-interception")
+    github(repo = "kotlin-adventure")
+    github(repo = "brigadier-kt")
 }
 
-fun RepositoryHandler.github(repo: String) {
-    maven {
-        url = uri("https://maven.pkg.github.com/Fantamomo/$repo")
-        credentials {
-            username = project.findProperty("gpr.user") as String?
-                ?: System.getenv("GITHUB_USERNAME")
-            password = project.findProperty("gpr.key") as String?
-                ?: System.getenv("GITHUB_TOKEN")
-        }
+fun RepositoryHandler.github(user: String = "Fantamomo", repo: String): MavenArtifactRepository = maven {
+    url = uri("https://maven.pkg.github.com/$user/$repo")
+    name = "GitHub $user/$repo"
+    credentials {
+        username = providers.gradleProperty("gpr.user").orNull ?: System.getenv("GITHUB_USERNAME")
+        password = providers.gradleProperty("gpr.key").orNull ?: System.getenv("GITHUB_TOKEN")
     }
 }
 
 dependencies {
     paperweight.paperDevBundle("1.21.11-R0.1-SNAPSHOT")
-    implementation(kotlin("stdlib"))
 
+    implementation(kotlin("stdlib"))
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
 
     implementation("com.fantamomo.mc:kotlin-adventure:1.4-SNAPSHOT")
-//    implementation("com.fantamomo.mc:brigadier-kt:1.4-SNAPSHOT")
     implementation("com.fantamomo.mc:brigadier-kt:1.5-SNAPSHOT")
     implementation("com.fantamomo.mc:brigadier-interception:1.1-SNAPSHOT")
 
@@ -55,27 +53,34 @@ kotlin {
     }
 }
 
-paperweight.reobfArtifactConfiguration = io.papermc.paperweight.userdev.ReobfArtifactConfiguration.MOJANG_PRODUCTION
+paperweight.reobfArtifactConfiguration = ReobfArtifactConfiguration.MOJANG_PRODUCTION
 
-tasks.shadowJar {
-    dependencies {
-        exclude(dependency("com.google.guava:.*"))
-        exclude(dependency("io.papermc.paper:.*"))
-        exclude(dependency("org.bukkit:.*"))
-        exclude(dependency("net.kyori:.*"))
-        exclude(dependency("com.mojang:.*"))
+val excludedFromShadow = listOf(
+    "com.google.guava",
+    "io.papermc.paper",
+    "org.bukkit",
+    "net.kyori",
+    "com.mojang",
+)
+
+tasks {
+    shadowJar {
+        mergeServiceFiles()
+        excludedFromShadow.forEach { group ->
+            dependencies { exclude(dependency("$group:.*")) }
+        }
     }
-}
 
-tasks.build {
-    dependsOn("shadowJar")
-}
+    build {
+        dependsOn(shadowJar)
+    }
 
-tasks.processResources {
-    val props = mapOf("version" to version)
-    inputs.properties(props)
-    filteringCharset = "UTF-8"
-    filesMatching("paper-plugin.yml") {
-        expand(props)
+    processResources {
+        val props = mapOf("version" to version)
+        inputs.properties(props)
+        filteringCharset = "UTF-8"
+        filesMatching("paper-plugin.yml") {
+            expand(props)
+        }
     }
 }
