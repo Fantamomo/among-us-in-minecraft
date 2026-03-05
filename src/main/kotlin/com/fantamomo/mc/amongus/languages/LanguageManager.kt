@@ -24,6 +24,7 @@ object LanguageManager {
 
     private var languagesList: List<Locale> = emptyList()
     private val loadedLanguages: MutableMap<Locale, Language> = mutableMapOf()
+    private val languageRoots: MutableMap<String, Locale> = mutableMapOf()
     private var englishLanguage: Language? = null
 
     const val VERSION_KEY = "version"
@@ -45,16 +46,14 @@ object LanguageManager {
     }
 
     private fun registerLanguagesToGlobalTranslator() {
-        val englishLanguage = englishLanguage
-        loadedLanguages.forEach { (locale, language) ->
-            if (language == englishLanguage) return@forEach
-            GlobalTranslator.translator().addSource(language)
-            logger.debug("Registered language {} to GlobalTranslator", locale)
-        }
-
-        if (englishLanguage == null) return
-        GlobalTranslator.translator().addSource(englishLanguage)
-        logger.debug("Registered english language to GlobalTranslator")
+        val translator = LanguageTranslator(
+            languages = loadedLanguages,
+            rootLocale = ROOT_LOCALE,
+            miniMessage = MiniMessage.miniMessage(),
+            languageRoots = languageRoots
+        )
+        GlobalTranslator.translator().addSource(translator)
+        logger.info("Registered LanguageTranslator with {} languages", loadedLanguages.size)
     }
 
     private fun loadLanguageList() {
@@ -68,8 +67,10 @@ object LanguageManager {
 
         languagesList = stream.bufferedReader().useLines { lines ->
             lines.mapNotNull { line ->
-                val locale = parseLocale(line)
-                if (locale == null) logger.error("Invalid locale '{}' in {}", line, LANGUAGES_LIST_FILE)
+                val parts = line.split(":", limit = 2)
+                val locale = parseLocale(parts[0])
+                if (locale == null) logger.error("Invalid locale '{}' in {}", parts[0], LANGUAGES_LIST_FILE)
+                else if (parts.size > 1) languageRoots[locale.language] = locale
                 locale
             }.toList()
         }
