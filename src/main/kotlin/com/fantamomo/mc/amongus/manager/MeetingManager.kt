@@ -350,8 +350,7 @@ class MeetingManager(private val game: Game) : Listener {
             timer = Cooldown(game.settings[SettingsKey.MEETING.MEETING_VOTING_TIME], true)
             if (game.settings[SettingsKey.MEETING.MEETING_DISCUSSION_TIME] >= Duration.ZERO) {
                 for (player in game.players) {
-                    val p = player.player
-                    if (p == null || !player.isAlive) continue
+                    val p = player.player ?: continue
                     p.sendTitlePart(
                         TitlePart.TITLE,
                         textComponent {
@@ -361,7 +360,10 @@ class MeetingManager(private val game: Game) : Listener {
                     p.sendTitlePart(
                         TitlePart.SUBTITLE,
                         textComponent {
-                            translatable("meeting.voting.start.subtitle")
+                            translatable(
+                                if (player.isAlive) "meeting.voting.start.subtitle"
+                                else "meeting.voting.start.subtitle.dead"
+                            )
                         }
                     )
                 }
@@ -489,6 +491,7 @@ class MeetingManager(private val game: Game) : Listener {
             } ?: Component.translatable("meeting.result.skip")
 
             game.sendTitle(TitlePart.TITLE, component)
+            game.sendTitle(TitlePart.SUBTITLE, Component.empty())
         }
 
         private fun showVoteDetails() {
@@ -545,8 +548,8 @@ class MeetingManager(private val game: Game) : Listener {
                     }
 
                     if (!anonymous && voters.isNotEmpty()) {
-                        space()
                         for (voter in voters) {
+                            space()
                             voterComponent(voter)
                         }
                     }

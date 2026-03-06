@@ -33,6 +33,8 @@ object CallMeetingAbility :
 
                 requiresNotInVent()
 
+                requiresAlive()
+
                 condition(
                     BlockReason.LimitReached,
                     Component.translatable("ability.call_meeting.call_meeting.tooltip")
