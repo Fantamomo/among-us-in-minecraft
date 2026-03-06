@@ -6,6 +6,8 @@ import org.bukkit.attribute.AttributeModifier
 interface AssignedAttributeModifier<M : Modification<M, A>, A : AssignedAttributeModifier<M, A>> :
     AssignedModification<M, A> {
 
+    override val definition: M
+
     val attribute: Attribute
     val modifier: AttributeModifier
 
