@@ -1,11 +1,11 @@
 package com.fantamomo.mc.amongus.settings
 
 import net.kyori.adventure.text.Component
-import org.bukkit.Material
+import org.bukkit.inventory.ItemType
 
-open class SettingsGroup(
+open class SettingsGroup constructor(
     val name: String,
-    val material: Material,
+    val itemType: ItemType,
     val parent: SettingsGroup? = null,
     val useCustomName: Boolean = false
 ) {
