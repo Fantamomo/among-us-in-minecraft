@@ -13,14 +13,18 @@ class Settings(val game: Game) {
 
     operator fun <T : Any> get(key: SettingsKey<T, *>) = getOrDefault(key, key.defaultValue)
 
-    fun <T : Any> set(key: SettingsKey<T, *>, value: T) {
-        addRecentlyChanged(key)
+    operator fun <T : Any> set(key: SettingsKey<T, *>, value: T) {
+        set(key, value, true)
+    }
+
+    fun <T : Any> set(key: SettingsKey<T, *>, value: T, addToRecentlyChanged: Boolean = true) {
+        if (addToRecentlyChanged) addRecentlyChanged(key)
         game.abortStartCooldown()
         data[key.key] = value
     }
 
-    fun remove(key: SettingsKey<*, *>): Boolean {
-        addRecentlyChanged(key)
+    fun remove(key: SettingsKey<*, *>, addToRecentlyChanged: Boolean = true): Boolean {
+        if (addToRecentlyChanged) addRecentlyChanged(key)
         game.abortStartCooldown()
         return data.remove(key.key) != null
     }
