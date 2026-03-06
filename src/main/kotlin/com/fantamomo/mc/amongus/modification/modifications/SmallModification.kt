@@ -21,7 +21,7 @@ object SmallModification : Modification<SmallModification, SmallModification.Ass
         override val modifier = Companion.modifier
 
         companion object {
-            private val key = NamespacedKey(AmongUs, "modifier/small")
+            private val key = NamespacedKey(AmongUs, "modification/$id")
             private val modifier = AttributeModifier(key, -0.5, AttributeModifier.Operation.ADD_NUMBER)
         }
     }
