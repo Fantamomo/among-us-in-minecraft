@@ -1,10 +1,7 @@
 package com.fantamomo.mc.amongus.modification
 
 import com.fantamomo.mc.amongus.data.AmongUsConfig
-import com.fantamomo.mc.amongus.modification.modifications.LaggyModification
-import com.fantamomo.mc.amongus.modification.modifications.RadarModification
-import com.fantamomo.mc.amongus.modification.modifications.SmallModification
-import com.fantamomo.mc.amongus.modification.modifications.TorchModification
+import com.fantamomo.mc.amongus.modification.modifications.*
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import net.kyori.adventure.text.Component
 
@@ -25,6 +22,7 @@ interface Modification<M : Modification<M, A>, A : AssignedModification<M, A>> {
             TorchModification,
             LaggyModification,
             SmallModification,
+            SpeedModification,
             RadarModification
         ).filter { it.id !in AmongUsConfig.Modifications.disabled }
 
