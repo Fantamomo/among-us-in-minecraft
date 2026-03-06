@@ -106,7 +106,7 @@ private fun PaperCommand.settingsCommand() = literal("settings") {
                         val value = arg<Any>("value")
 
                         @Suppress("UNCHECKED_CAST")
-                        amongUsPlayer.game.settings.set(key as SettingsKey<Any, *>, value)
+                        amongUsPlayer.game.settings[key as SettingsKey<Any, *>] = value
 
                         player.sendComponent {
                             translatable("command.success.admin.settings.set") {
