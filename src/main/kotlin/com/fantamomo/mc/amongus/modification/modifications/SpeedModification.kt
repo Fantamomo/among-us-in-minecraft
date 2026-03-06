@@ -21,7 +21,7 @@ object SpeedModification : Modification<SpeedModification, SpeedModification.Ass
 
         companion object {
             private val key = NamespacedKey(AmongUs, "modification/$id")
-            private val modifier = AttributeModifier(key, 0.2, AttributeModifier.Operation.ADD_NUMBER)
+            private val modifier = AttributeModifier(key, 0.05, AttributeModifier.Operation.ADD_NUMBER)
         }
     }
 }
