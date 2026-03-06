@@ -1,7 +1,7 @@
 package com.fantamomo.mc.amongus.modification.modifications
 
 import com.fantamomo.mc.amongus.AmongUs
-import com.fantamomo.mc.amongus.modification.AssignedModification
+import com.fantamomo.mc.amongus.modification.AssignedAttributeModifier
 import com.fantamomo.mc.amongus.modification.Modification
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import org.bukkit.NamespacedKey
@@ -13,16 +13,12 @@ object SmallModification : Modification<SmallModification, SmallModification.Ass
 
     override fun assignTo(player: AmongUsPlayer) = AssignedSmallModification(player)
 
-    class AssignedSmallModification(override val player: AmongUsPlayer) : AssignedModification<SmallModification, AssignedSmallModification> {
+    class AssignedSmallModification(override val player: AmongUsPlayer) :
+        AssignedAttributeModifier<SmallModification, AssignedSmallModification> {
         override val definition = SmallModification
 
-        override fun onStart() {
-            player.player?.getAttribute(Attribute.SCALE)?.addTransientModifier(modifier)
-        }
-
-        override fun onEnd() {
-            player.player?.getAttribute(Attribute.SCALE)?.removeModifier(modifier)
-        }
+        override val attribute: Attribute = Attribute.SCALE
+        override val modifier = Companion.modifier
 
         companion object {
             private val key = NamespacedKey(AmongUs, "modifier/small")
