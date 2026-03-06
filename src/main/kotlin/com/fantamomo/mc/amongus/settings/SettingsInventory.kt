@@ -152,7 +152,7 @@ class SettingsInventory(
 
     @Suppress("UnstableApiUsage")
     private fun buildGroupItem(g: SettingsGroup): ItemStack {
-        val item = ItemStack(g.material)
+        val item = g.itemType.createItemStack()
 
         val itemName = Component.translatable(g.displayName).translateTo(owner.locale)
         if (g.useCustomName) {
