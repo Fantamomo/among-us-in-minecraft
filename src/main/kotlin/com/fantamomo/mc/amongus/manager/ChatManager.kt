@@ -9,7 +9,6 @@ import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.game.GamePhase
 import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
-import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import io.papermc.paper.event.player.ChatEvent
 import net.kyori.adventure.text.Component
@@ -43,10 +42,7 @@ class ChatManager(val game: Game) {
 
     fun sendGhostMessage(sender: AmongUsPlayer, input: Component) {
         val message = getMessage("chat.message.ghost", sender, input)
-        for (auPlayer in game.players) {
-            if (auPlayer.isAlive) continue
-            auPlayer.player?.sendMessage(message)
-        }
+        game.audienceDead.sendMessage(message)
     }
 
     fun sendLobbyMessage(sender: AmongUsPlayer, input: Component) {
@@ -65,10 +61,7 @@ class ChatManager(val game: Game) {
 
     fun sendImposterMessage(player: AmongUsPlayer, message: String) {
         val component = getMessage("chat.message.imposter", player, Component.text(message))
-        for (auPlayer in game.players) {
-            if (auPlayer.assignedRole?.definition?.team != Team.IMPOSTERS) continue
-            auPlayer.player?.sendMessage(component)
-        }
+        game.audienceImposter.sendMessage(component)
     }
 
     companion object {
