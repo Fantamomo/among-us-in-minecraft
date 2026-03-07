@@ -25,6 +25,8 @@ import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.task.TaskManager
 import com.fantamomo.mc.amongus.util.CustomPersistentDataTypes
 import com.fantamomo.mc.amongus.util.RefPersistentDataType
+import com.fantamomo.mc.amongus.util.audience.AudienceHolder
+import com.fantamomo.mc.amongus.util.audience.OptionalAudience
 import com.fantamomo.mc.amongus.util.internal.Symbol
 import io.papermc.paper.datacomponent.item.ResolvableProfile
 import net.kyori.adventure.title.Title
@@ -46,11 +48,13 @@ class AmongUsPlayer internal constructor(
     name: String,
     val game: Game,
     val locationBeforeGame: Location
-) {
+) : AudienceHolder {
     private var _name: String = name
     private var _locale: Locale = Locale.getDefault()
     private var _profile: PlayerProfile? = null
     internal val abilities: MutableList<AssignedAbility<*, *>> = mutableListOf()
+
+    override val audience: OptionalAudience = OptionalAudience.of { player }
 
     val persistencePlayerData = PlayerDataManager.get(uuid.toKotlinUuid())
 
