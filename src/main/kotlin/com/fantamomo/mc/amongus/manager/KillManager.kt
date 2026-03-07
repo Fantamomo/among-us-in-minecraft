@@ -215,6 +215,7 @@ class KillManager(val game: Game) {
             }
         }
         target.addGhostImprovements()
+        game.audiences.forEach { it.setDirty() }
     }
 
     private fun showGhosts(target: AmongUsPlayer) {
