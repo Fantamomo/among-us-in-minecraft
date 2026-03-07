@@ -80,6 +80,13 @@ class Game(
 
     var resultMessage: Component? = null
 
+    val audienceAll = ListAudience.audienceHolder(::players)
+    val audienceAlive = ListAudience.audienceHolder { players.filter { it.isAlive } }
+    val audienceDead = ListAudience.audienceHolder { players.filter { !it.isAlive } }
+    val audienceImposter = ListAudience.audienceHolder { players.filter { it.assignedRole?.definition?.team == Team.IMPOSTERS } }
+
+    internal val audiences = listOf(audienceAll, audienceAlive, audienceDead, audienceImposter)
+
     fun addPlayer(player: Player, ignoreBanned: Boolean = false): Boolean {
         if (phase != GamePhase.LOBBY && phase != GamePhase.STARTING) return false
         if (players.size >= maxPlayers) return false
@@ -88,6 +95,7 @@ class Game(
         val newPlayer = PlayerManager.joinGame(player, this)
         scoreboardManager.addLobbyPlayer(newPlayer)
         abortStartCooldown()
+        audiences.forEach { it.setDirty() }
         return true
     }
 
@@ -104,6 +112,7 @@ class Game(
         taskManager.removePlayer(player)
         scoreboardManager.removePlayer(player)
         morphManager.removePlayer(player)
+        audiences.forEach { it.setDirty() }
     }
 
     fun tick(tickContext: TickContext) {
@@ -143,10 +152,7 @@ class Game(
                     0
                 )
 
-                for (player in players) {
-                    val p = player.player ?: continue
-                    p.showTitle(title)
-                }
+                audienceAll.showTitle(title)
             } else if (startCooldownTicks == tickContext.ticks) {
                 startCooldownTicks = -1
                 start()
@@ -269,15 +275,16 @@ class Game(
         sabotageManager.onPlayerRejoin(amongUsPlayer)
         taskManager.onPlayerRejoin(amongUsPlayer)
         amongUsPlayer.modification?.onStart()
+        audiences.forEach { it.setDirty() }
         if (!amongUsPlayer.isAlive) amongUsPlayer.addGhostImprovements()
     }
 
     fun sendChatMessage(component: Component) {
-        players.forEach { it.player?.sendMessage(component) }
+        audienceAll.sendMessage(component)
     }
 
     fun <T : Any> sendTitle(titlePart: TitlePart<T>, value: T) {
-        players.forEach { it.player?.sendTitlePart(titlePart, value) }
+        audienceAll.sendTitlePart(titlePart, value)
     }
 
     fun invalidateAbilities() {
@@ -333,6 +340,7 @@ class Game(
             }
         }
         scoreboardManager.start()
+        audiences.forEach { it.setDirty() }
     }
 
     fun checkWin() {
