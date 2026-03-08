@@ -483,8 +483,9 @@ class Game(
                         if (assignedRole != null) {
                             append(assignedRole.definition.name)
                             hoverEvent(KHoverEventType.ShowText) {
-                                append(assignedRole.description)
+                                append(assignedRole.definition.descriptionOther)
                                 assignedRole.gameEndInfo()?.let { message ->
+                                    newLine()
                                     newLine()
                                     append(message)
                                 }
