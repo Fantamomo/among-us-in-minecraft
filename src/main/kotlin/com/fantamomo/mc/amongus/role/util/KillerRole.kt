@@ -1,4 +1,4 @@
-package com.fantamomo.mc.amongus.role.marker
+package com.fantamomo.mc.amongus.role.util
 
 /**
  * A marker interface for roles that can kill other players.

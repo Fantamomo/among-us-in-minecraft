@@ -5,7 +5,7 @@ import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.role.AssignedRole
 import com.fantamomo.mc.amongus.role.Role
 import com.fantamomo.mc.amongus.role.Team
-import com.fantamomo.mc.amongus.role.marker.KillerRole
+import com.fantamomo.mc.amongus.role.util.KillerRole
 
 object MinerRole : Role<MinerRole, MinerRole.AssignedMinerRole>, KillerRole {
     override val id: String = "miner"
