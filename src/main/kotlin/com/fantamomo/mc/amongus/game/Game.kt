@@ -215,6 +215,7 @@ class Game(
         return list.random()
     }
 
+    @NMS
     internal fun onDisconnected(player: AmongUsPlayer) {
         player.disconnectedAt = Clock.System.now()
         when (phase) {
@@ -240,7 +241,15 @@ class Game(
 
         sabotageManager.onDisconnect(player)
 
-        if (phase.onDisconnectRemove) removePlayer0(player)
+        if (phase.onDisconnectRemove) {
+            val packet = ClientboundPlayerInfoRemovePacket(listOf(player.uuid))
+            for (online in Bukkit.getOnlinePlayers()) {
+                @Suppress("USELESS_ELVIS")
+                val connection = (online as CraftPlayer).handle.connection ?: continue
+                connection.send(packet)
+            }
+            removePlayer0(player)
+        }
     }
 
     internal fun isColorFree(color: PlayerColor) = players.none { it.color == color }
@@ -384,6 +393,7 @@ class Game(
         if (checkRoleWins(WinCheckPhase.POST)) return
     }
 
+    @NMS
     fun letWin(team: Team) {
         phase = GamePhase.FINISHED
 
@@ -408,6 +418,17 @@ class Game(
 
         val message = getWinMessage(team)
         resultMessage = message
+
+        val toRemove = players.filter { it.player?.isOnline != true }.map { it.uuid }
+
+        if (toRemove.isNotEmpty()) {
+            val packet = ClientboundPlayerInfoRemovePacket(toRemove)
+            for (online in Bukkit.getOnlinePlayers()) {
+                @Suppress("USELESS_ELVIS")
+                val connection = (online as CraftPlayer).handle.connection ?: continue
+                connection.send(packet)
+            }
+        }
 
         for (player in players) {
             if (cameraManager.isInCams(player)) cameraManager.leaveCams(player)
@@ -506,6 +527,7 @@ class Game(
         players.remove(amongUsPlayer)
         if (teleport) {
             val future = amongUsPlayer.player?.teleportAsync(amongUsPlayer.locationBeforeGame)?.thenAccept {
+                LastPlayerLocationManager.remove(amongUsPlayer.uuid.toKotlinUuid())
                 removePlayer0(amongUsPlayer)
                 amongUsPlayer.player = null
             }
