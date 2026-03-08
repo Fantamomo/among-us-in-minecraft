@@ -15,6 +15,7 @@ import com.fantamomo.mc.amongus.player.*
 import com.fantamomo.mc.amongus.player.info.DeadReason
 import com.fantamomo.mc.amongus.role.RoleManager
 import com.fantamomo.mc.amongus.role.Team
+import com.fantamomo.mc.amongus.role.util.WinCheckPhase
 import com.fantamomo.mc.amongus.sabotage.SabotageManager
 import com.fantamomo.mc.amongus.settings.Settings
 import com.fantamomo.mc.amongus.settings.SettingsKey
@@ -343,12 +344,30 @@ class Game(
         audiences.forEach { it.setDirty() }
     }
 
+    private fun checkRoleWins(phase: WinCheckPhase): Boolean {
+        for (player in players) {
+            val assignedRole = player.assignedRole ?: continue
+            if (assignedRole.winCheckPhase != phase) continue
+            if (assignedRole.hasWon()) {
+                letWin(assignedRole.definition.team)
+                return true
+            }
+        }
+        return false
+    }
+
     fun checkWin() {
         if (!settings[SettingsKey.DEV.DO_WIN_CHECK]) return
+
+        if (checkRoleWins(WinCheckPhase.PRE)) return
+
         if (taskManager.allTaskCompleted()) {
             letWin(Team.CREWMATES)
             return
         }
+
+        if (checkRoleWins(WinCheckPhase.POST_TASK_CHECK)) return
+
         val alivePlayers = players.filter { it.isAlive }
         val imposterCount = alivePlayers.count { it.assignedRole?.definition?.team == Team.IMPOSTERS }
         if (imposterCount == 0) {
@@ -359,13 +378,8 @@ class Game(
             letWin(Team.IMPOSTERS)
             return
         }
-        for (player in players) {
-            val assignedRole = player.assignedRole ?: continue
-            if (assignedRole.hasWon()) {
-                letWin(assignedRole.definition.team)
-                return
-            }
-        }
+
+        if (checkRoleWins(WinCheckPhase.POST)) return
     }
 
     fun letWin(team: Team) {
