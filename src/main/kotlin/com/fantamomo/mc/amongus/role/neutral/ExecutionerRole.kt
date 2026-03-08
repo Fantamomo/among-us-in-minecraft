@@ -10,6 +10,7 @@ import com.fantamomo.mc.amongus.player.info.DeadReason
 import com.fantamomo.mc.amongus.role.AssignedRole
 import com.fantamomo.mc.amongus.role.Role
 import com.fantamomo.mc.amongus.role.Team
+import com.fantamomo.mc.amongus.role.util.WinCheckPhase
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 
@@ -22,6 +23,7 @@ object ExecutionerRole : Role<ExecutionerRole, ExecutionerRole.AssignedExecution
 
     class AssignedExecutionerRole(override val player: AmongUsPlayer) : AssignedRole<ExecutionerRole, AssignedExecutionerRole> {
         override val definition = ExecutionerRole
+        override val winCheckPhase = WinCheckPhase.PRE
 
         var target: AmongUsPlayer? = null
             private set
@@ -42,7 +44,7 @@ object ExecutionerRole : Role<ExecutionerRole, ExecutionerRole.AssignedExecution
             target = null
         }
 
-        override fun hasWon() = target?.deadReason === DeadReason.Ejected
+        override fun hasWon() = player.isAlive && target?.deadReason === DeadReason.Ejected
 
         override fun scoreboardLine() = target?.let { target ->
             textComponent {
