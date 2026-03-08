@@ -9,6 +9,7 @@ import com.fantamomo.mc.amongus.ability.builder.requiresNotInMeeting
 import com.fantamomo.mc.amongus.ability.item.AbilityItem
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.role.Team
+import com.fantamomo.mc.amongus.role.crewmates.SeerRole
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import net.kyori.adventure.text.Component
 import org.bukkit.inventory.ItemType
@@ -77,6 +78,7 @@ object RevealTeamAbility : Ability<RevealTeamAbility, RevealTeamAbility.Assigned
                             }
                         }
                         if (nearestPlayer == null) return@onRightClick
+                        (player.assignedRole as? SeerRole.AssignedSeerRole)?.addRevealedPlayer(nearestPlayer)
                         revealedPlayers.add(nearestPlayer)
                         val team = (nearestPlayer.assignedRole?.definition?.team ?: Team.CREWMATES)
                         val color = team.textColor

@@ -1,6 +1,7 @@
 package com.fantamomo.mc.amongus.role.neutral
 
 import com.fantamomo.mc.adventure.text.args
+import com.fantamomo.mc.adventure.text.newLine
 import com.fantamomo.mc.adventure.text.textComponent
 import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.ability.Ability
@@ -95,5 +96,19 @@ object CannibalRole : Role<CannibalRole, CannibalRole.AssignedCannibalRole> {
         }
 
         override fun hasWon() = eatenBodies >= bodiesToEat
+
+        override fun gameEndInfo() = textComponent {
+            translatable("role.cannibal.end.eaten_bodies") {
+                args {
+                    numeric("count", eatenBodies)
+                }
+            }
+            newLine()
+            translatable("role.cannibal.end.remaining") {
+                args {
+                    numeric("count", bodiesToEat - eatenBodies)
+                }
+            }
+        }
     }
 }
