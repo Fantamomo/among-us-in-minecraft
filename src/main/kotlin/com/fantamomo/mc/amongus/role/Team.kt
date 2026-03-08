@@ -4,6 +4,7 @@ import com.fantamomo.mc.amongus.role.crewmates.CrewmateRole
 import com.fantamomo.mc.amongus.role.imposters.ImposterRole
 import com.fantamomo.mc.amongus.role.neutral.ArsonistRole
 import com.fantamomo.mc.amongus.role.neutral.CannibalRole
+import com.fantamomo.mc.amongus.role.neutral.ExecutionerRole
 import com.fantamomo.mc.amongus.role.neutral.JesterRole
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
@@ -41,6 +42,7 @@ sealed class Team(val name: String, private val default: Role<*, *>?, val textCo
             val JESTER by lazy { NEUTRAL(JesterRole) }
             val CANNIBAL by lazy { NEUTRAL(CannibalRole) }
             val ARSONIST by lazy { NEUTRAL(ArsonistRole) }
+            val EXECUTIONER by lazy { NEUTRAL(ExecutionerRole) }
         }
     }
 
@@ -52,7 +54,8 @@ sealed class Team(val name: String, private val default: Role<*, *>?, val textCo
                 IMPOSTERS,
                 NEUTRAL.JESTER,
                 NEUTRAL.CANNIBAL,
-                NEUTRAL.ARSONIST
+                NEUTRAL.ARSONIST,
+                NEUTRAL.EXECUTIONER
             )
         }
     }
