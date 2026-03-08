@@ -32,8 +32,8 @@ object ExecutionerRole : Role<ExecutionerRole, ExecutionerRole.AssignedExecution
             val players = player.game.players
             target = when (players.size) {
                 1 -> null
-                2 -> players.first { it !== player }
-                else -> (players - player).random()
+                2 -> players.firstOrNull { it !== player && it.assignedRole?.definition !== JesterRole }
+                else -> players.filter { it !== player && it.assignedRole?.definition !== JesterRole }.random()
             }
 
             target?.mannequinController?.setNameColorFor(player, NamedTextColor.GREEN)
