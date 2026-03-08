@@ -27,7 +27,7 @@ object PlayerManager {
 
     fun getPlayer(mannequin: Mannequin) = players.find { it.mannequinController.getEntity() == mannequin }
 
-    fun getPlayer(name: String) = players.find { it.name == name }
+    fun getPlayer(name: String) = players.find { it.name.equals(name, ignoreCase = true) }
 
     @NMS
     internal fun joinGame(player: Player, game: Game): AmongUsPlayer {

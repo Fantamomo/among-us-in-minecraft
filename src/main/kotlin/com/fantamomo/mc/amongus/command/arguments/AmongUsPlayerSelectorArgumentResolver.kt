@@ -205,14 +205,14 @@ class AmongUsPlayerSelectorArgumentResolver(
 
         private val fields: MutableMap<String, Field> = mutableMapOf()
 
-        private fun resolvePlayer(uuid: UUID): ResolvedPlayer? {
-            val player = Bukkit.getPlayer(uuid) ?: return null
-            return resolvePlayer(player)
-        }
+        private fun resolvePlayer(uuid: UUID) = resolvePlayer(PlayerManager.getPlayer(uuid) ?: Bukkit.getPlayer(uuid))
 
-        private fun resolvePlayer(name: String): ResolvedPlayer? {
-            val player = Bukkit.getPlayer(name) ?: return null
-            return resolvePlayer(player)
+        private fun resolvePlayer(name: String) = resolvePlayer(PlayerManager.getPlayer(name) ?: Bukkit.getPlayer(name))
+
+        private fun resolvePlayer(player: Any?): ResolvedPlayer? = when (player) {
+            is AmongUsPlayer -> ResolvedPlayer.AmongUs(player)
+            is Player -> resolvePlayer(player)
+            else -> null
         }
 
         private fun resolvePlayer(player: Player): ResolvedPlayer {

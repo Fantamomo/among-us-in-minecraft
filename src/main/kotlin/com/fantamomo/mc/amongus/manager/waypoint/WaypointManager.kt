@@ -9,9 +9,7 @@ import net.kyori.adventure.text.ComponentLike
 import net.kyori.adventure.text.format.TextColor
 import net.minecraft.core.Vec3i
 import net.minecraft.network.protocol.game.ClientboundTrackedWaypointPacket
-import net.minecraft.resources.ResourceKey
 import net.minecraft.world.waypoints.Waypoint.Icon
-import net.minecraft.world.waypoints.WaypointStyleAssets
 import org.bukkit.Color
 import org.bukkit.craftbukkit.entity.CraftPlayer
 import java.util.*
@@ -269,12 +267,7 @@ class WaypointManager(val game: Game) {
     }
 
     companion object {
-        private val constructor = Icon::class.java.getDeclaredConstructor(
-            ResourceKey::class.java,
-            Optional::class.java,
-        ).apply {
-            isAccessible = true
-        }
+        private val DEFAULT = Icon().apply { copyFrom(Icon.NULL) }
 
         /**
          * Creates an `Icon` instance with the specified color.
@@ -282,10 +275,11 @@ class WaypointManager(val game: Game) {
          * @param color The color to be applied to the icon.
          * @return The newly created `Icon` instance, or `Icon.NULL` if the creation fails.
          */
-        private fun createIcon(color: Int): Icon = try {
-            constructor.newInstance(WaypointStyleAssets.DEFAULT, Optional.of(color))
-        } catch (_: Exception) {
-            Icon.NULL
+        private fun createIcon(color: Int): Icon {
+            val icon = Icon()
+            icon.copyFrom(DEFAULT)
+            icon.color = Optional.of(color)
+            return icon
         }
     }
 }
