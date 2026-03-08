@@ -7,6 +7,7 @@ import com.fantamomo.mc.amongus.role.crewmates.*
 import com.fantamomo.mc.amongus.role.imposters.*
 import com.fantamomo.mc.amongus.role.neutral.ArsonistRole
 import com.fantamomo.mc.amongus.role.neutral.CannibalRole
+import com.fantamomo.mc.amongus.role.neutral.ExecutionerRole
 import com.fantamomo.mc.amongus.role.neutral.JesterRole
 import net.kyori.adventure.text.Component
 
@@ -52,7 +53,8 @@ interface Role<R : Role<R, A>, A : AssignedRole<R, A>> {
         val neutrals: Set<Role<*, *>> = createSet(
             JesterRole,
             CannibalRole,
-            ArsonistRole
+            ArsonistRole,
+            ExecutionerRole
         )
 
         val roles: Set<Role<*, *>> = crewmates + imposters + neutrals

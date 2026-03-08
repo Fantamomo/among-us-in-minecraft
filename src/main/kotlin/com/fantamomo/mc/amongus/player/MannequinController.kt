@@ -223,6 +223,11 @@ class MannequinController(
         viewerColors[player.uniqueId] = color
     }
 
+    fun setNameColorFor(viewer: AmongUsPlayer, color: TextColor?) {
+        setNameColorFor0(viewer.uuid, color)
+        updateNameTag(viewer)
+    }
+
     fun setNameColorFor(viewer: Player, color: TextColor?) {
         setNameColorFor0(viewer.uniqueId, color)
         updateNameTag(viewer)

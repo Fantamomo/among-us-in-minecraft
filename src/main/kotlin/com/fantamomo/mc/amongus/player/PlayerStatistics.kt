@@ -2,7 +2,7 @@ package com.fantamomo.mc.amongus.player
 
 import com.fantamomo.mc.amongus.role.Role
 import com.fantamomo.mc.amongus.role.Team
-import com.fantamomo.mc.amongus.role.marker.KillerRole
+import com.fantamomo.mc.amongus.role.util.KillerRole
 import com.fantamomo.mc.amongus.statistics.CounterStatistic
 import com.fantamomo.mc.amongus.statistics.StatisticMap
 import com.fantamomo.mc.amongus.statistics.StatisticsManager

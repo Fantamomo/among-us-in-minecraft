@@ -730,11 +730,6 @@ class MeetingManager(private val game: Game) : Listener {
             buttonCooldown.start()
             setPhase(GamePhase.RUNNING)
             AbilityManager.resetCooldownsAfterMeeting(game)
-
-            val assignedRole = ejectedPlayer?.assignedRole
-            if (assignedRole?.definition === JesterRole) {
-                game.letWin(assignedRole.definition.team)
-            }
         }
 
         private fun setPhase(phase: GamePhase) {
