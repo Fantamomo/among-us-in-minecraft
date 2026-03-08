@@ -1,7 +1,12 @@
 package com.fantamomo.mc.amongus.role.neutral
 
+import com.fantamomo.mc.adventure.text.args
+import com.fantamomo.mc.adventure.text.newLine
+import com.fantamomo.mc.adventure.text.textComponent
+import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.ability.Ability
 import com.fantamomo.mc.amongus.ability.abilities.ArsonistAbility
+import com.fantamomo.mc.amongus.languages.numeric
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.role.AssignedRole
 import com.fantamomo.mc.amongus.role.Role
@@ -76,6 +81,19 @@ object ArsonistRole : Role<ArsonistRole, ArsonistRole.AssignedArsonistRole> {
                 mannequinController.setNameColorFor(player, NamedTextColor.BLACK)
             } else {
                 mannequinController.setNameColorFor(this.player.uuid, NamedTextColor.BLACK)
+            }
+        }
+
+        override fun gameEndInfo() = textComponent {
+            translatable("role.arsonist.end.doused") {
+                args { numeric("count", dousedPlayers.size) }
+            }
+            newLine()
+            translatable("role.arsonist.end.remaining") {
+                args {
+                    val left = player.game.players.size - dousedPlayers.count { it.isAlive } - 1
+                    numeric("count", left)
+                }
             }
         }
     }

@@ -1,6 +1,10 @@
 package com.fantamomo.mc.amongus.role.imposters
 
+import com.fantamomo.mc.adventure.text.args
+import com.fantamomo.mc.adventure.text.textComponent
+import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.ability.abilities.CreateVentAbility
+import com.fantamomo.mc.amongus.languages.numeric
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.role.AssignedRole
 import com.fantamomo.mc.amongus.role.Role
@@ -16,5 +20,14 @@ object MinerRole : Role<MinerRole, MinerRole.AssignedMinerRole>, KillerRole {
 
     class AssignedMinerRole(override val player: AmongUsPlayer) : AssignedRole<MinerRole, AssignedMinerRole> {
         override val definition: MinerRole = MinerRole
+
+        var createdVents = 0
+            internal set
+
+        override fun gameEndInfo() = textComponent {
+            translatable("role.miner.end.created_vents") {
+                args { numeric("count", createdVents) }
+            }
+        }
     }
 }

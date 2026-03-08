@@ -6,6 +6,9 @@ import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.role.AssignedRole
 import com.fantamomo.mc.amongus.role.Role
 import com.fantamomo.mc.amongus.role.Team
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.JoinConfiguration
+import net.kyori.adventure.text.format.NamedTextColor
 
 object SeerRole : Role<SeerRole, SeerRole.AssignedSeerRole> {
     override val id: String = "seer"
@@ -16,5 +19,21 @@ object SeerRole : Role<SeerRole, SeerRole.AssignedSeerRole> {
 
     class AssignedSeerRole(override val player: AmongUsPlayer) : AssignedRole<SeerRole, AssignedSeerRole> {
         override val definition = SeerRole
+        private val revealedPlayers = mutableListOf<AmongUsPlayer>()
+
+        fun addRevealedPlayer(player: AmongUsPlayer) {
+            revealedPlayers.add(player)
+        }
+
+        override fun gameEndInfo(): Component {
+            val revealedPlayersInfo = revealedPlayers.map {
+                Component.text(it.name, it.assignedRole?.definition?.team?.textColor ?: NamedTextColor.WHITE)
+            }
+            return Component.join(joinConfig, revealedPlayersInfo)
+        }
+
+        companion object {
+            private val joinConfig = JoinConfiguration.separator(Component.translatable("role.seer.end.separator"))
+        }
     }
 }

@@ -1,9 +1,6 @@
 package com.fantamomo.mc.amongus.game
 
-import com.fantamomo.mc.adventure.text.args
-import com.fantamomo.mc.adventure.text.newLine
-import com.fantamomo.mc.adventure.text.textComponent
-import com.fantamomo.mc.adventure.text.translatable
+import com.fantamomo.mc.adventure.text.*
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.ability.AbilityManager
 import com.fantamomo.mc.amongus.area.GameArea
@@ -21,6 +18,8 @@ import com.fantamomo.mc.amongus.settings.Settings
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.task.TaskManager
 import com.fantamomo.mc.amongus.util.TickContext
+import com.fantamomo.mc.amongus.util.audience.ListAudience
+import com.fantamomo.mc.amongus.util.internal.NMS
 import com.fantamomo.mc.amongus.util.toSmartString
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.JoinConfiguration
@@ -28,13 +27,16 @@ import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.title.Title
 import net.kyori.adventure.title.TitlePart
+import net.minecraft.network.protocol.game.ClientboundPlayerInfoRemovePacket
 import org.bukkit.Bukkit
 import org.bukkit.World
+import org.bukkit.craftbukkit.entity.CraftPlayer
 import org.bukkit.entity.Player
 import java.util.*
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.Uuid
+import kotlin.uuid.toKotlinUuid
 
 class Game(
     area: GameArea,
@@ -476,10 +478,22 @@ class Game(
             translatable(if (alive) "win.message.player.alive" else "win.message.player.dead") {
                 args {
                     component("player", Component.text(player.name, color))
-                    component(
-                        "role",
-                        player.assignedRole?.name?.color(color) ?: Component.text("None", NamedTextColor.GRAY)
-                    )
+                    component("role") {
+                        val assignedRole = player.assignedRole
+                        if (assignedRole != null) {
+                            append(assignedRole.definition.name)
+                            hoverEvent(KHoverEventType.ShowText) {
+                                append(assignedRole.definition.descriptionOther)
+                                assignedRole.gameEndInfo()?.let { message ->
+                                    newLine()
+                                    newLine()
+                                    append(message)
+                                }
+                            }
+                        } else {
+                            translatable("scoreboard.role.none")
+                        }
+                    }
                     if (deadReason != null) component("reason", deadReason.name)
                 }
             }

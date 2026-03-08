@@ -4,6 +4,7 @@ import com.fantamomo.mc.adventure.text.args
 import com.fantamomo.mc.adventure.text.textComponent
 import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.ability.Ability
+import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.player.info.DeadReason
@@ -55,6 +56,19 @@ object ExecutionerRole : Role<ExecutionerRole, ExecutionerRole.AssignedExecution
                 }
             }
         } ?: NO_TARGET
+
+        override fun gameEndInfo() = textComponent {
+            translatable("role.executioner.end.target") {
+                args {
+                    val target = target
+                    if (target != null) {
+                        string("player", target.name)
+                    } else {
+                        component("player", NO_TARGET)
+                    }
+                }
+            }
+        }
 
         companion object {
             private val NO_TARGET = Component.translatable("role.executioner.scoreboard.no_target")

@@ -21,6 +21,8 @@ interface Role<R : Role<R, A>, A : AssignedRole<R, A>> {
         get() = Component.translatable("role.$id.name")
     val description: Component
         get() = Component.translatable("role.$id.description")
+    val descriptionOther: Component
+        get() = Component.translatable("role.$id.description.other")
 
     val defaultAbilities: Set<Ability<*, *>>
 
