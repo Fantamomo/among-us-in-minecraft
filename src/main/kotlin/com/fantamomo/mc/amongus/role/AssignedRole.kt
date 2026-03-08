@@ -24,4 +24,6 @@ interface AssignedRole<R : Role<R, A>, A : AssignedRole<R, A>> {
     fun scoreboardLine(): Component? = null
 
     fun hasWon(): Boolean = false
+
+    fun gameEndInfo(): Component? = null
 }
