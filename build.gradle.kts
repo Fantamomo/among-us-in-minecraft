@@ -63,6 +63,19 @@ val excludedFromShadow = listOf(
     "com.mojang",
 )
 
+abstract class GitHashSource : ValueSource<String, ValueSourceParameters.None> {
+    override fun obtain(): String =
+        ProcessBuilder("git", "rev-parse", "HEAD")
+            .start()
+            .inputStream
+            .bufferedReader()
+            .readLine()
+            ?.trim()
+            ?: "unknown"
+}
+
+val gitHash: Provider<String> = providers.of(GitHashSource::class) {}
+
 tasks {
     shadowJar {
         mergeServiceFiles()
@@ -76,11 +89,17 @@ tasks {
     }
 
     processResources {
-        val props = mapOf("version" to version)
-        inputs.properties(props)
+        val gitHash = providers.of(GitHashSource::class) {}
+        val pluginVersion = version.toString()
+
+        inputs.property("version", pluginVersion)
+        inputs.property("githash", gitHash)
         filteringCharset = "UTF-8"
         filesMatching("paper-plugin.yml") {
-            expand(props)
+            expand(mapOf(
+                "version" to pluginVersion,
+                "githash" to gitHash.get()
+            ))
         }
     }
 }
