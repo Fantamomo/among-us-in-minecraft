@@ -25,6 +25,7 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.JoinConfiguration
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
+import net.kyori.adventure.text.logger.slf4j.ComponentLogger
 import net.kyori.adventure.title.Title
 import net.kyori.adventure.title.TitlePart
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoRemovePacket
@@ -45,9 +46,15 @@ class Game(
 ) {
     val area: GameArea
 
+    val uuid: Uuid = Uuid.random()
+    val code: String = createRandomCode()
+
+    val logger = ComponentLogger.logger("Among Us: $code")
+
     init {
         require(area.isValid()) { "Area ${area.name} is not valid" }
         this.area = area.withWorld(world)
+        logger.info("Game created with area ${area.name} in world ${world.name}")
     }
 
     var host: AmongUsPlayer? = null
@@ -57,9 +64,6 @@ class Game(
         }
 
     private var lastPlayer: Long = -1
-
-    val code: String = createRandomCode()
-    val uuid: Uuid = Uuid.random()
 
     val settings: Settings = Settings(this)
 
@@ -99,6 +103,7 @@ class Game(
         scoreboardManager.addLobbyPlayer(newPlayer)
         abortStartCooldown()
         audiences.forEach { it.setDirty() }
+        logger.info("Adding player: ${player.name}")
         return true
     }
 
@@ -119,10 +124,12 @@ class Game(
     }
 
     fun tick(tickContext: TickContext) {
+        logger.trace("Ticking: ${tickContext.ticks}")
         if (world.playerCount == 0) {
             val currentTimeMillis = System.currentTimeMillis()
             if (lastPlayer == -1L) lastPlayer = currentTimeMillis
             if (lastPlayer + 300000 < currentTimeMillis) { // 300000 = 5 minutes
+                logger.info("Removing due that there are no players")
                 GameManager.markForRemove(this)
                 return
             }
@@ -310,6 +317,7 @@ class Game(
         if (phase != GamePhase.LOBBY) return
         phase = GamePhase.STARTING
         startCooldownTicks = GameManager.currentTick.ticks + 200
+        logger.info("Starting in 10 seconds")
     }
 
     fun abortStartCooldown() {
@@ -319,11 +327,13 @@ class Game(
         sendTitle(TitlePart.TIMES, Title.DEFAULT_TIMES)
         val abortStartMessage = Component.translatable("game.start.aborted")
         sendTitle(TitlePart.TITLE, abortStartMessage)
+        logger.info("Aborting start")
     }
 
     fun start() {
         if (phase != GamePhase.STARTING && phase != GamePhase.LOBBY) return
         phase = GamePhase.RUNNING
+        logger.info("Game started")
         roleManager.start()
         taskManager.start()
         val gameSpawn = area.gameSpawn ?: throw IllegalStateException("Game spawn not set")
@@ -368,6 +378,7 @@ class Game(
     }
 
     fun checkWin() {
+        logger.trace("Checking win")
         if (!settings[SettingsKey.DEV.DO_WIN_CHECK]) return
 
         if (checkRoleWins(WinCheckPhase.PRE)) return
@@ -395,7 +406,10 @@ class Game(
 
     @NMS
     fun letWin(team: Team) {
+        if (phase == GamePhase.FINISHED) return
         phase = GamePhase.FINISHED
+
+        logger.info("Game ended with $team win")
 
         sabotageManager.endSabotage()
         invalidateAbilities()
