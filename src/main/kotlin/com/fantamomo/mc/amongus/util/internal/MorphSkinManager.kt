@@ -9,6 +9,7 @@ import com.fantamomo.mc.amongus.util.internal.mineskin.HttpClientRequestHandler
 import com.fantamomo.mc.amongus.util.safeCreateDirectories
 import com.fantamomo.mc.amongus.util.skinblender.SkinBlender
 import com.fantamomo.mc.amongus.util.skinblender.VirusSkinBlender
+import com.fantamomo.mc.amongus.util.toSmartString
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -31,6 +32,7 @@ import java.util.concurrent.ConcurrentHashMap
 import javax.imageio.ImageIO
 import kotlin.jvm.optionals.getOrDefault
 import kotlin.jvm.optionals.getOrNull
+import kotlin.time.Clock
 import kotlin.uuid.Uuid
 import org.mineskin.data.Visibility as MineSkinVisibility
 
@@ -251,10 +253,15 @@ object MorphSkinManager {
         return try {
             checkValid()
             CompletableFuture.supplyAsync {
+                val start = Clock.System.now()
                 try {
                     val baseSkin = fetchSkinFromProfile(baseProfile)
                     val targetSkin = fetchSkinFromProfile(targetProfile)
-                    pregenerate(baseSkin, targetSkin, baseProfile, targetProfile, variants).join()
+                    val skins = pregenerate(baseSkin, targetSkin, baseProfile, targetProfile, variants).join()
+                    val end = Clock.System.now()
+                    val duration = end - start
+                    logger.info("Pregeneration completed in ${duration.toSmartString()}")
+                    skins
                 } catch (e: Exception) {
                     logger.error("Failed to pregenerate skins from profiles", e)
                     emptyList()
