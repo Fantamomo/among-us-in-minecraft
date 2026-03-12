@@ -63,7 +63,9 @@ object EntityManager {
      * @param game The game instance to be disposed of.
      */
     internal fun dispose(game: Game) {
-        removeOnEnd.remove(game)?.forEach { it.remove() }
+        var count = 0
+        removeOnEnd.remove(game)?.forEach { it.remove(); count++ }
+        logger.info("Removed $count entities from game ${game.code}")
     }
 
     /**
