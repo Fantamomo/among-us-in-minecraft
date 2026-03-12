@@ -168,6 +168,13 @@ class AmongUsPlayer internal constructor(
     internal fun notifyAbilityItemChange(item: AbilityItem) {
         // checkGameRunning()
         val player = player ?: return
+        val new = try {
+            item.get()
+        } catch (e: Exception) {
+            game.logger.error("Failed to get ability item: ${item.id} at ${item.ability.definition.id}", e)
+            game.logger.error("Please report that error to https://github.com/fantamomo/among-us-in-minecraft")
+            return
+        }
         val uuid = item.uuid
         val slots = player.inventory.mapIndexedNotNull { index, stack ->
             index.takeIf {
@@ -177,7 +184,6 @@ class AmongUsPlayer internal constructor(
                 ) == uuid
             }
         }
-        val new = item.get()
         for (slot in slots) {
             player.inventory.setItem(slot, new)
         }
@@ -220,7 +226,8 @@ class AmongUsPlayer internal constructor(
 
     fun isInGhostForm(): Boolean = game.ghostFormManager.isInGhostForm(this)
 
-    fun canSeeWhenLightsSabotage(): Boolean = assignedRole?.definition?.team == Team.IMPOSTERS || modification?.definition === TorchModification
+    fun canSeeWhenLightsSabotage(): Boolean =
+        assignedRole?.definition?.team == Team.IMPOSTERS || modification?.definition === TorchModification
 
     fun isHost() = game.host === this
 

@@ -67,7 +67,7 @@ class AbilityItemRender<M : ItemMeta>(
 
     @Suppress("UnstableApiUsage")
     fun toItemStack(): ItemStack {
-        val displayNameObject = displayNameObject ?: throw IllegalStateException("displayName not set")
+        val displayNameObject = displayNameObject ?: throw IllegalStateException("displayName not set at ${ctx.abilityItem.ability::class.java.name}/${ctx.ability.definition.id}")
         val item = itemType.createItemStack(amount, itemTypeConsumer)
 
         val timer = cooldownName?.let { ctx.getTimer(it) }
