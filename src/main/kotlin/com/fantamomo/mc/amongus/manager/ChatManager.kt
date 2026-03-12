@@ -38,16 +38,19 @@ class ChatManager(val game: Game) {
     fun sendMeetingMessage(sender: AmongUsPlayer, message: Component) {
         val message = getMessage("chat.message.meeting", sender, message)
         game.sendChatMessage(message)
+        game.logger.info(message)
     }
 
     fun sendGhostMessage(sender: AmongUsPlayer, input: Component) {
         val message = getMessage("chat.message.ghost", sender, input)
         game.audienceDead.sendMessage(message)
+        game.logger.info(message)
     }
 
     fun sendLobbyMessage(sender: AmongUsPlayer, input: Component) {
         val message = getMessage("chat.message.lobby", sender, input)
         game.sendChatMessage(message)
+        game.logger.info(message)
     }
 
     private fun getMessage(key: String, player: AmongUsPlayer, message: Component) = textComponent {
@@ -62,6 +65,7 @@ class ChatManager(val game: Game) {
     fun sendImposterMessage(player: AmongUsPlayer, message: String) {
         val component = getMessage("chat.message.imposter", player, Component.text(message))
         game.audienceImposter.sendMessage(component)
+        game.logger.info(component)
     }
 
     companion object {

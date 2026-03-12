@@ -14,7 +14,6 @@ import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.player.info.DeadReason
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.role.crewmates.MayorRole
-import com.fantamomo.mc.amongus.role.neutral.JesterRole
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.util.Cooldown
 import com.fantamomo.mc.amongus.util.internal.NMS
@@ -257,6 +256,8 @@ class MeetingManager(private val game: Game) : Listener {
         private fun startMeeting() {
             setPhase(GamePhase.CALLING_MEETING)
 
+            game.logger.info("Meeting started by ${caller.name} for ${reason.name}")
+
             game.sabotageManager.currentSabotageType()
                 ?.takeIf { it.isCrisis }
                 ?.let { game.sabotageManager.endSabotage() }
@@ -393,6 +394,8 @@ class MeetingManager(private val game: Game) : Listener {
                 }
                 player.player?.closeInventory()
             }
+
+            game.logger.info("Meeting ended. Ejected player: ${ejectedPlayer?.name ?: "None"}")
 
             Bukkit.getScheduler().runTaskLater(AmongUs, { ->
                 startEjection(ejectedPlayer)
