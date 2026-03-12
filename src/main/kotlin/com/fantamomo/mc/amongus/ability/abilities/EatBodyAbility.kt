@@ -54,12 +54,12 @@ object EatBodyAbility : Ability<EatBodyAbility, EatBodyAbility.AssignedEatBodyAb
                         itemType = ItemType.BARRIER
                         when (val reason = ctx.getBlockReason()) {
 
+                            BlockReason.Dead -> translationKey =
+                                "ability.eat_body.eat_body.deactivate.dead"
+
                             is BlockReason.Custom -> translationKey = when (reason.id) {
                                 "notNearCorpse" ->
                                     "ability.eat_body.eat_body.deactivate.not_near_corpse"
-
-                                "notAlive" ->
-                                    "ability.eat_body.eat_body.deactivate.dead"
 
                                 else ->
                                     "ability.eat_body.eat_body.deactivate"
