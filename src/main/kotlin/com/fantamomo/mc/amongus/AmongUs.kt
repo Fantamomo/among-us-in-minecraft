@@ -15,6 +15,7 @@ import com.fantamomo.mc.amongus.player.PlayerDataManager
 import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.role.Role
 import com.fantamomo.mc.amongus.statistics.StatisticsManager
+import com.fantamomo.mc.amongus.util.LogFilter
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
 import org.bukkit.plugin.java.JavaPlugin
 
@@ -28,7 +29,6 @@ import org.bukkit.plugin.java.JavaPlugin
  * @see AmongUsBootstrapper
  */
 object AmongUs : JavaPlugin() {
-
 
     override fun onLoad() {
         slF4JLogger.info(buildString {
@@ -52,6 +52,7 @@ object AmongUs : JavaPlugin() {
             info("In developing mode, some features work not as expected.")
             info("This is for easier developing.")
         }
+        LogFilter.init()
         GameAreaManager.loadAreas()
         Listeners.registerAll()
         LanguageManager.init()
