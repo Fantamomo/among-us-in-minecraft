@@ -142,6 +142,7 @@ object GameManager {
             player.teleportAsync(AmongUs.server.respawnWorld.spawnLocation)
             player.inventory.clear()
         }
+        logger.info("Unloading world ${world.name}")
         AmongUs.server.unloadWorld(world, false)
     }
 
