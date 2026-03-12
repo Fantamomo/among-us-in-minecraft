@@ -42,7 +42,6 @@ object ExecutionerRole : Role<ExecutionerRole, ExecutionerRole.AssignedExecution
 
         override fun onGameEnd() {
             target?.mannequinController?.setNameColorFor(player, null)
-            target = null
         }
 
         override fun hasWon() = player.isAlive && target?.deadReason === DeadReason.Ejected
