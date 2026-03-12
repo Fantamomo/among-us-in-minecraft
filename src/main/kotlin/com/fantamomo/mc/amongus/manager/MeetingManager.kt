@@ -76,18 +76,26 @@ class MeetingManager(private val game: Game) : Listener {
         500,
         false,
         null
-    ).apply {
+    ).addComponentProvider(false)
+
+    private val actionBarDead = game.actionBarManager.ActionBarPart(
+        "meetingDead",
+        ActionBarManager.ActionBarPartType.CENTER,
+        500,
+        false,
+        null
+    ).addComponentProvider(true)
+
+    private fun ActionBarManager.ActionBarPart.addComponentProvider(dead: Boolean) = apply {
         componentProvider = {
             val meeting = meeting
             if (meeting == null) null
-            else textComponent {
-                when (game.phase) {
-                    GamePhase.CALLING_MEETING -> translatable("meeting.actionbar.calling")
-                    GamePhase.DISCUSSION -> translatable("meeting.actionbar.discussing")
-                    GamePhase.VOTING -> translatable("meeting.actionbar.voting")
-                    GamePhase.ENDING_MEETING -> translatable("meeting.actionbar.ending")
-                    else -> content("<error>")
-                }
+            else when (game.phase) {
+                GamePhase.CALLING_MEETING -> ACTIONBAR_MEETING_CALLING
+                GamePhase.DISCUSSION -> ACTIONBAR_MEETING_DISCUSSING
+                GamePhase.VOTING -> if (dead) ACTIONBAR_MEETING_VOTING_DEAD else ACTIONBAR_MEETING_VOTING
+                GamePhase.ENDING_MEETING -> ACTIONBAR_MEETING_ENDING
+                else -> ACTIONBAR_MEETING_ERROR
             }
         }
     }
@@ -323,7 +331,7 @@ class MeetingManager(private val game: Game) : Listener {
                     showBossBar(bossBar)
                 }
 
-                game.actionBarManager.bar(p).add(actionBar)
+                game.actionBarManager.bar(p).add(if (p.isAlive) actionBar else actionBarDead)
             }
 
             startDiscussion()
@@ -351,8 +359,14 @@ class MeetingManager(private val game: Game) : Listener {
             timer = Cooldown(game.settings[SettingsKey.MEETING.MEETING_VOTING_TIME], true)
             if (game.settings[SettingsKey.MEETING.MEETING_DISCUSSION_TIME] >= Duration.ZERO) {
                 game.sendTitle(TitlePart.TITLE, Component.translatable("meeting.voting.start"))
-                game.audienceAlive.sendTitlePart(TitlePart.SUBTITLE, Component.translatable("meeting.voting.start.subtitle"))
-                game.audienceDead.sendTitlePart(TitlePart.SUBTITLE, Component.translatable("meeting.voting.start.subtitle.dead"))
+                game.audienceAlive.sendTitlePart(
+                    TitlePart.SUBTITLE,
+                    Component.translatable("meeting.voting.start.subtitle")
+                )
+                game.audienceDead.sendTitlePart(
+                    TitlePart.SUBTITLE,
+                    Component.translatable("meeting.voting.start.subtitle.dead")
+                )
             }
         }
 
@@ -707,6 +721,7 @@ class MeetingManager(private val game: Game) : Listener {
                 }
 
                 actionBar.remove()
+                actionBarDead.remove()
             }
             disableEventHandler = false
 
@@ -745,6 +760,12 @@ class MeetingManager(private val game: Game) : Listener {
 
     companion object {
         private val recipeKeys: MutableSet<NamespacedKey> = mutableSetOf()
+        private val ACTIONBAR_MEETING_CALLING = Component.translatable("meeting.actionbar.calling")
+        private val ACTIONBAR_MEETING_DISCUSSING = Component.translatable("meeting.actionbar.discussing")
+        private val ACTIONBAR_MEETING_VOTING = Component.translatable("meeting.actionbar.voting")
+        private val ACTIONBAR_MEETING_VOTING_DEAD = Component.translatable("meeting.actionbar.voting.dead")
+        private val ACTIONBAR_MEETING_ENDING = Component.translatable("meeting.actionbar.ending")
+        private val ACTIONBAR_MEETING_ERROR = Component.text("<error>")
 
         internal fun dispose() {
             recipeKeys.forEach { Bukkit.removeRecipe(it) }
