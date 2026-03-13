@@ -6,6 +6,7 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
+import java.util.*
 import kotlin.uuid.Uuid
 
 object PlayerActionElements {
@@ -58,6 +59,21 @@ object PlayerActionElements {
                     put("killer", reason.murderer.uuid.toString())
                 }
             }
+        }
+    }
+
+    class PlayerChat(val player: UUID, val type: String, val message: String) : IdActionElement("player_chat") {
+        override fun toJson(): JsonElement = buildJsonObject {
+            put("player", player.toString())
+            put("type", type)
+            put("message", message)
+        }
+    }
+
+    class PlayerChatFailed(val player: UUID, val message: String) : IdActionElement("player_chat_failed") {
+        override fun toJson(): JsonElement = buildJsonObject {
+            put("player", player.toString())
+            put("message", message)
         }
     }
 }
