@@ -17,6 +17,7 @@ import com.fantamomo.mc.amongus.role.crewmates.MayorRole
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.util.Cooldown
 import com.fantamomo.mc.amongus.util.internal.NMS
+import com.fantamomo.mc.amongus.util.log.elements.MeetingActionElement
 import com.fantamomo.mc.amongus.util.textComponent
 import io.papermc.paper.datacomponent.DataComponentTypes
 import io.papermc.paper.datacomponent.item.ResolvableProfile
@@ -262,6 +263,8 @@ class MeetingManager(private val game: Game) : Listener {
         }
 
         private fun startMeeting() {
+            game.actionLog.add(MeetingActionElement.Called(caller.uuid, reason, foundBody?.uuid))
+
             setPhase(GamePhase.CALLING_MEETING)
 
             game.logger.info("Meeting started by ${caller.name} for ${reason.name}")
@@ -379,6 +382,8 @@ class MeetingManager(private val game: Game) : Listener {
             showVoteResult(ejectedPlayer)
             showVoteDetails()
 
+            game.actionLog.add(MeetingActionElement.MeetingResult(ejectedPlayer?.uuid))
+
             votes.entries.forEach { (voter, vote) ->
                 val player = voter.player
                 player.statistics.voted.increment()
@@ -426,6 +431,7 @@ class MeetingManager(private val game: Game) : Listener {
             if (game.phase != GamePhase.VOTING || voter in votes) return false
             if (!target.isAlive) return false
             votes[voter] = Vote.For(target)
+            game.actionLog.add(MeetingActionElement.VoteFor(voter.player.uuid, target.uuid, mayorVote))
             mayEndVoting()
             return true
         }
@@ -446,6 +452,7 @@ class MeetingManager(private val game: Game) : Listener {
             val voter = if (mayorVote) Voter.MayorVoter(voter) else Voter.NormalPlayer(voter)
             if (game.phase != GamePhase.VOTING || voter in votes) return false
             votes[voter] = Vote.Skip
+            game.actionLog.add(MeetingActionElement.VoteSkip(voter.player.uuid, mayorVote))
             mayEndVoting()
             return true
         }
