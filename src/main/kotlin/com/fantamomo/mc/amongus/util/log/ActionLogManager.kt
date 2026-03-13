@@ -40,6 +40,7 @@ object ActionLogManager {
         val file = direction.resolve(type).resolve("${log.id}.json")
         file.parent.safeCreateDirectories()
         val data = buildJsonObject {
+            put("createdAt", log.createdAt.toString())
             put("metadata", anyMapToJsonObject(log.metadata))
             put("log", buildJsonArray {
                 for (type in log.entries) {
