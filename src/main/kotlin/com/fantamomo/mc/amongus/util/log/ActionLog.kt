@@ -7,6 +7,7 @@ class ActionLog(
     val id: Uuid,
     var metadata: Map<String, Any> = emptyMap()
 ) {
+    val createdAt = Clock.System.now()
     internal val entries: ArrayDeque<ActionEntry> = ArrayDeque()
 
     fun addEntry(entry: ActionEntry) {
