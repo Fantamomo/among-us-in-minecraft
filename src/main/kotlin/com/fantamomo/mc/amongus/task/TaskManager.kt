@@ -15,6 +15,7 @@ import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.task.GuiAssignedTask.Companion.MOVEABLE_ITEM_KEY
 import com.fantamomo.mc.amongus.util.data.TaskBarUpdateEnum
 import com.fantamomo.mc.amongus.util.isSameBlockPosition
+import com.fantamomo.mc.amongus.util.log.elements.TaskActionElements
 import com.fantamomo.mc.amongus.util.randomListDistinct
 import net.kyori.adventure.bossbar.BossBar
 import net.kyori.adventure.text.Component
@@ -24,6 +25,7 @@ import org.bukkit.Location
 import org.bukkit.entity.BlockDisplay
 import org.bukkit.entity.Player
 import org.bukkit.persistence.PersistentDataType
+import kotlin.uuid.toKotlinUuid
 
 class TaskManager(val game: Game) {
     private val tasks: MutableMap<AmongUsPlayer, MutableSet<RegisteredTask>> = mutableMapOf()
@@ -77,6 +79,7 @@ class TaskManager(val game: Game) {
         val registeredTask = get(task) ?: return
         if (registeredTask.completed) return
         val allTasksCompleted = tasks[task.player]?.all { it.completed } ?: true
+        game.actionLog.add(TaskActionElements.TaskCompleted(task.player.uuid.toKotlinUuid(), task.task.id))
         registeredTask.completed = true
         registeredTask.hideCompletely()
         registeredTask.task.stop()
@@ -106,6 +109,7 @@ class TaskManager(val game: Game) {
             completeTask(task)
             return
         }
+        game.actionLog.add(TaskActionElements.TaskStepCompleted(task.player.uuid.toKotlinUuid(), task.task.id, task.step + 1))
         task.player.player?.sendTitlePart(TitlePart.TITLE, textComponent {
             translatable("task.step.title") {
                 args {
@@ -125,6 +129,7 @@ class TaskManager(val game: Game) {
 
     internal fun taskFailed(task: AssignedTask<*, *>) {
         task.player.statistics.failedTasks[task.task]?.increment()
+        game.actionLog.add(TaskActionElements.TaskFailed(task.player.uuid.toKotlinUuid(), task.task.id))
     }
 
     private fun removeMoveableItems(player: AmongUsPlayer) {
@@ -157,6 +162,7 @@ class TaskManager(val game: Game) {
                 ?: return false
         if (task.fake) return true
         task.task.start()
+        game.actionLog.add(TaskActionElements.TaskStarted(player.uuid.toKotlinUuid(), task.task.task.id))
         return true
     }
 
