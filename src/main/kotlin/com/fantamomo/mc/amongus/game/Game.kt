@@ -126,7 +126,7 @@ class Game(
         val newPlayer = PlayerManager.joinGame(player, this)
         scoreboardManager.addLobbyPlayer(newPlayer)
         actionLog.add(PlayerActionElements.PlayerJoin(player.uniqueId.toKotlinUuid()))
-        abortStartCooldown(GameActionElements.StartCooldownAborted.Reason.PLAYER_JOIN)
+        abortStartCooldown(GameActionElements.StartCountdownAborted.Reason.PLAYER_JOIN)
         audiences.forEach { it.setDirty() }
         logger.info("Adding player: ${player.name}")
         return true
@@ -344,16 +344,16 @@ class Game(
 
     fun startStartCooldown() {
         if (phase != GamePhase.LOBBY) return
-        actionLog.add(GameActionElements.StartCooldown)
+        actionLog.add(GameActionElements.StartCountdown)
         phase = GamePhase.STARTING
         startCooldownTicks = GameManager.currentTick.ticks + 200
         logger.info("Starting in 10 seconds")
     }
 
-    fun abortStartCooldown(reason: GameActionElements.StartCooldownAborted.Reason) {
+    fun abortStartCooldown(reason: GameActionElements.StartCountdownAborted.Reason) {
         if (phase != GamePhase.STARTING) return
         actionLog.add(
-            GameActionElements.StartCooldownAborted(
+            GameActionElements.StartCountdownAborted(
                 reason,
                 ((startCooldownTicks - GameManager.currentTick.ticks) * 20).toInt()
             )

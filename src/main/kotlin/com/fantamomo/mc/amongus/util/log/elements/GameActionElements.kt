@@ -14,10 +14,10 @@ object GameActionElements {
 
     val End = IdActionElement("game_end")
 
-    val StartCooldown = IdActionElement("game_start_cooldown")
+    val StartCountdown = IdActionElement("game_start_countdown")
 
-    class StartCooldownAborted(val reason: Reason, val remaining: Int) :
-        IdActionElement("cooldown_aborted") {
+    class StartCountdownAborted(val reason: Reason, val remaining: Int) :
+        IdActionElement("countdown_aborted") {
         override fun toJson(): JsonElement = buildJsonObject {
             put("reason", reason.name)
             put("remaining", remaining)
