@@ -39,8 +39,8 @@ object AmongUsCommands {
 
         if (!AmongUsConfig.MsgCommandBlocker.disabled && !AmongUsConfig.MsgCommandBlocker.legacy) {
             if (!interceptMsgCommand(registrar)) {
-                logger.warn("Failed to intercept the /msg command for private messaging.")
-                logger.warn("This usually happens if another plugin overrides /msg commands.")
+                logger.warn("Failed to intercept the /msg or the /me command.")
+                logger.warn("This usually happens if another plugin overrides /msg or the /me command.")
                 logger.warn("Action: To resolve this, enable 'msg-command-blocker.legacy = true' in the config.yml.")
                 logger.warn(
                     "If enabling legacy mode does not fix the issue, please report this problem to the plugin author, " +
@@ -48,7 +48,11 @@ object AmongUsCommands {
                 )
             }
         }
-        registerEntitySelectorOption()
+        try {
+            registerEntitySelectorOption()
+        } catch (e: Exception) {
+            logger.error("Failed to register entity selector option", e)
+        }
     }
 
     private fun registerAll(registrar: Commands) {
@@ -71,7 +75,7 @@ object AmongUsCommands {
     private fun interceptMsgCommand(registrar: Commands): Boolean {
         logger.debug("Attempting to intercept /msg command")
 
-        return try {
+        val first = try {
             BrigadierInterceptor.build(registrar.dispatcher) {
                 interception {
                     runMsgInception()
@@ -84,6 +88,21 @@ object AmongUsCommands {
             logger.error("Failed to replace /msg command handler", ex)
             false
         }
+
+        val second = try {
+            BrigadierInterceptor.build(registrar.dispatcher) {
+                interception {
+                    runMeInception()
+                }
+                path("me", "action")
+            }
+            logger.debug("/me command successfully intercepted")
+            true
+        } catch (ex: Exception) {
+            logger.error("Failed to replace /me command handler", ex)
+            false
+        }
+        return first && second
     }
 
     /**
@@ -144,6 +163,28 @@ object AmongUsCommands {
             return 0
         }
 
+        return runOriginal()
+    }
+
+
+    /**
+     * Decorator implementation for the `/me` command.
+     *
+     * The interceptor:
+     * - Applies game-specific messaging restrictions.
+     * - Delegates to the original command when allowed.
+     *
+     * Rules enforced:
+     * 1. Players currently in-game cannot use `/me`.
+     *
+     * If no rule is violated, the original command executes normally.
+     */
+    private fun InceptionContext.runMeInception(): Int {
+        val sender = context.source.sender as? Player ?: return runOriginal()
+        if (PlayerManager.exists(sender.uniqueId)) {
+            sender.sendMessage(Component.translatable("command.error.me.in_game"))
+            return 0
+        }
         return runOriginal()
     }
 

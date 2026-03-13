@@ -1,8 +1,8 @@
 # The msg-command-blocker module prevents players from sending private messages
-# (/msg, /tell, /w, etc.) while they are in a game. This helps maintain fair play
+# (/msg, /tell, /w, etc.) and global messages (/me) while they are in a game. This helps maintain fair play
 # and prevents players from sharing information that could affect the outcome.
 msg-command-blocker:
-  # Master switch to enable or disable blocking of private message commands (/msg, /tell, /w, etc.).
+  # Master switch to enable or disable blocking of private message commands (/msg, /tell, /w, /me, etc.).
   disabled: false
 
   # Legacy mode for command blocking:
@@ -17,9 +17,11 @@ msg-command-blocker:
     - msg
     - tell
     - w
+    - me
     - minecraft:tell
     - minecraft:msg
     - minecraft:w
+    - minecraft:me
 
 # MorphBlender / Skin Animation Configuration
 # This section allows you to enable or disable the MorphBlender
