@@ -142,6 +142,7 @@ data class SettingsKey<T : Any, S : SettingsType<T>>(
     object MESSAGES : SettingsGroup("messages", ItemType.BOOK) {
         val ALLOW_GHOST_MESSAGE_IN_GAME = key("allow.ghost.message.in.game", BooleanSettingsType, true)
         val ALLOW_IMPOSTER_PRIVATE_MESSAGE = key("allow.imposter.private.message", BooleanSettingsType, true)
+        val DISABLE_MESSAGES_RESTRICTION = key("disable.messages.restriction", BooleanSettingsType, false)
     }
 
     object UTILS : SettingsGroup("utils", ItemType.COMPARATOR) {
