@@ -14,6 +14,8 @@ import io.papermc.paper.event.player.ChatEvent
 import net.kyori.adventure.text.Component
 
 class ChatManager(val game: Game) {
+    private var disableRestriction = false
+
     fun onChat(sender: AmongUsPlayer, event: ChatEvent) {
         event.isCancelled = true
         val message = event.message()
@@ -25,7 +27,13 @@ class ChatManager(val game: Game) {
         if (!meetingManager.isCurrentlyAMeeting() &&
             (sender.isAlive || !game.settings[SettingsKey.MESSAGES.ALLOW_GHOST_MESSAGE_IN_GAME])
         ) {
-            sender.player?.sendMessage(ERROR_IN_GAME)
+            if (disableRestriction) {
+                val message = getMessage("chat.message.in_game", sender, message)
+                game.audienceAll.sendMessage(message)
+                game.logger.info(message)
+            } else {
+                sender.player?.sendMessage(ERROR_IN_GAME)
+            }
             return
         }
         if (!sender.isAlive) {
@@ -43,7 +51,8 @@ class ChatManager(val game: Game) {
 
     fun sendGhostMessage(sender: AmongUsPlayer, input: Component) {
         val message = getMessage("chat.message.ghost", sender, input)
-        game.audienceDead.sendMessage(message)
+        val audience = if (disableRestriction) game.audienceAll else game.audienceDead
+        audience.sendMessage(message)
         game.logger.info(message)
     }
 
@@ -66,6 +75,10 @@ class ChatManager(val game: Game) {
         val component = getMessage("chat.message.imposter", player, Component.text(message))
         game.audienceImposter.sendMessage(component)
         game.logger.info(component)
+    }
+
+    fun start() {
+        disableRestriction = game.settings[SettingsKey.MESSAGES.DISABLE_MESSAGES_RESTRICTION]
     }
 
     companion object {
