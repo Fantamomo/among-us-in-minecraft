@@ -57,6 +57,7 @@ object AmongUs : JavaPlugin() {
         Listeners.registerAll()
         LanguageManager.init()
         AmongUsSecrets.init()
+        ActionLogManager
 
         Role
         Modification
@@ -88,6 +89,7 @@ object AmongUs : JavaPlugin() {
         saveRun { GameAreaManager.saveAll() }
         saveRun { PlayerDataManager.saveAll() }
         saveRun { LastPlayerLocationManager.save() }
+        saveRun { ActionLogManager.saveAll() }
 
         val ex = classNotFoundExceptions
         if (ex.isNotEmpty()) {
