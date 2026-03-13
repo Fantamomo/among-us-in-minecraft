@@ -336,6 +336,7 @@ class Game(
         logger.info("Game started")
         roleManager.start()
         taskManager.start()
+        chatManager.start()
         val gameSpawn = area.gameSpawn ?: throw IllegalStateException("Game spawn not set")
         val imposterTeamMatesMessage = textComponent {
             translatable("team.imposters.teammates") {
