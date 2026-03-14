@@ -16,7 +16,13 @@ import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.role.Role
 import com.fantamomo.mc.amongus.statistics.StatisticsManager
 import com.fantamomo.mc.amongus.util.LogFilter
+import com.fantamomo.mc.amongus.util.applyUnless
+import com.fantamomo.mc.amongus.util.log.ActionLogManager
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import org.bukkit.plugin.java.JavaPlugin
 
 /**
@@ -29,6 +35,10 @@ import org.bukkit.plugin.java.JavaPlugin
  * @see AmongUsBootstrapper
  */
 object AmongUs : JavaPlugin() {
+
+    internal val scope = CoroutineScope(SupervisorJob() + CoroutineExceptionHandler { context, throwable ->
+        slF4JLogger.error("Unhandled exception in AmongUs coroutine scope", throwable)
+    })
 
     override fun onLoad() {
         slF4JLogger.info(buildString {
@@ -90,6 +100,7 @@ object AmongUs : JavaPlugin() {
         saveRun { PlayerDataManager.saveAll() }
         saveRun { LastPlayerLocationManager.save() }
         saveRun { ActionLogManager.saveAll() }
+        saveRun { scope.cancel() }
 
         val ex = classNotFoundExceptions
         if (ex.isNotEmpty()) {
