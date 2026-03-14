@@ -52,7 +52,7 @@ object SabotageAbility :
                 }
 
                 onRightClick {
-                    game.sabotageManager.sabotage(sabotage)
+                    game.sabotageManager.sabotage(sabotage, player)
                 }
             }
 
