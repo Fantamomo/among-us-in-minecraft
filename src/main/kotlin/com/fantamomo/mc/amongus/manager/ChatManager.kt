@@ -31,9 +31,9 @@ class ChatManager(val game: Game) {
             (sender.isAlive || !game.settings[SettingsKey.MESSAGES.ALLOW_GHOST_MESSAGE_IN_GAME])
         ) {
             if (disableRestriction) {
+                logMessage(sender, "in_game", message)
                 val message = getMessage("chat.message.in_game", sender, message)
                 game.audienceAll.sendMessage(message)
-                logMessage(sender, "in_game", message)
                 game.logger.info(message)
             } else {
                 val type = PlayerActionElements.PlayerChatFailed(
@@ -53,24 +53,24 @@ class ChatManager(val game: Game) {
     }
 
     fun sendMeetingMessage(sender: AmongUsPlayer, message: Component) {
+        logMessage(sender, "meeting", message)
         val message = getMessage("chat.message.meeting", sender, message)
         game.sendChatMessage(message)
-        logMessage(sender, "meeting", message)
         game.logger.info(message)
     }
 
     fun sendGhostMessage(sender: AmongUsPlayer, input: Component) {
+        logMessage(sender, "ghost", input)
         val message = getMessage("chat.message.ghost", sender, input)
         val audience = if (disableRestriction) game.audienceAll else game.audienceDead
         audience.sendMessage(message)
-        logMessage(sender, "ghost", message)
         game.logger.info(message)
     }
 
     fun sendLobbyMessage(sender: AmongUsPlayer, input: Component) {
+        logMessage(sender, "lobby", input)
         val message = getMessage("chat.message.lobby", sender, input)
         game.sendChatMessage(message)
-        logMessage(sender, "lobby", message)
         game.logger.info(message)
     }
 
@@ -84,9 +84,9 @@ class ChatManager(val game: Game) {
     }
 
     fun sendImposterMessage(player: AmongUsPlayer, message: String) {
+        logMessage(player, "imposter", message)
         val component = getMessage("chat.message.imposter", player, Component.text(message))
         game.audienceImposter.sendMessage(component)
-        logMessage(player, "imposter", message)
         game.logger.info(component)
     }
 
