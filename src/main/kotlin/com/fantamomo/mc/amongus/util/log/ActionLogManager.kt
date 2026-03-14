@@ -42,6 +42,7 @@ object ActionLogManager {
         val data = buildJsonObject {
             put("createdAt", log.createdAt.toString())
             put("metadata", anyMapToJsonObject(log.metadata))
+            if (log.customData.isNotEmpty()) put("customData", anyMapToJsonObject(log.customData))
             put("log", buildJsonArray {
                 for (type in log.entries) {
                     addJsonObject {
@@ -68,9 +69,27 @@ object ActionLogManager {
                 is Number -> put(key, value)
                 is String -> put(key, value)
                 is Boolean -> put(key, value)
+                is Array<*> -> put(key, anyCollectionToJsonArray(value.toList()))
+                is Collection<*> -> put(key, anyCollectionToJsonArray(value))
                 is Map<*, *> -> put(key, anyMapToJsonObject(value.mapKeys { (k, _) -> k.toString() }))
                 null -> put(key, null)
                 else -> put(key, value.toString())
+            }
+        }
+    }
+
+    private fun anyCollectionToJsonArray(collection: Collection<Any?>): JsonArray = buildJsonArray {
+        for (element in collection) {
+            when (element) {
+                is JsonElement -> add(element)
+                is Number -> add(element)
+                is String -> add(element)
+                is Boolean -> add(element)
+                is Array<*> -> add(anyCollectionToJsonArray(element.toList()))
+                is Collection<*> -> add(anyCollectionToJsonArray(element))
+                is Map<*, *> -> add(anyMapToJsonObject(element.mapKeys { (k, _) -> k.toString() }))
+                null -> add(null)
+                else -> add(element.toString())
             }
         }
     }
