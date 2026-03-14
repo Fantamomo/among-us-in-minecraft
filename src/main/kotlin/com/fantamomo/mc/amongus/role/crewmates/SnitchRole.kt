@@ -10,6 +10,7 @@ import com.fantamomo.mc.amongus.role.AssignedRole
 import com.fantamomo.mc.amongus.role.Role
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.util.TickContext
+import com.fantamomo.mc.amongus.util.log.elements.CustomRoleActionElements
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.title.TitlePart
@@ -51,6 +52,7 @@ object SnitchRole : Role<SnitchRole, SnitchRole.AssignedSnitchRole> {
             if (taskLeft() <= 1) {
                 if (!sendWarning) {
                     sendWarning = true
+                    player.game.actionLog.add(CustomRoleActionElements.SnitchOneTaskLeft(player.uuid))
                     for (player in player.game.players) {
                         if (player.assignedRole?.definition?.team == Team.IMPOSTERS) {
                             val viewer = player.player
@@ -67,6 +69,7 @@ object SnitchRole : Role<SnitchRole, SnitchRole.AssignedSnitchRole> {
             val canSeeImposters = canSeeImposters()
             if (lastCanSeeImposters != canSeeImposters) {
                 lastCanSeeImposters = canSeeImposters
+                player.game.actionLog.add(CustomRoleActionElements.SnitchFinishedTasks(player.uuid))
                 val thisPlayer = this.player.player
                 for (player in player.game.players) {
                     if (player.assignedRole?.definition?.team == Team.IMPOSTERS) {

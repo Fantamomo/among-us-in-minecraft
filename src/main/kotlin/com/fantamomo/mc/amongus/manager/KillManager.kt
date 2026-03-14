@@ -10,6 +10,8 @@ import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.role.crewmates.TheDamnedRole
 import com.fantamomo.mc.amongus.role.neutral.CannibalRole.AssignedCannibalRole
 import com.fantamomo.mc.amongus.settings.SettingsKey
+import com.fantamomo.mc.amongus.util.log.elements.CustomAbilityActionElements
+import com.fantamomo.mc.amongus.util.log.elements.PlayerActionElements
 import io.papermc.paper.datacomponent.item.ResolvableProfile
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.title.TitlePart
@@ -20,6 +22,7 @@ import org.bukkit.entity.Pose
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
+import kotlin.uuid.toKotlinUuid
 
 class KillManager(val game: Game) {
     private val corpses: MutableList<Corpse> = mutableListOf()
@@ -200,6 +203,7 @@ class KillManager(val game: Game) {
         target.statistics.timeUntilDead.timerStop()
         target.mannequinController.hideFromAll()
         target.mannequinController.showToSeeingPlayers()
+        game.actionLog.add(PlayerActionElements.PlayerDeath(target.uuid.toKotlinUuid(), reason))
         val mannequin = target.mannequinController.getEntity()
         mannequin?.isInvisible = true
         showGhosts(target)
@@ -368,6 +372,7 @@ class KillManager(val game: Game) {
             ?: throw IllegalStateException("Only cannibal role can eat bodies")
 
         val corpse = nearestCorpse(player.livingEntity.location) ?: return
+        game.actionLog.add(CustomAbilityActionElements.CannibalEatBody(player.uuid, corpse.owner.uuid))
         corpse.remove()
         cannibalRole.incrementEatenBodies()
         game.checkWin()

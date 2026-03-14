@@ -12,6 +12,7 @@ import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.util.TickContext
 import com.fantamomo.mc.amongus.util.internal.NMS
+import com.fantamomo.mc.amongus.util.log.elements.CameraActionElements
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.craftbukkit.entity.CraftEntity
@@ -64,8 +65,11 @@ class CameraManager(val game: Game) {
             p?.sendBlockChange(value.location, Material.BARRIER.createBlockData())
 
             if (old != null) {
+                game.actionLog.add(CameraActionElements.SwitchCamera(player.uuid, old.name, value.name))
                 p?.hideEntity(AmongUs, old.armorStand)
                 p?.sendBlockChange(old.location, old.location.block.blockData)
+            } else {
+                game.actionLog.add(CameraActionElements.JoinCamera(player.uuid, value.name))
             }
 
             actionBar.componentLike = value.actionBarMessage
@@ -119,6 +123,8 @@ class CameraManager(val game: Game) {
         fun dispose() {
             checkIsValid()
             invalid = true
+
+            game.actionLog.add(CameraActionElements.LeaveCamera(player.uuid, camera.name))
 
             actionBar.remove()
 

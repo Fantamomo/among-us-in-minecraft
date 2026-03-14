@@ -20,6 +20,10 @@ import com.fantamomo.mc.amongus.task.TaskManager
 import com.fantamomo.mc.amongus.util.TickContext
 import com.fantamomo.mc.amongus.util.audience.ListAudience
 import com.fantamomo.mc.amongus.util.internal.NMS
+import com.fantamomo.mc.amongus.util.log.ActionLog
+import com.fantamomo.mc.amongus.util.log.ActionLogManager
+import com.fantamomo.mc.amongus.util.log.elements.GameActionElements
+import com.fantamomo.mc.amongus.util.log.elements.PlayerActionElements
 import com.fantamomo.mc.amongus.util.toSmartString
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.JoinConfiguration
@@ -57,9 +61,22 @@ class Game(
         logger.info("Game created with area ${area.name} in world ${world.name}")
     }
 
+    val actionLog = ActionLog(
+        uuid,
+        mapOf(
+            "area" to area.name,
+            "world" to world.name,
+            "maxPlayers" to maxPlayers.toString(),
+            "code" to code,
+        )
+    ).apply { ActionLogManager.register("game", this) }
+
     var host: AmongUsPlayer? = null
         set(value) {
             if (value != null && value.game !== this) throw IllegalArgumentException("Player is not in this game")
+            if (value != field) {
+                actionLog.add(GameActionElements.HostChange(field?.uuid?.toKotlinUuid(), value?.uuid?.toKotlinUuid()))
+            }
             field = value
         }
 
@@ -84,13 +101,20 @@ class Game(
     internal val players: MutableList<AmongUsPlayer> = mutableListOf()
     internal val bannedPlayers: MutableSet<UUID> = mutableSetOf()
     var phase: GamePhase = GamePhase.LOBBY
+        internal set(value) {
+            if (value != field) {
+                actionLog.add(GameActionElements.PhaseChange(field, value))
+            }
+            field = value
+        }
 
     var resultMessage: Component? = null
 
     val audienceAll = ListAudience.audienceHolder(::players)
     val audienceAlive = ListAudience.audienceHolder { players.filter { it.isAlive } }
     val audienceDead = ListAudience.audienceHolder { players.filter { !it.isAlive } }
-    val audienceImposter = ListAudience.audienceHolder { players.filter { it.assignedRole?.definition?.team == Team.IMPOSTERS } }
+    val audienceImposter =
+        ListAudience.audienceHolder { players.filter { it.assignedRole?.definition?.team == Team.IMPOSTERS } }
 
     internal val audiences = listOf(audienceAll, audienceAlive, audienceDead, audienceImposter)
 
@@ -101,7 +125,8 @@ class Game(
         if (PlayerManager.exists(player.uniqueId)) return false
         val newPlayer = PlayerManager.joinGame(player, this)
         scoreboardManager.addLobbyPlayer(newPlayer)
-        abortStartCooldown()
+        actionLog.add(PlayerActionElements.PlayerJoin(player.uniqueId.toKotlinUuid()))
+        abortStartCooldown(GameActionElements.StartCountdownAborted.Reason.PLAYER_JOIN)
         audiences.forEach { it.setDirty() }
         logger.info("Adding player: ${player.name}")
         return true
@@ -109,6 +134,7 @@ class Game(
 
     internal fun removePlayer0(player: AmongUsPlayer) {
         players.remove(player)
+        actionLog.add(PlayerActionElements.PlayerRemove(player.uuid.toKotlinUuid()))
         if (player === host) {
             host = players.randomOrNull()
         }
@@ -244,6 +270,8 @@ class Game(
             else -> {}
         }
 
+        actionLog.add(PlayerActionElements.PlayerDisconnect(player.uuid.toKotlinUuid()))
+
         meetingManager.meeting?.voteInventories?.remove(player)
 
         sabotageManager.onDisconnect(player)
@@ -276,6 +304,7 @@ class Game(
     }
 
     internal fun onRejoin(amongUsPlayer: AmongUsPlayer) {
+        actionLog.add(PlayerActionElements.PlayerRejoin(amongUsPlayer.uuid.toKotlinUuid()))
         amongUsPlayer.mannequinController.getEntity()?.location?.let { amongUsPlayer.player?.teleport(it) }
         val player = amongUsPlayer.player
         if (player != null) {
@@ -315,13 +344,20 @@ class Game(
 
     fun startStartCooldown() {
         if (phase != GamePhase.LOBBY) return
+        actionLog.add(GameActionElements.StartCountdown)
         phase = GamePhase.STARTING
         startCooldownTicks = GameManager.currentTick.ticks + 200
         logger.info("Starting in 10 seconds")
     }
 
-    fun abortStartCooldown() {
+    fun abortStartCooldown(reason: GameActionElements.StartCountdownAborted.Reason) {
         if (phase != GamePhase.STARTING) return
+        actionLog.add(
+            GameActionElements.StartCountdownAborted(
+                reason,
+                ((startCooldownTicks - GameManager.currentTick.ticks) * 20).toInt()
+            )
+        )
         phase = GamePhase.LOBBY
         startCooldownTicks = -1
         sendTitle(TitlePart.TIMES, Title.DEFAULT_TIMES)
@@ -332,6 +368,7 @@ class Game(
 
     fun start() {
         if (phase != GamePhase.STARTING && phase != GamePhase.LOBBY) return
+        actionLog.add(GameActionElements.Start)
         phase = GamePhase.RUNNING
         logger.info("Game started")
         roleManager.start()
@@ -408,6 +445,7 @@ class Game(
     @NMS
     fun letWin(team: Team) {
         if (phase == GamePhase.FINISHED) return
+        actionLog.add(GameActionElements.WinnerAnnouncement(team))
         phase = GamePhase.FINISHED
 
         logger.info("Game ended with $team win")
@@ -487,6 +525,8 @@ class Game(
         EntityManager.dispose(this)
 
         GameManager.gameEnd(this)
+        actionLog.add(GameActionElements.End)
+        ActionLogManager.saveAndRemove(actionLog)
     }
 
     private fun getWinMessage(team: Team): Component = textComponent {
@@ -540,6 +580,7 @@ class Game(
         if (phase != GamePhase.LOBBY) return true
         if (amongUsPlayer !in players) return true
         players.remove(amongUsPlayer)
+        actionLog.add(PlayerActionElements.PlayerLeave(amongUsPlayer.uuid.toKotlinUuid()))
         if (teleport) {
             val future = amongUsPlayer.player?.teleportAsync(amongUsPlayer.locationBeforeGame)?.thenAccept {
                 LastPlayerLocationManager.remove(amongUsPlayer.uuid.toKotlinUuid())

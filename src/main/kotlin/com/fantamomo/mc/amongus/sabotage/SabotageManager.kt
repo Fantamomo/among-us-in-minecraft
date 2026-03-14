@@ -10,6 +10,7 @@ import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.util.Cooldown
 import com.fantamomo.mc.amongus.util.TickContext
 import com.fantamomo.mc.amongus.util.internal.NMS
+import com.fantamomo.mc.amongus.util.log.elements.SabotageActionElements
 import net.kyori.adventure.bossbar.BossBar
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.title.TitlePart
@@ -60,8 +61,10 @@ class SabotageManager(private val game: Game) {
 
     /* ------------------- FLOW ------------------- */
 
-    fun sabotage(sabotage: Sabotage<*, *>, ignoreCooldown: Boolean = false): Boolean {
+    fun sabotage(sabotage: Sabotage<*, *>, player: AmongUsPlayer?, ignoreCooldown: Boolean = false): Boolean {
         if (!ignoreCooldown && !canSabotage(sabotage)) return false
+
+        game.actionLog.add(SabotageActionElements.Start(player?.uuid, sabotage.sabotageType.id))
 
         currentSabotage = sabotage
 
@@ -104,12 +107,19 @@ class SabotageManager(private val game: Game) {
         }
     }
 
-    fun endSabotage() {
+    fun endSabotage(updateActionLog: Boolean = true) {
         val sabotage = currentSabotage ?: return
 
         game.sendTitle(TitlePart.TITLE, textComponent {
             translatable("sabotage.end.${sabotage.sabotageType.id}")
         })
+
+        if (updateActionLog) game.actionLog.add(
+            SabotageActionElements.End(
+                sabotage.sabotageType.id,
+                sabotage.sabotageType.stopOnBodyReport
+            )
+        )
 
         currentSabotage = null
 
@@ -125,7 +135,9 @@ class SabotageManager(private val game: Game) {
     }
 
     fun criticallySabotageNotFixed() {
-        endSabotage()
+        val sabotage = currentSabotage ?: return
+        endSabotage(false)
+        game.actionLog.add(SabotageActionElements.End(sabotage.sabotageType.id, sabotage.sabotageType.stopOnBodyReport))
         for (player in game.players) {
             if (player.assignedRole?.definition?.team == Team.IMPOSTERS) {
                 player.statistics.winBySabotage.increment()
@@ -179,6 +191,7 @@ class SabotageManager(private val game: Game) {
             is CommunicationsSabotage -> {
                 sabotage.removePlayer(player)
             }
+
             else -> {}
         }
     }

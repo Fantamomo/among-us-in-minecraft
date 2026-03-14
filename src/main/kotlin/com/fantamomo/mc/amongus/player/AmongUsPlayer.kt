@@ -28,6 +28,7 @@ import com.fantamomo.mc.amongus.util.RefPersistentDataType
 import com.fantamomo.mc.amongus.util.audience.AudienceHolder
 import com.fantamomo.mc.amongus.util.audience.OptionalAudience
 import com.fantamomo.mc.amongus.util.internal.Symbol
+import com.fantamomo.mc.amongus.util.log.elements.AssignActionElements
 import io.papermc.paper.datacomponent.item.ResolvableProfile
 import net.kyori.adventure.title.Title
 import net.kyori.adventure.title.TitlePart
@@ -249,7 +250,10 @@ class AmongUsPlayer internal constructor(
         var modification = modification
         if (modification == null && game.settings[SettingsKey.MODIFIER.ENABLED]) {
             modification = Modification.randomModification(this)
-            this.modification = modification
+            if (modification != null) {
+                game.actionLog.add(AssignActionElements.AssignModification(uuid, modification.definition.id))
+                this.modification = modification
+            }
         }
         modification?.onGameStart()
         modification?.onStart()

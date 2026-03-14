@@ -5,6 +5,7 @@ import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.player.editStatistics
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.util.TickContext
+import com.fantamomo.mc.amongus.util.log.elements.AssignActionElements
 import kotlin.random.Random
 
 class RoleManager(private val game: Game) {
@@ -120,6 +121,7 @@ class RoleManager(private val game: Game) {
 
     private fun assign(player: AmongUsPlayer, role: Role<*, *>) {
         player.assignedRole = role.assignTo(player)
+        game.actionLog.add(AssignActionElements.AssignRole(player.uuid, role.id))
         player.editStatistics {
             assignedRole[role]?.increment()
             assignedTeam[role.team]?.increment()

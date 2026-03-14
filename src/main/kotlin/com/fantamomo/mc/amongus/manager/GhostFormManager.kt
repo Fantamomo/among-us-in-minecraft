@@ -4,6 +4,7 @@ import com.fantamomo.mc.amongus.ability.builder.AbilityTimer
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.settings.SettingsKey
+import com.fantamomo.mc.amongus.util.log.elements.GhostFormActionElements
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Instant
@@ -20,11 +21,13 @@ class GhostFormManager(val game: Game) {
             get() = (player.game.settings[SettingsKey.ROLES.GHOST.FORM_DURATION] - (Clock.System.now() - start)).takeIf { it > Duration.ZERO } ?: Duration.ZERO
 
         init {
+            player.game.actionLog.add(GhostFormActionElements.Enter(player.uuid))
             player.mannequinController.freezeWithPhysics()
             player.mannequinController.showToSelf()
         }
 
         internal fun exit() {
+            player.game.actionLog.add(GhostFormActionElements.Exit(player.uuid))
             ghostCooldown?.start(player.game.settings[SettingsKey.ROLES.GHOST.FORM_COOLDOWN])
             player.mannequinController.also { controller ->
                 controller.getEntity()?.location?.let { player.player?.teleport(it) }

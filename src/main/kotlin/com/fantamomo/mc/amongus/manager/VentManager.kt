@@ -11,6 +11,7 @@ import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.util.TickContext
 import com.fantamomo.mc.amongus.util.getClosestLocationOnLine
 import com.fantamomo.mc.amongus.util.internal.EntityIdManager
+import com.fantamomo.mc.amongus.util.log.elements.VentActionElement
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Color
@@ -59,6 +60,14 @@ class VentManager(val game: Game) {
                     orientationChange(this.player, location)
                 }
 
+                val switch = VentActionElement.Switch(
+                    this.player.uuid,
+                    field.groupId,
+                    field.normalizedLocation.run { Triple(blockX, blockY, blockZ) },
+                    value.normalizedLocation.run { Triple(blockX, blockY, blockZ) }
+                )
+                game.actionLog.add(switch)
+
                 field = value
                 _otherVents = null
                 _otherVentByLocation = null
@@ -102,6 +111,14 @@ class VentManager(val game: Game) {
                     }
                 }
             }
+
+            game.actionLog.add(
+                VentActionElement.Enter(
+                    this.player.uuid,
+                    vent.groupId,
+                    vent.normalizedLocation.run { Triple(blockX, blockY, blockZ) })
+            )
+
             this.player.mannequinController.hideFromAll()
             actionBar.remove()
         }
@@ -145,6 +162,14 @@ class VentManager(val game: Game) {
 
             _otherVents = null
             _otherVentByLocation = null
+
+            game.actionLog.add(
+                VentActionElement.Exit(
+                    this.player.uuid,
+                    vent.groupId,
+                    vent.normalizedLocation.run { Triple(blockX, blockY, blockZ) }
+                )
+            )
 
             displays.forEach { (_, display) ->
                 display.remove()
@@ -349,9 +374,14 @@ class VentManager(val game: Game) {
         private var state = 0.0f
         private var called = false
 
+        init {
+            game.actionLog.add(VentActionElement.StartCreating(player.uuid, player.uuid.mostSignificantBits.toInt(), player.livingEntity.location.run { Triple(blockX, blockY, blockZ) }))
+        }
+
         fun stop() {
             creatingVentPlayers.remove(player)
             if (!called) {
+                game.actionLog.add(VentActionElement.FailedCreating(player.uuid, player.uuid.mostSignificantBits.toInt(), player.livingEntity.location.run { Triple(blockX, blockY, blockZ) }))
                 called = true
                 onStop(false)
             }
@@ -383,6 +413,7 @@ class VentManager(val game: Game) {
 
         private fun place() {
             called = true
+            game.actionLog.add(VentActionElement.FinishCreating(player.uuid, player.uuid.mostSignificantBits.toInt(), player.livingEntity.location.run { Triple(blockX, blockY, blockZ) }))
             onStop(true)
             stop()
             val groupId = player.uuid.mostSignificantBits.toInt()

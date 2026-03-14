@@ -10,8 +10,11 @@ import com.fantamomo.mc.amongus.game.GamePhase
 import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.settings.SettingsKey
+import com.fantamomo.mc.amongus.util.log.elements.PlayerActionElements
 import io.papermc.paper.event.player.ChatEvent
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
+
 
 class ChatManager(val game: Game) {
     private var disableRestriction = false
@@ -28,10 +31,16 @@ class ChatManager(val game: Game) {
             (sender.isAlive || !game.settings[SettingsKey.MESSAGES.ALLOW_GHOST_MESSAGE_IN_GAME])
         ) {
             if (disableRestriction) {
+                logMessage(sender, "in_game", message)
                 val message = getMessage("chat.message.in_game", sender, message)
                 game.audienceAll.sendMessage(message)
                 game.logger.info(message)
             } else {
+                val type = PlayerActionElements.PlayerChatFailed(
+                    sender.uuid,
+                    PlainTextComponentSerializer.plainText().serialize(message)
+                )
+                game.actionLog.add(type)
                 sender.player?.sendMessage(ERROR_IN_GAME)
             }
             return
@@ -44,12 +53,14 @@ class ChatManager(val game: Game) {
     }
 
     fun sendMeetingMessage(sender: AmongUsPlayer, message: Component) {
+        logMessage(sender, "meeting", message)
         val message = getMessage("chat.message.meeting", sender, message)
         game.sendChatMessage(message)
         game.logger.info(message)
     }
 
     fun sendGhostMessage(sender: AmongUsPlayer, input: Component) {
+        logMessage(sender, "ghost", input)
         val message = getMessage("chat.message.ghost", sender, input)
         val audience = if (disableRestriction) game.audienceAll else game.audienceDead
         audience.sendMessage(message)
@@ -57,6 +68,7 @@ class ChatManager(val game: Game) {
     }
 
     fun sendLobbyMessage(sender: AmongUsPlayer, input: Component) {
+        logMessage(sender, "lobby", input)
         val message = getMessage("chat.message.lobby", sender, input)
         game.sendChatMessage(message)
         game.logger.info(message)
@@ -72,6 +84,7 @@ class ChatManager(val game: Game) {
     }
 
     fun sendImposterMessage(player: AmongUsPlayer, message: String) {
+        logMessage(player, "imposter", message)
         val component = getMessage("chat.message.imposter", player, Component.text(message))
         game.audienceImposter.sendMessage(component)
         game.logger.info(component)
@@ -79,6 +92,16 @@ class ChatManager(val game: Game) {
 
     fun start() {
         disableRestriction = game.settings[SettingsKey.MESSAGES.DISABLE_MESSAGES_RESTRICTION]
+    }
+
+    private fun logMessage(sender: AmongUsPlayer, type: String, message: Component) {
+        val text = PlainTextComponentSerializer.plainText().serialize(message)
+        logMessage(sender, type, text)
+    }
+
+    private fun logMessage(sender: AmongUsPlayer, type: String, message: String) {
+        val type = PlayerActionElements.PlayerChat(sender.uuid, type, message)
+        game.actionLog.add(type)
     }
 
     companion object {

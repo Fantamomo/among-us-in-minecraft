@@ -13,6 +13,7 @@ import com.fantamomo.mc.amongus.role.Role
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.util.data.DistanceEnum
+import com.fantamomo.mc.amongus.util.log.elements.CustomAbilityActionElements
 import net.kyori.adventure.text.format.NamedTextColor
 
 object ArsonistRole : Role<ArsonistRole, ArsonistRole.AssignedArsonistRole> {
@@ -73,6 +74,7 @@ object ArsonistRole : Role<ArsonistRole, ArsonistRole.AssignedArsonistRole> {
 
         private fun douse(player: AmongUsPlayer) {
             dousedPlayers += player
+            player.game.actionLog.add(CustomAbilityActionElements.ArsonistDouse(this.player.uuid, player.uuid))
             this.player.statistics.arsonistDousedPlayers.increment()
             player.statistics.arsonistDoused.increment()
             val mannequinController = player.mannequinController

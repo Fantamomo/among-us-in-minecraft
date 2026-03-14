@@ -12,6 +12,7 @@ import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.task.GuiAssignedTask
 import com.fantamomo.mc.amongus.util.CustomPersistentDataTypes
 import com.fantamomo.mc.amongus.util.internal.MorphSkinManager
+import com.fantamomo.mc.amongus.util.log.elements.MorphActionElements
 import com.fantamomo.mc.amongus.util.textComponent
 import io.papermc.paper.datacomponent.DataComponentTypes
 import net.kyori.adventure.text.Component
@@ -95,6 +96,7 @@ class MorphManager(val game: Game) {
         }
 
         fun unmorph(animation: Boolean = true) {
+            game.actionLog.add(MorphActionElements.EndMorph(player.uuid))
             if (animation && frames != null) {
                 playBackwardAnimation {
                     if (camouflageStart == null) player.mannequinController.restoreAppearance()
@@ -199,6 +201,8 @@ class MorphManager(val game: Game) {
 
     fun morph(player: AmongUsPlayer, target: AmongUsPlayer, abilityTimer: AbilityTimer? = null) {
         if (isMorphed(player)) return
+
+        game.actionLog.add(MorphActionElements.StartMorph(player.uuid, target.uuid))
 
         if (!MorphSkinManager.isValid()) {
             morphs[player] = MorphedPlayer(player, target, abilityTimer)
