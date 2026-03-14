@@ -171,6 +171,7 @@ class TaskManager(val game: Game) {
     fun assignTask(player: AmongUsPlayer, task: AssignedTask<*, *>) {
         val registeredTask = RegisteredTask(task, fake = !player.canDoTasks)
         tasks.getOrPut(player) { mutableSetOf() }.add(registeredTask)
+        game.actionLog.add(TaskActionElements.TaskAssigned(player.uuid.toKotlinUuid(), task.task.id))
         updateBossbar(true)
     }
 
@@ -190,6 +191,7 @@ class TaskManager(val game: Game) {
             t.hideCompletely()
             true
         }
+        game.actionLog.add(TaskActionElements.TaskUnassigned(player.uuid.toKotlinUuid(), task.id))
         updateBossbar(true)
     }
 
