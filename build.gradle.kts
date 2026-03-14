@@ -37,6 +37,7 @@ dependencies {
 
     implementation(kotlin("stdlib"))
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
 
     implementation("com.fantamomo.mc:kotlin-adventure:1.4-SNAPSHOT")
     implementation("com.fantamomo.mc:brigadier-kt:1.5-SNAPSHOT")
