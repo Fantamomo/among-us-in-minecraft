@@ -7,7 +7,9 @@ import com.fantamomo.mc.amongus.AmongUsConstants
 import com.fantamomo.mc.amongus.util.safeCreateDirectories
 import kotlinx.serialization.json.*
 import org.slf4j.LoggerFactory
+import java.net.URL
 import kotlin.io.path.writeText
+import kotlin.uuid.Uuid
 
 object ActionLogManager {
     private val logger = LoggerFactory.getLogger("AmongUsActionLogManager")
@@ -19,46 +21,64 @@ object ActionLogManager {
 
     private val json = Json {
         prettyPrint = AmongUsConstants.IN_DEVELOPMENT
-        ignoreUnknownKeys = true
     }
+    private val jsonCompact = Json
 
     fun register(type: String, log: ActionLog) {
         require(TYPE_REGEX.matches(type)) { "Invalid log type: $type" }
+        require(!logToType.containsKey(log)) { "Log already registered: $log" }
         logs.getOrPut(type) { mutableListOf() }.add(log)
         logToType[log] = type
     }
 
     fun saveAndRemove(log: ActionLog) {
-        save(log)
+        val type = logToType[log] ?: throw IllegalArgumentException("Log not registered: $log")
+        val data = toJson(log)
+        save(type, log.id, data)
         logs[logToType[log]]?.remove(log)
         logToType.remove(log)
     }
 
-    fun save(log: ActionLog) {
-        val type = logToType[log] ?: throw IllegalArgumentException("Log not registered")
-        require(TYPE_REGEX.matches(type)) { "Invalid log type: $type" }
-        val file = direction.resolve(type).resolve("${log.id}.json")
-        file.parent.safeCreateDirectories()
-        val data = buildJsonObject {
-            put("createdAt", log.createdAt.toString())
-            put("metadata", anyMapToJsonObject(log.metadata))
-            if (log.customData.isNotEmpty()) put("customData", anyMapToJsonObject(log.customData))
-            put("log", buildJsonArray {
-                for (type in log.entries) {
-                    addJsonObject {
-                        put("type", type.type.action)
-                        put("timestamp", type.timestamp.toString())
-                        val json = type.type.toJson()
-                        if (json != null) put("data", json)
-                    }
+    suspend fun saveUploadAndRemove(log: ActionLog): URL? {
+        val type = logToType[log] ?: throw IllegalArgumentException("Log not registered: $log")
+        val data = toJson(log)
+        save(type, log.id, data)
+        logs[logToType[log]]?.remove(log)
+        logToType.remove(log)
+        return upload(data)
+    }
+
+    private fun toJson(log: ActionLog): JsonObject = buildJsonObject {
+        put("createdAt", log.createdAt.toString())
+        put("metadata", anyMapToJsonObject(log.metadata))
+        if (log.customData.isNotEmpty()) put("customData", anyMapToJsonObject(log.customData))
+        put("log", buildJsonArray {
+            for (type in log.entries) {
+                addJsonObject {
+                    put("type", type.type.action)
+                    put("timestamp", type.timestamp.toString())
+                    val json = type.type.toJson()
+                    if (json != null) put("data", json)
                 }
-            })
-        }
+            }
+        })
+    }
+
+    private suspend fun upload(data: JsonObject): URL? {
+        if (!ActionLogUploader.enabled()) return null
+        val text = jsonCompact.encodeToString(data)
+        return ActionLogUploader.upload(text)
+    }
+
+    fun save(type: String, id: Uuid, data: JsonObject) {
+        require(TYPE_REGEX.matches(type)) { "Invalid log type: $type" }
+        val file = direction.resolve(type).resolve("${id}.json")
+        file.parent.safeCreateDirectories()
         try {
             val text = this.json.encodeToString(JsonObject.serializer(), data)
             file.writeText(text)
         } catch (e: Exception) {
-            logger.error("Failed to save log $log", e)
+            logger.error("Failed to save log $type:$id", e)
         }
     }
 
@@ -95,9 +115,10 @@ object ActionLogManager {
     }
 
     fun saveAll(remove: Boolean = true) {
-        for (logs in logs.values) {
+        for ((type, logs) in logs) {
             for (log in logs) {
-                save(log)
+                val data = toJson(log)
+                save(type, log.id, data)
             }
         }
         if (remove) {
