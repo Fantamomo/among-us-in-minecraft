@@ -9,6 +9,7 @@ import com.fantamomo.mc.amongus.ability.builder.requiresNotInVent
 import com.fantamomo.mc.amongus.ability.item.AbilityItem
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.settings.SettingsKey
+import com.fantamomo.mc.amongus.util.log.elements.CustomAbilityActionElements
 import org.bukkit.inventory.ItemType
 
 object CamouflageAbility : Ability<CamouflageAbility, CamouflageAbility.AssignedCamouflageAbility> {
@@ -40,6 +41,7 @@ object CamouflageAbility : Ability<CamouflageAbility, CamouflageAbility.Assigned
                         restartCooldown = false
                         val morphManager = player.game.morphManager
                         if (morphManager.isCamouflageMode()) return@onRightClick
+                        player.game.actionLog.add(CustomAbilityActionElements.CamouflageModeActivated(player.uuid))
                         player.statistics.camouflagerActivated.increment()
                         morphManager.camouflageMode()
                         camouflageCooldown.start(player.game.settings[SettingsKey.ROLES.CAMOUFLAGE.COOLDOWN] + player.game.settings[SettingsKey.ROLES.CAMOUFLAGE.DURATION])
