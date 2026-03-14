@@ -4,6 +4,7 @@ import com.fantamomo.mc.adventure.text.*
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.ability.AbilityManager
 import com.fantamomo.mc.amongus.area.GameArea
+import com.fantamomo.mc.amongus.data.AmongUsConfig
 import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.manager.*
@@ -22,9 +23,13 @@ import com.fantamomo.mc.amongus.util.audience.ListAudience
 import com.fantamomo.mc.amongus.util.internal.NMS
 import com.fantamomo.mc.amongus.util.log.ActionLog
 import com.fantamomo.mc.amongus.util.log.ActionLogManager
+import com.fantamomo.mc.amongus.util.log.ActionLogUploader
 import com.fantamomo.mc.amongus.util.log.elements.GameActionElements
 import com.fantamomo.mc.amongus.util.log.elements.PlayerActionElements
+import com.fantamomo.mc.amongus.util.sendComponent
 import com.fantamomo.mc.amongus.util.toSmartString
+import kotlinx.coroutines.launch
+import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.JoinConfiguration
 import net.kyori.adventure.text.format.NamedTextColor
@@ -472,7 +477,11 @@ class Game(
         val message = getWinMessage(team)
         resultMessage = message
 
-        val toRemove = players.filter { it.player?.isOnline != true }.map { it.uuid }
+        val playerList = players.toList()
+        val bukkitPlayerList = playerList.mapNotNull { it.player }
+        val hostPlayer = host?.player
+
+        val toRemove = playerList.filter { it.player?.isOnline != true }.map { it.uuid }
 
         if (toRemove.isNotEmpty()) {
             val packet = ClientboundPlayerInfoRemovePacket(toRemove)
@@ -483,7 +492,7 @@ class Game(
             }
         }
 
-        for (player in players) {
+        for (player in playerList) {
             if (cameraManager.isInCams(player)) cameraManager.leaveCams(player)
             if (ventManager.isVented(player)) ventManager.ventOut(player)
 
@@ -518,7 +527,7 @@ class Game(
             PlayerManager.gameEnds(player)
         }
 
-        for (it in players.toList()) {
+        for (it in playerList) {
             removePlayer0(it)
         }
 
@@ -526,7 +535,38 @@ class Game(
 
         GameManager.gameEnd(this)
         actionLog.add(GameActionElements.End)
-        ActionLogManager.saveAndRemove(actionLog)
+
+        if (ActionLogUploader.enabled()) {
+            val audience =
+                if (AmongUsConfig.ActionLogUpload.sendToPlayers) Audience.audience(bukkitPlayerList)
+                else hostPlayer ?: Audience.empty()
+            AmongUs.scope.launch {
+                val url = ActionLogManager.saveUploadAndRemove(actionLog)
+                if (url != null) {
+                    audience.sendComponent {
+                        translatable("action_log.uploaded") {
+                            args {
+                                component("url") {
+                                    text(url.toString())
+                                    hoverEvent(KHoverEventType.ShowText, Component.translatable("action_log.uploaded.hover"))
+                                    clickEvent(KClickEventType.OpenUrl) {
+                                        url(url)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    logger.info("Uploaded action log to $url")
+                } else {
+                    audience.sendComponent {
+                        translatable("action_log.upload_failed")
+                    }
+                    logger.warn("Failed to upload action log")
+                }
+            }
+        } else {
+            ActionLogManager.saveAndRemove(actionLog)
+        }
     }
 
     private fun getWinMessage(team: Team): Component = textComponent {
