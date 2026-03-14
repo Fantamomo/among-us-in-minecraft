@@ -12,6 +12,7 @@ import com.fantamomo.mc.amongus.role.AssignedRole
 import com.fantamomo.mc.amongus.role.Role
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.role.util.WinCheckPhase
+import com.fantamomo.mc.amongus.util.log.elements.CustomRoleActionElements
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 
@@ -38,6 +39,7 @@ object ExecutionerRole : Role<ExecutionerRole, ExecutionerRole.AssignedExecution
             }
 
             target?.mannequinController?.setNameColorFor(player, NamedTextColor.GREEN)
+            player.game.actionLog.add(CustomRoleActionElements.ExecutionerTargetSelected(player.uuid, target?.uuid))
         }
 
         override fun onGameEnd() {
