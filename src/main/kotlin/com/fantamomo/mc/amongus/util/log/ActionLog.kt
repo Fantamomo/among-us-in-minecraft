@@ -9,6 +9,7 @@ class ActionLog(
 ) {
     val createdAt = Clock.System.now()
     internal val entries: ArrayDeque<ActionEntry> = ArrayDeque()
+    var customData: Map<String, Any> = emptyMap()
 
     fun addEntry(entry: ActionEntry) {
         entries.add(entry)
