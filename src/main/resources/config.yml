@@ -70,5 +70,17 @@ game-creation:
   # Should admins (players with permission: 'amongus.admin.game.create') be able to ignore that max-games limit?
   ignore-admins: true
 
+# ActionLog upload configuration
+action-log-upload:
+  # Should we upload ActionLogs to a server?
+  enabled: false
+
+  # The URL to upload the ActionLogs to.
+  url: http://localhost:29243
+
+  # Should we send ActionLogs to all player that where in the game? (true)
+  # Or only to the host? (false)
+  send-to-players: true
+
 # Should we animate the scoreboard?
 animate-scoreboard: true
