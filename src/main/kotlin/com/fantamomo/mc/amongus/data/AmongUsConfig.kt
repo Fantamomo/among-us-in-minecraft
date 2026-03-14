@@ -42,5 +42,11 @@ object AmongUsConfig {
         val ignoreAdmins = section.getBoolean("ignore-admins", true)
     }
 
+    object ActionLogUpload : ConfigSection("action-log-upload") {
+        val enabled = section.getBoolean("enabled", false)
+        val url = section.getString("url", "http://localhost:29243") // todo: replace with url of the real server when it's up
+        val sendToPlayers = section.getBoolean("send-to-players", true)
+    }
+
     val animateScoreboard = config.getBoolean("animate-scoreboard", true)
 }
