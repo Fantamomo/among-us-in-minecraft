@@ -33,6 +33,30 @@ object VentActionElement {
         }
     }
 
+    class StartCreating(val player: UUID, val ventGroup: Int, val location: Triple<Int, Int, Int>) : IdActionElement("start_creating_vent") {
+        override fun toJson() = buildJsonObject {
+            put("player", player.toString())
+            put("ventGroup", ventGroup)
+            putLocation("location", location)
+        }
+    }
+
+    class FailedCreating(val player: UUID, val ventGroup: Int, val location: Triple<Int, Int, Int>) : IdActionElement("failed_creating_vent") {
+        override fun toJson() = buildJsonObject {
+            put("player", player.toString())
+            put("ventGroup", ventGroup)
+            putLocation("location", location)
+        }
+    }
+
+    class FinishCreating(val player: UUID, val ventGroup: Int, val location: Triple<Int, Int, Int>) : IdActionElement("finish_creating_vent") {
+        override fun toJson() = buildJsonObject {
+            put("player", player.toString())
+            put("ventGroup", ventGroup)
+            putLocation("location", location)
+        }
+    }
+
     private fun JsonObjectBuilder.putLocation(id: String, location: Triple<Int, Int, Int>) {
         putJsonObject(id) {
             put("x", location.first)

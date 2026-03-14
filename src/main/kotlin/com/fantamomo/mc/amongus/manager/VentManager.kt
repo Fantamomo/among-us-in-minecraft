@@ -374,9 +374,14 @@ class VentManager(val game: Game) {
         private var state = 0.0f
         private var called = false
 
+        init {
+            game.actionLog.add(VentActionElement.StartCreating(player.uuid, player.uuid.mostSignificantBits.toInt(), player.livingEntity.location.run { Triple(blockX, blockY, blockZ) }))
+        }
+
         fun stop() {
             creatingVentPlayers.remove(player)
             if (!called) {
+                game.actionLog.add(VentActionElement.FailedCreating(player.uuid, player.uuid.mostSignificantBits.toInt(), player.livingEntity.location.run { Triple(blockX, blockY, blockZ) }))
                 called = true
                 onStop(false)
             }
@@ -408,6 +413,7 @@ class VentManager(val game: Game) {
 
         private fun place() {
             called = true
+            game.actionLog.add(VentActionElement.FinishCreating(player.uuid, player.uuid.mostSignificantBits.toInt(), player.livingEntity.location.run { Triple(blockX, blockY, blockZ) }))
             onStop(true)
             stop()
             val groupId = player.uuid.mostSignificantBits.toInt()
