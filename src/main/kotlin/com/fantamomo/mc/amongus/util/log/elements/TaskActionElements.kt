@@ -34,4 +34,18 @@ object TaskActionElements {
             put("task", task)
         }
     }
+
+    class TaskAssigned(val player: Uuid, val task: String) : IdActionElement("task_assigned") {
+        override fun toJson() = buildJsonObject {
+            put("player", player.toString())
+            put("task", task)
+        }
+    }
+
+    class TaskUnassigned(val player: Uuid, val task: String) : IdActionElement("task_unassigned") {
+        override fun toJson() = buildJsonObject {
+            put("player", player.toString())
+            put("task", task)
+        }
+    }
 }
