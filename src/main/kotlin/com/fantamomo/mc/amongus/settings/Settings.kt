@@ -20,12 +20,22 @@ class Settings(val game: Game) {
 
     fun <T : Any> set(key: SettingsKey<T, *>, value: T, addToRecentlyChanged: Boolean = true) {
         if (addToRecentlyChanged) addRecentlyChanged(key)
+        if (addToRecentlyChanged) game.actionLog.add(GameActionElements.SettingsChange.of(this, key, value))
         game.abortStartCooldown(GameActionElements.StartCountdownAborted.Reason.SETTING_CHANGED)
         data[key.key] = value
     }
 
+    @Suppress("UNCHECKED_CAST")
     fun remove(key: SettingsKey<*, *>, addToRecentlyChanged: Boolean = true): Boolean {
         if (addToRecentlyChanged) addRecentlyChanged(key)
+        if (addToRecentlyChanged) {
+            val type = GameActionElements.SettingsChange.of(
+                this,
+                key as SettingsKey<Any, *>,
+                key.defaultValue
+            )
+            game.actionLog.add(type)
+        }
         game.abortStartCooldown(GameActionElements.StartCountdownAborted.Reason.SETTING_CHANGED)
         return data.remove(key.key) != null
     }
