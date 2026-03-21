@@ -66,18 +66,25 @@ object LanguageManager {
         }
 
         languagesList = stream.bufferedReader().useLines { lines ->
-            lines.mapNotNull { line ->
-                val parts = line.split(":", limit = 2)
-                val locale = parseLocale(parts[0])
-                if (locale == null) logger.error("Invalid locale '{}' in {}", parts[0], LANGUAGES_LIST_FILE)
-                else if (parts.size > 1) languageRoots[locale.language] = locale
-                locale
-            }.toList()
+            lines
+                .map { it.trim() }
+                .filter { it.isNotEmpty() && !it.startsWith("#") }
+                .mapNotNull { line ->
+                    val parts = line.split(":", limit = 2)
+                    val locale = parseLocale(parts[0])
+                    if (locale == null) logger.error("Invalid locale '{}' in {}", parts[0], LANGUAGES_LIST_FILE)
+                    else if (parts.size > 1) languageRoots[locale.language] = locale
+                    locale
+                }.toList()
         }
 
         when {
             languagesList.isEmpty() -> logger.error("No valid locales found in {}", LANGUAGES_LIST_FILE)
-            ROOT_LOCALE !in languagesList -> logger.warn("{} is missing in {}, it is the default language", ROOT_LOCALE.toLanguageTag(), LANGUAGES_LIST_FILE)
+            ROOT_LOCALE !in languagesList -> logger.warn(
+                "{} is missing in {}, it is the default language",
+                ROOT_LOCALE.toLanguageTag(),
+                LANGUAGES_LIST_FILE
+            )
         }
 
         logger.info("Found {} supported locales", languagesList.size)
@@ -120,7 +127,14 @@ object LanguageManager {
                     externalFile.outputStream().use { internalProps.store(it, "Updated by AmongUs in Minecraft") }
                     logger.info("Updated language {} ({} → {})", locale, externalVersion, internalVersion)
                 }
-                internalVersion < externalVersion -> logger.debug("External language {} is newer ({} > {}), skipping", locale, externalVersion, internalVersion)
+
+                internalVersion < externalVersion -> logger.debug(
+                    "External language {} is newer ({} > {}), skipping",
+                    locale,
+                    externalVersion,
+                    internalVersion
+                )
+
                 else -> logger.debug("Language {} is up to date (version {})", locale, internalVersion)
             }
         }
