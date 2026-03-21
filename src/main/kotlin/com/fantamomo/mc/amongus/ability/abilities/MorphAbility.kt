@@ -8,6 +8,7 @@ import com.fantamomo.mc.amongus.ability.builder.requiresNotInMeeting
 import com.fantamomo.mc.amongus.ability.builder.requiresNotInVent
 import com.fantamomo.mc.amongus.ability.item.AbilityItem
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import com.fantamomo.mc.amongus.player.isHuman
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.util.translateTo
 import io.papermc.paper.datacomponent.DataComponentTypes
@@ -73,9 +74,10 @@ object MorphAbility : Ability<MorphAbility, MorphAbility.AssignedMorphAbility> {
                             morphCooldown.start(duration)
                             return@onRightClick
                         }
-
-                        game.morphManager.showMorphInventory(player) { success ->
-                            morphCooldown.start(5.seconds)
+                        if (player.isHuman) {
+                            game.morphManager.showMorphInventory(player) { success ->
+                                morphCooldown.start(5.seconds)
+                            }
                         }
                     }
                 }
