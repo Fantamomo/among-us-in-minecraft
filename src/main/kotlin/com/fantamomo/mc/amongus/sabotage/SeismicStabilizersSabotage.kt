@@ -10,6 +10,8 @@ import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.manager.EntityManager
 import com.fantamomo.mc.amongus.manager.waypoint.FixedWaypointPosProvider
 import com.fantamomo.mc.amongus.manager.waypoint.WaypointManager
+import com.fantamomo.mc.amongus.player.humanOrNull
+import com.fantamomo.mc.amongus.player.isBot
 import com.fantamomo.mc.amongus.sabotage.SabotageType.SeismicStabilizers
 import com.fantamomo.mc.amongus.util.Cooldown
 import net.kyori.adventure.text.Component
@@ -66,6 +68,7 @@ class SeismicStabilizersSabotage(override val game: Game) :
     override fun start() {
         timer.reset(start = true)
         for (amongUsPlayer in game.players) {
+            if (amongUsPlayer.isBot) continue
             val player = amongUsPlayer.player ?: continue
             player.showEntity(AmongUs, seismicStabilizerDisplay1)
             player.showEntity(AmongUs, seismicStabilizerDisplay2)
@@ -107,7 +110,7 @@ class SeismicStabilizersSabotage(override val game: Game) :
 
     private fun showParticle(location: Location, ok: Boolean = true) {
         particle.color(if (ok) Color.GREEN else Color.RED, 2.0f)
-        particle.receivers(game.players.mapNotNull { it.player })
+        particle.receivers(game.players.mapNotNull { it.humanOrNull?.player })
         while (location.y < maxHeight) {
             particle.location(location).spawn()
             location.add(0.0, ((location.y / maxHeight) * 2.75).coerceAtMost(0.7), 0.0)
@@ -117,6 +120,7 @@ class SeismicStabilizersSabotage(override val game: Game) :
     override fun stop(cause: SabotageStopCause) {
         timer.stop()
         for (amongUsPlayer in game.players) {
+            if (amongUsPlayer.isBot) continue
             val player = amongUsPlayer.player ?: continue
             player.hideEntity(AmongUs, seismicStabilizerDisplay1)
             player.hideEntity(AmongUs, seismicStabilizerDisplay2)

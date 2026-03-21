@@ -7,8 +7,7 @@ import com.fantamomo.mc.amongus.manager.EntityManager
 import com.fantamomo.mc.amongus.manager.waypoint.FixedWaypointPosProvider
 import com.fantamomo.mc.amongus.manager.waypoint.WaypointManager
 import com.fantamomo.mc.amongus.modification.modifications.TorchModification
-import com.fantamomo.mc.amongus.player.AmongUsPlayer
-import com.fantamomo.mc.amongus.player.PlayerHelpPreferences
+import com.fantamomo.mc.amongus.player.*
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.util.centerLocationOf
@@ -21,6 +20,7 @@ import org.bukkit.Location
 import org.bukkit.block.Block
 import org.bukkit.block.data.type.Switch
 import org.bukkit.entity.BlockDisplay
+import org.bukkit.entity.Player
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import java.util.*
@@ -89,22 +89,25 @@ class LightsSabotage internal constructor(override val game: Game) :
         }
 
         game.players.forEach {
-            it.player?.isSprinting = false
+            val player = it.humanOrNull?.player
+            player?.isSprinting = false
             if (!it.canSeeWhenLightsSabotage()) {
-                it.player?.addPotionEffect(potionEffect)
+                player?.addPotionEffect(potionEffect)
             } else {
-                if (it.assignedRole?.definition?.team === Team.IMPOSTERS) {
-                    it.player?.sendComponent {
+                if (it.role.definition.team === Team.IMPOSTERS) {
+                    player?.sendComponent {
                         translatable("sabotage.lights.imposter.info")
                     }
                 } else if (game.settings[SettingsKey.MODIFIER.ENABLED] && it.modification?.definition === TorchModification) {
-                    it.player?.sendComponent {
+                    player?.sendComponent {
                         translatable("sabotage.lights.torch.info")
                     }
                 }
             }
-            for (waypoint in waypoints) {
-                game.waypointManager.assignWaypoint(it, waypoint)
+            if (it.isHuman) {
+                for (waypoint in waypoints) {
+                    game.waypointManager.assignWaypoint(it, waypoint)
+                }
             }
         }
     }
@@ -125,22 +128,22 @@ class LightsSabotage internal constructor(override val game: Game) :
 
     override fun pause() {
         game.players.forEach {
-            val player = it.player ?: return@forEach
-            player.removePotionEffect(potionEffect.type)
+            val entity = it.internalEntity ?: return@forEach
+            entity.removePotionEffect(potionEffect.type)
             levers.values.forEach { display ->
-                player.hideEntity(AmongUs, display)
+                (entity as? Player)?.hideEntity(AmongUs, display)
             }
         }
     }
 
     override fun pauseFor(player: AmongUsPlayer) {
-        player.player?.removePotionEffect(potionEffect.type)
+        player.humanOrNull?.player?.removePotionEffect(potionEffect.type)
     }
 
     override fun resume() {
         game.players.forEach {
             if (!it.canSeeWhenLightsSabotage()) {
-                it.player?.addPotionEffect(potionEffect)
+                it.internalEntity?.addPotionEffect(potionEffect)
             }
         }
     }
@@ -148,14 +151,14 @@ class LightsSabotage internal constructor(override val game: Game) :
     override fun resumeFor(player: AmongUsPlayer) {
         if (player.canSeeWhenLightsSabotage() || game.sabotageManager.isSabotagePaused()) return
 
-        player.player?.addPotionEffect(potionEffect)
+        player.internalEntity?.addPotionEffect(potionEffect)
     }
 
     fun onLightLeverFlip(location: Location, amongUsPlayer: AmongUsPlayer): Boolean {
         val block = location.block
         if (block !in levers) return true
-        if (!amongUsPlayer.isAlive) {
-            amongUsPlayer.player?.run {
+        if (!amongUsPlayer.isAlive()) {
+            amongUsPlayer.audience.run {
                 sendTitlePart(TitlePart.SUBTITLE, Component.translatable("sabotage.subtitle.dead"))
                 sendTitlePart(TitlePart.TITLE, Component.translatable("sabotage.title.dead"))
             }
@@ -173,7 +176,7 @@ class LightsSabotage internal constructor(override val game: Game) :
 
     private val doesSeeDisplays: MutableSet<UUID> = mutableSetOf()
 
-    fun mayShowLightDisplayBlocks(amongUsPlayer: AmongUsPlayer, location: Location) {
+    fun mayShowLightDisplayBlocks(amongUsPlayer: HumanAmongUsPlayer, location: Location) {
         val player = amongUsPlayer.player ?: return
         if (location.isBetween(min, max)) {
             if (doesSeeDisplays.add(amongUsPlayer.uuid)) {
