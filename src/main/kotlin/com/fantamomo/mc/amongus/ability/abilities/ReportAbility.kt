@@ -37,7 +37,7 @@ object ReportAbility :
                     BlockReason.custom("notNearCorpse"),
                     Component.translatable("ability.report.report.tooltip")
                 ) {
-                    val loc = player.livingEntity.location
+                    val loc = player.location
                     !game.killManager.isNearCorpse(loc)
                 }
 

@@ -1,6 +1,7 @@
 package com.fantamomo.mc.amongus.task
 
 import com.fantamomo.mc.amongus.AmongUs
+import com.fantamomo.mc.amongus.player.isBot
 import com.fantamomo.mc.amongus.util.CustomPersistentDataTypes
 import org.bukkit.Location
 import org.bukkit.Material
@@ -27,6 +28,8 @@ abstract class GuiAssignedTask<T : Task<T, A>, A : GuiAssignedTask<T, A>> : Assi
     }
 
     override fun start() {
+        val player = player
+        if (player.isBot) return
         player.player?.openInventory(inv)
         setupInventory()
     }

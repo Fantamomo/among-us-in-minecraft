@@ -10,7 +10,7 @@ import net.minecraft.commands.arguments.selector.EntitySelector
 import java.lang.reflect.Method
 
 @NMS
-class AmongUsPlayerArgumentType private constructor(private val single: Boolean) :
+class AmongUsPlayerArgumentType private constructor(private val single: Boolean, private val includeBots: Boolean) :
     CustomArgumentType<AmongUsPlayerSelectorArgumentResolver, EntitySelector> {
 
     @Suppress("UNCHECKED_CAST")
@@ -21,7 +21,7 @@ class AmongUsPlayerArgumentType private constructor(private val single: Boolean)
 
     override fun parse(reader: StringReader): AmongUsPlayerSelectorArgumentResolver {
         val entitySelector = native.parse(reader)
-        return AmongUsPlayerSelectorArgumentResolver(entitySelector, single)
+        return AmongUsPlayerSelectorArgumentResolver(entitySelector, single, includeBots)
     }
 
     override fun getNativeType() = native
@@ -41,7 +41,17 @@ class AmongUsPlayerArgumentType private constructor(private val single: Boolean)
             methode.isAccessible = true
         }
 
-        val SINGLE = AmongUsPlayerArgumentType(true)
-        val MANY = AmongUsPlayerArgumentType(false)
+        val SINGLE = AmongUsPlayerArgumentType(single = true, includeBots = true)
+        val MANY = AmongUsPlayerArgumentType(single = false, includeBots = true)
+
+        val SINGLE_NO_BOTS = AmongUsPlayerArgumentType(single = true, includeBots = false)
+        val MANY_NO_BOTS = AmongUsPlayerArgumentType(single = false, includeBots = false)
+
+        fun get(single: Boolean, includeBots: Boolean) = when {
+            single && includeBots -> SINGLE
+            single && !includeBots -> SINGLE_NO_BOTS
+            !single && includeBots -> MANY
+            else -> MANY_NO_BOTS
+        }
     }
 }

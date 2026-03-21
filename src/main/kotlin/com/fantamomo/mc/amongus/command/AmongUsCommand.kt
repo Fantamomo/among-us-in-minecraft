@@ -18,6 +18,7 @@ import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.PlayerColor
 import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.player.PlayerStatistics
+import com.fantamomo.mc.amongus.player.internal
 import com.fantamomo.mc.amongus.settings.SettingsInventory
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.statistics.*
@@ -656,7 +657,7 @@ private fun KtCommandBuilder<CommandSourceStack, *>.setColorCommand() = execute 
     }
 
     amongUsPlayer.color = color
-    uses?.color = game.randomPlayerColor()
+    uses?.internal?.color = game.randomPlayerColor()
 
     sendMessage {
         if (uses == null) {

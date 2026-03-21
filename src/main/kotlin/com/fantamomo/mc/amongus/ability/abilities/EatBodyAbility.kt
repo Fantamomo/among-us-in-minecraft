@@ -12,7 +12,7 @@ import org.bukkit.inventory.ItemType
 object EatBodyAbility : Ability<EatBodyAbility, EatBodyAbility.AssignedEatBodyAbility> {
     override val id: String = "eat_body"
 
-    override fun canAssignTo(player: AmongUsPlayer) = player.assignedRole?.definition === CannibalRole
+    override fun canAssignTo(player: AmongUsPlayer) = player.role.definition === CannibalRole
 
     override fun assignTo(player: AmongUsPlayer) = AssignedEatBodyAbility(player)
 
@@ -32,7 +32,7 @@ object EatBodyAbility : Ability<EatBodyAbility, EatBodyAbility.AssignedEatBodyAb
                     BlockReason.custom("notNearCorpse"),
                     Component.translatable("ability.eat_body.eat_body.tooltip")
                 ) {
-                    val loc = player.livingEntity.location
+                    val loc = player.location
                     !game.killManager.isNearCorpse(loc)
                 }
 

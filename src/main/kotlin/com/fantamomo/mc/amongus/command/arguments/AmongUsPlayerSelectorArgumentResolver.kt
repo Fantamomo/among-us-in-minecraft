@@ -2,6 +2,7 @@ package com.fantamomo.mc.amongus.command.arguments
 
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.player.PlayerManager
+import com.fantamomo.mc.amongus.player.isBot
 import com.fantamomo.mc.amongus.util.internal.NMS
 import com.mojang.brigadier.LiteralMessage
 import com.mojang.brigadier.exceptions.CommandSyntaxException
@@ -63,7 +64,8 @@ import kotlin.reflect.KClass
 @NMS
 class AmongUsPlayerSelectorArgumentResolver(
     private val handle: EntitySelector,
-    private val single: Boolean = false
+    private val single: Boolean = false,
+    private val includeBots: Boolean
 ) {
     private val maxResults: Int = handle.maxResults
     private val includesEntities: Boolean = handle.includesEntities()
@@ -101,9 +103,9 @@ class AmongUsPlayerSelectorArgumentResolver(
     private fun getPlayers(source: net.minecraft.commands.CommandSourceStack): List<AmongUsPlayer> {
         this.checkPermissions(source)
         if (this.playerName != null) {
-            return listOfNotNull(resolvePlayer(playerName)?.getOrThrow())
+            return listOfNotNull(resolvePlayer(playerName)?.getOrThrow(this))
         } else if (this.entityUUID != null) {
-            return listOfNotNull(resolvePlayer(this.entityUUID)?.getOrThrow())
+            return listOfNotNull(resolvePlayer(this.entityUUID)?.getOrThrow(this))
         } else {
             val maxResults = maxResults.takeIf { this.order === EntitySelector.ORDER_ARBITRARY } ?: Int.MAX_VALUE
             val vec3 = this.position.apply(source.position)
@@ -112,7 +114,7 @@ class AmongUsPlayerSelectorArgumentResolver(
             if (this.currentEntity) {
                 val serverPlayer = source.entity
                 return if (serverPlayer is ServerPlayer && predicate.test(serverPlayer))
-                    listOfNotNull(resolvePlayer(serverPlayer.bukkitEntity).getOrThrow())
+                    listOfNotNull(resolvePlayer(serverPlayer.bukkitEntity).getOrThrow(this))
                 else listOf()
             } else {
                 val players = ObjectArrayList<AmongUsPlayer>()
@@ -163,13 +165,13 @@ class AmongUsPlayerSelectorArgumentResolver(
             EntitySelector.ORDER_ARBITRARY -> {}
             EntitySelectorParser.ORDER_RANDOM -> entities.shuffle()
             EntitySelectorParser.ORDER_NEAREST -> entities.sortBy {
-                (it.mannequinController.getEntity()?.location ?: it.locationBeforeGame).run {
+                it.location.run {
                     pos.distanceToSqr(x, y, z)
                 }
             }
 
             EntitySelectorParser.ORDER_FURTHEST -> entities.sortByDescending {
-                (it.mannequinController.getEntity()?.location ?: it.locationBeforeGame).run {
+                it.location.run {
                     pos.distanceToSqr(x, y, z)
                 }
             }
@@ -203,6 +205,10 @@ class AmongUsPlayerSelectorArgumentResolver(
             LiteralMessage("Player is not an Among Us player")
         )
 
+        private val SELECTED_BOT = SimpleCommandExceptionType(
+            LiteralMessage("Selected player is a bot, but bots are not allowed in this selector")
+        )
+
         private val fields: MutableMap<String, Field> = mutableMapOf()
 
         private fun resolvePlayer(uuid: UUID) = resolvePlayer(PlayerManager.getPlayer(uuid) ?: Bukkit.getPlayer(uuid))
@@ -226,9 +232,15 @@ class AmongUsPlayerSelectorArgumentResolver(
         data class AmongUs(val player: AmongUsPlayer) : ResolvedPlayer
         data class Bukkit(val player: Player) : ResolvedPlayer
 
-        fun getOrThrow(): AmongUsPlayer = when (this) {
-            is AmongUs -> player
-            else -> throw NOT_AN_AMONG_US_PLAYER.create()
+        fun getOrThrow(resolver: AmongUsPlayerSelectorArgumentResolver): AmongUsPlayer {
+            val player = when (this) {
+                is AmongUs -> player
+                else -> throw NOT_AN_AMONG_US_PLAYER.create()
+            }
+            if (!resolver.includeBots && player.isBot) {
+                throw SELECTED_BOT.create()
+            }
+            return player
         }
     }
 }

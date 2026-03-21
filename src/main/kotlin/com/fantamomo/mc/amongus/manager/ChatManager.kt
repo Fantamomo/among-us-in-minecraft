@@ -9,6 +9,7 @@ import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.game.GamePhase
 import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import com.fantamomo.mc.amongus.player.isAlive
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.util.log.elements.PlayerActionElements
 import io.papermc.paper.event.player.ChatEvent
@@ -28,7 +29,7 @@ class ChatManager(val game: Game) {
         }
         val meetingManager = game.meetingManager
         if (!meetingManager.isCurrentlyAMeeting() &&
-            (sender.isAlive || !game.settings[SettingsKey.MESSAGES.ALLOW_GHOST_MESSAGE_IN_GAME])
+            (sender.isAlive() || !game.settings[SettingsKey.MESSAGES.ALLOW_GHOST_MESSAGE_IN_GAME])
         ) {
             if (disableRestriction) {
                 logMessage(sender, "in_game", message)
@@ -41,11 +42,11 @@ class ChatManager(val game: Game) {
                     PlainTextComponentSerializer.plainText().serialize(message)
                 )
                 game.actionLog.add(type)
-                sender.player?.sendMessage(ERROR_IN_GAME)
+                sender.audience.sendMessage(ERROR_IN_GAME)
             }
             return
         }
-        if (!sender.isAlive) {
+        if (!sender.isAlive()) {
             sendGhostMessage(sender, message)
             return
         }
@@ -77,7 +78,7 @@ class ChatManager(val game: Game) {
     private fun getMessage(key: String, player: AmongUsPlayer, message: Component) = textComponent {
         translatable(key) {
             args {
-                component("player", player.player?.displayName() ?: Component.text(player.name))
+                component("player", Component.text(player.name))
                 component("message", message)
             }
         }

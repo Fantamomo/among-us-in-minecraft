@@ -2,6 +2,7 @@ package com.fantamomo.mc.amongus.listeners
 
 import com.fantamomo.mc.amongus.game.GameManager
 import com.fantamomo.mc.amongus.player.PlayerManager
+import com.fantamomo.mc.amongus.player.isAlive
 import com.fantamomo.mc.amongus.sabotage.CommunicationsSabotage
 import com.fantamomo.mc.amongus.sabotage.LightsSabotage
 import com.fantamomo.mc.amongus.sabotage.SeismicStabilizersSabotage
@@ -40,7 +41,7 @@ object SabotageListener : Listener {
                 }
             }
             is SeismicStabilizersSabotage -> {
-                if (amongUsPlayer.isAlive) return
+                if (amongUsPlayer.isAlive()) return
                 val targetBlock = event.clickedBlock ?: return
                 if (sabotage.seismicStabilizers1 == targetBlock || sabotage.seismicStabilizers2 == targetBlock) {
                     player.run {

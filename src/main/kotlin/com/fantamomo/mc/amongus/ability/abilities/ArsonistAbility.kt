@@ -14,7 +14,7 @@ import org.bukkit.inventory.ItemType
 object ArsonistAbility : Ability<ArsonistAbility, ArsonistAbility.AssignedArsonistAbility> {
     override val id: String = "arsonist"
 
-    override fun canAssignTo(player: AmongUsPlayer) = player.assignedRole?.definition === ArsonistRole
+    override fun canAssignTo(player: AmongUsPlayer) = player.role.definition === ArsonistRole
 
     override fun assignTo(player: AmongUsPlayer) = AssignedArsonistAbility(player)
 
@@ -23,7 +23,7 @@ object ArsonistAbility : Ability<ArsonistAbility, ArsonistAbility.AssignedArsoni
         override val definition = ArsonistAbility
 
         private val arsonist: AssignedArsonistRole
-            get() = player.assignedRole as? AssignedArsonistRole ?: error("Player does not have assigned Arsonist role")
+            get() = player.role as? AssignedArsonistRole ?: error("Player does not have assigned Arsonist role")
 
         @Suppress("UnstableApiUsage")
         override val items: List<AbilityItem> = listOf(

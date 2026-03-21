@@ -7,8 +7,7 @@ import com.fantamomo.mc.amongus.ability.builder.BlockReason
 import com.fantamomo.mc.amongus.ability.builder.abilityItem
 import com.fantamomo.mc.amongus.ability.builder.requiresNotInMeeting
 import com.fantamomo.mc.amongus.ability.item.AbilityItem
-import com.fantamomo.mc.amongus.player.AmongUsPlayer
-import com.fantamomo.mc.amongus.role.Team
+import com.fantamomo.mc.amongus.player.*
 import com.fantamomo.mc.amongus.role.crewmates.SeerRole
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.util.log.elements.CustomAbilityActionElements
@@ -40,14 +39,14 @@ object RevealTeamAbility : Ability<RevealTeamAbility, RevealTeamAbility.Assigned
                     BlockReason.Custom("not_near_player"),
                     Component.translatable("ability.reveal_team.reveal_team.tooltip")
                 ) {
-                    val thisLoc = (player.mannequinController.getEntity() ?: player.livingEntity).location
+                    val thisLoc = player.location
                     val maxDistance = player.game.settings[SettingsKey.ROLES.REVEAL_TEAM.DISTANCE].distance.let { it * it }
                     for (player in game.players) {
                         if (player === this@AssignedRevealTeamAbility.player) continue
-                        if (!player.isAlive && this@AssignedRevealTeamAbility.player.isAlive) continue
+                        if (!player.isAlive() && this@AssignedRevealTeamAbility.player.isAlive()) continue
                         if (player.isVented()) continue
                         if (player in revealedPlayers) continue
-                        val loc = (player.mannequinController.getEntity() ?: player.livingEntity).location
+                        val loc = player.location
                         if (thisLoc.distanceSquared(loc) < maxDistance) return@condition false
                     }
 
@@ -62,16 +61,16 @@ object RevealTeamAbility : Ability<RevealTeamAbility, RevealTeamAbility.Assigned
 
                     onRightClick {
                         restartCooldown = false
-                        val thisLoc = (player.mannequinController.getEntity() ?: player.livingEntity).location
+                        val thisLoc = player.location
                         val maxDistance = player.game.settings[SettingsKey.ROLES.REVEAL_TEAM.DISTANCE].distance.let { it * it }
                         var nearestPlayer: AmongUsPlayer? = null
                         var nearestDistance = Double.MAX_VALUE
                         for (player in game.players) {
                             if (player === this@AssignedRevealTeamAbility.player) continue
-                            if (!player.isAlive && this@AssignedRevealTeamAbility.player.isAlive) continue
+                            if (!player.isAlive() && this@AssignedRevealTeamAbility.player.isAlive()) continue
                             if (player.isVented()) continue
                             if (player in revealedPlayers) continue
-                            val loc = (player.mannequinController.getEntity() ?: player.livingEntity).location
+                            val loc = player.location
                             val distance = thisLoc.distanceSquared(loc)
                             if (distance < maxDistance && distance < nearestDistance) {
                                 nearestPlayer = player
@@ -80,16 +79,18 @@ object RevealTeamAbility : Ability<RevealTeamAbility, RevealTeamAbility.Assigned
                         }
                         if (nearestPlayer == null) return@onRightClick
                         player.game.actionLog.add(CustomAbilityActionElements.RevealTeam(player.uuid, nearestPlayer.uuid))
-                        (player.assignedRole as? SeerRole.AssignedSeerRole)?.addRevealedPlayer(nearestPlayer)
+                        (player.role as? SeerRole.AssignedSeerRole)?.addRevealedPlayer(nearestPlayer)
                         revealedPlayers.add(nearestPlayer)
-                        val team = (nearestPlayer.assignedRole?.definition?.team ?: Team.CREWMATES)
+                        val team = nearestPlayer.role.definition.team
                         val color = team.textColor
-                        player.statistics.seerRevealedTeams[team]?.increment()
-                        val p = player.player
-                        if (p != null) {
-                            nearestPlayer.mannequinController.setNameColorFor(p, color)
-                        } else {
-                            nearestPlayer.mannequinController.setNameColorFor(player.uuid, color)
+                        player.humanOrNull?.statistics?.seerRevealedTeams[team]?.increment()
+                        if (player.isHuman) {
+                            val p = player.player
+                            if (p != null) {
+                                nearestPlayer.mannequinController.setNameColorFor(p, color)
+                            } else {
+                                nearestPlayer.mannequinController.setNameColorFor(player.uuid, color)
+                            }
                         }
                         val timeToAdd = player.game.settings[SettingsKey.ROLES.REVEAL_TEAM.COOLDOWN_INCREMENT]
                         if (timeToAdd <= Duration.ZERO) {

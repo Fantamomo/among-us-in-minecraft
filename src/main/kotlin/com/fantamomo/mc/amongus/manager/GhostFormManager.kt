@@ -30,7 +30,7 @@ class GhostFormManager(val game: Game) {
             player.game.actionLog.add(GhostFormActionElements.Exit(player.uuid))
             ghostCooldown?.start(player.game.settings[SettingsKey.ROLES.GHOST.FORM_COOLDOWN])
             player.mannequinController.also { controller ->
-                controller.getEntity()?.location?.let { player.player?.teleport(it) }
+                controller.getEntity()?.location?.let { player.teleport(it) }
                 controller.unfreeze()
                 controller.hideFromSelf()
             }

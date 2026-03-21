@@ -4,6 +4,7 @@ import com.fantamomo.mc.adventure.text.KTextComponent
 import com.fantamomo.mc.adventure.text.textComponent
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import com.fantamomo.mc.amongus.player.HumanAmongUsPlayer
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.ComponentLike
 import net.kyori.adventure.text.JoinConfiguration
@@ -14,17 +15,17 @@ import kotlin.contracts.contract
 
 class ActionBarManager(private val game: Game) {
 
-    private val bars = mutableMapOf<AmongUsPlayer, ActionBar>()
+    private val bars = mutableMapOf<HumanAmongUsPlayer, ActionBar>()
     private val globalParts = mutableSetOf<ActionBarPart>()
 
     fun tick() {
         bars.values.forEach { it.tick() }
     }
 
-    fun bar(player: AmongUsPlayer): ActionBar =
+    fun bar(player: HumanAmongUsPlayer): ActionBar =
         bars.getOrPut(player) { ActionBar(player) }
 
-    fun removeAll(player: AmongUsPlayer) {
+    fun removeAll(player: HumanAmongUsPlayer) {
         bars.remove(player)?.dispose()
     }
 
@@ -38,7 +39,7 @@ class ActionBarManager(private val game: Game) {
         bars.values.forEach { it.remove(part) }
     }
 
-    inner class ActionBar(private val owner: AmongUsPlayer) {
+    inner class ActionBar(private val owner: HumanAmongUsPlayer) {
 
         private val slots = ActionBarPartType.entries.associateWith {
             sortedSetOf<ActionBarPart>()
@@ -165,11 +166,11 @@ class ActionBarManager(private val game: Game) {
         }
     }
 
-    class RenderContext(val player: AmongUsPlayer)
+    class RenderContext(val player: HumanAmongUsPlayer)
 
     @OptIn(ExperimentalContracts::class)
     fun part(
-        player: AmongUsPlayer,
+        player: HumanAmongUsPlayer,
         id: String,
         type: ActionBarPartType,
         priority: Int,
@@ -183,7 +184,7 @@ class ActionBarManager(private val game: Game) {
     }
     @OptIn(ExperimentalContracts::class)
     fun part(
-        player: AmongUsPlayer,
+        player: HumanAmongUsPlayer,
         id: String,
         type: ActionBarPartType,
         priority: Int,
@@ -197,7 +198,7 @@ class ActionBarManager(private val game: Game) {
     }
 
     fun part(
-        player: AmongUsPlayer,
+        player: HumanAmongUsPlayer,
         id: String,
         type: ActionBarPartType,
         priority: Int,

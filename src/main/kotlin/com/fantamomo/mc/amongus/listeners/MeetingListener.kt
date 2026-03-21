@@ -4,6 +4,7 @@ import com.destroystokyo.paper.event.player.PlayerStopSpectatingEntityEvent
 import com.fantamomo.mc.amongus.game.GamePhase
 import com.fantamomo.mc.amongus.manager.MeetingManager
 import com.fantamomo.mc.amongus.player.PlayerManager
+import com.fantamomo.mc.amongus.player.isAlive
 import com.fantamomo.mc.amongus.util.isBetween
 import com.fantamomo.mc.amongus.util.isSameBlockPosition
 import org.bukkit.entity.Player
@@ -134,7 +135,7 @@ object MeetingListener : Listener {
         if (!event.isSneaking) return
         val player = event.player
         val amongUsPlayer = PlayerManager.getPlayer(player) ?: return
-        if (!amongUsPlayer.isAlive) return
+        if (!amongUsPlayer.isAlive()) return
         val game = amongUsPlayer.game
         if (game.phase != GamePhase.VOTING) return
         val meetingManager = game.meetingManager

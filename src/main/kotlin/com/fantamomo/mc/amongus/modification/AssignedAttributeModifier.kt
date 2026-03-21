@@ -1,5 +1,6 @@
 package com.fantamomo.mc.amongus.modification
 
+import com.fantamomo.mc.amongus.player.humanOrNull
 import org.bukkit.attribute.Attribute
 import org.bukkit.attribute.AttributeModifier
 
@@ -12,10 +13,10 @@ interface AssignedAttributeModifier<M : Modification<M, A>, A : AssignedAttribut
     val modifier: AttributeModifier
 
     override fun onStart() {
-        player.player?.getAttribute(attribute)?.addTransientModifier(modifier)
+        player.humanOrNull?.player?.getAttribute(attribute)?.addTransientModifier(modifier)
     }
 
     override fun onEnd() {
-        player.player?.getAttribute(attribute)?.removeModifier(modifier)
+        player.humanOrNull?.player?.getAttribute(attribute)?.removeModifier(modifier)
     }
 }

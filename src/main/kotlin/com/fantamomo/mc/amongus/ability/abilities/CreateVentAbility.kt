@@ -5,6 +5,8 @@ import com.fantamomo.mc.amongus.ability.AssignedAbility
 import com.fantamomo.mc.amongus.ability.builder.*
 import com.fantamomo.mc.amongus.ability.item.AbilityItem
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import com.fantamomo.mc.amongus.player.humanOrNull
+import com.fantamomo.mc.amongus.player.isNearVent
 import com.fantamomo.mc.amongus.role.imposters.MinerRole
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import net.kyori.adventure.text.Component
@@ -48,7 +50,7 @@ object CreateVentAbility : Ability<CreateVentAbility, CreateVentAbility.Assigned
                     blockReasonNotOnGround,
                     Component.translatable("ability.create_vent.create_vent.tooltip.not_on_ground")
                 ) {
-                    val p = player.player ?: return@condition false
+                    val p = player.humanOrNull?.player ?: return@condition false
                     @Suppress("DEPRECATION")
                     if (!p.isOnGround) return@condition true
                     val blockBeneath: Block = p.location.subtract(0.0, 0.1, 0.0).block
@@ -68,8 +70,8 @@ object CreateVentAbility : Ability<CreateVentAbility, CreateVentAbility.Assigned
                         game.ventManager.startCreatingVent(player) { success ->
                             val duration = player.game.settings[SettingsKey.ROLES.MINER.CREATE_VENT_COOLDOWN]
                             if (success) {
-                                (player.assignedRole as? MinerRole.AssignedMinerRole)?.createdVents++
-                                player.statistics.minerCreatedVents.increment()
+                                (player.role as? MinerRole.AssignedMinerRole)?.createdVents++
+                                player.humanOrNull?.statistics?.minerCreatedVents?.increment()
                                 createVentCooldown.start(duration)
                             } else {
                                 createVentCooldown.start(5.seconds.takeIf { duration > it } ?: duration)

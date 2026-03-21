@@ -76,7 +76,7 @@ class Game(
         )
     ).apply { ActionLogManager.register("game", this) }
 
-    var host: AmongUsPlayer? = null
+    var host: HumanAmongUsPlayer? = null
         set(value) {
             if (value != null && value.game !== this) throw IllegalArgumentException("Player is not in this game")
             if (value != field) {
@@ -112,7 +112,7 @@ class Game(
                 actionLog.add(GameActionElements.PhaseChange(field, value))
             }
             for (player in players) {
-                if (player.player != null) player.lastSeen = value
+                if (player.isHuman && player.player != null) player.lastSeen = value
             }
             field = value
         }
@@ -120,10 +120,10 @@ class Game(
     var resultMessage: Component? = null
 
     val audienceAll = ListAudience.audienceHolder(::players)
-    val audienceAlive = ListAudience.audienceHolder { players.filter { it.isAlive } }
-    val audienceDead = ListAudience.audienceHolder { players.filter { !it.isAlive } }
+    val audienceAlive = ListAudience.audienceHolder { players.filter { it.isAlive() } }
+    val audienceDead = ListAudience.audienceHolder { players.filter { !it.isAlive() } }
     val audienceImposter =
-        ListAudience.audienceHolder { players.filter { it.assignedRole?.definition?.team == Team.IMPOSTERS } }
+        ListAudience.audienceHolder { players.filter { it.role.definition.team == Team.IMPOSTERS } }
 
     internal val audiences = listOf(audienceAll, audienceAlive, audienceDead, audienceImposter)
 
@@ -145,15 +145,17 @@ class Game(
         players.remove(player)
         actionLog.add(PlayerActionElements.PlayerRemove(player.uuid.toKotlinUuid()))
         if (player === host) {
-            host = players.randomOrNull()
+            host = players.filterIsInstance<HumanAmongUsPlayer>().randomOrNull()
         }
         ventManager.removePlayer0(player)
-        cameraManager.leaveCams(player)
-        waypointManager.removePlayer(player)
-        actionBarManager.removeAll(player)
+        if (player.isHuman) {
+            cameraManager.leaveCams(player)
+            waypointManager.removePlayer(player)
+            actionBarManager.removeAll(player)
+            scoreboardManager.removePlayer(player)
+        }
         sabotageManager.removePlayer(player)
         taskManager.removePlayer(player)
-        scoreboardManager.removePlayer(player)
         morphManager.removePlayer(player)
         audiences.forEach { it.setDirty() }
     }
@@ -173,7 +175,7 @@ class Game(
         }
         if (phase == GamePhase.LOBBY || phase == GamePhase.STARTING) {
             for (player in players) {
-                player.mannequinController.syncFromPlayer()
+                player.mannequinController.syncFromOwner()
             }
             scoreboardManager.tick()
 
@@ -224,20 +226,22 @@ class Game(
         val now = Clock.System.now()
 
         for (player in players) {
-            player.player?.saturation = 5.0f
-            player.player?.foodLevel = 20
+            if (player.isHuman) {
+                player.player?.saturation = 5.0f
+                player.player?.foodLevel = 20
+            }
             player.modification?.onTick(tickContext)
-            player.mannequinController.syncFromPlayer()
-            val disconnectedAt = player.disconnectedAt ?: continue
+            player.mannequinController.syncFromOwner()
+            val disconnectedAt = (player as? HumanAmongUsPlayer)?.disconnectedAt ?: continue
             if (now - disconnectedAt < MAX_DISCONNECT_TIME) continue
-            killPlayer(player)
+            killPlayerDueDisconnect(player)
         }
     }
 
-    private fun killPlayer(player: AmongUsPlayer) {
+    private fun killPlayerDueDisconnect(player: HumanAmongUsPlayer) {
         killManager.kill(player, DeadReason.Disconnected, false)
         taskManager.removePlayer(player)
-        player.abilities.clear()
+        player._abilities.clear()
         player.disconnectedAt = null
         sendChatMessage(textComponent {
             translatable("game.disconnected.killed") {
@@ -258,7 +262,7 @@ class Game(
     }
 
     @NMS
-    internal fun onDisconnected(player: AmongUsPlayer) {
+    internal fun onDisconnected(player: HumanAmongUsPlayer) {
         player.disconnectedAt = Clock.System.now()
         when (phase) {
             GamePhase.RUNNING,
@@ -302,6 +306,7 @@ class Game(
         if (phase != GamePhase.LOBBY && phase != GamePhase.STARTING) return
         val cooldowns = PlayerColor.entries.associateWith { if (isColorFree(it)) 0 else Int.MAX_VALUE / 2 }
         for (player in players) {
+            if (player.isBot) return
             val p = player.player ?: continue
             val topInventory = p.openInventory.topInventory
             val holder = topInventory.holder as? WardrobeInventory ?: continue
@@ -312,7 +317,7 @@ class Game(
         }
     }
 
-    internal fun onRejoin(amongUsPlayer: AmongUsPlayer) {
+    internal fun onRejoin(amongUsPlayer: HumanAmongUsPlayer) {
         actionLog.add(PlayerActionElements.PlayerRejoin(amongUsPlayer.uuid.toKotlinUuid()))
         amongUsPlayer.mannequinController.getEntity()?.location?.let { amongUsPlayer.player?.teleport(it) }
         val player = amongUsPlayer.player
@@ -334,7 +339,7 @@ class Game(
         roleRevealManager.onPlayerRejoin(amongUsPlayer)
         amongUsPlayer.modification?.onStart()
         audiences.forEach { it.setDirty() }
-        if (!amongUsPlayer.isAlive) amongUsPlayer.addGhostImprovements()
+        if (!amongUsPlayer.isAlive()) amongUsPlayer.addGhostImprovements()
     }
 
     fun sendChatMessage(component: Component) {
@@ -385,7 +390,7 @@ class Game(
         chatManager.start()
 
         for (player in players) {
-            player.preStart()
+            player.internal.preStart()
         }
 
         roleRevealManager.start() // delegate to roleRevealManager.start()
@@ -404,7 +409,7 @@ class Game(
         val imposterTeamMatesMessage = textComponent {
             translatable("team.imposters.teammates") {
                 args {
-                    val imposterNames = players.filter { it.assignedRole?.definition?.team == Team.IMPOSTERS }
+                    val imposterNames = players.filter { it.role.definition.team == Team.IMPOSTERS }
                         .map { Component.text(it.name, NamedTextColor.GOLD) }
                     val players = Component.join(
                         JoinConfiguration.separator(Component.text(", ", NamedTextColor.RED)),
@@ -415,14 +420,16 @@ class Game(
             }
         }
         for (player in players) {
-            player.editStatistics {
+            player.internal
+
+            player.humanOrNull?.editStatistics {
                 statedGames.increment()
                 playTime.timerStart()
             }
-            player.player?.teleportAsync(gameSpawn)
+            player.teleportAsync(gameSpawn)
             player.start()
             if (player.assignedRole?.definition?.team == Team.IMPOSTERS) {
-                player.player?.sendMessage(imposterTeamMatesMessage)
+                player.audience.sendMessage(imposterTeamMatesMessage)
             }
         }
         scoreboardManager.start()
@@ -431,7 +438,7 @@ class Game(
 
     private fun checkRoleWins(phase: WinCheckPhase): Boolean {
         for (player in players) {
-            val assignedRole = player.assignedRole ?: continue
+            val assignedRole = player.role
             if (assignedRole.winCheckPhase != phase) continue
             if (assignedRole.hasWon()) {
                 letWin(assignedRole.definition.team)
@@ -454,8 +461,8 @@ class Game(
 
         if (checkRoleWins(WinCheckPhase.POST_TASK_CHECK)) return
 
-        val alivePlayers = players.filter { it.isAlive }
-        val imposterCount = alivePlayers.count { it.assignedRole?.definition?.team == Team.IMPOSTERS }
+        val alivePlayers = players.filter { it.isAlive() }
+        val imposterCount = alivePlayers.count { it.role.definition.team == Team.IMPOSTERS }
         if (imposterCount == 0) {
             letWin(Team.CREWMATES)
             return
@@ -499,10 +506,10 @@ class Game(
         resultMessage = message
 
         val playerList = players.toList()
-        val bukkitPlayerList = playerList.mapNotNull { it.player }
+        val bukkitPlayerList = playerList.mapNotNull { it.humanOrNull?.player }
         val hostPlayer = host?.player
 
-        val toRemove = playerList.filter { it.player?.isOnline != true }.map { it.uuid }
+        val toRemove = playerList.filter { it.isBot || it.player?.isOnline != true }.map { it.uuid }
 
         if (toRemove.isNotEmpty()) {
             val packet = ClientboundPlayerInfoRemovePacket(toRemove)
@@ -514,19 +521,21 @@ class Game(
         }
 
         for (player in playerList) {
-            if (cameraManager.isInCams(player)) cameraManager.leaveCams(player)
-            if (ventManager.isVented(player)) ventManager.ventOut(player)
+            player.internal
 
-            val t = player.assignedRole?.definition?.team ?: Team.CREWMATES
+            if (player.isInCams()) cameraManager.leaveCams(player)
+            if (player.isVented()) ventManager.ventOut(player)
+
+            val t = player.role.definition.team
             val hasWon = t === team
 
-            player.editStatistics {
-                if (player.isAlive) survivedGames.increment()
+            player.humanOrNull?.editStatistics {
+                if (player.isAlive()) survivedGames.increment()
                 if (hasWon) {
-                    winsAs[player.assignedRole?.definition]?.increment()
+                    winsAs[player.role.definition]?.increment()
                     winsWith[t]?.increment()
                 } else {
-                    losesAs[player.assignedRole?.definition]?.increment()
+                    losesAs[player.role.definition]?.increment()
                     losesWith[t]?.increment()
                 }
                 playTime.timerStop()
@@ -536,7 +545,7 @@ class Game(
             val subtitle = textComponent {
                 if (hasWon) translatable("win.win") else translatable("win.lose")
             }
-            val p = player.player
+            val p = player.humanOrNull?.player
             if (p != null) {
                 p.sendMessage(message)
                 p.sendTitlePart(TitlePart.SUBTITLE, subtitle)
@@ -544,7 +553,7 @@ class Game(
                     online.showPlayer(AmongUs, p)
                 }
             }
-            player.restorePlayer()
+            player.humanOrNull?.restorePlayer()
             PlayerManager.gameEnds(player)
         }
 
@@ -624,7 +633,7 @@ class Game(
     }
 
     private fun getWinMessage(team: Team): Component = textComponent {
-        val winners = players.filter { it.assignedRole?.definition?.team == team }
+        val winners = players.filter { it.role.definition.team == team }
         repeat(5) { newLine() }
         translatable("win.${team.id}")
         newLine()
@@ -641,27 +650,23 @@ class Game(
         }
         newLine()
         for (player in players) {
-            val alive = player.isAlive
-            val color = player.assignedRole?.definition?.team?.textColor ?: NamedTextColor.WHITE
+            val alive = player.isAlive()
+            val color = player.role.definition.team.textColor
             val deadReason = player.deadReason
             newLine()
             translatable(if (alive) "win.message.player.alive" else "win.message.player.dead") {
                 args {
                     component("player", Component.text(player.name, color))
                     component("role") {
-                        val assignedRole = player.assignedRole
-                        if (assignedRole != null) {
-                            append(assignedRole.definition.name)
-                            hoverEvent(KHoverEventType.ShowText) {
-                                append(assignedRole.definition.descriptionOther)
-                                assignedRole.gameEndInfo()?.let { message ->
-                                    newLine()
-                                    newLine()
-                                    append(message)
-                                }
+                        val assignedRole = player.role
+                        append(assignedRole.definition.name)
+                        hoverEvent(KHoverEventType.ShowText) {
+                            append(assignedRole.definition.descriptionOther)
+                            assignedRole.gameEndInfo()?.let { message ->
+                                newLine()
+                                newLine()
+                                append(message)
                             }
-                        } else {
-                            translatable("scoreboard.role.none")
                         }
                     }
                     if (deadReason != null) component("reason", deadReason.name)
@@ -675,8 +680,8 @@ class Game(
         if (amongUsPlayer !in players) return true
         players.remove(amongUsPlayer)
         actionLog.add(PlayerActionElements.PlayerLeave(amongUsPlayer.uuid.toKotlinUuid()))
-        if (teleport) {
-            val future = amongUsPlayer.player?.teleportAsync(amongUsPlayer.locationBeforeGame)?.thenAccept {
+        if (teleport && amongUsPlayer.isHuman) {
+            val future = amongUsPlayer.teleportAsync(amongUsPlayer.locationBeforeGame).thenAccept {
                 LastPlayerLocationManager.remove(amongUsPlayer.uuid.toKotlinUuid())
                 removePlayer0(amongUsPlayer)
                 amongUsPlayer.player = null

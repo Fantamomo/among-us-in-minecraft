@@ -7,7 +7,7 @@ import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.ability.Ability
 import com.fantamomo.mc.amongus.ability.abilities.ArsonistAbility
 import com.fantamomo.mc.amongus.languages.numeric
-import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import com.fantamomo.mc.amongus.player.*
 import com.fantamomo.mc.amongus.role.AssignedRole
 import com.fantamomo.mc.amongus.role.Role
 import com.fantamomo.mc.amongus.role.Team
@@ -31,27 +31,27 @@ object ArsonistRole : Role<ArsonistRole, ArsonistRole.AssignedArsonistRole> {
 
         val dousedPlayers: MutableSet<AmongUsPlayer> = mutableSetOf()
 
-        override fun hasWon(): Boolean = player.isAlive && player.game.players.all { it === player || !it.isAlive || it in dousedPlayers }
+        override fun hasWon(): Boolean = player.isAlive() && player.game.players.all { it === player || !it.isAlive() || it in dousedPlayers }
 
         fun nearUndousedPlayer(): Boolean {
-            if (!player.isAlive) return false
-            val thisLoc = (player.mannequinController.getEntity() ?: player.livingEntity).location
+            if (!player.isAlive()) return false
+            val thisLoc = player.location
             val douseDistanceSquared = douseDistance.distance.let { it * it }
 
             for (otherPlayer in player.game.players) {
                 if (otherPlayer === player) continue
-                if (!otherPlayer.isAlive) continue
+                if (!otherPlayer.isAlive()) continue
                 if (otherPlayer.isVented()) continue
                 if (otherPlayer in dousedPlayers) continue
-                val loc = (otherPlayer.mannequinController.getEntity() ?: otherPlayer.livingEntity).location
+                val loc = otherPlayer.location
                 if (thisLoc.distanceSquared(loc) < douseDistanceSquared) return true
             }
             return false
         }
 
         fun douseNearest() {
-            if (!player.isAlive) return
-            val thisLoc = (player.mannequinController.getEntity() ?: player.livingEntity).location
+            if (!player.isAlive()) return
+            val thisLoc = player.location
             val douseDistanceSquared = douseDistance.distance.let { it * it }
 
             var nearestDistance: Double = Double.MAX_VALUE
@@ -59,10 +59,10 @@ object ArsonistRole : Role<ArsonistRole, ArsonistRole.AssignedArsonistRole> {
 
             for (otherPlayer in player.game.players) {
                 if (otherPlayer === player) continue
-                if (!otherPlayer.isAlive) continue
+                if (!otherPlayer.isAlive()) continue
                 if (otherPlayer.isVented()) continue
                 if (otherPlayer in dousedPlayers) continue
-                val loc = (otherPlayer.mannequinController.getEntity() ?: otherPlayer.livingEntity).location
+                val loc = otherPlayer.location
                 val distanceSquared = thisLoc.distanceSquared(loc)
                 if (distanceSquared < douseDistanceSquared && distanceSquared < nearestDistance) {
                     nearest = otherPlayer
@@ -75,13 +75,13 @@ object ArsonistRole : Role<ArsonistRole, ArsonistRole.AssignedArsonistRole> {
         private fun douse(player: AmongUsPlayer) {
             dousedPlayers += player
             player.game.actionLog.add(CustomAbilityActionElements.ArsonistDouse(this.player.uuid, player.uuid))
-            this.player.statistics.arsonistDousedPlayers.increment()
-            player.statistics.arsonistDoused.increment()
+            this.player.humanOrNull?.statistics?.arsonistDousedPlayers?.increment()
+            player.humanOrNull?.statistics?.arsonistDoused?.increment()
             val mannequinController = player.mannequinController
-            val player = this.player.player
+            val player = this.player.humanOrNull?.player
             if (player != null) {
                 mannequinController.setNameColorFor(player, NamedTextColor.BLACK)
-            } else {
+            } else if (this.player.isHuman) {
                 mannequinController.setNameColorFor(this.player.uuid, NamedTextColor.BLACK)
             }
         }
@@ -93,7 +93,7 @@ object ArsonistRole : Role<ArsonistRole, ArsonistRole.AssignedArsonistRole> {
             newLine()
             translatable("role.arsonist.end.remaining") {
                 args {
-                    val left = player.game.players.size - dousedPlayers.count { it.isAlive } - 1
+                    val left = player.game.players.size - dousedPlayers.count { it.isAlive() } - 1
                     numeric("count", left)
                 }
             }

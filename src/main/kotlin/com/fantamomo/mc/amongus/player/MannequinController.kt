@@ -120,20 +120,24 @@ class MannequinController(
 
         despawn()
 
-        val player = owner.player ?: return
+        val player = owner.humanOrNull?.player
 
-        mannequin = player.world.spawn(player.location, Mannequin::class.java) {
-            it.profile = ResolvableProfile.resolvableProfile(player.playerProfile)
+        var realLocation = owner.realLocation
+        if (realLocation.world !== owner.game.world) {
+            realLocation = owner.game.world.spawnLocation.clone()
+        }
+        mannequin = owner.game.world.spawn(realLocation, Mannequin::class.java) {
+            it.profile = ResolvableProfile.resolvableProfile(owner.profile)
             it.isPersistent = false
             it.isInvulnerable = true
             it.isImmovable = true
         }
 
-        player.hideEntity(AmongUs, mannequin!!)
+        player?.hideEntity(AmongUs, mannequin!!)
 
         EntityManager.addEntityToRemoveOnEnd(owner.game, mannequin!!)
 
-        lastLocation = player.location.clone()
+        lastLocation = realLocation
 
         hiddenFrom.clear()
         viewerColors.clear()
@@ -184,7 +188,7 @@ class MannequinController(
     }
 
     fun updateNameTag(player: AmongUsPlayer, force: Boolean = false) {
-        updateNameTag(player.player ?: return, force)
+        updateNameTag(player.humanOrNull?.player ?: return, force)
     }
 
     fun updateNameTag(player: Player, force: Boolean = false) {
@@ -215,7 +219,7 @@ class MannequinController(
                 it.isVisibleByDefault = color == NamedTextColor.WHITE
                 mannequin.addPassenger(it)
                 EntityManager.addEntityToRemoveOnEnd(owner.game, it)
-                if (it.isVisibleByDefault) owner.player?.hideEntity(AmongUs, it)
+                if (it.isVisibleByDefault) owner.humanOrNull?.player?.hideEntity(AmongUs, it)
             }
         }
 
@@ -255,10 +259,10 @@ class MannequinController(
         viewerAmongUs: AmongUsPlayer?
     ): TextColor {
 
-        val assignedRole = viewerAmongUs?.assignedRole
+        val assignedRole = viewerAmongUs?.internal?.assignedRole
 
         return if (
-            owner.assignedRole?.definition?.team == Team.IMPOSTERS &&
+            owner.internal.assignedRole?.definition?.team == Team.IMPOSTERS &&
             (assignedRole?.definition?.team == Team.IMPOSTERS ||
                     (assignedRole as? SnitchRole.AssignedSnitchRole)?.canSeeImposters() == true)
         ) {
@@ -299,19 +303,19 @@ class MannequinController(
 
     fun showToAll() {
         Bukkit.getOnlinePlayers().forEach {
-            if (owner.player == it) return@forEach
+            if (owner.humanOrNull?.player == it) return@forEach
             showTo(it)
         }
     }
 
     fun showToSeeingPlayers() {
-        if (owner.isAlive) {
+        if (owner.isAlive()) {
             showToAll()
             return
         }
         for (player in owner.game.players) {
             if (owner === player) continue
-            if (player.isAlive) continue
+            if (player.isAlive() || player.isBot) continue
             player.player?.let(::showTo)
         }
     }
@@ -330,9 +334,9 @@ class MannequinController(
        === Sync / Update ===
        ========================= */
 
-    fun syncFromPlayer(force: Boolean = false) {
+    fun syncFromOwner(force: Boolean = false) {
         if (static) return
-        val player = owner.player ?: return
+        val entity = owner.internalEntity ?: return
         val mannequin = mannequin ?: return
 
         val velocity = mannequin.velocity
@@ -343,17 +347,17 @@ class MannequinController(
         if (!frozen) {
             val modification = owner.modification
             if (modification !is LaggyModification.AssignedLaggyModification || modification.shouldSync()) {
-                syncLocation(player, mannequin, force)
-                syncRotation(player, mannequin)
-                syncPose(player, mannequin)
-                syncAttributes(player, mannequin)
+                syncLocation(entity, mannequin, force)
+                syncRotation(entity, mannequin)
+                syncPose(entity, mannequin)
+                syncAttributes(entity, mannequin)
             }
         }
     }
 
-    private fun syncAttributes(player: Player, mannequin: Mannequin) {
+    private fun syncAttributes(entity: LivingEntity, mannequin: Mannequin) {
         SYNC_ATTRIBUTES.forEach { attribute ->
-            val instance = player.getAttribute(attribute)
+            val instance = entity.getAttribute(attribute)
             if (instance != null) {
                 var mannequinAttribute = mannequin.getAttribute(attribute)
                 if (mannequinAttribute == null) {
@@ -366,11 +370,11 @@ class MannequinController(
     }
 
     private fun syncLocation(
-        player: Player,
+        entity: LivingEntity,
         mannequin: Mannequin,
         force: Boolean
     ) {
-        val loc = player.location
+        val loc = entity.location
         val last = lastLocation
 
         if (force || last == null || last.world !== loc.world || last.distanceSquared(loc) > 0.0025) {
@@ -379,25 +383,25 @@ class MannequinController(
         }
     }
 
-    private fun syncRotation(player: Player, mannequin: Mannequin) {
-        mannequin.bodyYaw = player.bodyYaw
-        val location = player.location
+    private fun syncRotation(entity: LivingEntity, mannequin: Mannequin) {
+        mannequin.bodyYaw = entity.bodyYaw
+        val location = entity.location
         mannequin.setRotation(location.yaw, location.pitch)
     }
 
-    private fun syncPose(player: Player, mannequin: Mannequin) {
-        val pose = player.pose
+    private fun syncPose(entity: LivingEntity, mannequin: Mannequin) {
+        val pose = entity.pose
         val dontShowSomePosesUntil = dontShowSomePosesUntil
         if (dontShowSomePosesUntil == null || dontShowSomePosesUntil <= System.currentTimeMillis()) {
             mannequin.pose = pose
-            mannequin.isSneaking = player.isSneaking
+            mannequin.isSneaking = entity.isSneaking
             this.dontShowSomePosesUntil = null
         } else {
             if (pose != Pose.SNEAKING && pose != Pose.CROAKING) mannequin.pose = pose
             mannequin.isSneaking = false
         }
-        mannequin.isGliding = player.isGliding
-        mannequin.isJumping = player.isJumping
+        mannequin.isGliding = entity.isGliding
+        mannequin.isJumping = entity.isJumping
     }
 
     /* =========================
@@ -413,16 +417,16 @@ class MannequinController(
 
         val mannequin = mannequin ?: return
 
-        val player = owner.player ?: return
+        val livingEntity = owner.internalEntity ?: return
 
         mannequin.isImmovable = false
-        mannequin.velocity = player.velocity.clone()
+        mannequin.velocity = livingEntity.velocity.clone()
     }
 
     fun unfreeze(forceSync: Boolean = true) {
         frozen = false
         mannequin?.isImmovable = true
-        if (forceSync) syncFromPlayer(force = true)
+        if (forceSync) syncFromOwner(force = true)
     }
 
     fun setStatic(value: Boolean) {
@@ -433,10 +437,12 @@ class MannequinController(
     fun isStatic(): Boolean = static
 
     fun showToSelf() {
+        if (owner.isBot) return
         showTo(owner.player ?: return)
     }
 
     fun hideFromSelf() {
+        if (owner.isBot) return
         hideFrom(owner.player ?: return)
     }
 

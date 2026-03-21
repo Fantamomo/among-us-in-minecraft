@@ -2,6 +2,7 @@ package com.fantamomo.mc.amongus.ability.builder
 
 import com.fantamomo.mc.amongus.ability.AssignedAbility
 import com.fantamomo.mc.amongus.ability.item.AbilityItem
+import com.fantamomo.mc.amongus.player.internal
 import com.fantamomo.mc.amongus.util.Cooldown
 import net.kyori.adventure.key.Key
 import kotlin.time.Duration
@@ -31,7 +32,7 @@ class AbilityContext(
     }
 
     fun refresh() {
-        player.notifyAbilityItemChange(abilityItem)
+        player.internal.notifyAbilityItemChange(abilityItem)
     }
 
     fun getBlockReason(): BlockReason? = builder.conditions.firstNotNullOfOrNull { it.checkInternal(this) }
