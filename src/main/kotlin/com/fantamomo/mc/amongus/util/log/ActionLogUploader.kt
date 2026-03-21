@@ -16,7 +16,9 @@ import java.net.http.HttpResponse
 
 object ActionLogUploader {
     private val BASE_URL = AmongUsConfig.ActionLogUpload.url?.takeIf { it.isValidUrl() }?.removeSuffix("/")
+    private val BASE_URI = BASE_URL?.let { runCatching { URI.create(it) }.getOrNull() }
     private val UPLOAD_URL = BASE_URL?.let { "$it/upload" }
+    private val UPLOAD_URI = UPLOAD_URL?.let { runCatching { URI.create(it) }.getOrNull() }
 
     private val logger = LoggerFactory.getLogger("AmongUsActionLogUploader")
 
@@ -32,11 +34,11 @@ object ActionLogUploader {
     internal suspend fun upload(log: String): URL? {
         checkValid()
         return withContext(Dispatchers.IO) {
-            val urlString = UPLOAD_URL ?: return@withContext null
+            val uri = UPLOAD_URI ?: return@withContext null
 
             try {
                 val request = HttpRequest.newBuilder()
-                    .uri(URI.create(urlString))
+                    .uri(uri)
                     .header("Content-Type", "application/json; charset=UTF-8")
                     .header("User-Agent", "Fantamomo/among-us-in-minecraft/1.0")
                     .POST(HttpRequest.BodyPublishers.ofString(log))

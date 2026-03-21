@@ -44,6 +44,9 @@ dependencies {
     implementation("com.fantamomo.mc:brigadier-interception:1.1-SNAPSHOT")
 
     implementation("org.mineskin:java-client:3.2.1-SNAPSHOT")
+
+
+    testImplementation(kotlin("test"))
 }
 
 val targetJavaVersion = 21

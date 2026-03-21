@@ -68,6 +68,9 @@ object CallMeetingAbility :
                             BlockReason.LimitReached ->
                                 translationKey = "ability.call_meeting.call_meeting.button_limit_reached"
 
+                            BlockReason.Dead ->
+                                translationKey = "ability.call_meeting.call_meeting.dead"
+
                             else -> {}
                         }
                     }

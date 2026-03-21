@@ -49,6 +49,8 @@ object DetectiveRole : Role<DetectiveRole, DetectiveRole.AssignedDetectiveRole> 
         override fun tick(tickContext: TickContext) {
             if (tickContext.isBy(2)) return
 
+            if (trails.isEmpty()) return
+
             val viewer = player.player ?: return
             val viewerLoc = viewer.location
 
