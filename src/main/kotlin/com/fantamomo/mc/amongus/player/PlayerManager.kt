@@ -7,8 +7,14 @@ import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.game.GameManager
 import com.fantamomo.mc.amongus.game.GamePhase
+import com.fantamomo.mc.amongus.player.bot.BotName
 import com.fantamomo.mc.amongus.util.internal.NMS
+import com.mojang.authlib.GameProfile
+import net.minecraft.network.chat.Component
+import net.minecraft.network.chat.RemoteChatSession
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket
+import net.minecraft.server.network.ServerGamePacketListenerImpl
+import net.minecraft.world.level.GameType
 import org.bukkit.Bukkit
 import org.bukkit.craftbukkit.entity.CraftPlayer
 import org.bukkit.entity.Mannequin
@@ -18,6 +24,63 @@ import kotlin.uuid.toKotlinUuid
 
 object PlayerManager {
     private val players = mutableListOf<AmongUsPlayer>()
+
+    private val playerAddPacketActions = EnumSet.of(
+        ClientboundPlayerInfoUpdatePacket.Action.ADD_PLAYER,
+        ClientboundPlayerInfoUpdatePacket.Action.UPDATE_GAME_MODE,
+        ClientboundPlayerInfoUpdatePacket.Action.UPDATE_LISTED,
+        ClientboundPlayerInfoUpdatePacket.Action.UPDATE_LATENCY,
+        ClientboundPlayerInfoUpdatePacket.Action.UPDATE_DISPLAY_NAME,
+        ClientboundPlayerInfoUpdatePacket.Action.UPDATE_HAT,
+        ClientboundPlayerInfoUpdatePacket.Action.UPDATE_LIST_ORDER
+    )
+
+    private val clientboundPlayerInfoUpdatePacketEntryNewInstance: (
+        uuid: UUID,
+        profile: GameProfile,
+        listed: Boolean,
+        latency: Int,
+        gameMode: GameType,
+        displayName: Component,
+        showHat: Boolean,
+        playerListOrder: Int
+    ) -> ClientboundPlayerInfoUpdatePacket.Entry = run {
+        val clazz = ClientboundPlayerInfoUpdatePacket.Entry::class.java
+        val method = clazz.getDeclaredConstructor(
+            UUID::class.java,
+            GameProfile::class.java,
+            Boolean::class.javaPrimitiveType,
+            Int::class.javaPrimitiveType,
+            GameType::class.java,
+            Component::class.java,
+            Boolean::class.javaPrimitiveType,
+            Int::class.javaPrimitiveType,
+            RemoteChatSession.Data::class.java,
+        )
+        method.isAccessible = true
+        return@run {
+                uuid: UUID,
+                profile: GameProfile,
+                listed: Boolean,
+                latency: Int,
+                gameMode: GameType,
+                displayName: Component,
+                showHat: Boolean,
+                playerListOrder: Int,
+            ->
+            method.newInstance(
+                uuid,
+                profile,
+                listed,
+                latency,
+                gameMode,
+                displayName,
+                showHat,
+                playerListOrder,
+                null
+            )
+        }
+    }
 
     fun getPlayers(): List<AmongUsPlayer> = players
 
@@ -73,6 +136,39 @@ object PlayerManager {
         return auPlayer
     }
 
+    @NMS
+    internal fun addBot(name: BotName, game: Game) {
+        val auPlayer = BotAmongUsPlayer(UUID.randomUUID(), game, name)
+
+        auPlayer.mannequinController.spawn()
+
+        val entry = clientboundPlayerInfoUpdatePacketEntryNewInstance.invoke(
+            auPlayer.uuid,
+            name.gameProfile,
+            true,
+            0,
+            GameType.ADVENTURE,
+            Component.literal(name.name),
+            true,
+            0,
+        )
+
+        val packet = ClientboundPlayerInfoUpdatePacket(
+            playerAddPacketActions,
+            entry,
+        )
+
+        for (player in game.players) {
+            if (player.isBot) continue
+            val connection = (player.player as? CraftPlayer)?.handle?.connection ?: continue
+            connection.send(packet)
+        }
+
+        players.add(auPlayer)
+        game.players.add(auPlayer)
+        auPlayer.updateHelmet()
+    }
+
     internal fun onPlayerQuit(player: Player) {
         val auPlayer = getHumanPlayer(player.uniqueId) ?: return
         auPlayer.restorePlayer()
@@ -123,12 +219,12 @@ object PlayerManager {
 
     @NMS
     internal fun onPlayerJoin(player: Player) {
-        val connection = (player as CraftPlayer).handle.connection
+        @Suppress("RedundantNullableReturnType")
+        val connection: ServerGamePacketListenerImpl? = (player as CraftPlayer).handle.connection
         for (playingPlayer in players) {
             playingPlayer.mannequinController.updateNameTag(player, force = true)
             val bukkitPlayer = playingPlayer.humanOrNull?.player ?: continue
             player.hidePlayer(AmongUs, bukkitPlayer)
-            @Suppress("UNNECESSARY_SAFE_CALL")
             connection?.send(
                 ClientboundPlayerInfoUpdatePacket.createSinglePlayerInitializing(
                     (bukkitPlayer as CraftPlayer).handle,
@@ -166,6 +262,28 @@ object PlayerManager {
                     player.handle, true
                 )
             )
+        }
+        if (connection != null) {
+            for (playingPlayer in game.players) {
+                if (playingPlayer.isHuman) continue
+
+                val entry = clientboundPlayerInfoUpdatePacketEntryNewInstance.invoke(
+                    playingPlayer.uuid,
+                    playingPlayer.botName.gameProfile,
+                    true,
+                    0,
+                    GameType.ADVENTURE,
+                    Component.literal(playingPlayer.name),
+                    true,
+                    0,
+                )
+
+                val packet = ClientboundPlayerInfoUpdatePacket(
+                    playerAddPacketActions,
+                    entry,
+                )
+                connection.send(packet)
+            }
         }
         amongUsPlayer.mannequinController.hideFromSelf()
         amongUsPlayer.wardrobeMannequin?.let { player.showEntity(AmongUs, it) }
