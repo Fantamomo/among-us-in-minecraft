@@ -4,6 +4,7 @@ import com.fantamomo.mc.adventure.text.args
 import com.fantamomo.mc.adventure.text.textComponent
 import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.ability.Ability
+import com.fantamomo.mc.amongus.game.GamePhase
 import com.fantamomo.mc.amongus.languages.numeric
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.role.AssignedRole
@@ -33,6 +34,7 @@ object SnitchRole : Role<SnitchRole, SnitchRole.AssignedSnitchRole> {
         fun canSeeImposters(): Boolean = player.tasks.all { it.completed }
 
         override fun scoreboardLine(): Component? {
+            if (player.game.phase == GamePhase.REVEALING_ROLES) return SCOREBOARD_LINE_WAITING
             if (!player.isAlive) return null
             return when (val left = taskLeft()) {
                 0 -> SCOREBOARD_LINE_FINISHED
@@ -48,6 +50,7 @@ object SnitchRole : Role<SnitchRole, SnitchRole.AssignedSnitchRole> {
         }
 
         override fun tick(tickContext: TickContext) {
+            if (player.game.phase == GamePhase.REVEALING_ROLES) return
             if (!player.isAlive) return
             if (taskLeft() <= 1) {
                 if (!sendWarning) {
@@ -86,6 +89,7 @@ object SnitchRole : Role<SnitchRole, SnitchRole.AssignedSnitchRole> {
         companion object {
             private val SCOREBOARD_LINE_FINISHED = Component.translatable("role.snitch.scoreboard.finished")
             private val SCOREBOARD_LINE_LEFT = Component.translatable("role.snitch.scoreboard.one_task_left")
+            private val SCOREBOARD_LINE_WAITING = Component.translatable("role.snitch.scoreboard.wait_for_start")
             private val WARNING = Component.translatable("role.snitch.warning")
         }
     }
