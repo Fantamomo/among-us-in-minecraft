@@ -8,6 +8,7 @@ import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.player.info.DeadReason
+import com.fantamomo.mc.amongus.player.isAlive
 import com.fantamomo.mc.amongus.role.AssignedRole
 import com.fantamomo.mc.amongus.role.Role
 import com.fantamomo.mc.amongus.role.Team
@@ -34,8 +35,8 @@ object ExecutionerRole : Role<ExecutionerRole, ExecutionerRole.AssignedExecution
             val players = player.game.players
             target = when (players.size) {
                 1 -> null
-                2 -> players.firstOrNull { it !== player && it.assignedRole?.definition !== JesterRole }
-                else -> players.filter { it !== player && it.assignedRole?.definition !== JesterRole }.random()
+                2 -> players.firstOrNull { it !== player && it.role.definition !== JesterRole }
+                else -> players.filter { it !== player && it.role.definition !== JesterRole }.random()
             }
 
             target?.mannequinController?.setNameColorFor(player, NamedTextColor.GREEN)
@@ -46,7 +47,7 @@ object ExecutionerRole : Role<ExecutionerRole, ExecutionerRole.AssignedExecution
             target?.mannequinController?.setNameColorFor(player, null)
         }
 
-        override fun hasWon() = player.isAlive && target?.deadReason === DeadReason.Ejected
+        override fun hasWon() = player.isAlive() && target?.deadReason === DeadReason.Ejected
 
         override fun scoreboardLine() = target?.let { target ->
             textComponent {

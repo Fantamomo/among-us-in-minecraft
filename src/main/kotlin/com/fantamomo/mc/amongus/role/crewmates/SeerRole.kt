@@ -8,7 +8,6 @@ import com.fantamomo.mc.amongus.role.Role
 import com.fantamomo.mc.amongus.role.Team
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.JoinConfiguration
-import net.kyori.adventure.text.format.NamedTextColor
 
 object SeerRole : Role<SeerRole, SeerRole.AssignedSeerRole> {
     override val id: String = "seer"
@@ -27,7 +26,7 @@ object SeerRole : Role<SeerRole, SeerRole.AssignedSeerRole> {
 
         override fun gameEndInfo(): Component {
             val revealedPlayersInfo = revealedPlayers.map {
-                Component.text(it.name, it.assignedRole?.definition?.team?.textColor ?: NamedTextColor.WHITE)
+                Component.text(it.name, it.role.definition.team.textColor)
             }
             return Component.join(joinConfig, revealedPlayersInfo)
         }

@@ -6,7 +6,7 @@ import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.ability.Ability
 import com.fantamomo.mc.amongus.game.GamePhase
 import com.fantamomo.mc.amongus.languages.numeric
-import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import com.fantamomo.mc.amongus.player.*
 import com.fantamomo.mc.amongus.role.AssignedRole
 import com.fantamomo.mc.amongus.role.Role
 import com.fantamomo.mc.amongus.role.Team
@@ -35,7 +35,7 @@ object SnitchRole : Role<SnitchRole, SnitchRole.AssignedSnitchRole> {
 
         override fun scoreboardLine(): Component? {
             if (player.game.phase == GamePhase.REVEALING_ROLES) return SCOREBOARD_LINE_WAITING
-            if (!player.isAlive) return null
+            if (!player.isAlive()) return null
             return when (val left = taskLeft()) {
                 0 -> SCOREBOARD_LINE_FINISHED
                 1 -> SCOREBOARD_LINE_LEFT
@@ -51,13 +51,14 @@ object SnitchRole : Role<SnitchRole, SnitchRole.AssignedSnitchRole> {
 
         override fun tick(tickContext: TickContext) {
             if (player.game.phase == GamePhase.REVEALING_ROLES) return
-            if (!player.isAlive) return
+            if (!player.isAlive()) return
             if (taskLeft() <= 1) {
                 if (!sendWarning) {
                     sendWarning = true
                     player.game.actionLog.add(CustomRoleActionElements.SnitchOneTaskLeft(player.uuid))
                     for (player in player.game.players) {
-                        if (player.assignedRole?.definition?.team == Team.IMPOSTERS) {
+                        if (player.isBot) continue
+                        if (player.role.definition.team == Team.IMPOSTERS) {
                             val viewer = player.player
                             viewer?.sendTitlePart(TitlePart.TITLE, WARNING)
                             if (viewer != null) {
@@ -73,12 +74,12 @@ object SnitchRole : Role<SnitchRole, SnitchRole.AssignedSnitchRole> {
             if (lastCanSeeImposters != canSeeImposters) {
                 lastCanSeeImposters = canSeeImposters
                 player.game.actionLog.add(CustomRoleActionElements.SnitchFinishedTasks(player.uuid))
-                val thisPlayer = this.player.player
+                val thisPlayer = this.player.humanOrNull?.player
                 for (player in player.game.players) {
-                    if (player.assignedRole?.definition?.team == Team.IMPOSTERS) {
+                    if (player.role.definition.team == Team.IMPOSTERS) {
                         if (thisPlayer != null) {
                             player.mannequinController.setNameColorFor(thisPlayer, NamedTextColor.RED)
-                        } else {
+                        } else if (this.player.isHuman) {
                             player.mannequinController.setNameColorFor(this.player.uuid, NamedTextColor.RED)
                         }
                     }
