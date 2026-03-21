@@ -2,6 +2,7 @@ package com.fantamomo.mc.amongus.ability.builder
 
 import com.fantamomo.mc.adventure.text.*
 import com.fantamomo.mc.amongus.languages.string
+import com.fantamomo.mc.amongus.player.humanOrNull
 import com.fantamomo.mc.amongus.util.textComponent
 import io.papermc.paper.datacomponent.DataComponentTypes
 import io.papermc.paper.datacomponent.item.ItemLore
@@ -118,10 +119,10 @@ class AbilityItemRender<M : ItemMeta>(
                 DataComponentTypes.USE_COOLDOWN,
                 UseCooldown.useCooldown(Float.MAX_VALUE / 2).cooldownGroup(ctx.cooldownKey)
             )
-            ctx.player.player?.setCooldown(ctx.cooldownKey, Int.MAX_VALUE / 2)
+            ctx.player.humanOrNull?.player?.setCooldown(ctx.cooldownKey, Int.MAX_VALUE / 2)
             isCooldownActive = true
         } else {
-            ctx.player.player?.setCooldown(ctx.cooldownKey, 0)
+            ctx.player.humanOrNull?.player?.setCooldown(ctx.cooldownKey, 0)
         }
 
         if (hasCooldown) {

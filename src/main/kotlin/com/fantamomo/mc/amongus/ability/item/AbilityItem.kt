@@ -2,6 +2,7 @@ package com.fantamomo.mc.amongus.ability.item
 
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.ability.AssignedAbility
+import com.fantamomo.mc.amongus.player.internal
 import com.fantamomo.mc.amongus.util.CustomPersistentDataTypes
 import net.kyori.adventure.text.Component
 import org.bukkit.NamespacedKey
@@ -55,7 +56,7 @@ abstract class AbilityItem(val ability: AssignedAbility<*, *>, val id: String) {
     open fun onLeftClick() {}
 
     fun notifyItemChange() {
-        ability.player.notifyAbilityItemChange(this)
+        ability.player.internal.notifyAbilityItemChange(this)
     }
 
     open fun startCooldown() {}
