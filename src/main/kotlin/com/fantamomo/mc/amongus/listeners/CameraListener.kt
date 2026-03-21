@@ -1,6 +1,7 @@
 package com.fantamomo.mc.amongus.listeners
 
 import com.destroystokyo.paper.event.player.PlayerStopSpectatingEntityEvent
+import com.fantamomo.mc.amongus.game.GamePhase
 import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.util.isBetween
 import net.kyori.adventure.text.Component
@@ -37,7 +38,12 @@ object CameraListener : Listener {
     fun onStopSpectatingEntityEvent(event: PlayerStopSpectatingEntityEvent) {
         val player = event.player
         val amongUsPlayer = PlayerManager.getPlayer(player) ?: return
-        val cameraManager = amongUsPlayer.game.cameraManager
+        val game = amongUsPlayer.game
+        if (game.phase == GamePhase.REVEALING_ROLES) {
+            if (!game.roleRevealManager.ignorePlayerStopSpectating) event.isCancelled = true
+            return
+        }
+        val cameraManager = game.cameraManager
         val camera = cameraManager.getCamera(amongUsPlayer) ?: return
         if (!camera.ignorePlayerStopSpectatingEntityEvent) {
             player.isSneaking = false
