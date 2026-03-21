@@ -11,8 +11,7 @@ import com.fantamomo.mc.amongus.game.GamePhase
 import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.languages.numeric
 import com.fantamomo.mc.amongus.languages.string
-import com.fantamomo.mc.amongus.player.AmongUsPlayer
-import com.fantamomo.mc.amongus.player.PlayerManager
+import com.fantamomo.mc.amongus.player.*
 import com.fantamomo.mc.amongus.player.info.DeadReason
 import com.fantamomo.mc.amongus.role.Role
 import com.fantamomo.mc.amongus.role.Team
@@ -47,11 +46,13 @@ private fun PaperCommand.switchHostGameCommand() = literal("switch_host") {
     Permissions.ADMIN_GAME_SWITCH_HOST.required()
     argument("game", GameArgumentType(false)) {
         val gameRef = argRef()
-        argument("target", AmongUsPlayerArgumentType.SINGLE) {
+        argument("target", AmongUsPlayerArgumentType.SINGLE_NO_BOTS) {
             val targetResolverRef = argRef()
             execute {
                 val game = gameRef.get()
                 val target = targetResolverRef.get().resolve(source).first()
+
+                if (target.isBot) throw IllegalStateException("Resolver failed")
 
                 if (target.game !== game) {
                     sendMessage {
@@ -114,12 +115,12 @@ private fun KtCommandBuilder<CommandSourceStack, *>.playerInfoGameCommandExecute
         }
     }
 
-    val role = target.assignedRole
+    val role = target.internal.assignedRole
     val modification = target.modification
     val tasks = target.tasks.toList()
     val completedTasks = tasks.count { it.completed }
     val pendingTasks = tasks.size - completedTasks
-    val location = target.livingEntityOrNull?.location
+    val location = target.location
     val mannequin = target.mannequinController.getEntity()
     val isMorphed = target.game.morphManager.isMorphed(target)
 
@@ -221,7 +222,7 @@ private fun KtCommandBuilder<CommandSourceStack, *>.playerInfoGameCommandExecute
             args {
                 component("value") {
                     translatable(
-                        if (target.player != null) "command.success.admin.game.info.yes"
+                        if (target.humanOrNull?.player != null) "command.success.admin.game.info.yes"
                         else "command.success.admin.game.info.no"
                     )
                 }
@@ -233,14 +234,14 @@ private fun KtCommandBuilder<CommandSourceStack, *>.playerInfoGameCommandExecute
             args {
                 component("value") {
                     translatable(
-                        if (target.isAlive) "command.success.admin.game.info.alive.yes"
+                        if (target.isAlive()) "command.success.admin.game.info.alive.yes"
                         else "command.success.admin.game.info.alive.no"
                     )
                 }
             }
         }
     }
-    if (!target.isAlive) {
+    if (!target.isAlive()) {
         val reasonComponent = (target.deadReason?.name ?: Component.translatable("dead.reason.unknown")).maskText()
         sendMessage {
             translatable("command.success.admin.game.info.dead_reason") {
@@ -248,7 +249,7 @@ private fun KtCommandBuilder<CommandSourceStack, *>.playerInfoGameCommandExecute
             }
         }
     }
-    target.disconnectedAt?.let {
+    target.humanOrNull?.disconnectedAt?.let {
         sendMessage {
             translatable("command.success.admin.game.info.disconnected_at") {
                 args { string("time", it.toString()) }
@@ -277,32 +278,28 @@ private fun KtCommandBuilder<CommandSourceStack, *>.playerInfoGameCommandExecute
     }
 
     sendMessage { translatable("command.success.admin.game.info.section.location") }
-    if (location != null) {
-        sendMessage {
-            translatable("command.success.admin.game.info.location") {
-                args {
-                    numeric("x", location.blockX)
-                    numeric("y", location.blockY)
-                    numeric("z", location.blockZ)
-                    string("world", location.world.name)
-                }
+    sendMessage {
+        translatable("command.success.admin.game.info.location") {
+            args {
+                numeric("x", location.blockX)
+                numeric("y", location.blockY)
+                numeric("z", location.blockZ)
+                string("world", location.world.name)
             }
         }
-        sendMessage {
-            translatable("command.success.admin.game.info.location.entity_type") {
-                args {
-                    string(
-                        "type", when {
-                            target.player != null -> "Player"
-                            mannequin != null -> "Mannequin"
-                            else -> "None"
-                        }
-                    )
-                }
+    }
+    sendMessage {
+        translatable("command.success.admin.game.info.location.entity_type") {
+            args {
+                string(
+                    "type", when {
+                        target.humanOrNull?.player != null -> "Player"
+                        mannequin != null -> "Mannequin"
+                        else -> "None"
+                    }
+                )
             }
         }
-    } else {
-        sendMessage { translatable("command.success.admin.game.info.location.none") }
     }
     sendMessage {
         translatable("command.success.admin.game.info.vented") {
@@ -360,7 +357,7 @@ private fun KtCommandBuilder<CommandSourceStack, *>.playerInfoGameCommandExecute
                     component("value") {
                         maskBool {
                             translatable(
-                                if (target.canDoTasks) "command.success.admin.game.info.yes"
+                                if (target.canDoTasks()) "command.success.admin.game.info.yes"
                                 else "command.success.admin.game.info.no"
                             )
                         }
@@ -662,7 +659,7 @@ private fun KtCommandBuilder<CommandSourceStack, *>.killPlayerGamCommandExecute(
         else -> {}
     }
 
-    if (!amongUsPlayer.isAlive) {
+    if (!amongUsPlayer.isAlive()) {
         sendMessage {
             translatable("command.error.admin.game.kill.not_alive") {
                 args {
@@ -673,7 +670,7 @@ private fun KtCommandBuilder<CommandSourceStack, *>.killPlayerGamCommandExecute(
         return@execute 0
     }
 
-    val loc = (amongUsPlayer.mannequinController.getEntity() ?: amongUsPlayer.livingEntity).location
+    val loc = amongUsPlayer.location
     sendMessage {
         if (corpse) {
             translatable("command.success.admin.game.kill.corpse") {

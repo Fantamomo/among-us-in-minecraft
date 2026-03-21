@@ -3,6 +3,7 @@ package com.fantamomo.mc.amongus.command
 import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.game.GamePhase
 import com.fantamomo.mc.amongus.player.PlayerManager
+import com.fantamomo.mc.amongus.player.isAlive
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.brigadier.*
@@ -45,7 +46,7 @@ val AmongUsImposterMsgCommand = paperCommand("impostermsg") {
                 return@execute 0
             }
 
-            if (!amongUsPlayer.isAlive) {
+            if (!amongUsPlayer.isAlive()) {
                 sendMessage {
                     translatable("command.error.impostermsg.dead")
                 }
