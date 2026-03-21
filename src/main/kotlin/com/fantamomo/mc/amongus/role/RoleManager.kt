@@ -15,7 +15,7 @@ class RoleManager(private val game: Game) {
     private val allowedRoles = mutableMapOf<AmongUsPlayer, MutableSet<Role<*, *>>>()
     private val restrictedTeams = mutableMapOf<AmongUsPlayer, Team?>()
 
-    fun start() {
+    fun assign() {
         val players = game.players.toList()
         if (players.isEmpty()) return
 
@@ -30,9 +30,11 @@ class RoleManager(private val game: Game) {
         for (player in players) {
             if (player.assignedRole == null) assign(player, Team.CREWMATES.defaultRole)
         }
-
-        players.forEach { it.assignedRole?.onGameStart() }
         forcedRoles.clear()
+    }
+
+    fun start() {
+        game.players.forEach { it.assignedRole?.onGameStart() }
     }
 
     fun end() = game.players.forEach { it.assignedRole?.onGameEnd() }

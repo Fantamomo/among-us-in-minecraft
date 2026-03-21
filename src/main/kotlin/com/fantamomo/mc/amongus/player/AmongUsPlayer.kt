@@ -148,6 +148,8 @@ class AmongUsPlayer internal constructor(
     internal var disconnectedAt: Instant? = null
     var deadReason: DeadReason? = null
         internal set
+    var lastSeen: GamePhase = GamePhase.LOBBY
+        internal set
 
     val statistics = PlayerStatistics(uuid.toKotlinUuid())
     val helpPreferences = persistencePlayerData.helpPreferences
@@ -198,14 +200,13 @@ class AmongUsPlayer internal constructor(
     }
 
     fun addNewAbility(ability: Ability<*, *>) {
-        if (!game.phase.isPlaying) throw IllegalStateException("Cannot add ability in this phase")
+        if (!game.phase.isPlaying && game.phase != GamePhase.REVEALING_ROLES) throw IllegalStateException("Cannot add ability in this phase")
         if (!ability.canAssignTo(this)) throw IllegalArgumentException("Ability cannot be assigned to this player")
         val assigned = ability.assignTo(this)
         AbilityManager.registerAbility(assigned)
         abilities.add(assigned)
-        if (game.phase == GamePhase.LOBBY || game.phase == GamePhase.STARTING) return
         val player = player
-        if (player != null) {
+        if (player != null && game.phase != GamePhase.REVEALING_ROLES) {
             for (item in assigned.items) {
                 item.startCooldown()
                 player.inventory.addItem(item.get())
@@ -238,6 +239,17 @@ class AmongUsPlayer internal constructor(
         player.addPotionEffect(GHOST_SPEED)
     }
 
+    fun preStart() {
+        val player = player
+        var role = assignedRole
+        if (role == null) {
+            role = CrewmateRole.assignTo(this)
+            assignedRole = role
+        }
+        addNewAbility(ReportAbility)
+        role.definition.defaultAbilities.forEach { addNewAbility(it) }
+    }
+
     fun start() {
         val player = player
         var role = assignedRole
@@ -257,21 +269,27 @@ class AmongUsPlayer internal constructor(
         }
         modification?.onGameStart()
         modification?.onStart()
-        addNewAbility(ReportAbility)
-        role.definition.defaultAbilities.forEach { addNewAbility(it) }
-        player?.sendTitlePart(TitlePart.TIMES, Title.DEFAULT_TIMES)
-        player?.sendTitlePart(
-            TitlePart.TITLE,
-            textComponent {
-                translatable("roles.assigned.title") {
-                    args {
-                        component("role", role.name)
-                    }
+        if (player != null) {
+            for (assigned in abilities) {
+                for (item in assigned.items) {
+                    item.startCooldown()
+                    player.inventory.addItem(item.get())
                 }
             }
-        )
-        val team = role.definition.team
-        player?.sendMessage(team.description)
+            player.sendTitlePart(TitlePart.TIMES, Title.DEFAULT_TIMES)
+            player.sendTitlePart(
+                TitlePart.TITLE,
+                textComponent {
+                    translatable("roles.assigned.title") {
+                        args {
+                            component("role", role.name)
+                        }
+                    }
+                }
+            )
+            val team = role.definition.team
+            player.sendMessage(team.description)
+        }
 
         for (player in game.players) {
             if (player === this) continue
@@ -288,6 +306,7 @@ class AmongUsPlayer internal constructor(
     internal fun restorePlayer() {
         val player = player ?: return
         player.removePotionEffect(PotionEffectType.SPEED)
+        player.isInvisible = false
     }
 
     companion object {

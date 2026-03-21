@@ -18,10 +18,7 @@ import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryType
-import org.bukkit.event.player.PlayerInteractEntityEvent
-import org.bukkit.event.player.PlayerInteractEvent
-import org.bukkit.event.player.PlayerJoinEvent
-import org.bukkit.event.player.PlayerQuitEvent
+import org.bukkit.event.player.*
 import kotlin.uuid.toKotlinUuid
 
 object PlayerListener : Listener {
@@ -138,5 +135,23 @@ object PlayerListener : Listener {
         PlayerManager.getPlayer(player) ?: return
         if (event.slotType != InventoryType.SlotType.ARMOR) return
         event.isCancelled = true
+    }
+
+    @EventHandler
+    fun onPlayerItemHeld(event: PlayerItemHeldEvent) {
+        val player = event.player
+        val auPlayer = PlayerManager.getPlayer(player) ?: return
+        val game = auPlayer.game
+        if (game.phase != GamePhase.REVEALING_ROLES) return
+        game.roleRevealManager.onScroll(auPlayer, event.previousSlot, event.newSlot)
+    }
+
+    @EventHandler
+    fun onPlayerKick(event: PlayerKickEvent) {
+        if (event.cause != PlayerKickEvent.Cause.FLYING_PLAYER && event.cause != PlayerKickEvent.Cause.SELF_INTERACTION) return
+        val player = event.player
+        val auPlayer = PlayerManager.getPlayer(player) ?: return
+        val game = auPlayer.game
+        if (game.phase == GamePhase.REVEALING_ROLES) event.isCancelled = true
     }
 }

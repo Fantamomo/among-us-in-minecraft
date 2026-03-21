@@ -3,8 +3,10 @@ package com.fantamomo.mc.amongus.ability.item
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.ability.AssignedAbility
 import com.fantamomo.mc.amongus.util.CustomPersistentDataTypes
+import net.kyori.adventure.text.Component
 import org.bukkit.NamespacedKey
 import org.bukkit.inventory.ItemStack
+import org.bukkit.inventory.ItemType
 import org.bukkit.persistence.PersistentDataType
 import kotlin.uuid.Uuid
 
@@ -15,7 +17,7 @@ import kotlin.uuid.Uuid
  * the player's persistent data container. It is responsible for creating and managing items
  * that are linked with specific abilities and handling changes to such items.
  *
- * @property ability The ability associated with this item, represented as an instance of [com.fantamomo.mc.amongus.ability.AssignedAbility].
+ * @property ability The ability associated with this item, represented as an instance of [AssignedAbility].
  * @property id The unique identifier for the ability item, used for distinguishing it from others.
  */
 abstract class AbilityItem(val ability: AssignedAbility<*, *>, val id: String) {
@@ -28,6 +30,11 @@ abstract class AbilityItem(val ability: AssignedAbility<*, *>, val id: String) {
      * identification and proper tracking of the item during gameplay.
      */
     val uuid: Uuid = Uuid.random()
+
+    open val name: Component = Component.translatable("ability.${ability.definition.id}.${id}.name")
+    open val description: Component = Component.translatable("ability.${ability.definition.id}.${id}.description")
+
+    abstract val displayItem: ItemType
 
     protected abstract fun getItemStack(): ItemStack
 

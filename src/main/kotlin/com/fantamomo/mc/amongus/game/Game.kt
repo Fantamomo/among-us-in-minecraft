@@ -29,7 +29,6 @@ import com.fantamomo.mc.amongus.util.log.elements.PlayerActionElements
 import com.fantamomo.mc.amongus.util.sendComponent
 import com.fantamomo.mc.amongus.util.toSmartString
 import kotlinx.coroutines.launch
-import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.JoinConfiguration
 import net.kyori.adventure.text.format.NamedTextColor
@@ -42,6 +41,7 @@ import org.bukkit.Bukkit
 import org.bukkit.World
 import org.bukkit.craftbukkit.entity.CraftPlayer
 import org.bukkit.entity.Player
+import java.net.URI
 import java.util.*
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
@@ -102,6 +102,7 @@ class Game(
     val chatManager = ChatManager(this)
     val morphManager = MorphManager(this)
     val ghostFormManager = GhostFormManager(this)
+    val roleRevealManager = RoleRevealManager(this)
 
     internal val players: MutableList<AmongUsPlayer> = mutableListOf()
     internal val bannedPlayers: MutableSet<UUID> = mutableSetOf()
@@ -109,6 +110,9 @@ class Game(
         internal set(value) {
             if (value != field) {
                 actionLog.add(GameActionElements.PhaseChange(field, value))
+            }
+            for (player in players) {
+                if (player.player != null) player.lastSeen = value
             }
             field = value
         }
@@ -327,6 +331,7 @@ class Game(
         killManager.onPlayerRejoin(amongUsPlayer)
         sabotageManager.onPlayerRejoin(amongUsPlayer)
         taskManager.onPlayerRejoin(amongUsPlayer)
+        roleRevealManager.onPlayerRejoin(amongUsPlayer)
         amongUsPlayer.modification?.onStart()
         audiences.forEach { it.setDirty() }
         if (!amongUsPlayer.isAlive) amongUsPlayer.addGhostImprovements()
@@ -373,13 +378,29 @@ class Game(
 
     fun start() {
         if (phase != GamePhase.STARTING && phase != GamePhase.LOBBY) return
-        actionLog.add(GameActionElements.Start)
+        if (area.gameSpawn == null) throw IllegalStateException("Game spawn is not set")
+        if (area.lobbySpawn == null) throw IllegalStateException("Lobby spawn is not set")
+        phase = GamePhase.REVEALING_ROLES
+        roleManager.assign()
+        chatManager.start()
+
+        for (player in players) {
+            player.preStart()
+        }
+
+        roleRevealManager.start() // delegate to roleRevealManager.start()
+    }
+
+    internal fun startGame() {
+        if (phase != GamePhase.REVEALING_ROLES) return
         phase = GamePhase.RUNNING
+        actionLog.add(GameActionElements.Start)
         logger.info("Game started")
+
         roleManager.start()
         taskManager.start()
-        chatManager.start()
-        val gameSpawn = area.gameSpawn ?: throw IllegalStateException("Game spawn not set")
+
+        val gameSpawn = area.gameSpawn ?: throw IllegalStateException("Game spawn is not set")
         val imposterTeamMatesMessage = textComponent {
             translatable("team.imposters.teammates") {
                 args {
