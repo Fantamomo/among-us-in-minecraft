@@ -472,8 +472,9 @@ class Game(
     }
 
     fun checkWin() {
-        logger.trace("Checking win")
+        if (!phase.isPlaying) return
         if (!settings[SettingsKey.DEV.DO_WIN_CHECK]) return
+        logger.trace("Checking win")
 
         if (checkRoleWins(WinCheckPhase.PRE)) return
 
