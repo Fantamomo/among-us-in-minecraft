@@ -4,6 +4,8 @@ enum class GamePhase(val onDisconnectRemove: Boolean) {
     LOBBY(true),
     STARTING(true),
 
+    REVEALING_ROLES(false),
+
     RUNNING(false),
     CALLING_MEETING(false),
     DISCUSSION(false),
