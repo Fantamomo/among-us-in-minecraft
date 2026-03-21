@@ -44,11 +44,13 @@ object AmongUs : JavaPlugin() {
         slF4JLogger.info(buildString {
             append("Running v")
             append(pluginMeta.version)
-            AmongUsConstants.GIT_HASH?.take(8)?.let {
-                append(" (")
-                append(it)
-                append(")")
-            }
+            AmongUsConstants.GIT_HASH
+                ?.applyUnless(AmongUsConstants.IN_DEVELOPMENT) { take(8) }
+                ?.let {
+                    append(" (")
+                    append(it)
+                    append(")")
+                }
             append(" by Fantamomo")
         })
     }
