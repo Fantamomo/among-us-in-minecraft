@@ -558,30 +558,63 @@ class Game(
         actionLog.add(GameActionElements.End)
 
         if (ActionLogUploader.enabled()) {
-            val audience =
-                if (AmongUsConfig.ActionLogUpload.sendToPlayers) Audience.audience(bukkitPlayerList)
-                else hostPlayer ?: Audience.empty()
+            val targets =
+                if (AmongUsConfig.ActionLogUpload.sendToPlayers) bukkitPlayerList else listOfNotNull(hostPlayer)
             AmongUs.scope.launch {
-                val url = ActionLogManager.saveUploadAndRemove(actionLog)
-                if (url != null) {
-                    audience.sendComponent {
-                        translatable("action_log.uploaded") {
-                            args {
-                                component("url") {
-                                    text(url.toString())
-                                    hoverEvent(KHoverEventType.ShowText, Component.translatable("action_log.uploaded.hover"))
-                                    clickEvent(KClickEventType.OpenUrl) {
-                                        url(url)
+                val uploadPath = ActionLogManager.saveUploadAndRemove(actionLog)
+                if (uploadPath != null) {
+                    if (uploadPath.host == "localhost") {
+                        val uri = uploadPath.toURI()
+                        for (target in targets) {
+                            val url = URI(
+                                uri.scheme,
+                                uri.getUserInfo(),
+                                target.virtualHost?.hostString,
+                                uri.port,
+                                uri.getPath(),
+                                uri.getQuery(),
+                                uri.getFragment()
+                            ).toURL()
+                            target.sendComponent {
+                                translatable("action_log.uploaded") {
+                                    args {
+                                        component("url") {
+                                            text(url.toString())
+                                            hoverEvent(
+                                                KHoverEventType.ShowText,
+                                                Component.translatable("action_log.uploaded.hover")
+                                            )
+                                            clickEvent(KClickEventType.OpenUrl) {
+                                                url(url)
+                                            }
+                                        }
                                     }
                                 }
                             }
                         }
+                    } else {
+                        val message = textComponent {
+                            translatable("action_log.uploaded") {
+                                args {
+                                    component("url") {
+                                        text(uploadPath.toString())
+                                        hoverEvent(
+                                            KHoverEventType.ShowText,
+                                            Component.translatable("action_log.uploaded.hover")
+                                        )
+                                        clickEvent(KClickEventType.OpenUrl) {
+                                            url(uploadPath)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        targets.forEach { it.sendMessage(message) }
                     }
-                    logger.info("Uploaded action log to $url")
+                    logger.info("Uploaded action log to $uploadPath")
                 } else {
-                    audience.sendComponent {
-                        translatable("action_log.upload_failed")
-                    }
+                    val err = Component.translatable("action_log.upload_failed")
+                    targets.forEach { it.sendMessage(err) }
                     logger.warn("Failed to upload action log")
                 }
             }
