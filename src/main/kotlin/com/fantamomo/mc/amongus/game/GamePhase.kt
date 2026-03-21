@@ -22,7 +22,7 @@ enum class GamePhase(val onDisconnectRemove: Boolean) {
     /**
      * Represents the revealing roles phase of the game.
      *
-     * Time: TODO
+     * Time: 10 seconds
      * Next: [RUNNING]
      */
     REVEALING_ROLES(false),
