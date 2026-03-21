@@ -40,6 +40,87 @@ fun PaperCommand.gameCommand() = literal("game") {
     roleGameCommand()
     playerInfoGameCommand()
     switchHostGameCommand()
+    botGameCommand()
+}
+
+private fun PaperCommand.botGameCommand() = literal("bot") {
+    requires { sender is Player && sender.hasPermission(Permissions.ADMIN_GAME_BOT) }
+    literal("add") {
+        argument("name", BotNameArgumentType.NON_PLAYING_BOT) {
+            val botNameRef = argRef()
+            execute {
+                val auPlayer = PlayerManager.getPlayer(source.sender as Player)
+
+                if (auPlayer == null) {
+                    sendMessage {
+                        translatable("command.error.admin.game.bot.not_joined")
+                    }
+                    return@execute NO_SUCCESS
+                }
+
+                val game = auPlayer.game
+
+                if (game.phase != GamePhase.LOBBY && game.phase != GamePhase.STARTING) {
+                    sendMessage {
+                        translatable("command.error.admin.game.bot.started")
+                    }
+                    return@execute NO_SUCCESS
+                }
+
+                val botName = botNameRef.get()
+
+                game.addBot(botName)
+
+                sendMessage {
+                    translatable("command.success.admin.game.bot.add") {
+                        args {
+                            string("bot", botName.name)
+                        }
+                    }
+                }
+
+                SINGLE_SUCCESS
+            }
+        }
+    }
+    literal("remove") {
+        argument("name", BotNameArgumentType.PLAYING_BOT) {
+            val botNameRef = argRef()
+            execute {
+                val auPlayer = PlayerManager.getPlayer(source.sender as Player)
+
+                if (auPlayer == null) {
+                    sendMessage {
+                        translatable("command.error.admin.game.bot.not_joined")
+                    }
+                    return@execute NO_SUCCESS
+                }
+
+                val game = auPlayer.game
+
+                if (game.phase != GamePhase.LOBBY && game.phase != GamePhase.STARTING) {
+                    sendMessage {
+                        translatable("command.error.admin.game.bot.started")
+                    }
+                    return@execute NO_SUCCESS
+                }
+
+                val botName = botNameRef.get()
+
+                game.removeBot(botName)
+
+                sendMessage {
+                    translatable("command.success.admin.game.bot.remove") {
+                        args {
+                            string("bot", botName.name)
+                        }
+                    }
+                }
+
+                SINGLE_SUCCESS
+            }
+        }
+    }
 }
 
 private fun PaperCommand.switchHostGameCommand() = literal("switch_host") {

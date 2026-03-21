@@ -10,6 +10,7 @@ import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.manager.*
 import com.fantamomo.mc.amongus.manager.waypoint.WaypointManager
 import com.fantamomo.mc.amongus.player.*
+import com.fantamomo.mc.amongus.player.bot.BotName
 import com.fantamomo.mc.amongus.player.info.DeadReason
 import com.fantamomo.mc.amongus.role.RoleManager
 import com.fantamomo.mc.amongus.role.Team
@@ -139,6 +140,28 @@ class Game(
         audiences.forEach { it.setDirty() }
         logger.info("Adding player: ${player.name}")
         return true
+    }
+
+    fun addBot(name: BotName): Boolean {
+        if (phase != GamePhase.LOBBY && phase != GamePhase.STARTING) return false
+        if (players.size >= maxPlayers) return false
+        if (players.any { it.isBot && it.botName == name }) return false
+        PlayerManager.addBot(name, this)
+        return true
+    }
+
+    fun removeBot(botName: BotName) {
+        if (phase != GamePhase.LOBBY && phase != GamePhase.STARTING) return
+        val player = players.find { it.isBot && it.botName == botName } ?: return
+        val packet = ClientboundPlayerInfoRemovePacket(listOf(player.uuid))
+        for (online in Bukkit.getOnlinePlayers()) {
+            @Suppress("USELESS_ELVIS")
+            val connection = (online as CraftPlayer).handle.connection ?: continue
+            connection.send(packet)
+        }
+
+        removePlayer0(player)
+        player.mannequinController.despawn()
     }
 
     internal fun removePlayer0(player: AmongUsPlayer) {
@@ -449,8 +472,9 @@ class Game(
     }
 
     fun checkWin() {
-        logger.trace("Checking win")
+        if (!phase.isPlaying) return
         if (!settings[SettingsKey.DEV.DO_WIN_CHECK]) return
+        logger.trace("Checking win")
 
         if (checkRoleWins(WinCheckPhase.PRE)) return
 
