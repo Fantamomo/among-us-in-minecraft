@@ -8,7 +8,7 @@ import com.fantamomo.mc.amongus.role.Team
 object TorchModification : Modification<TorchModification, TorchModification.AssignedTorchModification> {
     override val id: String = "torch"
 
-    override fun canAssignTo(player: AmongUsPlayer) = player.assignedRole?.definition?.team != Team.IMPOSTERS
+    override fun canAssignTo(player: AmongUsPlayer) = player.role.definition.team != Team.IMPOSTERS
 
     override fun assignTo(player: AmongUsPlayer) = AssignedTorchModification(player)
 
