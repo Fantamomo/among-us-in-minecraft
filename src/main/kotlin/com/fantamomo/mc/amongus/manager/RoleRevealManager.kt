@@ -9,6 +9,9 @@ import com.fantamomo.mc.amongus.game.GamePhase
 import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import com.fantamomo.mc.amongus.player.HumanAmongUsPlayer
+import com.fantamomo.mc.amongus.player.humanOrNull
+import com.fantamomo.mc.amongus.player.isBot
 import com.fantamomo.mc.amongus.util.internal.NMS
 import io.papermc.paper.datacomponent.item.ResolvableProfile
 import net.kyori.adventure.text.Component
@@ -54,6 +57,7 @@ class RoleRevealManager(val game: Game) {
 
         for (player in game.players) {
             player.mannequinController.hideFromAll()
+            if (player.isBot) continue
             val p = player.player ?: continue
             p.isInvisible = true
             p.teleportAsync(cameraPos)
@@ -73,7 +77,7 @@ class RoleRevealManager(val game: Game) {
         }, REVEAL_DURATION_TICKS)
     }
 
-    internal fun onPlayerRejoin(player: AmongUsPlayer) {
+    internal fun onPlayerRejoin(player: HumanAmongUsPlayer) {
         if (game.phase != GamePhase.REVEALING_ROLES) return
         val p = player.player ?: return
         val viewEntity = viewEntity ?: return
@@ -108,7 +112,7 @@ class RoleRevealManager(val game: Game) {
     private fun spawnRevealEntities(
         base: Location,
         forward: Vector,
-        player: AmongUsPlayer
+        player: HumanAmongUsPlayer
     ): PlayerRevealEntities {
         val right = forward.clone().crossProduct(Vector(0.0, 1.0, 0.0)).normalize()
 
@@ -147,7 +151,7 @@ class RoleRevealManager(val game: Game) {
             scale = SCALE_BODY,
         )
 
-        val abilities: MutableList<AssignedAbility<*, *>> = player.abilities
+        val abilities: List<AssignedAbility<*, *>> = player.abilities
         val items: List<AbilityItem> = abilities.flatMap { it.items }
 
         val abilityEntities = items.mapIndexed { index, abilityItem ->
@@ -314,7 +318,7 @@ class RoleRevealManager(val game: Game) {
         }
     }
 
-    private fun buildRoleText(player: AmongUsPlayer): Component {
+    private fun buildRoleText(player: HumanAmongUsPlayer): Component {
         val role = player.assignedRole
             ?: return Component.translatable("game.reveal_roles.role.none")
 
@@ -342,7 +346,7 @@ class RoleRevealManager(val game: Game) {
 
         for (player in game.players) {
             player.mannequinController.showToSeeingPlayers()
-            val p = player.player ?: continue
+            val p = player.humanOrNull?.player ?: continue
             p.isInvisible = false
             ignorePlayerStopSpectating = true
             p.setCamera(null)

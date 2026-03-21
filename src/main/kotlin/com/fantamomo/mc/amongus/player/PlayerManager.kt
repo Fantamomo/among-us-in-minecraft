@@ -25,33 +25,38 @@ object PlayerManager {
 
     fun getPlayer(uuid: UUID) = players.find { it.uuid == uuid }
 
+    fun getHumanPlayer(uuid: UUID) = players.find { it.uuid == uuid } as? HumanAmongUsPlayer
+
     fun getPlayer(mannequin: Mannequin) = players.find { it.mannequinController.getEntity() == mannequin }
 
     fun getPlayer(name: String) = players.find { it.name.equals(name, ignoreCase = true) }
 
     @NMS
-    internal fun joinGame(player: Player, game: Game): AmongUsPlayer {
+    internal fun joinGame(player: Player, game: Game): HumanAmongUsPlayer {
         if (exists(player.uniqueId)) throw IllegalStateException("Player already in a game")
-        val auPlayer = AmongUsPlayer(player.uniqueId, player.name, game, player.location)
+        val auPlayer = HumanAmongUsPlayer(player.uniqueId, player.name, game, player.location)
         LastPlayerLocationManager.set(player.uniqueId, player.location)
         auPlayer.player = player
 
         auPlayer.mannequinController.spawn()
+
+        AmongUs.server.scheduler.runTaskLater(AmongUs, { ->
+            auPlayer.mannequinController.showToAll()
+        }, 1L)
 
         players.add(auPlayer)
         game.players.add(auPlayer)
 
         val nmsPlayer = (player as CraftPlayer).handle
 
+        val packet = ClientboundPlayerInfoUpdatePacket.createSinglePlayerInitializing(
+            nmsPlayer,
+            true
+        )
         player.server.onlinePlayers.forEach {
             it.hidePlayer(AmongUs, player)
             @Suppress("UNNECESSARY_SAFE_CALL")
-            (it as CraftPlayer).handle.connection?.send(
-                ClientboundPlayerInfoUpdatePacket.createSinglePlayerInitializing(
-                    nmsPlayer,
-                    true
-                )
-            )
+            (it as CraftPlayer).handle.connection?.send(packet)
         }
         player.teleportAsync(game.area.lobbySpawn ?: throw IllegalStateException("Lobby spawn not set"))
             .thenAccept {
@@ -69,7 +74,7 @@ object PlayerManager {
     }
 
     internal fun onPlayerQuit(player: Player) {
-        val auPlayer = getPlayer(player.uniqueId) ?: return
+        val auPlayer = getHumanPlayer(player.uniqueId) ?: return
         auPlayer.restorePlayer()
 
         if (auPlayer.game.phase.onDisconnectRemove) {
@@ -84,31 +89,35 @@ object PlayerManager {
     internal fun gameEnds(amongUsPlayer: AmongUsPlayer, teleport: Boolean = true) {
         amongUsPlayer.modification?.onGameEnd()
         amongUsPlayer.modification?.onEnd()
-        val player = amongUsPlayer.player
-        if (player != null) {
-            if (teleport) player.teleportAsync(amongUsPlayer.locationBeforeGame)
-            player.inventory.clear()
-            amongUsPlayer.player = null
+        if (amongUsPlayer.isHuman) {
+            val player = amongUsPlayer.player
+            if (player != null) {
+                if (teleport) player.teleportAsync(amongUsPlayer.locationBeforeGame)
+                player.inventory.clear()
+                amongUsPlayer.player = null
+            }
         }
         amongUsPlayer.mannequinController.despawn()
-        amongUsPlayer.statistics.onGameStop()
+        amongUsPlayer.humanOrNull?.statistics?.onGameStop()
         players.remove(amongUsPlayer)
     }
 
     fun leaveGame(player: AmongUsPlayer, teleport: Boolean = true) {
         val game = player.game
         if (game.phase != GamePhase.LOBBY) return
-        val p = player.player
-        val clearPlayer = game.leavePlayer(player, teleport)
-        if (p != null) {
-            p.inventory.clear()
-            for (online in Bukkit.getOnlinePlayers()) {
-                online.showPlayer(AmongUs, p)
+        if (player.isHuman) {
+            val p = player.player
+            val clearPlayer = game.leavePlayer(player, teleport)
+            if (p != null) {
+                p.inventory.clear()
+                for (online in Bukkit.getOnlinePlayers()) {
+                    online.showPlayer(AmongUs, p)
+                }
             }
+            if (clearPlayer) player.player = null
+            player.wardrobeMannequin?.remove()
+            player.mannequinController.despawn()
         }
-        if (clearPlayer) player.player = null
-        player.wardrobeMannequin?.remove()
-        player.mannequinController.despawn()
         players.remove(player)
     }
 
@@ -117,7 +126,7 @@ object PlayerManager {
         val connection = (player as CraftPlayer).handle.connection
         for (playingPlayer in players) {
             playingPlayer.mannequinController.updateNameTag(player, force = true)
-            val bukkitPlayer = playingPlayer.player ?: continue
+            val bukkitPlayer = playingPlayer.humanOrNull?.player ?: continue
             player.hidePlayer(AmongUs, bukkitPlayer)
             @Suppress("UNNECESSARY_SAFE_CALL")
             connection?.send(
@@ -164,14 +173,15 @@ object PlayerManager {
         game.onRejoin(amongUsPlayer)
     }
 
-    fun getPlayer(player: Player): AmongUsPlayer? {
-        val amongUsPlayer = getPlayer(player.uniqueId)
+    fun getPlayer(player: Player): HumanAmongUsPlayer? {
+        val amongUsPlayer = getHumanPlayer(player.uniqueId)
         amongUsPlayer?.player = player
         return amongUsPlayer
     }
 
     fun stop() {
         for (player in players) {
+            if (player.isBot) continue
             player.player?.teleportAsync(player.locationBeforeGame)
             player.player?.inventory?.clear()
             player.restorePlayer()
