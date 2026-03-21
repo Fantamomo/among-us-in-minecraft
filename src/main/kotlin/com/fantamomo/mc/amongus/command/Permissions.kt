@@ -42,6 +42,7 @@ object Permissions {
     val ADMIN_GAME_LIST = perm("admin.game.list", PermissionDefault.OP)
     val ADMIN_GAME_JOIN = perm("admin.game.join", PermissionDefault.OP)
     val ADMIN_GAME_CREATE = perm("admin.game.create", PermissionDefault.OP)
+    val ADMIN_GAME_BOT = perm("admin.game.bot", PermissionDefault.OP)
 
     val ADMIN_SET_ADD_TO_RECENTLY_CHANGED = perm("admin.set.add_to_recently_changed", PermissionDefault.OP)
 
