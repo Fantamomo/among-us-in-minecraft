@@ -6,7 +6,6 @@ import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.format.NamedTextColor
 
 sealed interface DeadReason {
 
@@ -46,7 +45,7 @@ sealed interface DeadReason {
                         "murderer",
                         Component.text(
                             murderer.name,
-                            murderer.assignedRole?.definition?.team?.textColor ?: NamedTextColor.WHITE
+                            murderer.role.definition.team.textColor
                         )
                     )
                 }
