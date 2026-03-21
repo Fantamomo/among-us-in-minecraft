@@ -3,6 +3,7 @@ package com.fantamomo.mc.amongus.ability.builder
 import com.fantamomo.mc.amongus.ability.AssignedAbility
 import com.fantamomo.mc.amongus.ability.item.AbilityItem
 import org.bukkit.inventory.ItemStack
+import org.bukkit.inventory.ItemType
 
 class DSLAbilityItem(
     ability: AssignedAbility<*, *>,
@@ -35,6 +36,8 @@ class DSLAbilityItem(
 
         return AbilityItemState.ACTIVE to null
     }
+
+    override val displayItem: ItemType = states[AbilityItemState.ACTIVE]?.render(ctx)?.type?.asItemType() ?: ItemType.AIR
 
     override fun getItemStack(): ItemStack {
         val (state, _) = computeState()
