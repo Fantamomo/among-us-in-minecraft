@@ -7,7 +7,6 @@ import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.ability.Ability
 import com.fantamomo.mc.amongus.ability.AssignedAbility
-import com.fantamomo.mc.amongus.ability.abilities.ReportAbility
 import com.fantamomo.mc.amongus.ability.item.AbilityItem
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.game.GamePhase
@@ -188,17 +187,6 @@ class HumanAmongUsPlayer internal constructor(
     fun isInGhostForm(): Boolean = game.ghostFormManager.isInGhostForm(this)
 
     fun isHost() = game.host === this
-
-    override fun preStart() {
-        val player = player
-        var role = assignedRole
-        if (role == null) {
-            role = CrewmateRole.assignTo(this)
-            assignedRole = role
-        }
-        addNewAbility(ReportAbility)
-        role.definition.defaultAbilities.forEach { addNewAbility(it) }
-    }
 
     override fun start() {
         val player = player
