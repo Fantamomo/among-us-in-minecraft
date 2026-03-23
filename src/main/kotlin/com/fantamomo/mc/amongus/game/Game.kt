@@ -112,10 +112,11 @@ class Game(
             if (value != field) {
                 actionLog.add(GameActionElements.PhaseChange(field, value))
             }
+            field = value
             for (player in players) {
                 if (player.isHuman && player.player != null) player.lastSeen = value
+                else if (player.isBot) player.controller.onPhaseChange()
             }
-            field = value
         }
 
     var resultMessage: Component? = null
@@ -152,7 +153,7 @@ class Game(
 
     fun removeBot(botName: BotName) {
         if (phase != GamePhase.LOBBY && phase != GamePhase.STARTING) return
-        val player = players.find { it.isBot && it.botName == botName } ?: return
+        val player = players.find { it.isBot && it.botName == botName }?.botOrNull ?: return
         val packet = ClientboundPlayerInfoRemovePacket(listOf(player.uuid))
         for (online in Bukkit.getOnlinePlayers()) {
             @Suppress("USELESS_ELVIS")
@@ -162,6 +163,7 @@ class Game(
 
         removePlayer0(player)
         player.mannequinController.despawn()
+        player.controller.entity.remove()
     }
 
     internal fun removePlayer0(player: AmongUsPlayer) {

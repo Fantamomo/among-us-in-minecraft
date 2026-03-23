@@ -4,13 +4,18 @@ import com.destroystokyo.paper.profile.PlayerProfile
 import com.fantamomo.mc.amongus.ability.Ability
 import com.fantamomo.mc.amongus.ability.AbilityManager
 import com.fantamomo.mc.amongus.ability.AssignedAbility
+import com.fantamomo.mc.amongus.ability.abilities.ReportAbility
 import com.fantamomo.mc.amongus.ability.item.AbilityItem
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.game.GamePhase
 import com.fantamomo.mc.amongus.modification.AssignedModification
+import com.fantamomo.mc.amongus.modification.Modification
 import com.fantamomo.mc.amongus.player.info.DeadReason
 import com.fantamomo.mc.amongus.role.AssignedRole
+import com.fantamomo.mc.amongus.role.crewmates.CrewmateRole
+import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.task.TaskManager
+import com.fantamomo.mc.amongus.util.log.elements.AssignActionElements
 import net.kyori.adventure.audience.Audience
 import org.bukkit.Location
 import org.bukkit.entity.Mannequin
@@ -97,11 +102,37 @@ sealed class AbstractAmongUsPlayer(
     internal open fun notifyAbilityItemChange(item: AbilityItem) {}
 
     internal open fun preStart() {
-
+        var role = assignedRole
+        if (role == null) {
+            role = CrewmateRole.assignTo(this)
+            assignedRole = role
+        }
+        addNewAbility(ReportAbility)
+        role.definition.defaultAbilities.forEach { addNewAbility(it) }
     }
 
     internal open fun start() {
+        var role = assignedRole
+        if (role == null) {
+            role = CrewmateRole.assignTo(this)
+            assignedRole = role
+        }
+        var modification = modification
+        if (modification == null && game.settings[SettingsKey.MODIFIER.ENABLED]) {
+            modification = Modification.randomModification(this)
+            if (modification != null) {
+                game.actionLog.add(AssignActionElements.AssignModification(uuid, modification.definition.id))
+                this.modification = modification
+            }
+        }
+        modification?.onGameStart()
+        modification?.onStart()
 
+        for (player in game.players) {
+            if (player === this || player.isBot) continue
+            val p = player.player ?: continue
+            mannequinController.updateNameTag(p)
+        }
     }
 
     internal fun addGhostImprovements() {

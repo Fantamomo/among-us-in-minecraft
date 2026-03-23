@@ -288,6 +288,7 @@ object PlayerManager {
         amongUsPlayer.mannequinController.hideFromSelf()
         amongUsPlayer.wardrobeMannequin?.let { player.showEntity(AmongUs, it) }
         amongUsPlayer.disconnectedAt = null
+        amongUsPlayer.lastSeen = game.phase
         game.onRejoin(amongUsPlayer)
     }
 
