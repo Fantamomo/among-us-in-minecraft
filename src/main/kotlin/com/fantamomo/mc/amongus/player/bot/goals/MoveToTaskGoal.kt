@@ -1,7 +1,9 @@
 package com.fantamomo.mc.amongus.player.bot.goals
 
 import com.fantamomo.mc.amongus.player.BotAmongUsPlayer
+import com.fantamomo.mc.amongus.task.BotSupportingTask
 import com.fantamomo.mc.amongus.task.TaskManager
+import com.fantamomo.mc.amongus.util.ticks
 import net.minecraft.core.BlockPos
 import net.minecraft.world.entity.PathfinderMob
 import net.minecraft.world.entity.ai.goal.MoveToBlockGoal
@@ -15,7 +17,7 @@ class MoveToTaskGoal(
 ) : MoveToBlockGoal(mob, speedModifier, 0, 0), CustomGoalDebugName {
 
     companion object {
-        private const val COMPLETE_DELAY_TICKS = 100
+        private const val DEFAULT_COMPLETE_DELAY_TICKS = 100
     }
 
     private enum class State {
@@ -25,6 +27,7 @@ class MoveToTaskGoal(
     }
 
     private var targetTask: TaskManager.RegisteredTask? = null
+    private var completeDelayTicks: Int? = null
     private var state = State.IDLE
     private var workingTicks = 0
 
@@ -35,7 +38,7 @@ class MoveToTaskGoal(
 
     override fun canContinueToUse(): Boolean = when (state) {
         State.NAVIGATING -> tryTicks in 0..500 && !mob.navigation.isStuck && isValidTarget(mob.level(), blockPos)
-        State.WORKING -> workingTicks < COMPLETE_DELAY_TICKS
+        State.WORKING -> workingTicks < (completeDelayTicks ?: DEFAULT_COMPLETE_DELAY_TICKS)
         State.IDLE -> false
     }
 
@@ -49,6 +52,7 @@ class MoveToTaskGoal(
     override fun stop() {
         super.stop()
         targetTask = null
+        completeDelayTicks = null
         workingTicks = 0
         state = State.IDLE
     }
@@ -70,7 +74,7 @@ class MoveToTaskGoal(
 
             State.WORKING -> {
                 workingTicks++
-                if (workingTicks >= COMPLETE_DELAY_TICKS) {
+                if (workingTicks >= (completeDelayTicks ?: DEFAULT_COMPLETE_DELAY_TICKS)) {
                     completeCurrentTask()
                 }
             }
@@ -92,6 +96,7 @@ class MoveToTaskGoal(
         } ?: return false
 
         targetTask = closest
+        completeDelayTicks = (closest.task as? BotSupportingTask)?.getTaskDurationForBot()?.getDuration(player)?.ticks?.toInt()
         blockPos = closest.task.location.run { BlockPos(blockX, blockY - 1, blockZ) }
         mob.movingTarget = blockPos
         return true
