@@ -105,11 +105,12 @@ class TaskManager(val game: Game) {
         if (allTaskCompleted()) game.checkWin()
     }
 
-    fun <T> completeOneTaskStep(task: T) where T : Steppable, T : AssignedTask<*, *> {
+    fun <T> completeOneTaskStep(task: T) where T : MultiStepTask, T : AssignedTask<*, *> {
         if (task.step + 1 >= task.maxSteps) {
             completeTask(task)
             return
         }
+        task.nextStep()
         val player = task.player
         game.actionLog.add(
             TaskActionElements.TaskStepCompleted(
@@ -254,7 +255,7 @@ class TaskManager(val game: Game) {
         var completed: Boolean = false
         var isShown: Boolean = false
         val started: Boolean
-            get() = completed || (task as? Steppable)?.step.let { it != null && it > 0 }
+            get() = completed || (task as? MultiStepTask)?.step.let { it != null && it > 0 }
 
         val display: BlockDisplay = task.location.world.spawn(task.location, BlockDisplay::class.java) { display ->
             display.isVisibleByDefault = false
