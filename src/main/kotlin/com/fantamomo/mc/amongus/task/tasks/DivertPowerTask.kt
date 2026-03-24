@@ -3,7 +3,7 @@ package com.fantamomo.mc.amongus.task.tasks
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.task.GuiAssignedTask
-import com.fantamomo.mc.amongus.task.Steppable
+import com.fantamomo.mc.amongus.task.MultiStepTask
 import com.fantamomo.mc.amongus.task.Task
 import com.fantamomo.mc.amongus.task.TaskType
 import com.fantamomo.mc.amongus.util.hideTooltip
@@ -26,7 +26,7 @@ object DivertPowerTask : Task<DivertPowerTask, DivertPowerTask.AssignedDivertPow
     override fun assignTo(player: AmongUsPlayer) = AssignedDivertPowerTask(player)
 
     class AssignedDivertPowerTask(override val player: AmongUsPlayer) :
-        GuiAssignedTask<DivertPowerTask, AssignedDivertPowerTask>(), Steppable {
+        GuiAssignedTask<DivertPowerTask, AssignedDivertPowerTask>(), MultiStepTask {
 
         override val task = DivertPowerTask
         override var location: Location = player.game.area.tasks[id]?.random() ?: throw IllegalArgumentException("No location for task $id")
@@ -38,6 +38,11 @@ object DivertPowerTask : Task<DivertPowerTask, DivertPowerTask.AssignedDivertPow
         override var step: Int = 0
         override val maxSteps: Int = 2
 
+        override fun nextStep() {
+            step++
+            location = acceptLocation
+        }
+
         private val border = itemStack(Material.BLACK_STAINED_GLASS_PANE).hideTooltip()
         private val leverOff = itemStack(Material.GRAY_DYE).hideTooltip().markWith("lever_off")
         private val leverOn = itemStack(Material.LIME_DYE).hideTooltip().markWith("lever_on")
@@ -48,8 +53,6 @@ object DivertPowerTask : Task<DivertPowerTask, DivertPowerTask.AssignedDivertPow
                 if (step == 0 && item.isMarkedWith("lever_off")) {
                     inv.setItem(event.slot, leverOn.clone())
                     player.game.taskManager.completeOneTaskStep(this)
-                    step++
-                    location = acceptLocation
                     stop()
                 } else if (step == 1 && item.isMarkedWith("accept")) {
                     player.game.taskManager.completeTask(this)

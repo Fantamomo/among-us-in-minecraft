@@ -2,10 +2,7 @@ package com.fantamomo.mc.amongus.task.tasks
 
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
-import com.fantamomo.mc.amongus.task.GuiAssignedTask
-import com.fantamomo.mc.amongus.task.Steppable
-import com.fantamomo.mc.amongus.task.Task
-import com.fantamomo.mc.amongus.task.TaskType
+import com.fantamomo.mc.amongus.task.*
 import com.fantamomo.mc.amongus.task.tasks.FixWireTask.AssignedFixWireTask.Companion.STEPS
 import com.fantamomo.mc.amongus.util.hideTooltip
 import net.kyori.adventure.text.Component
@@ -16,6 +13,7 @@ import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.milliseconds
 
 object FixWireTask : Task<FixWireTask, FixWireTask.AssignedFixWireTask> {
 
@@ -33,7 +31,7 @@ object FixWireTask : Task<FixWireTask, FixWireTask.AssignedFixWireTask> {
 
     class AssignedFixWireTask(
         override val player: AmongUsPlayer,
-    ) : GuiAssignedTask<FixWireTask, AssignedFixWireTask>(), Steppable {
+    ) : GuiAssignedTask<FixWireTask, AssignedFixWireTask>(), MultiStepTask, BotSupportingTask {
         private val locations =
             player.game.area.tasks[id]?.toMutableSet() ?: throw IllegalArgumentException("No locations for task $id")
         override var location: Location = locations.random().also { locations.remove(it) }
@@ -52,6 +50,13 @@ object FixWireTask : Task<FixWireTask, FixWireTask.AssignedFixWireTask> {
         override var step = 0
 
         override val maxSteps: Int = STEPS
+
+        override fun getTaskDurationForBot() = BotSupportingTask.BotTaskDuration.percentage(4813.milliseconds, 5)
+
+        override fun nextStep() {
+            step++
+            location = locations.random().also { locations.remove(it) }
+        }
 
         override fun setupInventory() {
             generateGrid()
@@ -104,9 +109,7 @@ object FixWireTask : Task<FixWireTask, FixWireTask.AssignedFixWireTask> {
                     }
                 }
             }
-            location = locations.random().also { locations.remove(it) }
             player.game.taskManager.completeOneTaskStep(this)
-            step++
             stop()
         }
 

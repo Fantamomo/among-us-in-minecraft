@@ -2,10 +2,7 @@ package com.fantamomo.mc.amongus.task.tasks
 
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
-import com.fantamomo.mc.amongus.task.GuiAssignedTask
-import com.fantamomo.mc.amongus.task.Steppable
-import com.fantamomo.mc.amongus.task.Task
-import com.fantamomo.mc.amongus.task.TaskType
+import com.fantamomo.mc.amongus.task.*
 import com.fantamomo.mc.amongus.util.Cooldown
 import com.fantamomo.mc.amongus.util.hideTooltip
 import net.kyori.adventure.text.Component
@@ -28,7 +25,7 @@ object FuelEnginesTask : Task<FuelEnginesTask, FuelEnginesTask.AssignedFuelEngin
     override fun assignTo(player: AmongUsPlayer) = AssignedFuelEnginesTask(player)
 
     class AssignedFuelEnginesTask(override val player: AmongUsPlayer) :
-        GuiAssignedTask<FuelEnginesTask, AssignedFuelEnginesTask>(), Steppable {
+        GuiAssignedTask<FuelEnginesTask, AssignedFuelEnginesTask>(), MultiStepTask, BotSupportingTask {
 
         override val task = FuelEnginesTask
         private val refuelLocation = player.game.area.tasks[REFUEL_STATION]?.random() ?: throw IllegalArgumentException("No refuel location for task $id")
@@ -45,10 +42,17 @@ object FuelEnginesTask : Task<FuelEnginesTask, FuelEnginesTask.AssignedFuelEngin
         override var step: Int = 0
         override val maxSteps: Int = 4
 
+        override fun nextStep() {
+            step++
+            location = if (step % 2 == 1) refuelLocation else engineLocations[step / 2]
+        }
+
         private val cooldown = Cooldown(3.seconds)
         private val border = itemStack(Material.BLACK_STAINED_GLASS_PANE).hideTooltip()
         private val emptyBucket = itemStack(Material.BUCKET).hideTooltip().markWith("empty")
         private val fullBucket = itemStack(Material.LAVA_BUCKET).hideTooltip().markWith("full")
+
+        override fun getTaskDurationForBot() = BotSupportingTask.BotTaskDuration.range(3.seconds, 3.seconds + 10.seconds)
 
         override fun onInventoryClick(event: InventoryClickEvent) {
             val item = event.currentItem ?: return
@@ -65,10 +69,8 @@ object FuelEnginesTask : Task<FuelEnginesTask, FuelEnginesTask.AssignedFuelEngin
             if (cooldown.isFinished()) {
                 cooldown.reset()
                 if (step < maxSteps) {
-                    location = if (step % 2 == 1) refuelLocation else engineLocations[step / 2]
                     stop()
                     player.game.taskManager.completeOneTaskStep(this)
-                    step++
                 } else {
                     player.game.taskManager.completeTask(this)
                 }
