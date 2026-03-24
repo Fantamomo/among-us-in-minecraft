@@ -90,13 +90,14 @@ import kotlin.time.Duration
  * @since 1.0-SNAPSHOT
  */
 class MannequinController(
-    private val owner: AmongUsPlayer
+    val owner: AmongUsPlayer
 ) {
 
     /* =========================
        === Internal State ===
        ========================= */
 
+    private var handle: AmongUsMannequin? = null
     private var mannequin: Mannequin? = null
     private var lastLocation: Location? = null
 
@@ -126,12 +127,10 @@ class MannequinController(
         if (realLocation.world !== owner.game.world) {
             realLocation = owner.game.world.spawnLocation.clone()
         }
-        mannequin = owner.game.world.spawn(realLocation, Mannequin::class.java) {
-            it.profile = ResolvableProfile.resolvableProfile(owner.profile)
-            it.isPersistent = false
-            it.isInvulnerable = true
-            it.isImmovable = true
-        }
+        val handle = AmongUsMannequin(this)
+        this.handle = handle
+
+        mannequin = handle.bukkitEntity as Mannequin
 
         player?.hideEntity(AmongUs, mannequin!!)
 
