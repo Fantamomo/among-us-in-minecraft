@@ -58,8 +58,9 @@ class BotController(val player: BotAmongUsPlayer) {
 
     private fun addMeetingGoals() {
         val gs = handle.goalSelector
-        gs.addGoal(1, LookAtPlayerGoal(handle, Player::class.java, 12.0f, 1.0f))
-        gs.addGoal(2, RandomLookAroundGoal(handle))
+        gs.addGoal(1, RandomStrollGoal(handle, 1.0, 40, false))
+        gs.addGoal(2, LookAtPlayerGoal(handle, Player::class.java, 12.0f, 1.0f))
+        gs.addGoal(3, RandomLookAroundGoal(handle))
     }
 
     private fun applyGoals(phase: GamePhase, setup: () -> Unit) {
