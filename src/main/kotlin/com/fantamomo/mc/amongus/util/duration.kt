@@ -41,3 +41,6 @@ fun Duration.toSmartString(minUnit: DurationUnit = DurationUnit.NANOSECONDS): St
 
     return sign + parts.joinToString(" ")
 }
+
+val Duration.ticks: Long
+    get() = this.inWholeSeconds * 20

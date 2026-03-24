@@ -2,10 +2,7 @@ package com.fantamomo.mc.amongus.task.tasks
 
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
-import com.fantamomo.mc.amongus.task.GuiAssignedTask
-import com.fantamomo.mc.amongus.task.Task
-import com.fantamomo.mc.amongus.task.TaskType
-import com.fantamomo.mc.amongus.task.areaLocation
+import com.fantamomo.mc.amongus.task.*
 import com.fantamomo.mc.amongus.util.hideTooltip
 import io.papermc.paper.datacomponent.DataComponentTypes
 import net.kyori.adventure.text.Component
@@ -15,6 +12,7 @@ import org.bukkit.Material
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryDragEvent
 import org.bukkit.inventory.Inventory
+import kotlin.time.Duration.Companion.milliseconds
 
 object SwipeCardTask : Task<SwipeCardTask, SwipeCardTask.AssignedSwipeCardTask> {
     override val id: String = "swipe_card"
@@ -25,7 +23,7 @@ object SwipeCardTask : Task<SwipeCardTask, SwipeCardTask.AssignedSwipeCardTask> 
     override fun assignTo(player: AmongUsPlayer) = AssignedSwipeCardTask(player)
 
     class AssignedSwipeCardTask(override val player: AmongUsPlayer) :
-        GuiAssignedTask<SwipeCardTask, AssignedSwipeCardTask>() {
+        GuiAssignedTask<SwipeCardTask, AssignedSwipeCardTask>(), BotSupportingTask {
 
         override val task = SwipeCardTask
         override val location: Location = areaLocation ?: throw IllegalArgumentException("No location for task $id")
@@ -35,6 +33,8 @@ object SwipeCardTask : Task<SwipeCardTask, SwipeCardTask.AssignedSwipeCardTask> 
         val border = (getBorderItemSlots(SIZE) as MutableList<Int>).apply { removeAt(9); removeAt(9) }
 
         private var opened = false
+
+        override fun getTaskDurationForBot() = BotSupportingTask.BotTaskDuration.percentage(1664.milliseconds, 5)
 
         override fun onInventoryClick(event: InventoryClickEvent) {
             check()

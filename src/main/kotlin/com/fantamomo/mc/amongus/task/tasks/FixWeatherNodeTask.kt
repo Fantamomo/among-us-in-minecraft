@@ -2,10 +2,7 @@ package com.fantamomo.mc.amongus.task.tasks
 
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
-import com.fantamomo.mc.amongus.task.GuiAssignedTask
-import com.fantamomo.mc.amongus.task.Steppable
-import com.fantamomo.mc.amongus.task.Task
-import com.fantamomo.mc.amongus.task.TaskType
+import com.fantamomo.mc.amongus.task.*
 import com.fantamomo.mc.amongus.util.hideTooltip
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
@@ -13,6 +10,7 @@ import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.inventory.Inventory
+import kotlin.time.Duration.Companion.milliseconds
 
 object FixWeatherNodeTask :
     Task<FixWeatherNodeTask, FixWeatherNodeTask.AssignedFixWeatherNodeTask> {
@@ -26,7 +24,7 @@ object FixWeatherNodeTask :
 
     class AssignedFixWeatherNodeTask(
         override val player: AmongUsPlayer
-    ) : GuiAssignedTask<FixWeatherNodeTask, AssignedFixWeatherNodeTask>(), Steppable {
+    ) : GuiAssignedTask<FixWeatherNodeTask, AssignedFixWeatherNodeTask>(), MultiStepTask, BotSupportingTask {
 
         override val task = FixWeatherNodeTask
 
@@ -41,6 +39,11 @@ object FixWeatherNodeTask :
         override var step = 0
         override val maxSteps = 2
 
+        override fun nextStep() {
+            step++
+            location = stage2Location
+        }
+
         override val inv: Inventory =
             Bukkit.createInventory(this, SIZE, Component.translatable("tasks.fix_weather_node.title"))
 
@@ -49,6 +52,8 @@ object FixWeatherNodeTask :
         private val backgroundItem = itemStack(Material.BLACK_STAINED_GLASS_PANE).hideTooltip()
         private val redItem = itemStack(Material.RED_STAINED_GLASS_PANE).hideTooltip().markWith("off2")
         private val greenItem = itemStack(Material.LIME_STAINED_GLASS_PANE).hideTooltip().markWith("on2")
+
+        override fun getTaskDurationForBot() = BotSupportingTask.BotTaskDuration.percentage((if (step == 0) 3000 else 1170).milliseconds, 2)
 
         override fun setupInventory() {
             repeat(SIZE) {
@@ -90,9 +95,7 @@ object FixWeatherNodeTask :
                 inv.setItem(slot, newItem)
 
                 if (leverSlots.all { inv.getItem(it)?.isMarkedWith("on") == true }) {
-                    location = stage2Location
                     player.game.taskManager.completeOneTaskStep(this)
-                    step++
                     stop()
                 }
             } else if (step == 1) {

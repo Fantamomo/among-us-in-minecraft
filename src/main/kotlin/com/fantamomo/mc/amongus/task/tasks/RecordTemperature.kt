@@ -16,6 +16,7 @@ import org.bukkit.Material
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.inventory.Inventory
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.milliseconds
 
 object RecordTemperature : Task<RecordTemperature, RecordTemperature.AssignedRecordTemperature> {
     override val id: String = "record_temperature"
@@ -25,7 +26,7 @@ object RecordTemperature : Task<RecordTemperature, RecordTemperature.AssignedRec
 
     override fun assignTo(player: AmongUsPlayer): AssignedRecordTemperature = AssignedRecordTemperature(player)
 
-    class AssignedRecordTemperature(override val player: AmongUsPlayer) : GuiAssignedTask<RecordTemperature, AssignedRecordTemperature>() {
+    class AssignedRecordTemperature(override val player: AmongUsPlayer) : GuiAssignedTask<RecordTemperature, AssignedRecordTemperature>(), BotSupportingTask {
         override val task: RecordTemperature = RecordTemperature
         override val inv: Inventory = Bukkit.createInventory(this, SIZE, Component.translatable(task.title))
         override val location: Location = areaLocation ?: error("No location for task $id")
@@ -34,6 +35,8 @@ object RecordTemperature : Task<RecordTemperature, RecordTemperature.AssignedRec
         private var currentTemp = Random.nextInt(32, 69)
         private val targetTemp = Random.nextInt(currentTemp - 30, currentTemp + 30)
             .takeUnless { currentTemp == it } ?: (currentTemp + 1)
+
+        override fun getTaskDurationForBot() = BotSupportingTask.BotTaskDuration.percentage(4595.milliseconds, 5)
 
         override fun setupInventory() {
             updateInventory()

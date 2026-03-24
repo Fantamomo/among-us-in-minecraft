@@ -2,10 +2,7 @@ package com.fantamomo.mc.amongus.task.tasks
 
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
-import com.fantamomo.mc.amongus.task.GuiAssignedTask
-import com.fantamomo.mc.amongus.task.Task
-import com.fantamomo.mc.amongus.task.TaskType
-import com.fantamomo.mc.amongus.task.areaLocation
+import com.fantamomo.mc.amongus.task.*
 import com.fantamomo.mc.amongus.util.hideTooltip
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
@@ -13,6 +10,7 @@ import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.inventory.Inventory
+import kotlin.time.Duration.Companion.milliseconds
 
 object InsertKeyTask : Task<InsertKeyTask, InsertKeyTask.AssignedInsertKeyTask> {
     override val id: String = "insert_key"
@@ -22,11 +20,13 @@ object InsertKeyTask : Task<InsertKeyTask, InsertKeyTask.AssignedInsertKeyTask> 
 
     override fun assignTo(player: AmongUsPlayer) = AssignedInsertKeyTask(player)
 
-    class AssignedInsertKeyTask(override val player: AmongUsPlayer) : GuiAssignedTask<InsertKeyTask, AssignedInsertKeyTask>() {
+    class AssignedInsertKeyTask(override val player: AmongUsPlayer) : GuiAssignedTask<InsertKeyTask, AssignedInsertKeyTask>(), BotSupportingTask {
         override val task = InsertKeyTask
         override val location: Location = areaLocation ?: error("No location found for $id")
         override val inv: Inventory = Bukkit.createInventory(this, SIZE, Component.translatable(""))
         private val target = targetSlots.random()
+
+        override fun getTaskDurationForBot() = BotSupportingTask.BotTaskDuration.percentage(1683.milliseconds, 5)
 
         override fun onInventoryClick(event: InventoryClickEvent) {
             val slot = event.slot
