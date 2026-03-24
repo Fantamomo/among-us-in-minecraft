@@ -26,7 +26,7 @@ object FixWeatherNodeTask :
 
     class AssignedFixWeatherNodeTask(
         override val player: AmongUsPlayer
-    ) : GuiAssignedTask<FixWeatherNodeTask, AssignedFixWeatherNodeTask>(), Steppable {
+    ) : GuiAssignedTask<FixWeatherNodeTask, AssignedFixWeatherNodeTask>(), Steppable/*, BotSupportingTask*/ {
 
         override val task = FixWeatherNodeTask
 
@@ -49,6 +49,8 @@ object FixWeatherNodeTask :
         private val backgroundItem = itemStack(Material.BLACK_STAINED_GLASS_PANE).hideTooltip()
         private val redItem = itemStack(Material.RED_STAINED_GLASS_PANE).hideTooltip().markWith("off2")
         private val greenItem = itemStack(Material.LIME_STAINED_GLASS_PANE).hideTooltip().markWith("on2")
+
+//        override fun getTaskDurationForBot() = BotSupportingTask.BotTaskDuration.percentage(1170.milliseconds, 5)
 
         override fun setupInventory() {
             repeat(SIZE) {

@@ -2,10 +2,7 @@ package com.fantamomo.mc.amongus.task.tasks
 
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
-import com.fantamomo.mc.amongus.task.GuiAssignedTask
-import com.fantamomo.mc.amongus.task.Task
-import com.fantamomo.mc.amongus.task.TaskType
-import com.fantamomo.mc.amongus.task.areaLocation
+import com.fantamomo.mc.amongus.task.*
 import com.fantamomo.mc.amongus.util.hideTooltip
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
@@ -14,6 +11,7 @@ import org.bukkit.Material
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.inventory.Inventory
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.milliseconds
 
 object GarbageTask : Task<GarbageTask, GarbageTask.AssignedGarbageTask> {
     override val id: String = "garbage"
@@ -24,7 +22,7 @@ object GarbageTask : Task<GarbageTask, GarbageTask.AssignedGarbageTask> {
     override fun assignTo(player: AmongUsPlayer) = AssignedGarbageTask(player)
 
     class AssignedGarbageTask(override val player: AmongUsPlayer) :
-        GuiAssignedTask<GarbageTask, AssignedGarbageTask>() {
+        GuiAssignedTask<GarbageTask, AssignedGarbageTask>(), BotSupportingTask {
 
         override val inv: Inventory =
             Bukkit.createInventory(this, SIZE, Component.translatable("tasks.garbage.title"))
@@ -34,6 +32,8 @@ object GarbageTask : Task<GarbageTask, GarbageTask.AssignedGarbageTask> {
         override val task = GarbageTask
 
         override val location: Location = areaLocation ?: throw IllegalArgumentException("No location for task $id")
+
+        override fun getTaskDurationForBot() = BotSupportingTask.BotTaskDuration.percentage(2380.milliseconds, 5)
 
         override fun onInventoryClick(event: InventoryClickEvent) {
             val slot = event.slot

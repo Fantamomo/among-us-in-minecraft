@@ -3,10 +3,7 @@ package com.fantamomo.mc.amongus.task.tasks
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
-import com.fantamomo.mc.amongus.task.GuiAssignedTask
-import com.fantamomo.mc.amongus.task.Task
-import com.fantamomo.mc.amongus.task.TaskType
-import com.fantamomo.mc.amongus.task.areaLocation
+import com.fantamomo.mc.amongus.task.*
 import com.fantamomo.mc.amongus.util.hideTooltip
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
@@ -17,6 +14,7 @@ import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.inventory.Inventory
 import org.bukkit.persistence.PersistentDataType
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.milliseconds
 
 object NumbersTask : Task<NumbersTask, NumbersTask.AssignedNumbersTask> {
     override val id: String = "numbers"
@@ -27,7 +25,7 @@ object NumbersTask : Task<NumbersTask, NumbersTask.AssignedNumbersTask> {
     override fun assignTo(player: AmongUsPlayer) = AssignedNumbersTask(player)
 
     class AssignedNumbersTask(override val player: AmongUsPlayer) :
-        GuiAssignedTask<NumbersTask, AssignedNumbersTask>() {
+        GuiAssignedTask<NumbersTask, AssignedNumbersTask>(), BotSupportingTask {
         override val task = NumbersTask
         override val location: Location = areaLocation ?: throw IllegalArgumentException("No location for task $id")
 
@@ -39,6 +37,8 @@ object NumbersTask : Task<NumbersTask, NumbersTask.AssignedNumbersTask> {
         private var currentNumber = 0
         private var ticks = 0
         private var until = -1
+
+        override fun getTaskDurationForBot() = BotSupportingTask.BotTaskDuration.percentage(16595.milliseconds, 5)
 
         override fun onInventoryClick(event: InventoryClickEvent) {
             if (until > ticks) return
