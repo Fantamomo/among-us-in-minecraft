@@ -10,15 +10,15 @@ class BotPathNavigation(
     level: Level,
 ) : GroundPathNavigation(mob, level) {
 
-    private val botPlayer get() = (mob as AmongUsZombie).controller.player
+    private val auZombie get() = mob as AmongUsZombie
+    private val botPlayer get() = auZombie.controller.player
     private lateinit var botEvaluator: BotNodeEvaluator
 
     private var ventCooldown = 0
-
     private var lastSpeed = 1.0
 
     override fun createPathFinder(maxVisitedNodes: Int): PathFinder {
-        botEvaluator = BotNodeEvaluator(mob as AmongUsZombie)
+        botEvaluator = BotNodeEvaluator(auZombie)
         nodeEvaluator = botEvaluator
         return PathFinder(nodeEvaluator, maxVisitedNodes)
     }
@@ -33,32 +33,26 @@ class BotPathNavigation(
         super.tick()
         if (ventCooldown > 0) return
 
-        val currentPath = path ?: return
-        if (currentPath.isDone) return
+        val currentPath = path?.takeUnless { it.isDone } ?: return
 
-        val nextNode = currentPath.nextNode ?: return
-        val nextPos = BlockPos(nextNode.x, nextNode.y, nextNode.z)
+        val nextNode = currentPath.nextNode
+        val nextKey = BlockPos.asLong(nextNode.x, nextNode.y, nextNode.z)
+        if (nextKey !in botEvaluator.ventExitsByEntry) return
 
         val ventManager = botPlayer.game.ventManager
         val currentPos = mob.blockPosition()
 
-        val entryVent = ventManager.vents.find { vent ->
+        val entryVent = ventManager.vents.firstOrNull { vent ->
             val vPos = vent.normalizedLocation.run { BlockPos(blockX, blockY, blockZ) }
-            currentPos.distSqr(vPos) <= BotNodeEvaluator.VENT_REACH_SQ.toLong()
+            currentPos.distSqr(vPos) <= BotNodeEvaluator.VENT_REACH_SQ
         } ?: return
 
-        val exitVent = entryVent.otherVents
-            .find { exit ->
-                val ePos = exit.normalizedLocation.run { BlockPos(blockX, blockY, blockZ) }
-                nextPos.distSqr(ePos) <= BotNodeEvaluator.VENT_REACH_SQ.toLong()
-            } ?: return
-
-        if (exitVent === entryVent) return
+        val exitVent = entryVent.otherVents.firstOrNull { exit ->
+            val ePos = exit.normalizedLocation.run { BlockPos(blockX, blockY, blockZ) }
+            BlockPos(nextNode.x, nextNode.y, nextNode.z).distSqr(ePos) <= BotNodeEvaluator.VENT_REACH_SQ
+        }?.takeUnless { it === entryVent } ?: return
 
         val endNode = currentPath.endNode ?: return
-        val targetX = endNode.x.toDouble()
-        val targetY = endNode.y.toDouble()
-        val targetZ = endNode.z.toDouble()
 
         ventManager.ventIn(botPlayer, entryVent)
         ventManager.changeVent(botPlayer, exitVent)
@@ -66,7 +60,6 @@ class BotPathNavigation(
 
         stop()
         ventCooldown = 40
-
-        super.moveTo(targetX, targetY, targetZ, lastSpeed)
+        super.moveTo(endNode.x.toDouble(), endNode.y.toDouble(), endNode.z.toDouble(), lastSpeed)
     }
 }
