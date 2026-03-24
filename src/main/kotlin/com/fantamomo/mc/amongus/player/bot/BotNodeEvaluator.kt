@@ -10,7 +10,7 @@ import net.minecraft.world.level.pathfinder.PathfindingContext
 import net.minecraft.world.level.pathfinder.WalkNodeEvaluator
 
 class BotNodeEvaluator(
-    private val mob: AmongUsZombie,
+    private val auZombie: AmongUsZombie,
 ) : WalkNodeEvaluator() {
 
     companion object {
@@ -19,45 +19,49 @@ class BotNodeEvaluator(
         const val VENT_REACH_SQ = 2 * 2
     }
 
-    private val botPlayer get() = mob.controller.player
+    private val botPlayer get() = auZombie.controller.player
 
-    private var ventExitsByEntry: Map<Long, List<BlockPos>> = emptyMap()
+    var ventExitsByEntry: Map<Long, List<BlockPos>> = emptyMap()
+        private set
+    private var ventGraphDirty = true
 
     private val ventExitNodes = mutableSetOf<Long>()
 
     override fun prepare(level: PathNavigationRegion, mob: Mob) {
         super.prepare(level, mob)
-        ventExitsByEntry = buildVentGraph()
+        if (ventGraphDirty) {
+            ventExitsByEntry = buildVentGraph()
+            ventGraphDirty = false
+        }
         ventExitNodes.clear()
     }
 
     override fun done() {
         super.done()
-        ventExitsByEntry = emptyMap()
         ventExitNodes.clear()
+    }
+
+    fun invalidateVentGraph() {
+        ventGraphDirty = true
     }
 
     private fun buildVentGraph(): Map<Long, List<BlockPos>> {
         if (!botPlayer.hasAbility(VentAbility)) return emptyMap()
 
-        val result = mutableMapOf<Long, MutableList<BlockPos>>()
-        for (vent in botPlayer.game.ventManager.vents) {
-            val entryPos = vent.normalizedLocation.toBlockPos()
-            val exits = vent.otherVents
-                .filter { it !== vent }
-                .map { it.normalizedLocation.toBlockPos() }
-            if (exits.isNotEmpty()) {
-                result.getOrPut(entryPos.asLong()) { mutableListOf() }.addAll(exits)
+        return buildMap {
+            for (vent in botPlayer.game.ventManager.vents) {
+                val exits = vent.otherVents
+                    .filter { it !== vent }
+                    .map { it.normalizedLocation.toBlockPos() }
+                if (exits.isNotEmpty()) {
+                    getOrPut(vent.normalizedLocation.toBlockPos().asLong()) { mutableListOf() }.addAll(exits)
+                }
             }
-        }
-        return result
+        } as Map<Long, List<BlockPos>>
     }
 
-    override fun getStart(): Node {
-        val node = super.getStart()
-        applyVentBonusIfNeeded(node)
-        return node
-    }
+    override fun getStart(): Node =
+        super.getStart().also { applyVentBonusIfNeeded(it) }
 
     override fun getNeighbors(outputArray: Array<Node>, node: Node): Int {
         var count = super.getNeighbors(outputArray, node)
@@ -65,26 +69,25 @@ class BotNodeEvaluator(
         for (i in 0 until count) {
             val n = outputArray[i]
             val key = BlockPos.asLong(n.x, n.y, n.z)
-            if (ventExitsByEntry.containsKey(key) && !ventExitNodes.contains(key)) {
+            if (key in ventExitsByEntry && key !in ventExitNodes) {
                 n.costMalus = VENT_ENTRY_BONUS
             }
         }
 
         val nodeKey = BlockPos.asLong(node.x, node.y, node.z)
-        if (ventExitNodes.contains(nodeKey)) return count
+        if (nodeKey in ventExitNodes) return count
 
         val exits = ventExitsByEntry[nodeKey] ?: return count
 
         for (exit in exits) {
             if (count >= outputArray.size) break
-            val exitKey = BlockPos.asLong(exit.x, exit.y, exit.z)
+            val exitKey = exit.asLong()
 
-            val exitNode = getNode(exit.x, exit.y, exit.z)
-            exitNode.type = PathType.WALKABLE
-            exitNode.costMalus = VENT_TELEPORT_COST
-
-            ventExitNodes.add(exitKey)
-            outputArray[count++] = exitNode
+            outputArray[count++] = getNode(exit.x, exit.y, exit.z).also { exitNode ->
+                exitNode.type = PathType.WALKABLE
+                exitNode.costMalus = VENT_TELEPORT_COST
+                ventExitNodes += exitKey
+            }
         }
 
         return count
@@ -92,22 +95,34 @@ class BotNodeEvaluator(
 
     private fun applyVentBonusIfNeeded(node: Node) {
         val key = BlockPos.asLong(node.x, node.y, node.z)
-        if (ventExitsByEntry.containsKey(key) && !ventExitNodes.contains(key)) {
+        if (key in ventExitsByEntry && key !in ventExitNodes) {
             node.costMalus = VENT_ENTRY_BONUS
         }
     }
 
-    override fun getPathTypeOfMob(
-        context: PathfindingContext, x: Int, y: Int, z: Int, mob: Mob,
-    ): PathType {
-        if (ventExitsByEntry.containsKey(BlockPos.asLong(x, y, z))) return PathType.WALKABLE
-        return super.getPathTypeOfMob(context, x, y, z, mob)
+    private fun blockBlock(x: Int, y: Int, z: Int): Boolean {
+        val game = auZombie.controller.player.game
+        val meetingManager = game.meetingManager
+        if (!meetingManager.isCurrentlyAMeeting()) return false
+        val area = game.area
+        val min = area.meetingRoomMin ?: return false
+        val max = area.meetingRoomMax ?: return false
+        return (min.x >= x || x >= max.x) || (min.y >= y || y >= max.y) || (min.z >= z || z >= max.z)
     }
 
-    override fun getPathType(context: PathfindingContext, x: Int, y: Int, z: Int): PathType {
-        if (ventExitsByEntry.containsKey(BlockPos.asLong(x, y, z))) return PathType.WALKABLE
-        return super.getPathType(context, x, y, z)
-    }
+    override fun getPathTypeOfMob(context: PathfindingContext, x: Int, y: Int, z: Int, mob: Mob): PathType =
+        when {
+            blockBlock(x, y, z) -> PathType.UNPASSABLE_RAIL
+            BlockPos.asLong(x, y, z) in ventExitsByEntry -> PathType.WALKABLE
+            else -> super.getPathTypeOfMob(context, x, y, z, mob)
+        }
+
+    override fun getPathType(context: PathfindingContext, x: Int, y: Int, z: Int): PathType =
+        when {
+            blockBlock(x, y, z) -> PathType.UNPASSABLE_RAIL
+            BlockPos.asLong(x, y, z) in ventExitsByEntry -> PathType.WALKABLE
+            else -> super.getPathType(context, x, y, z)
+        }
 
     private fun org.bukkit.Location.toBlockPos() = BlockPos(blockX, blockY, blockZ)
 }
