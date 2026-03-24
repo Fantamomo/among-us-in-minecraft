@@ -12,7 +12,7 @@ class MoveToTaskGoal(
     private val player: BotAmongUsPlayer,
     mob: PathfinderMob,
     speedModifier: Double = 1.5,
-) : MoveToBlockGoal(mob, speedModifier, 0, 0) {
+) : MoveToBlockGoal(mob, speedModifier, 0, 0), CustomGoalDebugName {
 
     companion object {
         private const val COMPLETE_DELAY_TICKS = 100
@@ -112,4 +112,6 @@ class MoveToTaskGoal(
         if (task.completed) return false
         return task.task.location.run { pos.x == blockX && pos.y == blockY && pos.z == blockZ }
     }
+
+    override fun getDebugName() = this::class.java.simpleName + targetTask?.task?.task?.id?.let { ": $it" }.orEmpty()
 }
