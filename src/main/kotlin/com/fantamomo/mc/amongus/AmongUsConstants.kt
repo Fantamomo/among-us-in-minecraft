@@ -1,5 +1,6 @@
 package com.fantamomo.mc.amongus
 
+import com.fantamomo.mc.amongus.data.AmongUsDebug
 import io.papermc.paper.plugin.bootstrap.BootstrapContext
 import org.bukkit.configuration.file.YamlConfiguration
 import java.io.IOException
@@ -39,7 +40,7 @@ sealed interface AmongUsConstants {
                 }
             }
 
-            override val IN_DEVELOPMENT by lazy { context.dataDirectory.resolve("IN_DEVELOPMENT").exists() }
+            override val IN_DEVELOPMENT by lazy { context.dataDirectory.resolve(AmongUsDebug.DEBUG_FILE_NAME).exists() }
             override val GIT_HASH by lazy { paperPluginYml?.getString("git-hash") }
         }
     }
