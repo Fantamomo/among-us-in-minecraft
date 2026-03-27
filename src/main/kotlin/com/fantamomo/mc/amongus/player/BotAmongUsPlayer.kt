@@ -30,7 +30,7 @@ class BotAmongUsPlayer internal constructor(
     override val realLocation: Location
         get() = controller.entity.location
 
-    override fun canSee(other: AmongUsPlayer): Boolean = other !in hiddenPlayers
+    override fun canSee(other: AmongUsPlayer): Boolean = super.canSee(other) && other !in hiddenPlayers
 
     override fun teleportAsync(to: Location) = controller.entity.teleportAsync(to)
     override fun teleport(to: Location) {
