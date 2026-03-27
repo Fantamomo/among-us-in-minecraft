@@ -8,7 +8,7 @@ import com.fantamomo.mc.amongus.util.log.IdActionElement
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import kotlin.uuid.Uuid
+import java.util.*
 
 object GameActionElements {
 
@@ -39,7 +39,7 @@ object GameActionElements {
         }
     }
 
-    class HostChange(val old: Uuid?, val new: Uuid?) : IdActionElement("host_change") {
+    class HostChange(val old: UUID?, val new: UUID?) : IdActionElement("host_change") {
         override fun toJson(): JsonElement = buildJsonObject {
             put("old", old?.toString())
             put("new", new?.toString())

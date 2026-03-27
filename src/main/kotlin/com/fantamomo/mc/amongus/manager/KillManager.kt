@@ -205,7 +205,7 @@ class KillManager(val game: Game) {
         target.humanOrNull?.statistics?.timeUntilDead?.timerStop()
         target.mannequinController.hideFromAll()
         target.mannequinController.showToSeeingPlayers()
-        game.actionLog.add(PlayerActionElements.PlayerDeath(target.uuid.toKotlinUuid(), reason))
+        game.actionLog.add(PlayerActionElements.PlayerDeath(target.uuid, reason))
         val mannequin = target.mannequin
         mannequin.isInvisible = true
         showGhosts(target)

@@ -68,6 +68,12 @@ val AmongUsPlayer.botOrNull: BotAmongUsPlayer?
         return if (isBot) bot else null
     }
 
+val AmongUsPlayer.type: AmongUsPlayerType
+    get() = when (this) {
+        is BotAmongUsPlayer -> AmongUsPlayerType.BOT
+        is HumanAmongUsPlayer -> AmongUsPlayerType.HUMAN
+    }
+
 // utils
 
 val AmongUsPlayer.mannequin: Mannequin

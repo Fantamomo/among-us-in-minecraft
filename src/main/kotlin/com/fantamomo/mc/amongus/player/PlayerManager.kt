@@ -137,7 +137,7 @@ object PlayerManager {
     }
 
     @NMS
-    internal fun addBot(name: BotName, game: Game) {
+    internal fun addBot(name: BotName, game: Game): BotAmongUsPlayer {
         val auPlayer = BotAmongUsPlayer(UUID.randomUUID(), game, name)
 
         auPlayer.mannequinController.spawn()
@@ -167,6 +167,7 @@ object PlayerManager {
         players.add(auPlayer)
         game.players.add(auPlayer)
         auPlayer.updateHelmet()
+        return auPlayer
     }
 
     internal fun onPlayerQuit(player: Player) {
