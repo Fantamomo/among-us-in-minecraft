@@ -8,11 +8,10 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
 import java.util.*
-import kotlin.uuid.Uuid
 
 object PlayerActionElements {
 
-    class PlayerJoin(val player: Uuid, val type: AmongUsPlayerType) : IdActionElement("player_join") {
+    class PlayerJoin(val player: UUID, val type: AmongUsPlayerType) : IdActionElement("player_join") {
         override fun toJson(): JsonElement = buildJsonObject {
             put("player", player.toString())
             put("type", type.name.lowercase())
