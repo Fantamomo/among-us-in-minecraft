@@ -112,14 +112,14 @@ class BotNodeEvaluator(
 
     override fun getPathTypeOfMob(context: PathfindingContext, x: Int, y: Int, z: Int, mob: Mob): PathType =
         when {
-            blockBlock(x, y, z) -> PathType.UNPASSABLE_RAIL
+            blockBlock(x, y, z) -> PathType.BLOCKED
             BlockPos.asLong(x, y, z) in ventExitsByEntry -> PathType.WALKABLE
             else -> super.getPathTypeOfMob(context, x, y, z, mob)
         }
 
     override fun getPathType(context: PathfindingContext, x: Int, y: Int, z: Int): PathType =
         when {
-            blockBlock(x, y, z) -> PathType.UNPASSABLE_RAIL
+            blockBlock(x, y, z) -> PathType.BLOCKED
             BlockPos.asLong(x, y, z) in ventExitsByEntry -> PathType.WALKABLE
             else -> super.getPathType(context, x, y, z)
         }
