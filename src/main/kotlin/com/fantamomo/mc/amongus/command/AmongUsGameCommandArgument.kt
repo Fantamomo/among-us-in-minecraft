@@ -121,6 +121,40 @@ private fun PaperCommand.botGameCommand() = literal("bot") {
             }
         }
     }
+    literal("pause") {
+        argument("name", BotNameArgumentType.PLAYING_BOT) {
+            val botNameRef = argRef()
+            execute {
+                val auPlayer = PlayerManager.getPlayer(source.sender as Player)
+
+                if (auPlayer == null) {
+                    sendMessage {
+                        translatable("command.error.admin.game.bot.not_joined")
+                    }
+                    return@execute NO_SUCCESS
+                }
+
+                val game = auPlayer.game
+
+                val botName = botNameRef.get()
+
+                val botPlayer = game.players.first { it.isBot && it.botName == botName }
+
+                val navigation = botPlayer.bot.controller.handle.navigation
+                navigation.paused = !navigation.paused
+
+                sendMessage {
+                    translatable(if (navigation.paused) "command.success.admin.game.bot.paused" else "command.success.admin.game.bot.paused.unpaused") {
+                        args {
+                            string("bot", botName.name)
+                        }
+                    }
+                }
+
+                SINGLE_SUCCESS
+            }
+        }
+    }
 }
 
 private fun PaperCommand.switchHostGameCommand() = literal("switch_host") {

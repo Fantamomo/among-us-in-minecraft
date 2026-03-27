@@ -17,6 +17,8 @@ class BotPathNavigation(
     private var ventCooldown = 0
     private var lastSpeed = 1.0
 
+    var paused = false
+
     override fun createPathFinder(maxVisitedNodes: Int): PathFinder {
         botEvaluator = BotNodeEvaluator(auZombie)
         nodeEvaluator = botEvaluator
@@ -29,6 +31,7 @@ class BotPathNavigation(
     }
 
     override fun tick() {
+        if (paused) return
         if (ventCooldown > 0) ventCooldown--
         super.tick()
         if (ventCooldown > 0) return
