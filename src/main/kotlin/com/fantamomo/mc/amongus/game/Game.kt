@@ -2,6 +2,7 @@ package com.fantamomo.mc.amongus.game
 
 import com.fantamomo.mc.adventure.text.*
 import com.fantamomo.mc.amongus.AmongUs
+import com.fantamomo.mc.amongus.AmongUsConstants
 import com.fantamomo.mc.amongus.ability.AbilityManager
 import com.fantamomo.mc.amongus.area.GameArea
 import com.fantamomo.mc.amongus.data.AmongUsConfig
@@ -73,8 +74,13 @@ class Game(
         mapOf(
             "area" to area.name,
             "world" to world.name,
-            "maxPlayers" to maxPlayers.toString(),
+            "max_players" to maxPlayers.toString(),
             "code" to code,
+            "plugin" to mapOf(
+                "version" to AmongUs.pluginMeta.version,
+                "in_development" to AmongUsConstants.IN_DEVELOPMENT,
+                "git_hash" to AmongUsConstants.GIT_HASH,
+            )
         )
     ).apply { ActionLogManager.register("game", this) }
 
@@ -82,7 +88,7 @@ class Game(
         set(value) {
             if (value != null && value.game !== this) throw IllegalArgumentException("Player is not in this game")
             if (value != field) {
-                actionLog.add(GameActionElements.HostChange(field?.uuid?.toKotlinUuid(), value?.uuid?.toKotlinUuid()))
+                actionLog.add(GameActionElements.HostChange(field?.uuid, value?.uuid))
             }
             field = value
         }
@@ -137,7 +143,7 @@ class Game(
         if (PlayerManager.exists(player.uniqueId)) return false
         val newPlayer = PlayerManager.joinGame(player, this)
         scoreboardManager.addLobbyPlayer(newPlayer)
-        actionLog.add(PlayerActionElements.PlayerJoin(player.uniqueId.toKotlinUuid()))
+        actionLog.add(PlayerActionElements.PlayerJoin(player.uniqueId, AmongUsPlayerType.HUMAN))
         abortStartCooldown(GameActionElements.StartCountdownAborted.Reason.PLAYER_JOIN)
         audiences.forEach { it.setDirty() }
         logger.info("Adding player: ${player.name}")
@@ -148,7 +154,8 @@ class Game(
         if (phase != GamePhase.LOBBY && phase != GamePhase.STARTING) return false
         if (players.size >= maxPlayers) return false
         if (players.any { it.isBot && it.botName == name }) return false
-        PlayerManager.addBot(name, this)
+        val bot = PlayerManager.addBot(name, this)
+        actionLog.add(PlayerActionElements.PlayerJoin(bot.uuid, AmongUsPlayerType.BOT))
         return true
     }
 
@@ -169,7 +176,7 @@ class Game(
 
     internal fun removePlayer0(player: AmongUsPlayer) {
         players.remove(player)
-        actionLog.add(PlayerActionElements.PlayerRemove(player.uuid.toKotlinUuid()))
+        actionLog.add(PlayerActionElements.PlayerRemove(player.uuid))
         if (player === host) {
             host = players.filterIsInstance<HumanAmongUsPlayer>().randomOrNull()
         }
@@ -309,7 +316,7 @@ class Game(
             else -> {}
         }
 
-        actionLog.add(PlayerActionElements.PlayerDisconnect(player.uuid.toKotlinUuid()))
+        actionLog.add(PlayerActionElements.PlayerDisconnect(player.uuid))
 
         meetingManager.meeting?.voteInventories?.remove(player)
 
@@ -344,7 +351,7 @@ class Game(
     }
 
     internal fun onRejoin(amongUsPlayer: HumanAmongUsPlayer) {
-        actionLog.add(PlayerActionElements.PlayerRejoin(amongUsPlayer.uuid.toKotlinUuid()))
+        actionLog.add(PlayerActionElements.PlayerRejoin(amongUsPlayer.uuid))
         amongUsPlayer.mannequinController.getEntity()?.location?.let { amongUsPlayer.player?.teleport(it) }
         val player = amongUsPlayer.player
         if (player != null) {
@@ -710,7 +717,7 @@ class Game(
         if (phase != GamePhase.LOBBY) return true
         if (amongUsPlayer !in players) return true
         players.remove(amongUsPlayer)
-        actionLog.add(PlayerActionElements.PlayerLeave(amongUsPlayer.uuid.toKotlinUuid()))
+        actionLog.add(PlayerActionElements.PlayerLeave(amongUsPlayer.uuid))
         if (teleport && amongUsPlayer.isHuman) {
             val future = amongUsPlayer.teleportAsync(amongUsPlayer.locationBeforeGame).thenAccept {
                 LastPlayerLocationManager.remove(amongUsPlayer.uuid.toKotlinUuid())

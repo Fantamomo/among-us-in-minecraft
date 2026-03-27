@@ -80,7 +80,7 @@ class TaskManager(val game: Game) {
         if (registeredTask.completed) return
         val player = task.player
         val allTasksCompleted = tasks[player]?.all { it.completed } ?: true
-        game.actionLog.add(TaskActionElements.TaskCompleted(player.uuid.toKotlinUuid(), task.task.id))
+        game.actionLog.add(TaskActionElements.TaskCompleted(player.uuid, task.task.id))
         registeredTask.completed = true
         registeredTask.hideCompletely()
         registeredTask.task.stop()
@@ -114,7 +114,7 @@ class TaskManager(val game: Game) {
         val player = task.player
         game.actionLog.add(
             TaskActionElements.TaskStepCompleted(
-                player.uuid.toKotlinUuid(),
+                player.uuid,
                 task.task.id,
                 task.step + 1
             )
@@ -139,7 +139,7 @@ class TaskManager(val game: Game) {
 
     internal fun taskFailed(task: AssignedTask<*, *>) {
         task.player.humanOrNull?.statistics?.failedTasks[task.task]?.increment()
-        game.actionLog.add(TaskActionElements.TaskFailed(task.player.uuid.toKotlinUuid(), task.task.id))
+        game.actionLog.add(TaskActionElements.TaskFailed(task.player.uuid, task.task.id))
     }
 
     private fun removeMoveableItems(player: HumanAmongUsPlayer) {
@@ -172,7 +172,7 @@ class TaskManager(val game: Game) {
                 ?: return false
         if (task.fake) return true
         task.task.start()
-        game.actionLog.add(TaskActionElements.TaskStarted(player.uuid.toKotlinUuid(), task.task.task.id))
+        game.actionLog.add(TaskActionElements.TaskStarted(player.uuid, task.task.task.id))
         return true
     }
 
@@ -181,7 +181,7 @@ class TaskManager(val game: Game) {
     fun assignTask(player: AmongUsPlayer, task: AssignedTask<*, *>) {
         val registeredTask = RegisteredTask(task, fake = !player.canDoTasks())
         tasks.getOrPut(player) { mutableSetOf() }.add(registeredTask)
-        game.actionLog.add(TaskActionElements.TaskAssigned(player.uuid.toKotlinUuid(), task.task.id))
+        game.actionLog.add(TaskActionElements.TaskAssigned(player.uuid, task.task.id))
         updateBossbar(true)
     }
 
@@ -201,7 +201,7 @@ class TaskManager(val game: Game) {
             t.hideCompletely()
             true
         }
-        game.actionLog.add(TaskActionElements.TaskUnassigned(player.uuid.toKotlinUuid(), task.id))
+        game.actionLog.add(TaskActionElements.TaskUnassigned(player.uuid, task.id))
         updateBossbar(true)
     }
 

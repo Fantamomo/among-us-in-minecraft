@@ -19,31 +19,31 @@ object PlayerActionElements {
         }
     }
 
-    class PlayerDisconnect(val player: Uuid) : IdActionElement("player_disconnect") {
+    class PlayerDisconnect(val player: UUID) : IdActionElement("player_disconnect") {
         override fun toJson(): JsonElement = buildJsonObject {
             put("player", player.toString())
         }
     }
 
-    class PlayerRejoin(val player: Uuid) : IdActionElement("player_rejoin") {
+    class PlayerRejoin(val player: UUID) : IdActionElement("player_rejoin") {
         override fun toJson(): JsonElement = buildJsonObject {
             put("player", player.toString())
         }
     }
 
-    class PlayerRemove(val player: Uuid) : IdActionElement("player_remove") {
+    class PlayerRemove(val player: UUID) : IdActionElement("player_remove") {
         override fun toJson(): JsonElement = buildJsonObject {
             put("player", player.toString())
         }
     }
 
-    class PlayerLeave(val player: Uuid) : IdActionElement("player_leave") {
+    class PlayerLeave(val player: UUID) : IdActionElement("player_leave") {
         override fun toJson(): JsonElement = buildJsonObject {
             put("player", player.toString())
         }
     }
 
-    class PlayerDeath(val player: Uuid, val reason: DeadReason) : IdActionElement("player_death") {
+    class PlayerDeath(val player: UUID, val reason: DeadReason) : IdActionElement("player_death") {
         override fun toJson(): JsonElement = buildJsonObject {
             put("player", player.toString())
             if (reason !is DeadReason.Murdered) {
