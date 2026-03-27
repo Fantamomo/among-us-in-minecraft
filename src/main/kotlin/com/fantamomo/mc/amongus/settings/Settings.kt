@@ -1,11 +1,18 @@
 package com.fantamomo.mc.amongus.settings
 
+import com.fantamomo.mc.amongus.data.AmongUsDebug
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.util.log.elements.GameActionElements
 
 class Settings(val game: Game) {
     private val data: MutableMap<String, Any> = mutableMapOf()
     private val recentlyChanged: MutableList<SettingsKey<*, *>> = mutableListOf()
+
+    init {
+        if (AmongUsDebug.DebugValues.DEFAULT_DISABLE_WIN_CHECK.isEnabled()) {
+            set(SettingsKey.DEV.DO_WIN_CHECK, false)
+        }
+    }
 
     @Suppress("UNCHECKED_CAST")
     fun <T : Any> getOrNull(key: SettingsKey<T, *>): T? = data[key.key] as? T

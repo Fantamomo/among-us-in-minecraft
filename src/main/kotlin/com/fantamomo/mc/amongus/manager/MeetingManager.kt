@@ -3,6 +3,7 @@ package com.fantamomo.mc.amongus.manager
 import com.fantamomo.mc.adventure.text.*
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.ability.AbilityManager
+import com.fantamomo.mc.amongus.data.AmongUsDebug
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.game.GamePhase
 import com.fantamomo.mc.amongus.languages.LanguageManager
@@ -444,7 +445,8 @@ class MeetingManager(private val game: Game) {
         }
 
         private fun mayEndVoting() {
-            val end = game.players.all { !it.isAlive() || hasVoted(it) }
+            val ignoreBots = AmongUsDebug.DebugValues.IGNORE_BOT_VOTES_ON_MEETING_END_CHECK.isEnabled()
+            val end = game.players.all { !it.isAlive() || hasVoted(it) || (ignoreBots && it.isBot) }
             if (end) {
                 endVoting()
             }
