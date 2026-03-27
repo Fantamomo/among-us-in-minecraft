@@ -13,6 +13,7 @@ import net.minecraft.world.entity.monster.zombie.Zombie
 import net.minecraft.world.level.Level
 import net.minecraft.world.level.ServerLevelAccessor
 import org.bukkit.craftbukkit.CraftWorld
+import org.bukkit.craftbukkit.entity.CraftZombie
 import org.bukkit.event.entity.CreatureSpawnEvent
 
 class AmongUsZombie internal constructor(val controller: BotController, level: ServerLevel) :
@@ -25,6 +26,7 @@ class AmongUsZombie internal constructor(val controller: BotController, level: S
         isInvulnerable = true
         isSilent = true
         bukkitEntity.isVisibleByDefault = AmongUsDebug.isEnabled(AmongUsDebug.DebugValues.BOT_SHOW_ZOMBIE)
+        (bukkitEntity as CraftZombie).removeWhenFarAway = false
         collides = false
         persist = true
         setCanPickUpLoot(false)
@@ -60,4 +62,6 @@ class AmongUsZombie internal constructor(val controller: BotController, level: S
     override fun registerDebugValues(level: ServerLevel, registrar: DebugValueSource.Registration) {
         registerDebugValues(this, registrar)
     }
+
+    override fun getNavigation(): BotPathNavigation = navigation as BotPathNavigation
 }
