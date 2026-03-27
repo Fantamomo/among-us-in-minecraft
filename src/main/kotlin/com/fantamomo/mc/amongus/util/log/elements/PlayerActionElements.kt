@@ -1,5 +1,6 @@
 package com.fantamomo.mc.amongus.util.log.elements
 
+import com.fantamomo.mc.amongus.player.AmongUsPlayerType
 import com.fantamomo.mc.amongus.player.info.DeadReason
 import com.fantamomo.mc.amongus.util.log.IdActionElement
 import kotlinx.serialization.json.JsonElement
@@ -11,9 +12,10 @@ import kotlin.uuid.Uuid
 
 object PlayerActionElements {
 
-    class PlayerJoin(val player: Uuid) : IdActionElement("player_join") {
+    class PlayerJoin(val player: Uuid, val type: AmongUsPlayerType) : IdActionElement("player_join") {
         override fun toJson(): JsonElement = buildJsonObject {
             put("player", player.toString())
+            put("type", type.name.lowercase())
         }
     }
 
