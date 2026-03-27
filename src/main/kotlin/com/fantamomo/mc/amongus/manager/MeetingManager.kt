@@ -3,6 +3,7 @@ package com.fantamomo.mc.amongus.manager
 import com.fantamomo.mc.adventure.text.*
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.ability.AbilityManager
+import com.fantamomo.mc.amongus.data.AmongUsDebug
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.game.GamePhase
 import com.fantamomo.mc.amongus.languages.LanguageManager
@@ -34,7 +35,6 @@ import org.bukkit.NamespacedKey
 import org.bukkit.craftbukkit.entity.CraftEntity
 import org.bukkit.craftbukkit.entity.CraftPlayer
 import org.bukkit.entity.ArmorStand
-import org.bukkit.event.Listener
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.MenuType.STONECUTTER
@@ -54,7 +54,7 @@ import kotlin.time.DurationUnit
  * @author Fantamomo
  * @since 1.0-SNAPSHOT
  */
-class MeetingManager(private val game: Game) : Listener {
+class MeetingManager(private val game: Game) {
 
     var meeting: Meeting? = null
         private set
@@ -319,11 +319,13 @@ class MeetingManager(private val game: Game) : Listener {
                     }
                 }
 
+            val meetingSpawn = meetingBlock.toCenterLocation().add(0.0, 1.0, 0.0)
+
             game.players.forEach { p ->
                 if (p.isInCams()) game.cameraManager.leaveCams(p)
                 if (p.isVented()) game.ventManager.ventOut(p)
 
-                p.teleport(meetingBlock)
+                p.teleport(meetingSpawn)
 
                 if (p.isHuman) {
                     p.humanOrNull?.player?.apply {
@@ -443,7 +445,8 @@ class MeetingManager(private val game: Game) : Listener {
         }
 
         private fun mayEndVoting() {
-            val end = game.players.all { !it.isAlive() || hasVoted(it) }
+            val ignoreBots = AmongUsDebug.DebugValues.IGNORE_BOT_VOTES_ON_MEETING_END_CHECK.isEnabled()
+            val end = game.players.all { !it.isAlive() || hasVoted(it) || (ignoreBots && it.isBot) }
             if (end) {
                 endVoting()
             }

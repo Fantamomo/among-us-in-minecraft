@@ -97,7 +97,8 @@ class MannequinController(
        === Internal State ===
        ========================= */
 
-    private var handle: AmongUsMannequin? = null
+    var handle: AmongUsMannequin? = null
+        private set
     private var mannequin: Mannequin? = null
     private var lastLocation: Location? = null
 

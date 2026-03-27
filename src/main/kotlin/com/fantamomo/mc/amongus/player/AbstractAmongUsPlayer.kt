@@ -142,6 +142,14 @@ sealed class AbstractAmongUsPlayer(
 
     override fun hasAbility(ability: Ability<*, *>) = abilities.any { it.definition === ability }
 
+    override fun canSee(other: AmongUsPlayer): Boolean {
+        if (other === this) return false
+        if (other.game !== game) return false
+        if (other.isVented()) return false
+        if (!other.isAlive() && this.isAlive()) return false
+        return true
+    }
+
     companion object {
         private val GHOST_SPEED = PotionEffect(PotionEffectType.SPEED, -1, 1, false, false)
     }

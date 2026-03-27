@@ -5,6 +5,7 @@ import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.ability.AbilityManager
 import com.fantamomo.mc.amongus.area.GameArea
 import com.fantamomo.mc.amongus.data.AmongUsConfig
+import com.fantamomo.mc.amongus.data.AmongUsDebug
 import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.manager.*
@@ -418,7 +419,11 @@ class Game(
             player.internal.preStart()
         }
 
-        roleRevealManager.start() // delegate to roleRevealManager.start()
+        if (AmongUsDebug.DebugValues.SKIP_REVEAL_ROLE_PHASE.isEnabled()) {
+            startGame()
+        } else {
+            roleRevealManager.start() // delegate to roleRevealManager.start()
+        }
     }
 
     internal fun startGame() {

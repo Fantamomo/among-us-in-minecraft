@@ -33,7 +33,10 @@ object AmongUsDebug {
     enum class DebugValues {
         BOT_SHOW_ZOMBIE,
         BOT_SHOW_PATH,
-        BOT_SHOW_GOALS;
+        BOT_SHOW_GOALS,
+        SKIP_REVEAL_ROLE_PHASE,
+        DEFAULT_DISABLE_WIN_CHECK,
+        IGNORE_BOT_VOTES_ON_MEETING_END_CHECK;
 
         fun isEnabled() = isEnabled(this)
 
