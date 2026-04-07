@@ -52,6 +52,12 @@ class MoveToTaskGoal(
         setFlags(EnumSet.of(Flag.MOVE))
     }
 
+    override fun requiresUpdateEveryTick() = false
+
+    override fun moveMobToBlock() {
+        player.controller.handle.navigation.moveToWithGraph(blockPos, speedModifier)
+    }
+
     override fun canUse(): Boolean {
         if (state == State.COOLDOWN && cooldownTicksEnd != -1L && cooldownTicksEnd > GameManager.currentTick.ticks) return false
         if (player.tasks.all { it.completed }) return false

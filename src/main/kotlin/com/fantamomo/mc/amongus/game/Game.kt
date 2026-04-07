@@ -13,6 +13,8 @@ import com.fantamomo.mc.amongus.manager.*
 import com.fantamomo.mc.amongus.manager.waypoint.WaypointManager
 import com.fantamomo.mc.amongus.player.*
 import com.fantamomo.mc.amongus.player.bot.BotName
+import com.fantamomo.mc.amongus.player.bot.nav.NavGraph
+import com.fantamomo.mc.amongus.player.bot.nav.NavGraphBuilder
 import com.fantamomo.mc.amongus.player.info.DeadReason
 import com.fantamomo.mc.amongus.role.RoleManager
 import com.fantamomo.mc.amongus.role.Team
@@ -62,6 +64,8 @@ class Game(
     val code: String = createRandomCode()
 
     val logger = ComponentLogger.logger("Among Us: $code")
+
+    val navGraph: NavGraph
 
     init {
         require(area.isValid()) { "Area ${area.name} is not valid" }
@@ -135,6 +139,10 @@ class Game(
         ListAudience.audienceHolder { players.filter { it.role.definition.team == Team.IMPOSTERS } }
 
     internal val audiences = listOf(audienceAll, audienceAlive, audienceDead, audienceImposter)
+
+    init {
+        navGraph = NavGraphBuilder(this).build()
+    }
 
     fun addPlayer(player: Player, ignoreBanned: Boolean = false): Boolean {
         if (phase != GamePhase.LOBBY && phase != GamePhase.STARTING) return false
@@ -260,8 +268,17 @@ class Game(
 
         for (player in players) {
             if (player.isHuman) {
-                player.player?.saturation = 5.0f
-                player.player?.foodLevel = 20
+                val bukkitPlayer = player.player
+                if (bukkitPlayer != null) {
+                    bukkitPlayer.saturation = 5.0f
+                    bukkitPlayer.foodLevel = 20
+                    if (tickContext.isBy(6) &&
+                        AmongUsDebug.DebugValues.SHOW_BOT_GRAPH.isEnabled() &&
+                        bukkitPlayer.isOp
+                    ) {
+                        navGraph.debugShowGraph(bukkitPlayer)
+                    }
+                }
             }
             player.modification?.onTick(tickContext)
             player.mannequinController.syncFromOwner()
