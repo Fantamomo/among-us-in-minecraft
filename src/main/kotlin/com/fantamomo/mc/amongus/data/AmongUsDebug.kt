@@ -36,7 +36,8 @@ object AmongUsDebug {
         BOT_SHOW_GOALS,
         SKIP_REVEAL_ROLE_PHASE,
         DEFAULT_DISABLE_WIN_CHECK,
-        IGNORE_BOT_VOTES_ON_MEETING_END_CHECK;
+        IGNORE_BOT_VOTES_ON_MEETING_END_CHECK,
+        SHOW_BOT_GRAPH;
 
         fun isEnabled() = isEnabled(this)
 
