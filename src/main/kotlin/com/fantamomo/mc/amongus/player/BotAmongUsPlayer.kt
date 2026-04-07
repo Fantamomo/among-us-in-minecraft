@@ -36,4 +36,9 @@ class BotAmongUsPlayer internal constructor(
     override fun teleport(to: Location) {
         controller.entity.teleport(to)
     }
+
+    override fun preStart() {
+        super.preStart()
+        controller.preStart()
+    }
 }
