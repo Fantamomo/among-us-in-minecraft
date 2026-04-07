@@ -7,8 +7,10 @@ import com.fantamomo.mc.amongus.ability.Ability
 import com.fantamomo.mc.amongus.game.GamePhase
 import com.fantamomo.mc.amongus.languages.numeric
 import com.fantamomo.mc.amongus.player.*
+import com.fantamomo.mc.amongus.player.bot.mangement.BotVoteTargetController
 import com.fantamomo.mc.amongus.role.AssignedRole
 import com.fantamomo.mc.amongus.role.Role
+import com.fantamomo.mc.amongus.role.SupportBotsRole
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.util.TickContext
 import com.fantamomo.mc.amongus.util.log.elements.CustomRoleActionElements
@@ -23,7 +25,8 @@ object SnitchRole : Role<SnitchRole, SnitchRole.AssignedSnitchRole> {
 
     override fun assignTo(player: AmongUsPlayer) = AssignedSnitchRole(player)
 
-    class AssignedSnitchRole(override val player: AmongUsPlayer) : AssignedRole<SnitchRole, AssignedSnitchRole> {
+    class AssignedSnitchRole(override val player: AmongUsPlayer) : AssignedRole<SnitchRole, AssignedSnitchRole>,
+        SupportBotsRole {
         override val definition = SnitchRole
 
         private var lastCanSeeImposters = false
@@ -87,11 +90,32 @@ object SnitchRole : Role<SnitchRole, SnitchRole.AssignedSnitchRole> {
             }
         }
 
+        override fun createBotVoteTargetController() = SnitchBotVoteTargetController(this)
+
         companion object {
             private val SCOREBOARD_LINE_FINISHED = Component.translatable("role.snitch.scoreboard.finished")
             private val SCOREBOARD_LINE_LEFT = Component.translatable("role.snitch.scoreboard.one_task_left")
             private val SCOREBOARD_LINE_WAITING = Component.translatable("role.snitch.scoreboard.wait_for_start")
             private val WARNING = Component.translatable("role.snitch.warning")
+        }
+    }
+
+    /**
+     * The controller will prioritize voting for imposters that if he can see imposters.
+     */
+    class SnitchBotVoteTargetController(val role: AssignedSnitchRole) : BotVoteTargetController(
+        role.player.botOrNull
+            ?: throw IllegalArgumentException("Player must be a bot to create SnitchBotVoteTargetController")
+    ) {
+        private val random = default(role.player)
+
+        override fun getTarget(availableTargets: List<AmongUsPlayer>): Target? = getTarget(availableTargets, true)
+
+        override fun getTarget(availableTargets: List<AmongUsPlayer>, includeSkip: Boolean): Target? {
+            val filteredTargets =
+                if (role.canSeeImposters()) availableTargets.filter { it.role.definition.team == Team.IMPOSTERS }
+                else availableTargets
+            return random.getTarget(filteredTargets, includeSkip)
         }
     }
 }

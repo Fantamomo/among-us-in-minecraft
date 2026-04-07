@@ -8,8 +8,10 @@ import com.fantamomo.mc.amongus.ability.Ability
 import com.fantamomo.mc.amongus.ability.abilities.ArsonistAbility
 import com.fantamomo.mc.amongus.languages.numeric
 import com.fantamomo.mc.amongus.player.*
+import com.fantamomo.mc.amongus.player.bot.mangement.BotVoteTargetController
 import com.fantamomo.mc.amongus.role.AssignedRole
 import com.fantamomo.mc.amongus.role.Role
+import com.fantamomo.mc.amongus.role.SupportBotsRole
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.util.data.DistanceEnum
@@ -23,7 +25,7 @@ object ArsonistRole : Role<ArsonistRole, ArsonistRole.AssignedArsonistRole> {
 
     override fun assignTo(player: AmongUsPlayer) = AssignedArsonistRole(player)
 
-    class AssignedArsonistRole(override val player: AmongUsPlayer) : AssignedRole<ArsonistRole, AssignedArsonistRole> {
+    class AssignedArsonistRole(override val player: AmongUsPlayer) : AssignedRole<ArsonistRole, AssignedArsonistRole>, SupportBotsRole {
         override val definition = ArsonistRole
 
         val douseDistance: DistanceEnum
@@ -97,6 +99,27 @@ object ArsonistRole : Role<ArsonistRole, ArsonistRole.AssignedArsonistRole> {
                     numeric("count", left)
                 }
             }
+        }
+
+        override fun createBotVoteTargetController() = ArsonistBotVoteTargetController(this)
+    }
+
+    /**
+     * A controller that will filter out players that have already been doused.
+     *
+     * The arsonist will prioritize voting for players that have not been doused, so he can reduce the count of doused players faster and increase the chance of winning.
+     */
+    class ArsonistBotVoteTargetController(val role: AssignedArsonistRole) : BotVoteTargetController(
+        role.player.botOrNull
+            ?: throw IllegalArgumentException("Player must be a bot to create SnitchBotVoteTargetController")
+    ) {
+        private val random = default(role.player)
+
+        override fun getTarget(availableTargets: List<AmongUsPlayer>): Target? = getTarget(availableTargets, true)
+
+        override fun getTarget(availableTargets: List<AmongUsPlayer>, includeSkip: Boolean): Target? {
+            val filteredTargets = availableTargets.filterNot { role.dousedPlayers.contains(it) }
+            return random.getTarget(filteredTargets, includeSkip)
         }
     }
 }

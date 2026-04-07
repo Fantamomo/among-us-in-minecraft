@@ -7,6 +7,8 @@ import com.fantamomo.mc.amongus.player.bot.goals.LookAtPlayerGoal
 import com.fantamomo.mc.amongus.player.bot.goals.LookAtTaskGoal
 import com.fantamomo.mc.amongus.player.bot.goals.MoveToTaskGoal
 import com.fantamomo.mc.amongus.player.bot.goals.RandomMoveGoal
+import com.fantamomo.mc.amongus.player.bot.mangement.BotVoteTargetController
+import com.fantamomo.mc.amongus.role.SupportBotsRole
 import com.fantamomo.mc.amongus.util.internal.NMS
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal
 import net.minecraft.world.entity.ai.goal.RandomStrollGoal
@@ -28,9 +30,18 @@ class BotController(val player: BotAmongUsPlayer) {
     var moveToTaskGoal: MoveToTaskGoal? = null
         private set
 
+    // controllers
+    var voteTargetController: BotVoteTargetController? = null
+        private set
+
     init {
         handle.navigation.pathFinder.setMaxVisitedNodes(80 * 16)
         onPhaseChange()
+    }
+
+    fun preStart() {
+        val role = player.assignedRole
+        voteTargetController = (role as? SupportBotsRole)?.createBotVoteTargetController() ?: BotVoteTargetController.default(player)
     }
 
     fun onPhaseChange() {

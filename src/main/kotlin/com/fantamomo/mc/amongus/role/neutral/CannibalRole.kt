@@ -14,6 +14,7 @@ import com.fantamomo.mc.amongus.player.humanOrNull
 import com.fantamomo.mc.amongus.player.isBot
 import com.fantamomo.mc.amongus.role.AssignedRole
 import com.fantamomo.mc.amongus.role.Role
+import com.fantamomo.mc.amongus.role.SupportBotsRole
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.util.TickContext
@@ -30,7 +31,7 @@ object CannibalRole : Role<CannibalRole, CannibalRole.AssignedCannibalRole> {
 
     override fun assignTo(player: AmongUsPlayer) = AssignedCannibalRole(player)
 
-    class AssignedCannibalRole(override val player: AmongUsPlayer) : AssignedRole<CannibalRole, AssignedCannibalRole> {
+    class AssignedCannibalRole(override val player: AmongUsPlayer) : AssignedRole<CannibalRole, AssignedCannibalRole>, SupportBotsRole {
         override val definition = CannibalRole
 
         val bodiesToEat: Int

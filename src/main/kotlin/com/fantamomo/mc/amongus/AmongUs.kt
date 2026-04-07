@@ -10,10 +10,12 @@ import com.fantamomo.mc.amongus.listeners.Listeners
 import com.fantamomo.mc.amongus.manager.EntityManager
 import com.fantamomo.mc.amongus.manager.MeetingManager
 import com.fantamomo.mc.amongus.modification.Modification
+import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.player.LastPlayerLocationManager
 import com.fantamomo.mc.amongus.player.PlayerDataManager
 import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.role.Role
+import com.fantamomo.mc.amongus.role.SupportBotsRole
 import com.fantamomo.mc.amongus.statistics.StatisticsManager
 import com.fantamomo.mc.amongus.util.LogFilter
 import com.fantamomo.mc.amongus.util.applyUnless
@@ -73,6 +75,18 @@ object AmongUs : JavaPlugin() {
 
         Role
         Modification
+
+        if (AmongUsConstants.IN_DEVELOPMENT) {
+            val notSupportBots: MutableList<Role<*, *>> = mutableListOf()
+            for (role in Role.roles) runCatching {
+                val method = role::class.java.getMethod("assignTo", AmongUsPlayer::class.java)
+                val returnType = method.returnType
+                if (!SupportBotsRole::class.java.isAssignableFrom(returnType)) notSupportBots.add(role)
+            }
+            if (notSupportBots.isNotEmpty()) {
+                slF4JLogger.warn("The following roles do not have bot support: ${notSupportBots.joinToString { it.id }}")
+            }
+        }
 
         AmongUs.lifecycleManager.registerEventHandler(LifecycleEvents.COMMANDS) {
             AmongUsCommands.init(it.registrar())

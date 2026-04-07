@@ -5,6 +5,7 @@ import com.fantamomo.mc.amongus.ability.Ability
 import com.fantamomo.mc.amongus.player.*
 import com.fantamomo.mc.amongus.role.AssignedRole
 import com.fantamomo.mc.amongus.role.Role
+import com.fantamomo.mc.amongus.role.SupportBotsRole
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.util.TickContext
 import org.bukkit.Location
@@ -19,7 +20,7 @@ object DetectiveRole : Role<DetectiveRole, DetectiveRole.AssignedDetectiveRole> 
 
     class AssignedDetectiveRole(
         override val player: AmongUsPlayer
-    ) : AssignedRole<DetectiveRole, AssignedDetectiveRole> {
+    ) : AssignedRole<DetectiveRole, AssignedDetectiveRole>, SupportBotsRole {
 
         override val definition = DetectiveRole
 

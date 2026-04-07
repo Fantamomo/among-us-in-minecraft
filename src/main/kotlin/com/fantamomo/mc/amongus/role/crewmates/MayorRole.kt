@@ -4,6 +4,7 @@ import com.fantamomo.mc.amongus.ability.Ability
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.role.AssignedRole
 import com.fantamomo.mc.amongus.role.Role
+import com.fantamomo.mc.amongus.role.SupportBotsRole
 import com.fantamomo.mc.amongus.role.Team
 
 object MayorRole : Role<MayorRole, MayorRole.AssignedMayorRole> {
@@ -13,7 +14,7 @@ object MayorRole : Role<MayorRole, MayorRole.AssignedMayorRole> {
 
     override fun assignTo(player: AmongUsPlayer) = AssignedMayorRole(player)
 
-    class AssignedMayorRole(override val player: AmongUsPlayer) : AssignedRole<MayorRole, AssignedMayorRole> {
+    class AssignedMayorRole(override val player: AmongUsPlayer) : AssignedRole<MayorRole, AssignedMayorRole>, SupportBotsRole {
         override val definition = MayorRole
     }
 }

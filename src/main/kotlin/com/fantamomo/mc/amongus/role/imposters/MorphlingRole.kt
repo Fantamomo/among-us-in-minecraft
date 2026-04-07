@@ -7,8 +7,10 @@ import com.fantamomo.mc.amongus.ability.Ability
 import com.fantamomo.mc.amongus.ability.abilities.MorphAbility
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import com.fantamomo.mc.amongus.player.bot.mangement.BotVoteTargetController
 import com.fantamomo.mc.amongus.role.AssignedRole
 import com.fantamomo.mc.amongus.role.Role
+import com.fantamomo.mc.amongus.role.SupportBotsRole
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.role.util.KillerRole
 
@@ -19,7 +21,8 @@ object MorphlingRole : Role<MorphlingRole, MorphlingRole.AssignedMorphlingRole>,
 
     override fun assignTo(player: AmongUsPlayer) = AssignedMorphlingRole(player)
 
-    class AssignedMorphlingRole(override val player: AmongUsPlayer) : AssignedRole<MorphlingRole, AssignedMorphlingRole> {
+    class AssignedMorphlingRole(override val player: AmongUsPlayer) : AssignedRole<MorphlingRole, AssignedMorphlingRole>,
+        SupportBotsRole {
         override val definition = MorphlingRole
 
         override fun scoreboardLine() = player.game.morphManager.getMorphedPlayer(player)?.let { morphedPlayer ->
@@ -31,5 +34,7 @@ object MorphlingRole : Role<MorphlingRole, MorphlingRole.AssignedMorphlingRole>,
                 }
             }
         }
+
+        override fun createBotVoteTargetController() = BotVoteTargetController.create { avoidOnesTeam(random(player)) }
     }
 }

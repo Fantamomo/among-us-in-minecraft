@@ -7,8 +7,10 @@ import com.fantamomo.mc.amongus.ability.Ability
 import com.fantamomo.mc.amongus.ability.abilities.CamouflageAbility
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import com.fantamomo.mc.amongus.player.bot.mangement.BotVoteTargetController
 import com.fantamomo.mc.amongus.role.AssignedRole
 import com.fantamomo.mc.amongus.role.Role
+import com.fantamomo.mc.amongus.role.SupportBotsRole
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.role.util.KillerRole
 import com.fantamomo.mc.amongus.util.toSmartString
@@ -22,7 +24,7 @@ object CamouflagerRole : Role<CamouflagerRole, CamouflagerRole.AssignedCamouflag
 
     override fun assignTo(player: AmongUsPlayer) = AssignedCamouflagerRole(player)
 
-    class AssignedCamouflagerRole(override val player: AmongUsPlayer) : AssignedRole<CamouflagerRole, AssignedCamouflagerRole> {
+    class AssignedCamouflagerRole(override val player: AmongUsPlayer) : AssignedRole<CamouflagerRole, AssignedCamouflagerRole>, SupportBotsRole {
         override val definition = CamouflagerRole
 
         override fun scoreboardLine(): Component? {
@@ -38,5 +40,7 @@ object CamouflagerRole : Role<CamouflagerRole, CamouflagerRole.AssignedCamouflag
                 }
             }
         }
+
+        override fun createBotVoteTargetController() = BotVoteTargetController.create { avoidOnesTeam(random(player)) }
     }
 }

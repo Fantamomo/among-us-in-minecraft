@@ -5,6 +5,7 @@ import com.fantamomo.mc.amongus.ability.abilities.SheriffKillAbility
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.role.AssignedRole
 import com.fantamomo.mc.amongus.role.Role
+import com.fantamomo.mc.amongus.role.SupportBotsRole
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.role.util.KillerRole
 
@@ -15,7 +16,7 @@ object SheriffRole : Role<SheriffRole, SheriffRole.AssignedSheriffRole>, KillerR
 
     override fun assignTo(player: AmongUsPlayer) = AssignedSheriffRole(player)
 
-    class AssignedSheriffRole(override val player: AmongUsPlayer) : AssignedRole<SheriffRole, AssignedSheriffRole> {
+    class AssignedSheriffRole(override val player: AmongUsPlayer) : AssignedRole<SheriffRole, AssignedSheriffRole>, SupportBotsRole {
         override val definition = SheriffRole
     }
 }

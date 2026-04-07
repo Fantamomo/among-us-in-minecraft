@@ -5,6 +5,7 @@ import com.fantamomo.mc.amongus.ability.abilities.RemoteCameraAbility
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.role.AssignedRole
 import com.fantamomo.mc.amongus.role.Role
+import com.fantamomo.mc.amongus.role.SupportBotsRole
 import com.fantamomo.mc.amongus.role.Team
 
 object CameraManRole : Role<CameraManRole, CameraManRole.AssignedCameraManRole> {
@@ -16,7 +17,7 @@ object CameraManRole : Role<CameraManRole, CameraManRole.AssignedCameraManRole> 
 
     override fun assignTo(player: AmongUsPlayer) = AssignedCameraManRole(player)
 
-    class AssignedCameraManRole(override val player: AmongUsPlayer) : AssignedRole<CameraManRole, AssignedCameraManRole> {
+    class AssignedCameraManRole(override val player: AmongUsPlayer) : AssignedRole<CameraManRole, AssignedCameraManRole>, SupportBotsRole {
         override val definition = CameraManRole
     }
 }
