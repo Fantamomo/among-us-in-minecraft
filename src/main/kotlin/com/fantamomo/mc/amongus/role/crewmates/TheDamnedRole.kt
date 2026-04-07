@@ -4,6 +4,7 @@ import com.fantamomo.mc.amongus.ability.Ability
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.role.AssignedRole
 import com.fantamomo.mc.amongus.role.Role
+import com.fantamomo.mc.amongus.role.SupportBotsRole
 import com.fantamomo.mc.amongus.role.Team
 
 object TheDamnedRole : Role<TheDamnedRole, TheDamnedRole.AssignedTheDamnedRole>{
@@ -13,7 +14,7 @@ object TheDamnedRole : Role<TheDamnedRole, TheDamnedRole.AssignedTheDamnedRole>{
 
     override fun assignTo(player: AmongUsPlayer) = AssignedTheDamnedRole(player)
 
-    class AssignedTheDamnedRole(override val player: AmongUsPlayer) : AssignedRole<TheDamnedRole, AssignedTheDamnedRole> {
+    class AssignedTheDamnedRole(override val player: AmongUsPlayer) : AssignedRole<TheDamnedRole, AssignedTheDamnedRole>, SupportBotsRole {
         override val definition = TheDamnedRole
     }
 }
