@@ -11,6 +11,7 @@ import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.languages.numeric
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.*
+import com.fantamomo.mc.amongus.player.bot.mangement.BotVoteTargetController
 import com.fantamomo.mc.amongus.player.info.DeadReason
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.role.crewmates.MayorRole
@@ -182,7 +183,7 @@ class MeetingManager(private val game: Game) {
         private val foundBody: AmongUsPlayer?
     ) {
         private var timer: Cooldown? = null
-        private val votes: MutableMap<Voter, Vote> = mutableMapOf()
+        internal val votes: MutableMap<Voter, Vote> = mutableMapOf()
         var respawnLocation: Location? = null
             private set
         var ejectedPlayer: AmongUsPlayer? = null
@@ -354,7 +355,8 @@ class MeetingManager(private val game: Game) {
         }
 
         private fun startVoting() {
-            for (amongUsPlayer in game.players) {
+            val players = game.players
+            for (amongUsPlayer in players) {
                 if (amongUsPlayer.isBot) continue
                 val player = amongUsPlayer.player ?: continue
                 for (key in recipes.keys) {
@@ -374,6 +376,18 @@ class MeetingManager(private val game: Game) {
                     TitlePart.SUBTITLE,
                     Component.translatable("meeting.voting.start.subtitle.dead")
                 )
+            }
+
+            for (amongUsPlayer in players) {
+                if (amongUsPlayer.isHuman) continue
+                if (!amongUsPlayer.isAlive()) continue
+                val voteTargetController = amongUsPlayer.controller.voteTargetController ?: continue
+                if (!voteTargetController.executesAtTheStartOfTheMeeting()) continue
+                when (val target = voteTargetController.getTarget()) {
+                    is BotVoteTargetController.Target.Player -> voteFor(amongUsPlayer, target.player)
+                    BotVoteTargetController.Target.Skip -> voteSkip(amongUsPlayer)
+                    else -> {}
+                }
             }
         }
 
@@ -444,11 +458,29 @@ class MeetingManager(private val game: Game) {
             return true
         }
 
-        private fun mayEndVoting() {
-            val ignoreBots = AmongUsDebug.DebugValues.IGNORE_BOT_VOTES_ON_MEETING_END_CHECK.isEnabled()
+        private fun mayEndVoting(second: Boolean = false) {
+            val ignoreBots = second && AmongUsDebug.DebugValues.IGNORE_BOT_VOTES_ON_MEETING_END_CHECK.isEnabled()
             val end = game.players.all { !it.isAlive() || hasVoted(it) || (ignoreBots && it.isBot) }
             if (end) {
                 endVoting()
+                return
+            }
+            if (second) return
+            val endByPlayer = game.players.all { !it.isAlive() || hasVoted(it) || it.isBot }
+            if (endByPlayer) {
+                for (auPlayer in game.players) {
+                    if (auPlayer.isHuman) continue
+                    if (!auPlayer.isAlive()) continue
+                    if (hasVoted(auPlayer)) continue
+                    val voteTargetController = auPlayer.controller.voteTargetController ?: continue
+                    if (voteTargetController.executesAtTheStartOfTheMeeting()) continue
+                    when (val target = voteTargetController.getTarget()) {
+                        is BotVoteTargetController.Target.Player -> voteFor(auPlayer, target.player)
+                        BotVoteTargetController.Target.Skip -> voteSkip(auPlayer)
+                        else -> {}
+                    }
+                }
+                mayEndVoting(second = true)
             }
         }
 
