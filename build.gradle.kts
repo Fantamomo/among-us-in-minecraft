@@ -44,6 +44,7 @@ dependencies {
     implementation("com.fantamomo.mc:brigadier-interception:1.1-SNAPSHOT")
 
     implementation("org.mineskin:java-client:3.2.1-SNAPSHOT")
+    implementation("ai.koog:koog-agents:0.7.1")
 
 
     testImplementation(kotlin("test"))
@@ -83,6 +84,24 @@ val gitHash: Provider<String> = providers.of(GitHashSource::class) {}
 tasks {
     shadowJar {
         mergeServiceFiles()
+
+        // These dependencies are intentionally excluded from the shaded (fat) JAR.
+        // They are resolved and downloaded dynamically at runtime on the first plugin startup
+        // via AmongUsPluginLoader (src/main/java/com/fantamomo/mc/amongus/AmongUsPluginLoader.java), keeping the plugin artifact lightweight.
+        exclude("org/jetbrains/kotlinx/**")
+        exclude("org/mineskin/**")
+        exclude("ai/koog/**")
+
+        // Internal project dependencies (com.fantamomo.mc) are currently published via GitHub Packages
+        // and require authentication using a GitHub token.
+        // Embedding such credentials inside the JAR would pose a security risk.
+        //
+        // Since these artifacts are not yet available in a fully public repository,
+        // they are bundled directly into the shaded JAR for now.
+        dependencies {
+            include(dependency("com.fantamomo.mc:.*"))
+        }
+
         excludedFromShadow.forEach { group ->
             dependencies { exclude(dependency("$group:.*")) }
         }
