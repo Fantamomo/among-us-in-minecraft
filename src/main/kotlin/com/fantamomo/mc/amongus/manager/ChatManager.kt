@@ -16,8 +16,8 @@ import io.papermc.paper.event.player.ChatEvent
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
 
-
 class ChatManager(val game: Game) {
+    internal val chatHistory: MutableList<Pair<AmongUsPlayer, String>> = mutableListOf()
     private var disableRestriction = false
 
     fun onChat(sender: AmongUsPlayer, event: ChatEvent) {
@@ -70,6 +70,7 @@ class ChatManager(val game: Game) {
 
     fun sendLobbyMessage(sender: AmongUsPlayer, input: Component) {
         logMessage(sender, "lobby", input)
+        game.lobbyChatAiService.chatMessage(sender)
         val message = getMessage("chat.message.lobby", sender, input)
         game.sendChatMessage(message)
         game.logger.info(message)
@@ -101,6 +102,8 @@ class ChatManager(val game: Game) {
     }
 
     private fun logMessage(sender: AmongUsPlayer, type: String, message: String) {
+        chatHistory.add(sender to message)
+        if (chatHistory.size > 100) chatHistory.removeFirst()
         val type = PlayerActionElements.PlayerChat(sender.uuid, type, message)
         game.actionLog.add(type)
     }
