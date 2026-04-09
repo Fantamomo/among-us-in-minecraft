@@ -4,6 +4,7 @@ import com.fantamomo.mc.adventure.text.*
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.AmongUsConstants
 import com.fantamomo.mc.amongus.ability.AbilityManager
+import com.fantamomo.mc.amongus.ai.LobbyChatAiService
 import com.fantamomo.mc.amongus.area.GameArea
 import com.fantamomo.mc.amongus.data.AmongUsConfig
 import com.fantamomo.mc.amongus.data.AmongUsDebug
@@ -115,6 +116,7 @@ class Game(
     val morphManager = MorphManager(this)
     val ghostFormManager = GhostFormManager(this)
     val roleRevealManager = RoleRevealManager(this)
+    val lobbyChatAiService = LobbyChatAiService(this)
 
     internal val players: MutableList<AmongUsPlayer> = mutableListOf()
     internal val bannedPlayers: MutableSet<UUID> = mutableSetOf()
@@ -438,6 +440,7 @@ class Game(
         phase = GamePhase.REVEALING_ROLES
         roleManager.assign()
         chatManager.start()
+        lobbyChatAiService.stop()
 
         for (player in players) {
             player.internal.preStart()
