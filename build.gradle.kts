@@ -44,6 +44,7 @@ dependencies {
     implementation("com.fantamomo.mc:brigadier-interception:1.1-SNAPSHOT")
 
     implementation("org.mineskin:java-client:3.2.1-SNAPSHOT")
+    implementation("ai.koog:koog-agents:0.7.1")
 
 
     testImplementation(kotlin("test"))
