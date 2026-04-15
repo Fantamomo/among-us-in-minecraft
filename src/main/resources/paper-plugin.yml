@@ -8,5 +8,5 @@ load: STARTUP
 authors: [Fantamomo]
 bootstrapper: com.fantamomo.mc.amongus.AmongUsBootstrapper
 loader: com.fantamomo.mc.amongus.AmongUsPluginLoader
-website: https://among-us-in-minecraft.docs.fantamomo.com
+website: https://docs.among-us-in-minecraft.fantamomo.com
 description: A plugin for playing Among Us in Minecraft
