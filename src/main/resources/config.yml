@@ -73,10 +73,10 @@ game-creation:
 # ActionLog upload configuration
 action-log-upload:
   # Should we upload ActionLogs to a server?
-  enabled: false
+  enabled: true
 
   # The URL to upload the ActionLogs to.
-  url: http://localhost:29243
+  url: https://among-us-in-minecraft-logs.fantamomo.com
 
   # Should we send ActionLogs to all player that where in the game? (true)
   # Or only to the host? (false)
