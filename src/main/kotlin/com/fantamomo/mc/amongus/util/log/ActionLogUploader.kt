@@ -3,10 +3,6 @@ package com.fantamomo.mc.amongus.util.log
 import com.fantamomo.mc.amongus.data.AmongUsConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import org.slf4j.LoggerFactory
 import java.net.URI
 import java.net.URL
@@ -45,16 +41,22 @@ object ActionLogUploader {
                     .build()
 
                 val response = client.send(request, HttpResponse.BodyHandlers.ofString())
-                if (response.statusCode() != 200) {
+                if (response.statusCode() !in 200..299) {
                     logger.error("Action log upload failed with status code ${response.statusCode()}: ${response.body()}")
                     return@withContext null
                 }
 
-                val json = Json.parseToJsonElement(response.body()).jsonObject
-                val resultUrl = json["url"]?.jsonPrimitive?.contentOrNull ?: return@withContext null
+                val code = response.body()
+                if (code.isEmpty()) {
+                    logger.error("Action log upload failed: empty response")
+                    return@withContext null
+                } else if (code.length != 8) {
+                    logger.error("Action log upload failed: invalid response code: $code")
+                    return@withContext null
+                }
 
                 @Suppress("DEPRECATION")
-                return@withContext URL(BASE_URL!! + resultUrl)
+                return@withContext URL(BASE_URL!! + "/log/" + code)
             } catch (e: Exception) {
                 logger.error("Action log upload failed", e)
                 null
