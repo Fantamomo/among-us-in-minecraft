@@ -5,14 +5,17 @@ import com.fantamomo.mc.amongus.data.AmongUsDebug
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.game.GamePhase
 import com.fantamomo.mc.amongus.player.*
-import com.fantamomo.mc.amongus.util.ServerThread
+import com.fantamomo.mc.amongus.util.coroutines.ServerThread
+import com.fantamomo.mc.amongus.util.coroutines.toLineFlow
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.collectIndexed
 import net.kyori.adventure.text.Component
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalAtomicApi::class)
 class LobbyChatAiService(private val game: Game) {
@@ -32,10 +35,17 @@ class LobbyChatAiService(private val game: Game) {
 
         if (currentlySendingBot.exchange(null) != null) return
 
-        debounceJob?.cancel()
+        val lastJob = debounceJob
+
+        if (lastJob != null && lastJob.isActive) {
+            scope.launch {
+                delay(100.milliseconds)
+                lastJob.cancel()
+            }
+        }
 
         debounceJob = scope.launch {
-            delay(1200)
+            delay(1200.milliseconds)
 
             triggerAi()
         }
@@ -47,9 +57,31 @@ class LobbyChatAiService(private val game: Game) {
 
             logger.info("Requesting Lobby Director AI...")
 
-            val response = AiService.run(prompt)
+            val flow = AiService.stream(prompt)
 
-            handleResponse(response)
+            var active = false
+
+            flow.toLineFlow().collectIndexed { index, line ->
+                if (index != 0) {
+                    try {
+                        delay(Random.nextInt(10, 800).milliseconds)
+                    } catch (e: CancellationException) {
+                        handleResponse(line)
+                        throw e
+                    }
+                }
+                if (line.isBlank()) return@collectIndexed
+                if (handleResponse(line)) {
+                    active = true
+                }
+            }
+
+            if (active) {
+                debounceJob = scope.launch {
+                    delay(1200.milliseconds)
+                    triggerAi()
+                }
+            }
 
         } catch (e: CancellationException) {
             if (e.message != "StandaloneCoroutine was cancelled" && e.message != "Job was cancelled") {
@@ -100,43 +132,44 @@ class LobbyChatAiService(private val game: Game) {
         return AiPrompts.LOBBY[placeholders]
     }
 
-    private suspend fun handleResponse(response: String) {
+    private suspend fun handleResponse(line: String): Boolean {
         if (AmongUsDebug.DebugValues.LOG_AI_RESPONSE.isEnabled()) {
-            logger.info("AI Response: $response")
+            logger.info("AI Response: $line")
         }
 
-        val lines = response.lines()
+//        val lines = response.lines()
+//
+//        var executed = 0
+//
+//        for ((index, line) in lines.withIndex()) {
+//            if (executed >= 2) break
 
-        var executed = 0
+        if (!line.startsWith("CHAT ")) return false
 
-        for ((index, line) in lines.withIndex()) {
-            if (executed >= 2) break
+        val content = line.removePrefix("CHAT ").trim()
 
-            if (!line.startsWith("CHAT ")) continue
+        val splitIndex = content.indexOf(" ")
+        if (splitIndex == -1) return false
 
-            val content = line.removePrefix("CHAT ").trim()
+        val botName = content.substring(0, splitIndex).trim()
+        val message = content.substring(splitIndex + 1).trim()
 
-            val splitIndex = content.indexOf(" ")
-            if (splitIndex == -1) continue
+        if (message.isEmpty()) return false
 
-            val botName = content.substring(0, splitIndex).trim()
-            val message = content.substring(splitIndex + 1).trim()
+        val bot = game.players
+            .find { it.isBot && it.name.equals(botName, ignoreCase = true) }
+            ?.bot ?: return false
 
-            if (message.isEmpty()) continue
+        /*if (index < lines.lastIndex)*/ currentlySendingBot.store(bot)
+        sendMessage(bot, message)
+        currentlySendingBot.store(null)
 
-            val bot = game.players
-                .find { it.isBot && it.name.equals(botName, ignoreCase = true) }
-                ?.bot ?: continue
-
-            if (index < lines.lastIndex) currentlySendingBot.store(bot)
-            sendMessage(bot, message)
-            currentlySendingBot.store(null)
-
-            if (index == lines.lastIndex) break
-
-            executed++
-            delay(Random.nextLong(100, 800))
-        }
+//            if (index == lines.lastIndex) break
+//
+//            executed++
+//            delay(Random.nextLong(100, 800).milliseconds)
+//        }
+        return true
     }
 
     private suspend fun sendMessage(bot: BotAmongUsPlayer, message: String) {
