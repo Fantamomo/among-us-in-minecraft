@@ -128,6 +128,12 @@ sealed class AbstractAmongUsPlayer(
         modification?.onGameStart()
         modification?.onStart()
 
+        for (assigned in abilities) {
+            for (item in assigned.items) {
+                item.startCooldown()
+            }
+        }
+
         for (player in game.players) {
             if (player === this || player.isBot) continue
             val p = player.player ?: continue
