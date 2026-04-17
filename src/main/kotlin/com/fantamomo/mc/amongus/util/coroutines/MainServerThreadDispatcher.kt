@@ -1,4 +1,4 @@
-package com.fantamomo.mc.amongus.util
+package com.fantamomo.mc.amongus.util.coroutines
 
 import ca.spottedleaf.moonrise.common.util.TickThread
 import com.fantamomo.mc.amongus.AmongUs
