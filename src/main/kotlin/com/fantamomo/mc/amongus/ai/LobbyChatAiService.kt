@@ -13,6 +13,7 @@ import java.util.concurrent.ConcurrentHashMap
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalAtomicApi::class)
 class LobbyChatAiService(private val game: Game) {
@@ -32,10 +33,17 @@ class LobbyChatAiService(private val game: Game) {
 
         if (currentlySendingBot.exchange(null) != null) return
 
-        debounceJob?.cancel()
+        val lastJob = debounceJob
+
+        if (lastJob != null && lastJob.isActive) {
+            scope.launch {
+                delay(100.milliseconds)
+                lastJob.cancel()
+            }
+        }
 
         debounceJob = scope.launch {
-            delay(1200)
+            delay(1200.milliseconds)
 
             triggerAi()
         }
@@ -135,7 +143,7 @@ class LobbyChatAiService(private val game: Game) {
             if (index == lines.lastIndex) break
 
             executed++
-            delay(Random.nextLong(100, 800))
+            delay(Random.nextLong(100, 800).milliseconds)
         }
     }
 
