@@ -92,6 +92,7 @@ ai:
     model-path:
     embeddings-path:
   model: qwen/qwen3-32b
+  generate-game-summary: true
 
 # Should we animate the scoreboard?
 animate-scoreboard: true

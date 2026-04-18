@@ -1,5 +1,6 @@
 package com.fantamomo.mc.amongus
 
+import com.fantamomo.mc.amongus.ai.AiService
 import com.fantamomo.mc.amongus.area.GameAreaManager
 import com.fantamomo.mc.amongus.command.AmongUsCommands
 import com.fantamomo.mc.amongus.command.Permissions
@@ -57,7 +58,6 @@ object AmongUs : JavaPlugin() {
         })
     }
 
-    @Suppress("UnusedExpression")
     override fun onEnable() {
         saveDefaultConfig()
         AmongUsConfig.init()
@@ -71,10 +71,8 @@ object AmongUs : JavaPlugin() {
         Listeners.registerAll()
         LanguageManager.init()
         AmongUsSecrets.init()
-        ActionLogManager
 
-        Role
-        Modification
+        initClasses()
 
         if (AmongUsConstants.IN_DEVELOPMENT) {
             val notSupportBots: MutableList<Role<*, *>> = mutableListOf()
@@ -94,9 +92,16 @@ object AmongUs : JavaPlugin() {
 
         Permissions.registerAll()
 
-        runCatching { classLoader.loadClass("kotlin.io.FilesKt") }
-        @Suppress("UnusedExpression")
+    }
+
+    @Suppress("UnusedExpression")
+    private fun initClasses() {
+        ActionLogManager
+        AiService
+        Role
+        Modification
         PlayerDataManager
+        runCatching { classLoader.loadClass("kotlin.io.FilesKt") }
     }
 
     private val classNotFoundExceptions: MutableList<NoClassDefFoundError> = mutableListOf()

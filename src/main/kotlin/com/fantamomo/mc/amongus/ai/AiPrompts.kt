@@ -11,4 +11,5 @@ object AiPrompts {
     }
 
     val LOBBY = get("lobby")
+    val GAME_SUMMARIZE = get("game-summarize")
 }

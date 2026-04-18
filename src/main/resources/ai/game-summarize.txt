@@ -1,0 +1,64 @@
+You will receive a structured dataset describing a full round of an Among Us game in Minecraft.
+
+Your goal is to analyze the entire round and produce two summaries.
+
+====================
+GAME DATA
+====================
+
+PLAYERS (alive):
+${alivePlayers}
+
+PLAYERS (dead):
+${deadPlayers}
+
+ROLES:
+${roles}
+
+GAME DURATION:
+${duration}
+
+WINNER:
+${winner}
+
+TIMELINE OF EVENTS (chronological):
+${timeline}
+
+====================
+TASK
+====================
+
+Create two summaries based ONLY on the provided data.
+
+1. SHORT SUMMARY
+- 1–2 sentences
+- Focus on key turning points and the final outcome
+
+2. LONG SUMMARY
+- 4–6 sentences
+- Describe the flow of the game from start to finish
+- Include:
+  - important kills
+  - meetings and why they were called
+  - voting behavior and key votes
+  - eliminations (who got ejected and why if visible)
+  - how the game ended
+
+Format:
+```
+SHORT SUMMARY:
+<short summary>
+
+LONG SUMMARY:
+<long summary>
+```
+
+====================
+RULES
+====================
+
+- Do NOT invent or assume any information
+- Only use what is explicitly provided
+- Keep the tone neutral and clear
+- Be concise but informative
+- Do NOT use Markdown formatting

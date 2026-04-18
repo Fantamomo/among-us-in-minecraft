@@ -65,6 +65,8 @@ object AmongUsConfig {
             val embeddingsPath = section.getString("embeddings-path", "").orEmpty()
         }
         val model = section.getString("model", "qwen/qwen3-32b")
+
+        val generateGameSummary = section.getBoolean("generate-game-summary", true)
     }
 
     val animateScoreboard = config.getBoolean("animate-scoreboard", true)
