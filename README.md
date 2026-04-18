@@ -1,12 +1,15 @@
+![Among Us in Minecraft](banner.svg)
+
 # Among Us in Minecraft
 
 > A fan-made Minecraft plugin that brings the gameplay of Among Us to Minecraft.
 
 **[🕮 Documentation](https://among-us-in-minecraft.docs.fantamomo.com/)** · **[🗺️ Map Setup](https://among-us-in-minecraft.docs.fantamomo.com/demo/map/)** · **[🎮 Demo Server](https://among-us-in-minecraft.docs.fantamomo.com/demo/demo)**
 
-> [!WARNING]
-> This project is **not affiliated with, endorsed by, or associated with Innersloth**.
-> All trademarks and IP related to Among Us belong to Innersloth.
+> [!WARNING]  
+> This project is **not affiliated with, endorsed by, or associated with Innersloth or Mojang Studios**.  
+> All trademarks and IP related to **Among Us** belong to **Innersloth**.  
+> All trademarks and IP related to **Minecraft** belong to **Mojang Studios**.  
 > This is an independent, non-commercial fan project for educational and entertainment purposes.
 
 ---
@@ -69,14 +72,18 @@ Some task and role names are borrowed from Among Us purely for recognizability a
 
 - Not an official Among Us product
 - Not affiliated with Innersloth LLC.
-- No original Among Us assets used
+- No original Among Us assets are used
 - Fan-made recreation inspired by the gameplay
 
 ---
 
 ## Licence
 
-[Apache License 2.0](LICENSE)
+Code: [Apache License 2.0](LICENSE)
+
+Asserts (e.g., banner, logo): All rights reserved.  
+Contains fan-made artwork inspired by Among Us and Minecraft.
+All trademarks belong to their respective owners.
 
 ---
 
