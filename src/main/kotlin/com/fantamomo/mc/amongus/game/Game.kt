@@ -4,6 +4,8 @@ import com.fantamomo.mc.adventure.text.*
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.AmongUsConstants
 import com.fantamomo.mc.amongus.ability.AbilityManager
+import com.fantamomo.mc.amongus.ai.AiGameSummarizer
+import com.fantamomo.mc.amongus.ai.AiService
 import com.fantamomo.mc.amongus.ai.LobbyChatAiService
 import com.fantamomo.mc.amongus.area.GameArea
 import com.fantamomo.mc.amongus.data.AmongUsConfig
@@ -122,6 +124,7 @@ class Game(
     internal val bannedPlayers: MutableSet<UUID> = mutableSetOf()
     var phase: GamePhase = GamePhase.LOBBY
         internal set(value) {
+            if (field == GamePhase.FINISHED) throw IllegalStateException("Cannot change phase after game has finished")
             if (value != field) {
                 actionLog.add(GameActionElements.PhaseChange(field, value))
             }
@@ -541,6 +544,9 @@ class Game(
 
         logger.info("Game ended with $team win")
 
+        val summarizer = AiGameSummarizer(this)
+        summarizer.init()
+
         sabotageManager.endSabotage()
         invalidateAbilities()
 
@@ -624,6 +630,21 @@ class Game(
         GameManager.gameEnd(this)
         actionLog.add(GameActionElements.End)
 
+        if (AmongUsConfig.AI.generateGameSummary && AiService.isEnabled()) {
+            AmongUs.scope.launch {
+                val (short, long) = summarizer.generate()
+                actionLog.customData["ai_long_summary"] = long
+                actionLog.customData["ai_short_summary"] = short
+                logger.info("Short summary: $short")
+                logger.info("Long summary: $long")
+                storeActionLog(bukkitPlayerList, hostPlayer)
+            }
+        } else {
+            storeActionLog(bukkitPlayerList, hostPlayer)
+        }
+    }
+
+    private fun storeActionLog(bukkitPlayerList: List<Player>, hostPlayer: Player?) {
         if (ActionLogUploader.enabled()) {
             val targets =
                 if (AmongUsConfig.ActionLogUpload.sendToPlayers) bukkitPlayerList else listOfNotNull(hostPlayer)
