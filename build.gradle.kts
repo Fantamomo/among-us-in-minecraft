@@ -1,10 +1,10 @@
 import io.papermc.paperweight.userdev.ReobfArtifactConfiguration
 
 plugins {
-    kotlin("jvm") version "2.3.20-Beta2"
+    kotlin("jvm") version "2.4.0-Beta1"
     kotlin("plugin.serialization") version "2.3.20-Beta2"
     id("com.gradleup.shadow") version "8.3.0"
-    id("io.papermc.paperweight.userdev") version "2.0.0-beta.19"
+    id("io.papermc.paperweight.userdev") version "2.0.0-beta.21"
 }
 
 group = "com.fantamomo.mc"
@@ -33,7 +33,7 @@ fun RepositoryHandler.github(user: String = "Fantamomo", repo: String): MavenArt
 }
 
 dependencies {
-    paperweight.paperDevBundle("1.21.11-R0.1-SNAPSHOT")
+    paperweight.paperDevBundle("26.1.2.build.+")
 
     implementation(kotlin("stdlib"))
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
@@ -49,7 +49,7 @@ dependencies {
     testImplementation(kotlin("test"))
 }
 
-val targetJavaVersion = 21
+val targetJavaVersion = 25
 kotlin {
     jvmToolchain(targetJavaVersion)
     compilerOptions {
