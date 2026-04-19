@@ -22,10 +22,10 @@ import org.bukkit.entity.Pose
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
-import kotlin.uuid.toKotlinUuid
+import kotlin.time.Clock
 
 class KillManager(val game: Game) {
-    private val corpses: MutableList<Corpse> = mutableListOf()
+    internal val corpses: MutableList<Corpse> = mutableListOf()
 
     @Suppress("UnstableApiUsage")
     fun showCorpse(owner: AmongUsPlayer, location: Location) {
@@ -208,6 +208,9 @@ class KillManager(val game: Game) {
         game.actionLog.add(PlayerActionElements.PlayerDeath(target.uuid, reason))
         val mannequin = target.mannequin
         mannequin.isInvisible = true
+        if (reason is DeadReason.Murdered) {
+            reason.murderer.internal.lastKillTime = Clock.System.now()
+        }
         showGhosts(target)
         val scoreboard = game.scoreboardManager.get(target)
         if (scoreboard != null) {
