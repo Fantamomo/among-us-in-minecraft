@@ -23,6 +23,7 @@ import org.bukkit.inventory.meta.trim.ArmorTrim
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import java.util.*
+import kotlin.time.Instant
 
 sealed class AbstractAmongUsPlayer(
     override val uuid: UUID,
@@ -65,9 +66,10 @@ sealed class AbstractAmongUsPlayer(
 
     override val location: Location
         get() = mannequinController.getEntity()?.location ?: throw IllegalStateException("No location available")
-    override var meetingButtonsPressed: Int = 0
     override val mannequinController = MannequinController(this)
-
+    override var meetingButtonsPressed: Int = 0
+    override var lastKillTime: Instant? = null
+        internal set
     abstract override val audience: Audience
 
 

@@ -13,6 +13,7 @@ import org.bukkit.Location
 import org.bukkit.inventory.meta.trim.ArmorTrim
 import java.util.*
 import java.util.concurrent.CompletableFuture
+import kotlin.time.Instant
 
 /**
  * Represents a player in the game Among Us. This interface consolidates
@@ -49,6 +50,7 @@ sealed interface AmongUsPlayer : AudienceHolder {
 
     val meetingButtonsPressed: Int
 
+    val lastKillTime: Instant?
 
     fun canSee(other: AmongUsPlayer): Boolean
 
