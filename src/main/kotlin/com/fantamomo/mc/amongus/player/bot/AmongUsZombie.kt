@@ -52,6 +52,10 @@ class AmongUsZombie internal constructor(val controller: BotController, level: S
 
     override fun registerGoals() {}
 
+    override fun fireImmune() = true
+
+    override fun isOnFire() = false
+
     override fun finalizeSpawn(
         level: ServerLevelAccessor,
         difficulty: DifficultyInstance,

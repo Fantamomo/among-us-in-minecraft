@@ -3,13 +3,12 @@ package com.fantamomo.mc.amongus.player.bot
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.game.GamePhase
 import com.fantamomo.mc.amongus.player.BotAmongUsPlayer
-import com.fantamomo.mc.amongus.player.bot.goals.LookAtPlayerGoal
-import com.fantamomo.mc.amongus.player.bot.goals.LookAtTaskGoal
-import com.fantamomo.mc.amongus.player.bot.goals.MoveToTaskGoal
-import com.fantamomo.mc.amongus.player.bot.goals.RandomMoveGoal
+import com.fantamomo.mc.amongus.player.bot.goals.*
 import com.fantamomo.mc.amongus.player.bot.mangement.BotVoteTargetController
 import com.fantamomo.mc.amongus.role.SupportBotsRole
+import com.fantamomo.mc.amongus.role.util.KillerRole
 import com.fantamomo.mc.amongus.util.internal.NMS
+import net.minecraft.world.entity.ai.goal.Goal
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal
 import net.minecraft.world.entity.ai.goal.RandomStrollGoal
 import org.bukkit.craftbukkit.CraftWorld
@@ -29,6 +28,8 @@ class BotController(val player: BotAmongUsPlayer) {
 
     var moveToTaskGoal: MoveToTaskGoal? = null
         private set
+    var executionAbilityGoal: Goal? = null
+        internal set
 
     // controllers
     var voteTargetController: BotVoteTargetController? = null
@@ -89,11 +90,19 @@ class BotController(val player: BotAmongUsPlayer) {
 
     private fun addRunningGoals() {
         val gs = handle.goalSelector
-        gs.addGoal(1, MoveToTaskGoal(player, handle, 1.5).also { moveToTaskGoal = it })
-        gs.addGoal(2, LookAtTaskGoal(handle))
-        gs.addGoal(6, LookAtPlayerGoal(handle, 6.0f))
-        gs.addGoal(7, RandomLookAroundGoal(handle))
-        gs.addGoal(7, RandomMoveGoal(handle, 1.0, 40, 20))
+        gs.addGoal(10, MoveToTaskGoal(player, handle, 1.5).also { moveToTaskGoal = it })
+        gs.addGoal(20, LookAtTaskGoal(handle))
+        gs.addGoal(60, LookAtPlayerGoal(handle, 6.0f))
+        gs.addGoal(70, RandomLookAroundGoal(handle))
+        gs.addGoal(70, RandomMoveGoal(handle, 1.0, 40, 20))
+        if (player.role is KillerRole) {
+            gs.addGoal(4, RunAwayFromBodyGoal(handle))
+        }
+        for (ability in player.abilities) {
+            for (item in ability.items) {
+                item.registerGoals(gs, handle)
+            }
+        }
     }
 
     private fun addMeetingGoals() {

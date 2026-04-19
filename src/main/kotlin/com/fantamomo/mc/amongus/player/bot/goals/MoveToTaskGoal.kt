@@ -13,6 +13,7 @@ import net.minecraft.world.entity.ai.goal.MoveToBlockGoal
 import net.minecraft.world.entity.decoration.Mannequin
 import net.minecraft.world.level.LevelReader
 import java.util.*
+import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
 
 class MoveToTaskGoal(
@@ -33,7 +34,10 @@ class MoveToTaskGoal(
         NAVIGATING,
         WORKING,
         IDLE,
-        COOLDOWN
+        COOLDOWN;
+
+        val isDoingNothing: Boolean
+            get() = this == IDLE || this == COOLDOWN
     }
 
     var targetTask: TaskManager.RegisteredTask? = null
@@ -45,6 +49,11 @@ class MoveToTaskGoal(
         private set
     private var cooldownTicksEnd = -1L
     var state = State.IDLE
+        get() {
+            if (player.tasks.all { it.completed })
+                return State.IDLE
+            return field
+        }
         private set
     private var recalculatePathIn = 0L
 
@@ -60,7 +69,9 @@ class MoveToTaskGoal(
 
     override fun canUse(): Boolean {
         if (state == State.COOLDOWN && cooldownTicksEnd != -1L && cooldownTicksEnd > GameManager.currentTick.ticks) return false
+        if (player.controller.executionAbilityGoal != null) return false
         if (player.tasks.all { it.completed }) return false
+        if (Random.nextDouble() < 0.4) return false
         return findNearestBlock()
     }
 

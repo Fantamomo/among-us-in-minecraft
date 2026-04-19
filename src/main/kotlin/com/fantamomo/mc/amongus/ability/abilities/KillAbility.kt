@@ -4,6 +4,7 @@ import com.fantamomo.mc.amongus.ability.Ability
 import com.fantamomo.mc.amongus.ability.AssignedAbility
 import com.fantamomo.mc.amongus.ability.builder.*
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import com.fantamomo.mc.amongus.player.bot.goals.KillNearestPlayerGoal
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import net.kyori.adventure.text.Component
 import org.bukkit.inventory.ItemType
@@ -40,6 +41,10 @@ object KillAbility :
                 requiresNotInMeeting()
 
                 requiresNotInVent()
+
+                registerGoals { gs, zombie, item ->
+                    gs.addGoal(5, KillNearestPlayerGoal(zombie, this@AssignedKillAbility, item))
+                }
 
                 condition(
                     BlockReason.custom("notNearVictim"),

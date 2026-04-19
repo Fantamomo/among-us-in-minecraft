@@ -13,6 +13,6 @@ class RandomMoveGoal(mob: AmongUsZombie, speedModifier: Double, interval: Int, v
     override fun getPosition() = DefaultRandomPos.getPos(auZombie, range, 7)
 
     override fun canContinueToUse(): Boolean {
-        return auZombie.controller.moveToTaskGoal?.state.let { it == null || it == MoveToTaskGoal.State.COOLDOWN } && super.canContinueToUse()
+        return auZombie.controller.moveToTaskGoal?.state.let { it == null || it.isDoingNothing } && super.canContinueToUse()
     }
 }
