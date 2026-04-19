@@ -69,6 +69,7 @@ class MoveToTaskGoal(
 
     override fun canUse(): Boolean {
         if (state == State.COOLDOWN && cooldownTicksEnd != -1L && cooldownTicksEnd > GameManager.currentTick.ticks) return false
+        if (player.controller.executionAbilityGoal != null) return false
         if (player.tasks.all { it.completed }) return false
         if (Random.nextDouble() < 0.4) return false
         return findNearestBlock()
