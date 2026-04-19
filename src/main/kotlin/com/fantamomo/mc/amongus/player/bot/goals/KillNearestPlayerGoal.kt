@@ -59,7 +59,7 @@ class KillNearestPlayerGoal(
     }
 
     override fun start() {
-//        mob.controller.handle.navigation.moveToWithGraph(target!!.mannequinController.handle!!.blockPosition(), speedModifier)
+        mob.controller.executionAbilityGoal = this
     }
 
     override fun tick() {
@@ -76,6 +76,7 @@ class KillNearestPlayerGoal(
             }
         } else {
             target.game.killManager.killByImposter(mob.controller.player, target)
+            item.startCooldown()
             this.target = null
         }
     }
@@ -84,6 +85,7 @@ class KillNearestPlayerGoal(
         this.mob.getNavigation().stop()
         target = null
         ticks = 0
+        mob.controller.executionAbilityGoal = null
     }
 
     override fun getDebugName() = this::class.java.simpleName + target?.name?.let { ": $it" }.orEmpty()
