@@ -50,7 +50,7 @@ public class AmongUsPluginLoader implements PluginLoader {
             return true;
         }
         String value = manifest.getMainAttributes().getValue("Jar-Type");
-        return value == null || !value.equalsIgnoreCase("standalone");
+        return value == null || value.equalsIgnoreCase("lite");
     }
 
     @Override
