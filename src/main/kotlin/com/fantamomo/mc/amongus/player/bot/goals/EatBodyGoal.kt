@@ -1,7 +1,5 @@
 package com.fantamomo.mc.amongus.player.bot.goals
 
-import com.fantamomo.mc.amongus.ability.abilities.EatBodyAbility
-import com.fantamomo.mc.amongus.manager.MeetingManager
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.player.bot.AmongUsZombie
 import net.minecraft.core.BlockPos
@@ -51,10 +49,7 @@ class EatBodyGoal(val zombie: AmongUsZombie) :
                 )
             }
         } else {
-            player.game.meetingManager.callMeeting(
-                player,
-                MeetingManager.MeetingReason.BODY
-            )
+            player.game.killManager.eatCorpse(player)
             targetBody = null
         }
     }
