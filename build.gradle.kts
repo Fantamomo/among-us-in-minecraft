@@ -79,50 +79,113 @@ abstract class GitHashSource : ValueSource<String, ValueSourceParameters.None> {
             ?: "unknown"
 }
 
+abstract class GitUnattachedSource : ValueSource<Boolean, ValueSourceParameters.None> {
+    override fun obtain(): Boolean {
+        val process = ProcessBuilder("git", "status", "--porcelain", "--untracked-files=no")
+            .start()
+
+        val output = process.inputStream.bufferedReader().readText().trim()
+        return output.isNotEmpty()
+    }
+}
+
 val gitHash: Provider<String> = providers.of(GitHashSource::class) {}
+val gitUnattached: Provider<Boolean> = providers.of(GitUnattachedSource::class) {}
 
-tasks {
-    shadowJar {
-        mergeServiceFiles()
+tasks.jar {
+    archiveClassifier.set("thin")
 
-        // These dependencies are intentionally excluded from the shaded (fat) JAR.
-        // They are resolved and downloaded dynamically at runtime on the first plugin startup
-        // via AmongUsPluginLoader (src/main/java/com/fantamomo/mc/amongus/AmongUsPluginLoader.java), keeping the plugin artifact lightweight.
-        exclude("org/jetbrains/kotlinx/**")
-        exclude("org/mineskin/**")
-        exclude("ai/koog/**")
+    manifest {
+        attributes(
+            "Jar-Type" to "thin"
+        )
+    }
+}
 
-        // Internal project dependencies (com.fantamomo.mc) are currently published via GitHub Packages
-        // and require authentication using a GitHub token.
-        // Embedding such credentials inside the JAR would pose a security risk.
-        //
-        // Since these artifacts are not yet available in a fully public repository,
-        // they are bundled directly into the shaded JAR for now.
-        dependencies {
-            include(dependency("com.fantamomo.mc:.*"))
-        }
+val liteJar by tasks.registering(com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar::class) {
+    archiveClassifier.set("lite")
+    mergeServiceFiles()
 
-        excludedFromShadow.forEach { group ->
-            dependencies { exclude(dependency("$group:.*")) }
-        }
+    from(sourceSets.main.get().output)
+    configurations = listOf(project.configurations.runtimeClasspath.get())
+
+    // These dependencies are intentionally excluded from the shaded (fat) JAR.
+    // They are resolved and downloaded dynamically at runtime on the first plugin startup
+    // via AmongUsPluginLoader (src/main/java/com/fantamomo/mc/amongus/AmongUsPluginLoader.java), keeping the plugin artifact lightweight.
+    exclude("org/jetbrains/kotlinx/**")
+    exclude("org/mineskin/**")
+    exclude("ai/koog/**")
+
+    // Internal project dependencies (com.fantamomo.mc) are currently published via GitHub Packages
+    // and require authentication using a GitHub token.
+    // Embedding such credentials inside the JAR would pose a security risk.
+    //
+    // Since these artifacts are not yet available in a fully public repository,
+    // they are bundled directly into the shaded JAR for now.
+    dependencies {
+        include(dependency("com.fantamomo.mc:.*"))
     }
 
+    excludedFromShadow.forEach { group ->
+        dependencies { exclude(dependency("$group:.*")) }
+    }
+
+    manifest {
+        attributes(
+            "Jar-Type" to "lite"
+        )
+    }
+}
+
+val standaloneJar by tasks.registering(com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar::class) {
+    archiveClassifier.set("standalone")
+
+    from(sourceSets.main.get().output)
+    configurations = listOf(project.configurations.runtimeClasspath.get())
+
+    mergeServiceFiles()
+
+    manifest {
+        attributes(
+            "Jar-Type" to "standalone"
+        )
+    }
+}
+
+liteJar {
+    dependsOn(tasks.classes)
+}
+
+standaloneJar {
+    dependsOn(tasks.classes)
+}
+
+tasks {
+
     build {
-        dependsOn(shadowJar)
+        dependsOn(jar)
+        dependsOn(liteJar)
+        dependsOn(standaloneJar)
     }
 
     processResources {
         val gitHash = providers.of(GitHashSource::class) {}
+        val gitUnattached = providers.of(GitUnattachedSource::class) {}
         val pluginVersion = version.toString()
 
         inputs.property("version", pluginVersion)
         inputs.property("githash", gitHash)
+        inputs.property("unattached", gitUnattached)
+
         filteringCharset = "UTF-8"
         filesMatching("paper-plugin.yml") {
-            expand(mapOf(
-                "version" to pluginVersion,
-                "githash" to gitHash.get()
-            ))
+            expand(
+                mapOf(
+                    "version" to pluginVersion,
+                    "githash" to gitHash.get(),
+                    "unattached" to gitUnattached.get()
+                )
+            )
         }
     }
 }

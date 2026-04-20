@@ -1,6 +1,7 @@
 name: AmongUs
 version: ${version}
 git-hash: ${githash}
+unattached: ${unattached}
 main: com.fantamomo.mc.amongus.AmongUs
 api-version: '1.21'
 prefix: AmongUs

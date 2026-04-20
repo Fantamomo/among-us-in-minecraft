@@ -18,6 +18,7 @@ import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.role.Role
 import com.fantamomo.mc.amongus.role.SupportBotsRole
 import com.fantamomo.mc.amongus.statistics.StatisticsManager
+import com.fantamomo.mc.amongus.util.JarType
 import com.fantamomo.mc.amongus.util.LogFilter
 import com.fantamomo.mc.amongus.util.applyUnless
 import com.fantamomo.mc.amongus.util.log.ActionLogManager
@@ -44,21 +45,49 @@ object AmongUs : JavaPlugin() {
     })
 
     override fun onLoad() {
-        slF4JLogger.info(buildString {
-            append("Running v")
-            append(pluginMeta.version)
-            AmongUsConstants.GIT_HASH
-                ?.applyUnless(AmongUsConstants.IN_DEVELOPMENT) { take(8) }
-                ?.let {
-                    append(" (")
-                    append(it)
-                    append(")")
+        val inDevelopment = AmongUsConstants.IN_DEVELOPMENT
+        val unattached = AmongUsConstants.UNATTACHED
+        with(slF4JLogger) {
+            info(buildString {
+                append("Running v")
+                append(pluginMeta.version)
+                AmongUsConstants.GIT_HASH
+                    ?.applyUnless(inDevelopment) { take(8) }
+                    ?.let {
+                        append(" (")
+                        append(it)
+                        append(")")
+                    }
+                append(" by Fantamomo")
+            })
+            when (unattached) {
+                true -> {
+                    warn("This plugin is in a unattached state")
+                    warn("This means that there have been changes to the code, without a commit")
+                    warn("If you are a developer, you can ignore this message.")
+                    warn("If you are a server admin, please switch to a official build.")
                 }
-            append(" by Fantamomo")
-        })
+                false -> {}
+                else -> {
+                    error("The unattached state could not be determined.")
+                    error("Please report this issue to the plugin author.")
+                }
+            }
+        }
     }
 
     override fun onEnable() {
+        if (AmongUsConstants.JAR_TYPE == JarType.THIN) {
+            with(slF4JLogger) {
+                warn("This Plugin is running the thin version of the jar.")
+                warn("Some libraries are not included in the jar.")
+                warn("This would lead to exception we could not catch.")
+                warn("Please switch to the LITE or the STANDALONE version.")
+                warn("The plugin will be disabled.")
+            }
+            server.pluginManager.disablePlugin(this)
+            return
+        }
         saveDefaultConfig()
         AmongUsConfig.init()
         if (AmongUsConstants.IN_DEVELOPMENT) with(slF4JLogger) {
