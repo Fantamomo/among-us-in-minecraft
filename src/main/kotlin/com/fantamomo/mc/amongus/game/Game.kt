@@ -272,21 +272,12 @@ class Game(
         val now = Clock.System.now()
 
         for (player in players) {
-            if (player.isHuman) {
-                val bukkitPlayer = player.player
-                if (bukkitPlayer != null) {
-                    bukkitPlayer.saturation = 5.0f
-                    bukkitPlayer.foodLevel = 20
-                    if (tickContext.isBy(6) &&
-                        AmongUsDebug.DebugValues.SHOW_BOT_GRAPH.isEnabled() &&
-                        bukkitPlayer.isOp
-                    ) {
-                        navGraph.debugShowGraph(bukkitPlayer)
-                    }
-                }
+            player.internal
+            try {
+                player.tick(tickContext)
+            } catch (e: Exception) {
+                logger.error("Error while ticking player ${player.name}", e)
             }
-            player.modification?.onTick(tickContext)
-            player.mannequinController.syncFromOwner()
             val disconnectedAt = (player as? HumanAmongUsPlayer)?.disconnectedAt ?: continue
             if (now - disconnectedAt < MAX_DISCONNECT_TIME) continue
             killPlayerDueDisconnect(player)

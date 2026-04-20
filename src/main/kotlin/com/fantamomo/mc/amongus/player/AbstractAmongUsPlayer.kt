@@ -15,6 +15,7 @@ import com.fantamomo.mc.amongus.role.AssignedRole
 import com.fantamomo.mc.amongus.role.crewmates.CrewmateRole
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.task.TaskManager
+import com.fantamomo.mc.amongus.util.TickContext
 import com.fantamomo.mc.amongus.util.log.elements.AssignActionElements
 import net.kyori.adventure.audience.Audience
 import org.bukkit.Location
@@ -156,6 +157,11 @@ sealed class AbstractAmongUsPlayer(
         if (other.isVented()) return false
         if (!other.isAlive() && this.isAlive()) return false
         return true
+    }
+
+    open fun tick(tickContext: TickContext) {
+        modification?.onTick(tickContext)
+        mannequinController.syncFromOwner()
     }
 
     companion object {
