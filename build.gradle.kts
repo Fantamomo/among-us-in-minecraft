@@ -80,14 +80,19 @@ abstract class GitHashSource : ValueSource<String, ValueSourceParameters.None> {
 }
 
 val gitHash: Provider<String> = providers.of(GitHashSource::class) {}
-val jarType: Provider<String> = providers.gradleProperty("jarType").orElse("thin")
 
 tasks.jar {
     archiveClassifier.set("thin")
+
+    manifest {
+        attributes(
+            "Jar-Type" to "thin"
+        )
+    }
 }
 
 val semiFatJar by tasks.registering(com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar::class) {
-    archiveClassifier.set("all-lite")
+    archiveClassifier.set("lite")
     mergeServiceFiles()
 
     from(sourceSets.main.get().output)
@@ -113,22 +118,34 @@ val semiFatJar by tasks.registering(com.github.jengelman.gradle.plugins.shadow.t
     excludedFromShadow.forEach { group ->
         dependencies { exclude(dependency("$group:.*")) }
     }
+
+    manifest {
+        attributes(
+            "Jar-Type" to "lite"
+        )
+    }
 }
 
-val fullFatJar by tasks.registering(com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar::class) {
-    archiveClassifier.set("all-full")
+val standaloneFatJar by tasks.registering(com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar::class) {
+    archiveClassifier.set("standalone")
 
     from(sourceSets.main.get().output)
     configurations = listOf(project.configurations.runtimeClasspath.get())
 
     mergeServiceFiles()
+
+    manifest {
+        attributes(
+            "Jar-Type" to "standalone"
+        )
+    }
 }
 
 semiFatJar {
     dependsOn(tasks.classes)
 }
 
-fullFatJar {
+standaloneFatJar {
     dependsOn(tasks.classes)
 }
 
@@ -137,7 +154,7 @@ tasks {
     build {
         dependsOn(jar)
         dependsOn(semiFatJar)
-        dependsOn(fullFatJar)
+        dependsOn(standaloneFatJar)
     }
 
     processResources {
@@ -149,10 +166,12 @@ tasks {
 
         filteringCharset = "UTF-8"
         filesMatching("paper-plugin.yml") {
-            expand(mapOf(
-                "version" to pluginVersion,
-                "githash" to gitHash.get()
-            ))
+            expand(
+                mapOf(
+                    "version" to pluginVersion,
+                    "githash" to gitHash.get()
+                )
+            )
         }
     }
 }
