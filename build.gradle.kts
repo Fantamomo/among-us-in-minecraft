@@ -80,35 +80,64 @@ abstract class GitHashSource : ValueSource<String, ValueSourceParameters.None> {
 }
 
 val gitHash: Provider<String> = providers.of(GitHashSource::class) {}
+val jarType: Provider<String> = providers.gradleProperty("jarType").orElse("thin")
 
-tasks {
-    shadowJar {
-        mergeServiceFiles()
+tasks.jar {
+    archiveClassifier.set("thin")
+}
 
-        // These dependencies are intentionally excluded from the shaded (fat) JAR.
-        // They are resolved and downloaded dynamically at runtime on the first plugin startup
-        // via AmongUsPluginLoader (src/main/java/com/fantamomo/mc/amongus/AmongUsPluginLoader.java), keeping the plugin artifact lightweight.
-        exclude("org/jetbrains/kotlinx/**")
-        exclude("org/mineskin/**")
-        exclude("ai/koog/**")
+val semiFatJar by tasks.registering(com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar::class) {
+    archiveClassifier.set("all-lite")
+    mergeServiceFiles()
 
-        // Internal project dependencies (com.fantamomo.mc) are currently published via GitHub Packages
-        // and require authentication using a GitHub token.
-        // Embedding such credentials inside the JAR would pose a security risk.
-        //
-        // Since these artifacts are not yet available in a fully public repository,
-        // they are bundled directly into the shaded JAR for now.
-        dependencies {
-            include(dependency("com.fantamomo.mc:.*"))
-        }
+    from(sourceSets.main.get().output)
+    configurations = listOf(project.configurations.runtimeClasspath.get())
 
-        excludedFromShadow.forEach { group ->
-            dependencies { exclude(dependency("$group:.*")) }
-        }
+    // These dependencies are intentionally excluded from the shaded (fat) JAR.
+    // They are resolved and downloaded dynamically at runtime on the first plugin startup
+    // via AmongUsPluginLoader (src/main/java/com/fantamomo/mc/amongus/AmongUsPluginLoader.java), keeping the plugin artifact lightweight.
+    exclude("org/jetbrains/kotlinx/**")
+    exclude("org/mineskin/**")
+    exclude("ai/koog/**")
+
+    // Internal project dependencies (com.fantamomo.mc) are currently published via GitHub Packages
+    // and require authentication using a GitHub token.
+    // Embedding such credentials inside the JAR would pose a security risk.
+    //
+    // Since these artifacts are not yet available in a fully public repository,
+    // they are bundled directly into the shaded JAR for now.
+    dependencies {
+        include(dependency("com.fantamomo.mc:.*"))
     }
 
+    excludedFromShadow.forEach { group ->
+        dependencies { exclude(dependency("$group:.*")) }
+    }
+}
+
+val fullFatJar by tasks.registering(com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar::class) {
+    archiveClassifier.set("all-full")
+
+    from(sourceSets.main.get().output)
+    configurations = listOf(project.configurations.runtimeClasspath.get())
+
+    mergeServiceFiles()
+}
+
+semiFatJar {
+    dependsOn(tasks.classes)
+}
+
+fullFatJar {
+    dependsOn(tasks.classes)
+}
+
+tasks {
+
     build {
-        dependsOn(shadowJar)
+        dependsOn(jar)
+        dependsOn(semiFatJar)
+        dependsOn(fullFatJar)
     }
 
     processResources {
@@ -117,6 +146,7 @@ tasks {
 
         inputs.property("version", pluginVersion)
         inputs.property("githash", gitHash)
+
         filteringCharset = "UTF-8"
         filesMatching("paper-plugin.yml") {
             expand(mapOf(
