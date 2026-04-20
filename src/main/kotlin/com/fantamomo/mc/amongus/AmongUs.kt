@@ -18,6 +18,7 @@ import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.role.Role
 import com.fantamomo.mc.amongus.role.SupportBotsRole
 import com.fantamomo.mc.amongus.statistics.StatisticsManager
+import com.fantamomo.mc.amongus.util.JarType
 import com.fantamomo.mc.amongus.util.LogFilter
 import com.fantamomo.mc.amongus.util.applyUnless
 import com.fantamomo.mc.amongus.util.log.ActionLogManager
@@ -59,6 +60,17 @@ object AmongUs : JavaPlugin() {
     }
 
     override fun onEnable() {
+        if (AmongUsConstants.JAR_TYPE == JarType.THIN) {
+            with(slF4JLogger) {
+                warn("This Plugin is running the thin version of the jar.")
+                warn("Some libraries are not included in the jar.")
+                warn("This would lead to exception we could not catch.")
+                warn("Please switch to the LITE or the STANDALONE version.")
+                warn("The plugin will be disabled.")
+            }
+            server.pluginManager.disablePlugin(this)
+            return
+        }
         saveDefaultConfig()
         AmongUsConfig.init()
         if (AmongUsConstants.IN_DEVELOPMENT) with(slF4JLogger) {
