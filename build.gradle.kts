@@ -79,7 +79,18 @@ abstract class GitHashSource : ValueSource<String, ValueSourceParameters.None> {
             ?: "unknown"
 }
 
+abstract class GitUnattachedSource : ValueSource<Boolean, ValueSourceParameters.None> {
+    override fun obtain(): Boolean {
+        val process = ProcessBuilder("git", "status", "--porcelain", "--untracked-files=no")
+            .start()
+
+        val output = process.inputStream.bufferedReader().readText().trim()
+        return output.isNotEmpty()
+    }
+}
+
 val gitHash: Provider<String> = providers.of(GitHashSource::class) {}
+val gitUnattached: Provider<Boolean> = providers.of(GitUnattachedSource::class) {}
 
 tasks.jar {
     archiveClassifier.set("thin")
@@ -159,17 +170,20 @@ tasks {
 
     processResources {
         val gitHash = providers.of(GitHashSource::class) {}
+        val gitUnattached = providers.of(GitUnattachedSource::class) {}
         val pluginVersion = version.toString()
 
         inputs.property("version", pluginVersion)
         inputs.property("githash", gitHash)
+        inputs.property("unattached", gitUnattached)
 
         filteringCharset = "UTF-8"
         filesMatching("paper-plugin.yml") {
             expand(
                 mapOf(
                     "version" to pluginVersion,
-                    "githash" to gitHash.get()
+                    "githash" to gitHash.get(),
+                    "unattached" to gitUnattached.get()
                 )
             )
         }
