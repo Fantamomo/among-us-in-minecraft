@@ -1,17 +1,13 @@
 package com.fantamomo.mc.amongus.player.bot.goals
 
-import com.fantamomo.mc.amongus.ability.abilities.EatBodyAbility
-import com.fantamomo.mc.amongus.manager.MeetingManager
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.player.bot.AmongUsZombie
-import com.fantamomo.mc.amongus.role.neutral.CannibalRole
 import net.minecraft.core.BlockPos
 import net.minecraft.world.entity.ai.goal.target.TargetGoal
 import org.bukkit.craftbukkit.entity.CraftMannequin
-import kotlin.time.Clock
-import kotlin.time.Duration.Companion.seconds
 
-class ReportBodyGoal(val zombie: AmongUsZombie) : TargetGoal(zombie, true), CustomGoalDebugName {
+class EatBodyGoal(val zombie: AmongUsZombie) :
+    TargetGoal(zombie, true), CustomGoalDebugName {
     val player = zombie.controller.player
 
     var targetBody: AmongUsPlayer? = null
@@ -19,10 +15,6 @@ class ReportBodyGoal(val zombie: AmongUsZombie) : TargetGoal(zombie, true), Cust
     private var ticks: Int = 0
 
     override fun canUse(): Boolean {
-        if (player.role.definition === CannibalRole) return false
-        if (player.hasAbility(EatBodyAbility)) return false
-        val lastKillTime = player.lastKillTime
-        if (lastKillTime != null && lastKillTime + 30.seconds > Clock.System.now()) return false
         findTarget()
         return targetBody != null
     }
@@ -53,14 +45,11 @@ class ReportBodyGoal(val zombie: AmongUsZombie) : TargetGoal(zombie, true), Cust
             if (ticks % 10 == 0) {
                 zombie.navigation.moveToWithGraph(
                     target.mannequinController.handle!!.blockPosition(),
-                    1.5
+                    1.0
                 )
             }
         } else {
-            player.game.meetingManager.callMeeting(
-                player,
-                MeetingManager.MeetingReason.BODY
-            )
+            player.game.killManager.eatCorpse(player)
             targetBody = null
         }
     }

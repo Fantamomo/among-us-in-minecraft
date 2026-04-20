@@ -8,6 +8,7 @@ import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.ability.Ability
 import com.fantamomo.mc.amongus.ability.AssignedAbility
 import com.fantamomo.mc.amongus.ability.item.AbilityItem
+import com.fantamomo.mc.amongus.data.AmongUsDebug
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.game.GamePhase
 import com.fantamomo.mc.amongus.languages.component
@@ -18,6 +19,7 @@ import com.fantamomo.mc.amongus.role.crewmates.CrewmateRole
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.util.CustomPersistentDataTypes
 import com.fantamomo.mc.amongus.util.RefPersistentDataType
+import com.fantamomo.mc.amongus.util.TickContext
 import com.fantamomo.mc.amongus.util.audience.OptionalAudience
 import com.fantamomo.mc.amongus.util.internal.Symbol
 import com.fantamomo.mc.amongus.util.log.elements.AssignActionElements
@@ -104,6 +106,21 @@ class HumanAmongUsPlayer internal constructor(
         get() = player?.location ?: throw IllegalStateException("No location available")
 
     override fun canSee(other: AmongUsPlayer) = player?.canSee(other.mannequin) == true
+    override fun tick(tickContext: TickContext) {
+        super.tick(tickContext)
+        val bukkitPlayer = player
+        if (bukkitPlayer != null) {
+            bukkitPlayer.saturation = 5.0f
+            bukkitPlayer.foodLevel = 20
+            if (tickContext.isBy(6) &&
+                AmongUsDebug.DebugValues.SHOW_BOT_GRAPH.isEnabled() &&
+                bukkitPlayer.isOp
+            ) {
+                game.navGraph.debugShowGraph(bukkitPlayer)
+            }
+        }
+    }
+
     override fun teleportAsync(to: Location): CompletableFuture<Boolean> {
         val entity = player ?: mannequin
         return entity.teleportAsync(to)
