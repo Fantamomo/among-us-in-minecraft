@@ -91,7 +91,7 @@ tasks.jar {
     }
 }
 
-val semiFatJar by tasks.registering(com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar::class) {
+val liteJar by tasks.registering(com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar::class) {
     archiveClassifier.set("lite")
     mergeServiceFiles()
 
@@ -126,7 +126,7 @@ val semiFatJar by tasks.registering(com.github.jengelman.gradle.plugins.shadow.t
     }
 }
 
-val standaloneFatJar by tasks.registering(com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar::class) {
+val standaloneJar by tasks.registering(com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar::class) {
     archiveClassifier.set("standalone")
 
     from(sourceSets.main.get().output)
@@ -141,11 +141,11 @@ val standaloneFatJar by tasks.registering(com.github.jengelman.gradle.plugins.sh
     }
 }
 
-semiFatJar {
+liteJar {
     dependsOn(tasks.classes)
 }
 
-standaloneFatJar {
+standaloneJar {
     dependsOn(tasks.classes)
 }
 
@@ -153,8 +153,8 @@ tasks {
 
     build {
         dependsOn(jar)
-        dependsOn(semiFatJar)
-        dependsOn(standaloneFatJar)
+        dependsOn(liteJar)
+        dependsOn(standaloneJar)
     }
 
     processResources {
