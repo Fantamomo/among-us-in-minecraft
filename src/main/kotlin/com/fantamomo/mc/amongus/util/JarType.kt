@@ -18,9 +18,7 @@ enum class JarType {
     /**
      * Only the compiled code is in the JAR.
      *
-     * The Libraries are downloaded at runtime.
-     *
-     * But some Libraries cannot be downloaded, so the plugin will not work.
+     * The plugin will disable itself.
      */
     THIN,
     UNKNOWN;
