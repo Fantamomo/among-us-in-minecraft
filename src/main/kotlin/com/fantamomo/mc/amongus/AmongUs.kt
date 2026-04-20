@@ -45,18 +45,35 @@ object AmongUs : JavaPlugin() {
     })
 
     override fun onLoad() {
-        slF4JLogger.info(buildString {
-            append("Running v")
-            append(pluginMeta.version)
-            AmongUsConstants.GIT_HASH
-                ?.applyUnless(AmongUsConstants.IN_DEVELOPMENT) { take(8) }
-                ?.let {
-                    append(" (")
-                    append(it)
-                    append(")")
+        val inDevelopment = AmongUsConstants.IN_DEVELOPMENT
+        val unattached = AmongUsConstants.UNATTACHED
+        with(slF4JLogger) {
+            info(buildString {
+                append("Running v")
+                append(pluginMeta.version)
+                AmongUsConstants.GIT_HASH
+                    ?.applyUnless(inDevelopment) { take(8) }
+                    ?.let {
+                        append(" (")
+                        append(it)
+                        append(")")
+                    }
+                append(" by Fantamomo")
+            })
+            when (unattached) {
+                true -> {
+                    warn("This plugin is in a unattached state")
+                    warn("This means that there have been changes to the code, without a commit")
+                    warn("If you are a developer, you can ignore this message.")
+                    warn("If you are a server admin, please switch to a official build.")
                 }
-            append(" by Fantamomo")
-        })
+                false -> {}
+                else -> {
+                    error("The unattached state could not be determined.")
+                    error("Please report this issue to the plugin author.")
+                }
+            }
+        }
     }
 
     override fun onEnable() {

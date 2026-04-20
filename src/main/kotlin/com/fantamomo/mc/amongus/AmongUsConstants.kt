@@ -14,6 +14,7 @@ sealed interface AmongUsConstants {
     val IN_DEVELOPMENT: Boolean
     val GIT_HASH: String?
     val JAR_TYPE: JarType
+    val UNATTACHED: Boolean?
 
     companion object : AmongUsConstants {
         private var delegate: Impl? = null
@@ -23,6 +24,7 @@ sealed interface AmongUsConstants {
         override val IN_DEVELOPMENT get() = impl.IN_DEVELOPMENT
         override val GIT_HASH get() = impl.GIT_HASH
         override val JAR_TYPE get() = impl.JAR_TYPE
+        override val UNATTACHED get() = impl.UNATTACHED
 
         internal class Impl(private val dataDirectory: Path) : AmongUsConstants {
             private val paperPluginYml: YamlConfiguration?
@@ -56,7 +58,8 @@ sealed interface AmongUsConstants {
 
             override val IN_DEVELOPMENT by lazy { dataDirectory.resolve(AmongUsDebug.DEBUG_FILE_NAME).exists() }
             override val GIT_HASH by lazy { paperPluginYml?.getString("git-hash") }
-            override val JAR_TYPE: JarType by lazy { manifest?.mainAttributes?.getValue("Jar-Type")?.let(JarType::get) ?: JarType.UNKNOWN }
+            override val JAR_TYPE by lazy { manifest?.mainAttributes?.getValue("Jar-Type")?.let(JarType::get) ?: JarType.UNKNOWN }
+            override val UNATTACHED by lazy { paperPluginYml?.getBoolean("unattached") }
         }
     }
 }
