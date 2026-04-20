@@ -8,8 +8,11 @@ import org.eclipse.aether.graph.Dependency;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.jspecify.annotations.NonNull;
 
-import java.util.List;
-import java.util.Map;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.jar.Manifest;
 
 /**
  * PluginLoader implementation used by the Among Us plugin to dynamically resolve and load
@@ -31,8 +34,29 @@ import java.util.Map;
 @SuppressWarnings("UnstableApiUsage")
 public class AmongUsPluginLoader implements PluginLoader {
 
+    private boolean shouldDownloadDependencies() {
+        Manifest manifest = null;
+        try {
+            URL url = this.getClass().getClassLoader().getResource("META-INF/MANIFEST.MF");
+            if (url != null) {
+                URLConnection connection = url.openConnection();
+                connection.setUseCaches(false);
+                try (InputStream inputStream = connection.getInputStream()) {
+                    manifest = new Manifest(inputStream);
+                }
+            }
+        } catch (IOException ignore) {}
+        if (manifest == null) {
+            return true;
+        }
+        String value = manifest.getMainAttributes().getValue("Jar-Type");
+        return value == null || !value.equalsIgnoreCase("standalone");
+    }
+
     @Override
     public void classloader(@NonNull PluginClasspathBuilder classpathBuilder) {
+        if (!shouldDownloadDependencies()) return;
+
         classpathBuilder.getContext().getLogger().info("Loading dependencies for Among Us");
 
         MavenLibraryResolver centralResolver = new MavenLibraryResolver();
