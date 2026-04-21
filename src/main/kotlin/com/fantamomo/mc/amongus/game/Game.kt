@@ -455,6 +455,7 @@ class Game(
         actionLog.add(GameActionElements.Start)
         logger.info("Game started")
 
+        chatManager.clearChatHistory()
         roleManager.start()
         taskManager.start()
 

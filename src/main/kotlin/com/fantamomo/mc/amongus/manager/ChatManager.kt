@@ -101,6 +101,10 @@ class ChatManager(val game: Game) {
         logMessage(sender, type, text)
     }
 
+    fun clearChatHistory() {
+        chatHistory.clear()
+    }
+
     private fun logMessage(sender: AmongUsPlayer, type: String, message: String) {
         chatHistory.add(sender to message)
         if (chatHistory.size > 100) chatHistory.removeFirst()
