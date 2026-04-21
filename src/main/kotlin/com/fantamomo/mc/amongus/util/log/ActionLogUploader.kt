@@ -2,7 +2,6 @@ package com.fantamomo.mc.amongus.util.log
 
 import com.fantamomo.mc.amongus.data.AmongUsConfig
 import io.ktor.client.*
-import io.ktor.client.engine.apache5.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
