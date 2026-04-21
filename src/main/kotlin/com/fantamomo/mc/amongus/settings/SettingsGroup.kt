@@ -3,7 +3,7 @@ package com.fantamomo.mc.amongus.settings
 import net.kyori.adventure.text.Component
 import org.bukkit.inventory.ItemType
 
-open class SettingsGroup constructor(
+open class SettingsGroup(
     val name: String,
     val itemType: ItemType,
     val parent: SettingsGroup? = null,

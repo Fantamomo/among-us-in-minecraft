@@ -116,7 +116,6 @@ class MannequinController(
        === Lifecycle ===
        ========================= */
 
-    @Suppress("UnstableApiUsage")
     fun spawn(force: Boolean = false) {
         if (mannequin != null && !force) return
 

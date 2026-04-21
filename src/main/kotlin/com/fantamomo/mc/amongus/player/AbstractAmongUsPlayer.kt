@@ -159,7 +159,7 @@ sealed class AbstractAmongUsPlayer(
         return true
     }
 
-    open fun tick(tickContext: TickContext) {
+    internal open fun tick(tickContext: TickContext) {
         modification?.onTick(tickContext)
         mannequinController.syncFromOwner()
     }

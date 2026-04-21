@@ -160,15 +160,10 @@ class LobbyChatAiService(private val game: Game) {
             .find { it.isBot && it.name.equals(botName, ignoreCase = true) }
             ?.bot ?: return false
 
-        /*if (index < lines.lastIndex)*/ currentlySendingBot.store(bot)
+        currentlySendingBot.store(bot)
         sendMessage(bot, message)
         currentlySendingBot.store(null)
 
-//            if (index == lines.lastIndex) break
-//
-//            executed++
-//            delay(Random.nextLong(100, 800).milliseconds)
-//        }
         return true
     }
 

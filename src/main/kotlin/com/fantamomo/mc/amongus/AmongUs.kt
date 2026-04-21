@@ -52,7 +52,7 @@ object AmongUs : JavaPlugin() {
                 append("Running v")
                 append(pluginMeta.version)
                 AmongUsConstants.GIT_HASH
-                    ?.applyUnless(inDevelopment) { take(8) }
+                    ?.applyUnless(inDevelopment || unattached != false) { take(8) }
                     ?.let {
                         append(" (")
                         append(it)
@@ -66,6 +66,7 @@ object AmongUs : JavaPlugin() {
                     warn("This means that there have been changes to the code, without a commit")
                     warn("If you are a developer, you can ignore this message.")
                     warn("If you are a server admin, please switch to a official build.")
+                    warn("We do not provide support for unattached builds.")
                 }
                 false -> {}
                 else -> {
@@ -78,6 +79,9 @@ object AmongUs : JavaPlugin() {
 
     override fun onEnable() {
         if (AmongUsConstants.JAR_TYPE == JarType.THIN) {
+            // If it is really a thin jar, this code could not be reached
+            // because the kotlin runtime is not available,
+            // but just in case, the kotlin runtime is available.
             with(slF4JLogger) {
                 warn("This Plugin is running the thin version of the jar.")
                 warn("Some libraries are not included in the jar.")
@@ -91,9 +95,10 @@ object AmongUs : JavaPlugin() {
         saveDefaultConfig()
         AmongUsConfig.init()
         if (AmongUsConstants.IN_DEVELOPMENT) with(slF4JLogger) {
-            info("This Plugin is running in development mode!")
-            info("In developing mode, some features work not as expected.")
-            info("This is for easier developing.")
+            info("This plugin is currently running in development mode.")
+            info("Additional development-only features are enabled to assist testing.")
+            info("These features may impact performance and must not be used in production.")
+            info("They may also expose information that should remain hidden in fair-play environments.")
         }
         LogFilter.init()
         GameAreaManager.loadAreas()
@@ -120,7 +125,6 @@ object AmongUs : JavaPlugin() {
         }
 
         Permissions.registerAll()
-
     }
 
     @Suppress("UnusedExpression")
