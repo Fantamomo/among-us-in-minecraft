@@ -18,6 +18,7 @@ import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.role.Role
 import com.fantamomo.mc.amongus.role.SupportBotsRole
 import com.fantamomo.mc.amongus.statistics.StatisticsManager
+import com.fantamomo.mc.amongus.util.BotsJoinMessages
 import com.fantamomo.mc.amongus.util.JarType
 import com.fantamomo.mc.amongus.util.LogFilter
 import com.fantamomo.mc.amongus.util.applyUnless
@@ -134,6 +135,7 @@ object AmongUs : JavaPlugin() {
         Role
         Modification
         PlayerDataManager
+        BotsJoinMessages
         runCatching { classLoader.loadClass("kotlin.io.FilesKt") }
     }
 
