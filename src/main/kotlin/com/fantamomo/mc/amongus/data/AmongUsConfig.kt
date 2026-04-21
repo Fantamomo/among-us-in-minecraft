@@ -10,7 +10,7 @@ object AmongUsConfig {
 
     private val config = AmongUs.config
 
-    open class ConfigSection(vararg val sectionId: String) {
+    open class ConfigSection(vararg sectionId: String) {
         val section = sectionId.fold(config as ConfigurationSection) { acc, id ->
             acc.getConfigurationSection(id) ?: acc.createSection(id)
         }
