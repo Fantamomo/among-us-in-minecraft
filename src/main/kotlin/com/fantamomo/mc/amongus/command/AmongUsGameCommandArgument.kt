@@ -5,6 +5,7 @@ import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.area.GameArea
 import com.fantamomo.mc.amongus.command.Permissions.required
 import com.fantamomo.mc.amongus.command.arguments.*
+import com.fantamomo.mc.amongus.data.AmongUsConfig
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.game.GameManager
 import com.fantamomo.mc.amongus.game.GamePhase
@@ -40,7 +41,7 @@ fun PaperCommand.gameCommand() = literal("game") {
     roleGameCommand()
     playerInfoGameCommand()
     switchHostGameCommand()
-    botGameCommand()
+    if (AmongUsConfig.Bots.enabled) botGameCommand()
 }
 
 private fun PaperCommand.botGameCommand() = literal("bot") {
@@ -63,6 +64,15 @@ private fun PaperCommand.botGameCommand() = literal("bot") {
                 if (game.phase != GamePhase.LOBBY && game.phase != GamePhase.STARTING) {
                     sendMessage {
                         translatable("command.error.admin.game.bot.started")
+                    }
+                    return@execute NO_SUCCESS
+                }
+
+                if (!AmongUsConfig.Bots.adminIgnoreBotsLimit &&
+                    AmongUsConfig.Bots.maxBotsPerGame in 1..game.players.count { it.isBot }
+                ) {
+                    sendMessage {
+                        translatable("command.error.admin.game.bot.limit_reached")
                     }
                     return@execute NO_SUCCESS
                 }

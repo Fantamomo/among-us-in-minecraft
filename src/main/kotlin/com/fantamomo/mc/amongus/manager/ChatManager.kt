@@ -24,7 +24,7 @@ class ChatManager(val game: Game) {
         event.isCancelled = true
         val message = event.message()
         if (game.phase == GamePhase.LOBBY || game.phase == GamePhase.STARTING) {
-            sendLobbyMessage(sender, message)
+            sendLobbyMessage(sender, message,)
             return
         }
         val meetingManager = game.meetingManager
@@ -68,9 +68,9 @@ class ChatManager(val game: Game) {
         game.logger.info(message)
     }
 
-    fun sendLobbyMessage(sender: AmongUsPlayer, input: Component) {
+    fun sendLobbyMessage(sender: AmongUsPlayer, input: Component, triggerAi: Boolean = true) {
         logMessage(sender, "lobby", input)
-        game.lobbyChatAiService.chatMessage(sender)
+        if (triggerAi) game.lobbyChatAiService.chatMessage(sender)
         val message = getMessage("chat.message.lobby", sender, input)
         game.sendChatMessage(message)
         game.logger.info(message)

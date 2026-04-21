@@ -172,7 +172,7 @@ class LobbyChatAiService(private val game: Game) {
             lastBotMessage[bot] = System.currentTimeMillis()
             game.chatManager.sendLobbyMessage(
                 bot,
-                Component.text(message)
+                Component.text(message),
             )
         }
     }

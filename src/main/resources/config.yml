@@ -76,7 +76,7 @@ action-log-upload:
   enabled: true
 
   # The URL to upload the ActionLogs to.
-  url: https://among-us-in-minecraft-logs.fantamomo.com
+  url: https://logs.among-us-in-minecraft.fantamomo.com
 
   # Should we send ActionLogs to all player that where in the game? (true)
   # Or only to the host? (false)
@@ -93,6 +93,17 @@ ai:
     embeddings-path:
   model: qwen/qwen3-32b
   generate-game-summary: true
+
+bots:
+  # Should bots be enabled?
+  enabled: true
+  # Should only admins be able to create bots?
+  only-admins: false
+  # Should admins be able to ignore the bots limit?
+  admin-ignore-bots-limit: true
+  # Maximum number of bots that can be created per game.
+  # Set to 0 to disable the limit. (There are only 9 bots in the game, so 0 or any number above 9 is the same as 9)
+  max-bots-per-game: 5
 
 # Should we animate the scoreboard?
 animate-scoreboard: true

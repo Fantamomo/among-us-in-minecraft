@@ -26,8 +26,10 @@ import com.fantamomo.mc.amongus.sabotage.SabotageManager
 import com.fantamomo.mc.amongus.settings.Settings
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.task.TaskManager
+import com.fantamomo.mc.amongus.util.BotsJoinMessages
 import com.fantamomo.mc.amongus.util.TickContext
 import com.fantamomo.mc.amongus.util.audience.ListAudience
+import com.fantamomo.mc.amongus.util.coroutines.ServerThread
 import com.fantamomo.mc.amongus.util.internal.NMS
 import com.fantamomo.mc.amongus.util.log.ActionLog
 import com.fantamomo.mc.amongus.util.log.ActionLogManager
@@ -36,7 +38,10 @@ import com.fantamomo.mc.amongus.util.log.elements.GameActionElements
 import com.fantamomo.mc.amongus.util.log.elements.PlayerActionElements
 import com.fantamomo.mc.amongus.util.sendComponent
 import com.fantamomo.mc.amongus.util.toSmartString
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.JoinConfiguration
 import net.kyori.adventure.text.format.NamedTextColor
@@ -52,6 +57,7 @@ import org.bukkit.entity.Player
 import java.net.URI
 import java.util.*
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.Uuid
 import kotlin.uuid.toKotlinUuid
@@ -171,6 +177,15 @@ class Game(
         if (players.any { it.isBot && it.botName == name }) return false
         val bot = PlayerManager.addBot(name, this)
         actionLog.add(PlayerActionElements.PlayerJoin(bot.uuid, AmongUsPlayerType.BOT))
+        AmongUs.scope.launch {
+            delay((10..500).random().milliseconds)
+            val message = BotsJoinMessages.getRandomMessage(bot)
+            withContext(Dispatchers.ServerThread) {
+                if (players.contains(bot) && (phase == GamePhase.LOBBY || phase == GamePhase.STARTING)) {
+                    chatManager.sendLobbyMessage(bot, Component.text(message), triggerAi = false)
+                }
+            }
+        }
         return true
     }
 

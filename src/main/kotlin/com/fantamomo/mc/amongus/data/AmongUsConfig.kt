@@ -69,5 +69,13 @@ object AmongUsConfig {
         val generateGameSummary = section.getBoolean("generate-game-summary", true)
     }
 
+    object Bots : ConfigSection("bots") {
+        val enabled = section.getBoolean("enabled", true)
+
+        val onlyAdmins = section.getBoolean("only-admins", false)
+        val adminIgnoreBotsLimit = section.getBoolean("admin-ignore-bots-limit", false)
+        val maxBotsPerGame = section.getInt("max-bots-per-game", 5)
+    }
+
     val animateScoreboard = config.getBoolean("animate-scoreboard", true)
 }
