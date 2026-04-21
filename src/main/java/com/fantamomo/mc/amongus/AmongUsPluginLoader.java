@@ -3,6 +3,7 @@ package com.fantamomo.mc.amongus;
 import io.papermc.paper.plugin.loader.PluginClasspathBuilder;
 import io.papermc.paper.plugin.loader.PluginLoader;
 import io.papermc.paper.plugin.loader.library.impl.MavenLibraryResolver;
+import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.graph.Dependency;
 import org.eclipse.aether.repository.RemoteRepository;
@@ -34,7 +35,7 @@ import java.util.jar.Manifest;
 @SuppressWarnings("UnstableApiUsage")
 public class AmongUsPluginLoader implements PluginLoader {
 
-    private boolean shouldDownloadDependencies() {
+    private String getJarType() {
         Manifest manifest = null;
         try {
             URL url = this.getClass().getClassLoader().getResource("META-INF/MANIFEST.MF");
@@ -45,19 +46,37 @@ public class AmongUsPluginLoader implements PluginLoader {
                     manifest = new Manifest(inputStream);
                 }
             }
-        } catch (IOException ignore) {}
+        } catch (IOException ignore) {
+        }
         if (manifest == null) {
-            return true;
+            return "unknown";
         }
         String value = manifest.getMainAttributes().getValue("Jar-Type");
-        return value == null || value.equalsIgnoreCase("lite");
+        return value == null ? "unknown" : value.toLowerCase();
     }
 
     @Override
     public void classloader(@NonNull PluginClasspathBuilder classpathBuilder) {
-        if (!shouldDownloadDependencies()) return;
-
-        classpathBuilder.getContext().getLogger().info("Loading dependencies for Among Us");
+        String jarType = getJarType();
+        ComponentLogger logger = classpathBuilder.getContext().getLogger();
+        switch (jarType) {
+            case "standalone":
+                return;
+            case "thin":
+                logger.warn("Detected thin jar, the plugin will not work");
+                logger.warn("Please switch to the lite or standalone jar types");
+                logger.warn("The plugin will throw an exception");
+                return;
+            case "unknown":
+                logger.warn("Could not determine jar type, proceeding with dependency resolution");
+                break;
+            case "lite":
+                logger.info("Detected lite jar, proceeding with dependency resolution");
+                break;
+            default:
+                logger.warn("Unknown jar type: {}, proceeding with dependency resolution", jarType);
+                break;
+        }
 
         MavenLibraryResolver centralResolver = new MavenLibraryResolver();
 
