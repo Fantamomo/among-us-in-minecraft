@@ -87,6 +87,8 @@ class Game(
                 "version" to AmongUs.pluginMeta.version,
                 "in_development" to AmongUsConstants.IN_DEVELOPMENT,
                 "git_hash" to AmongUsConstants.GIT_HASH,
+                "jar_type" to AmongUsConstants.JAR_TYPE.name.lowercase(),
+                "unattached" to AmongUsConstants.UNATTACHED
             )
         )
     ).apply { ActionLogManager.register("game", this) }
@@ -623,12 +625,17 @@ class Game(
 
         if (AmongUsConfig.AI.generateGameSummary && AiService.isEnabled()) {
             AmongUs.scope.launch {
-                val (short, long) = summarizer.generate()
-                actionLog.customData["ai_long_summary"] = long
-                actionLog.customData["ai_short_summary"] = short
-                logger.info("Short summary: $short")
-                logger.info("Long summary: $long")
-                storeActionLog(bukkitPlayerList, hostPlayer)
+                try {
+                    val (short, long) = summarizer.generate()
+                    actionLog.customData["ai_long_summary"] = long
+                    actionLog.customData["ai_short_summary"] = short
+                    logger.info("Short summary: $short")
+                    logger.info("Long summary: $long")
+                    storeActionLog(bukkitPlayerList, hostPlayer)
+                } catch (e: Exception) {
+                    logger.error("Failed to generate AI summary", e)
+                    storeActionLog(bukkitPlayerList, hostPlayer)
+                }
             }
         } else {
             storeActionLog(bukkitPlayerList, hostPlayer)
