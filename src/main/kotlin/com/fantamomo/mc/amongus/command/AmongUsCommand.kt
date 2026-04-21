@@ -1,9 +1,6 @@
 package com.fantamomo.mc.amongus.command
 
-import com.fantamomo.mc.adventure.text.KClickEventType
-import com.fantamomo.mc.adventure.text.args
-import com.fantamomo.mc.adventure.text.clickEvent
-import com.fantamomo.mc.adventure.text.translatable
+import com.fantamomo.mc.adventure.text.*
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.area.GameArea
 import com.fantamomo.mc.amongus.command.Permissions.required
@@ -15,10 +12,7 @@ import com.fantamomo.mc.amongus.game.GamePhase
 import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.languages.numeric
 import com.fantamomo.mc.amongus.languages.string
-import com.fantamomo.mc.amongus.player.PlayerColor
-import com.fantamomo.mc.amongus.player.PlayerManager
-import com.fantamomo.mc.amongus.player.PlayerStatistics
-import com.fantamomo.mc.amongus.player.internal
+import com.fantamomo.mc.amongus.player.*
 import com.fantamomo.mc.amongus.settings.SettingsInventory
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.statistics.*
@@ -29,6 +23,7 @@ import io.papermc.paper.command.brigadier.CommandSourceStack
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver
 import io.papermc.paper.registry.RegistryKey
+import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.entity.Player
 import org.bukkit.inventory.meta.trim.ArmorTrim
 import kotlin.time.Duration.Companion.milliseconds
@@ -45,6 +40,108 @@ val AmongUsCommand = paperCommand("amongus") {
     startCommand()
     banCommand()
     inviteCommand()
+    if (AmongUsConfig.Bots.enabled) botCommand()
+}
+
+private fun PaperCommand.botCommand() = literal("bot") {
+    requires { sender is Player && (!AmongUsConfig.Bots.onlyAdmins || sender.hasPermission(Permissions.ADMIN_GAME_BOT)) }
+    literal("add") {
+        argument("name", BotNameArgumentType.NON_PLAYING_BOT) {
+            val botNameRef = argRef()
+            execute {
+                val auPlayer = PlayerManager.getPlayer(source.sender as Player)
+
+                if (auPlayer == null) {
+                    sendMessage {
+                        translatable("command.error.admin.game.bot.not_joined")
+                    }
+                    return@execute NO_SUCCESS
+                }
+
+                if (!auPlayer.isHost()) {
+                    sendMessage {
+                        translatable("command.error.admin.game.bot.not_host")
+                    }
+                    return@execute NO_SUCCESS
+                }
+
+                val game = auPlayer.game
+
+                if (game.phase != GamePhase.LOBBY && game.phase != GamePhase.STARTING) {
+                    sendMessage {
+                        translatable("command.error.admin.game.bot.started")
+                    }
+                    return@execute NO_SUCCESS
+                }
+
+                if (AmongUsConfig.Bots.maxBotsPerGame in 1..game.players.count { it.isBot }) {
+                    sendMessage {
+                        translatable("command.error.admin.game.bot.limit_reached")
+                    }
+                    return@execute NO_SUCCESS
+                }
+
+                val botName = botNameRef.get()
+
+                game.addBot(botName)
+
+                sendMessage {
+                    translatable("command.success.admin.game.bot.add") {
+                        args {
+                            string("bot", botName.name)
+                        }
+                    }
+                }
+
+                SINGLE_SUCCESS
+            }
+        }
+    }
+    literal("remove") {
+        argument("name", BotNameArgumentType.PLAYING_BOT) {
+            val botNameRef = argRef()
+            execute {
+                val auPlayer = PlayerManager.getPlayer(source.sender as Player)
+
+                if (auPlayer == null) {
+                    sendMessage {
+                        translatable("command.error.admin.game.bot.not_joined")
+                    }
+                    return@execute NO_SUCCESS
+                }
+
+                if (!auPlayer.isHost()) {
+                    sendMessage {
+                        translatable("command.error.admin.game.bot.not_host")
+                    }
+                    return@execute NO_SUCCESS
+                }
+
+                val game = auPlayer.game
+
+                if (game.phase != GamePhase.LOBBY && game.phase != GamePhase.STARTING) {
+                    sendMessage {
+                        translatable("command.error.admin.game.bot.started")
+                    }
+                    return@execute NO_SUCCESS
+                }
+
+                val botName = botNameRef.get()
+
+                game.removeBot(botName)
+
+                sendMessage {
+                    translatable("command.success.admin.game.bot.remove") {
+                        args {
+                            string("bot", botName.name)
+                        }
+                    }
+                }
+
+                SINGLE_SUCCESS
+            }
+        }
+    }
 }
 
 private fun PaperCommand.inviteCommand() = literal("invite") {
@@ -172,6 +269,25 @@ private fun PaperCommand.banCommand() = literal("ban") {
             if (game !== target.game) {
                 sendMessage {
                     translatable("command.error.ban.not_in_same_game")
+                }
+                return@execute NO_SUCCESS
+            }
+
+            if (target.isBot) {
+                sendMessage {
+                    translatable("command.error.ban.bot") {
+                        args {
+                            component("command") {
+                                text("/au bot remove ${target.name}", NamedTextColor.GOLD)
+                                clickEvent(KClickEventType.RunCommand) {
+                                    command("/au bot remove ${target.name}")
+                                }
+                                hoverEvent(KHoverEventType.ShowText) {
+                                    text("Click to execute", NamedTextColor.GRAY)
+                                }
+                            }
+                        }
+                    }
                 }
                 return@execute NO_SUCCESS
             }
