@@ -84,7 +84,14 @@ abstract class GitUnattachedSource : ValueSource<Boolean, ValueSourceParameters.
         val process = ProcessBuilder("git", "status", "--porcelain", "--untracked-files=no")
             .start()
 
-        val output = process.inputStream.bufferedReader().readText().trim()
+        val output = process.inputStream
+            .bufferedReader()
+            .readLines()
+            .filterNot {
+                it.startsWith("?? ") || // skip untracked files
+                        it == " M gradlew" || // ignore chmod changes on gradlew caused by github actions
+                        it.isBlank() // ignore empty lines
+            }
         return output.isNotEmpty()
     }
 }
