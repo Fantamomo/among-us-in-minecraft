@@ -7,6 +7,7 @@ import com.fantamomo.mc.amongus.ability.AbilityManager
 import com.fantamomo.mc.amongus.ai.AiGameSummarizer
 import com.fantamomo.mc.amongus.ai.AiService
 import com.fantamomo.mc.amongus.ai.LobbyChatAiService
+import com.fantamomo.mc.amongus.ai.MeetingAiService
 import com.fantamomo.mc.amongus.area.GameArea
 import com.fantamomo.mc.amongus.data.AmongUsConfig
 import com.fantamomo.mc.amongus.data.AmongUsDebug
@@ -127,12 +128,13 @@ class Game(
     val ghostFormManager = GhostFormManager(this)
     val roleRevealManager = RoleRevealManager(this)
     val lobbyChatAiService = LobbyChatAiService(this)
+    val meetingAiService = MeetingAiService(this)
 
     internal val players: MutableList<AmongUsPlayer> = mutableListOf()
     internal val bannedPlayers: MutableSet<UUID> = mutableSetOf()
     var phase: GamePhase = GamePhase.LOBBY
         internal set(value) {
-            if (field == GamePhase.FINISHED) throw IllegalStateException("Cannot change phase after game has finished")
+            if (field == GamePhase.FINISHED) throw IllegalStateException("Cannot change phase to ${value.name} after game has finished")
             if (value != field) {
                 actionLog.add(GameActionElements.PhaseChange(field, value))
             }
@@ -182,7 +184,7 @@ class Game(
             val message = BotsJoinMessages.getRandomMessage(bot)
             withContext(Dispatchers.ServerThread) {
                 if (players.contains(bot) && (phase == GamePhase.LOBBY || phase == GamePhase.STARTING)) {
-                    chatManager.sendLobbyMessage(bot, Component.text(message), triggerAi = false)
+                    chatManager.sendLobbyMessage(bot, Component.text(message), triggerAi = false, logMessage = false)
                 }
             }
         }
