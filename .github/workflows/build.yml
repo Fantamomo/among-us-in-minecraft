@@ -1,4 +1,4 @@
-name: Build & Release Paper Project
+name: Build & Release Project
 
 on:
   release:
@@ -20,13 +20,13 @@ jobs:
       - name: Make Gradle wrapper executable
         run: chmod +x ./gradlew
 
-      - name: Build ShadowJar
-        run: ./gradlew clean shadowJar
+      - name: Build Jars
+        run: ./gradlew clean build
         env:
           GITHUB_USERNAME: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload ShadowJar to GitHub Release
+      - name: Upload Jars to GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           files: build/libs/*.jar
