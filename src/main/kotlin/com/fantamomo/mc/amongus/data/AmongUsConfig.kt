@@ -64,9 +64,10 @@ object AmongUsConfig {
             val modelPath = section.getString("model-path", "").orEmpty()
             val embeddingsPath = section.getString("embeddings-path", "").orEmpty()
         }
-        val model = section.getString("model", "qwen/qwen3-32b")
+        val model = section.getString("model", "qwen/qwen3-32b")!!.split(";")
 
         val generateGameSummary = section.getBoolean("generate-game-summary", true)
+        val latencyWarning = section.getBoolean("latency-warning", true)
     }
 
     object Bots : ConfigSection("bots") {
