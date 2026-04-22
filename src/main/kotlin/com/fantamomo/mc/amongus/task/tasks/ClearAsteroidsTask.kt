@@ -12,6 +12,7 @@ import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.inventory.Inventory
 import kotlin.math.absoluteValue
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.milliseconds
 
 object ClearAsteroidsTask : Task<ClearAsteroidsTask, ClearAsteroidsTask.AssignedClearAsteroidsTask> {
     override val id: String = "clear_asteroids"
@@ -21,7 +22,7 @@ object ClearAsteroidsTask : Task<ClearAsteroidsTask, ClearAsteroidsTask.Assigned
 
     override fun assignTo(player: AmongUsPlayer) = AssignedClearAsteroidsTask(player)
 
-    class AssignedClearAsteroidsTask(override val player: AmongUsPlayer) : GuiAssignedTask<ClearAsteroidsTask, AssignedClearAsteroidsTask>() {
+    class AssignedClearAsteroidsTask(override val player: AmongUsPlayer) : GuiAssignedTask<ClearAsteroidsTask, AssignedClearAsteroidsTask>(), BotSupportingTask {
         override val task = ClearAsteroidsTask
         override val location: Location = areaLocation ?: error("No Location for $id")
         override val inv: Inventory = Bukkit.createInventory(this, SIZE, Component.translatable("tasks.clear_asteroids.title"))
@@ -35,6 +36,8 @@ object ClearAsteroidsTask : Task<ClearAsteroidsTask, ClearAsteroidsTask.Assigned
         private var shootAsteroids = 0
         private var open = false
         private var ticks = -1
+
+        override fun getTaskDurationForBot() = BotSupportingTask.BotTaskDuration.percentage(22797.milliseconds, 5)
 
         override fun onInventoryClick(event: InventoryClickEvent) {
             val slot = event.slot

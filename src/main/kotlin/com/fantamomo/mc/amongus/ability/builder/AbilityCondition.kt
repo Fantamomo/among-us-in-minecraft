@@ -1,5 +1,8 @@
 package com.fantamomo.mc.amongus.ability.builder
 
+import com.fantamomo.mc.amongus.player.isAlive
+import com.fantamomo.mc.amongus.player.isInGhostForm
+import com.fantamomo.mc.amongus.player.isVented
 import net.kyori.adventure.text.Component
 
 fun interface AbilityCondition {
@@ -45,7 +48,7 @@ fun AbilityItemBuilder.requiresNoSabotage(): Unit =
     condition(BlockReason.Sabotage) { player.game.sabotageManager.isCurrentlySabotage() }
 
 fun AbilityItemBuilder.requiresAlive(): Unit =
-    condition(BlockReason.Dead) { !player.isAlive }
+    condition(BlockReason.Dead) { !player.isAlive() }
 
 fun AbilityItemBuilder.requiresNotInGhostForm(): Unit =
     condition(BlockReason.GhostForm) { player.isInGhostForm() }

@@ -9,6 +9,7 @@ import com.fantamomo.mc.amongus.languages.numeric
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.role.AssignedRole
 import com.fantamomo.mc.amongus.role.Role
+import com.fantamomo.mc.amongus.role.SupportBotsRole
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import net.kyori.adventure.text.Component
@@ -22,7 +23,7 @@ object CallerRole : Role<CallerRole, CallerRole.AssignedCallerRole> {
 
     override fun assignTo(player: AmongUsPlayer) = AssignedCallerRole(player)
 
-    class AssignedCallerRole(override val player: AmongUsPlayer) : AssignedRole<CallerRole, AssignedCallerRole> {
+    class AssignedCallerRole(override val player: AmongUsPlayer) : AssignedRole<CallerRole, AssignedCallerRole>, SupportBotsRole {
         override val definition = CallerRole
 
         override fun scoreboardLine(): Component {

@@ -1,5 +1,6 @@
 package com.fantamomo.mc.amongus.util.log.elements
 
+import com.fantamomo.mc.amongus.player.AmongUsPlayerType
 import com.fantamomo.mc.amongus.player.info.DeadReason
 import com.fantamomo.mc.amongus.util.log.IdActionElement
 import kotlinx.serialization.json.JsonElement
@@ -7,41 +8,41 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
 import java.util.*
-import kotlin.uuid.Uuid
 
 object PlayerActionElements {
 
-    class PlayerJoin(val player: Uuid) : IdActionElement("player_join") {
+    class PlayerJoin(val player: UUID, val type: AmongUsPlayerType) : IdActionElement("player_join") {
+        override fun toJson(): JsonElement = buildJsonObject {
+            put("player", player.toString())
+            put("type", type.name.lowercase())
+        }
+    }
+
+    class PlayerDisconnect(val player: UUID) : IdActionElement("player_disconnect") {
         override fun toJson(): JsonElement = buildJsonObject {
             put("player", player.toString())
         }
     }
 
-    class PlayerDisconnect(val player: Uuid) : IdActionElement("player_disconnect") {
+    class PlayerRejoin(val player: UUID) : IdActionElement("player_rejoin") {
         override fun toJson(): JsonElement = buildJsonObject {
             put("player", player.toString())
         }
     }
 
-    class PlayerRejoin(val player: Uuid) : IdActionElement("player_rejoin") {
+    class PlayerRemove(val player: UUID) : IdActionElement("player_remove") {
         override fun toJson(): JsonElement = buildJsonObject {
             put("player", player.toString())
         }
     }
 
-    class PlayerRemove(val player: Uuid) : IdActionElement("player_remove") {
+    class PlayerLeave(val player: UUID) : IdActionElement("player_leave") {
         override fun toJson(): JsonElement = buildJsonObject {
             put("player", player.toString())
         }
     }
 
-    class PlayerLeave(val player: Uuid) : IdActionElement("player_leave") {
-        override fun toJson(): JsonElement = buildJsonObject {
-            put("player", player.toString())
-        }
-    }
-
-    class PlayerDeath(val player: Uuid, val reason: DeadReason) : IdActionElement("player_death") {
+    class PlayerDeath(val player: UUID, val reason: DeadReason) : IdActionElement("player_death") {
         override fun toJson(): JsonElement = buildJsonObject {
             put("player", player.toString())
             if (reason !is DeadReason.Murdered) {

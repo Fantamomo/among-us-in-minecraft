@@ -4,6 +4,7 @@ import com.fantamomo.mc.amongus.ability.Ability
 import com.fantamomo.mc.amongus.ability.AssignedAbility
 import com.fantamomo.mc.amongus.ability.builder.*
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import com.fantamomo.mc.amongus.player.isVented
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import net.kyori.adventure.text.Component
 import org.bukkit.inventory.ItemType

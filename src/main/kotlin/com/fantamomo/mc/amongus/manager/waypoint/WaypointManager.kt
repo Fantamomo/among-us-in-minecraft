@@ -2,7 +2,7 @@ package com.fantamomo.mc.amongus.manager.waypoint
 
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.manager.ActionBarManager
-import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import com.fantamomo.mc.amongus.player.HumanAmongUsPlayer
 import com.fantamomo.mc.amongus.util.internal.NMS
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.ComponentLike
@@ -21,7 +21,7 @@ class WaypointManager(val game: Game) {
     private val waypointData: MutableSet<WaypointData> = mutableSetOf()
 
     private inner class WaypointData(
-        val player: AmongUsPlayer
+        val player: HumanAmongUsPlayer
     ) {
         val actionBar = game.actionBarManager.part(
             player,
@@ -154,23 +154,23 @@ class WaypointManager(val game: Game) {
             ClientboundTrackedWaypointPacket.updateWaypointPosition(uuid, icon, vector)
     }
 
-    fun assignWaypoint(player: AmongUsPlayer, waypoint: Waypoint) {
+    fun assignWaypoint(player: HumanAmongUsPlayer, waypoint: Waypoint) {
         val data = waypointData.find { it.player == player } ?: WaypointData(player).also(waypointData::add)
         data.addWaypoint(waypoint)
     }
 
-    fun removeWaypoint(player: AmongUsPlayer, waypoint: Waypoint) {
+    fun removeWaypoint(player: HumanAmongUsPlayer, waypoint: Waypoint) {
         val data = waypointData.find { it.player == player } ?: return
         data.removeWaypoint(waypoint)
     }
 
-    fun removePlayer(player: AmongUsPlayer) {
+    fun removePlayer(player: HumanAmongUsPlayer) {
         val data = waypointData.find { it.player == player } ?: return
         data.removeAll()
         waypointData.remove(data)
     }
 
-    fun onPlayerRejoin(player: AmongUsPlayer) {
+    fun onPlayerRejoin(player: HumanAmongUsPlayer) {
         val data = waypointData.find { it.player == player } ?: return
         data.resendAll()
     }

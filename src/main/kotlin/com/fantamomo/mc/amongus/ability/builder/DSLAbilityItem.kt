@@ -2,8 +2,11 @@ package com.fantamomo.mc.amongus.ability.builder
 
 import com.fantamomo.mc.amongus.ability.AssignedAbility
 import com.fantamomo.mc.amongus.ability.item.AbilityItem
+import com.fantamomo.mc.amongus.player.bot.AmongUsZombie
+import net.minecraft.world.entity.ai.goal.GoalSelector
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.ItemType
+import kotlin.time.Duration
 
 class DSLAbilityItem(
     ability: AssignedAbility<*, *>,
@@ -11,7 +14,8 @@ class DSLAbilityItem(
     internal val ctx: AbilityContext,
     private val states: Map<AbilityItemState, AbilityItemStateDefinition>,
     private val conditions: List<AbilityCondition>,
-    private val clickDelay: Boolean
+    private val clickDelay: Boolean,
+    internal val registerGoals: (GoalSelector, AmongUsZombie, DSLAbilityItem) -> Unit
 ) : AbilityItem(ability, id) {
 
     private var lastState: AbilityItemState? = null
@@ -87,6 +91,12 @@ class DSLAbilityItem(
 
     override fun startCooldown() {
         ctx.startTimers()
+    }
+
+    fun remainingCooldown(): Duration = ctx.getTimer("cooldown")?.remaining() ?: Duration.ZERO
+
+    override fun registerGoals(gs: GoalSelector, zombie: AmongUsZombie) {
+        registerGoals.invoke(gs, zombie, this)
     }
 
     companion object {

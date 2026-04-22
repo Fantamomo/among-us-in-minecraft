@@ -13,7 +13,7 @@ import io.papermc.paper.plugin.bootstrap.PluginProviderContext
 @Suppress("UnstableApiUsage")
 class AmongUsBootstrapper : PluginBootstrap {
     override fun bootstrap(context: BootstrapContext) {
-        AmongUsConstants.Companion.Impl(context)
+        AmongUsConstants.Companion.Impl(context.dataDirectory)
     }
 
     /**

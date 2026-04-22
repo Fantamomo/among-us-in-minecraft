@@ -1,11 +1,13 @@
 name: AmongUs
 version: ${version}
 git-hash: ${githash}
+unattached: ${unattached}
 main: com.fantamomo.mc.amongus.AmongUs
 api-version: '1.21'
 prefix: AmongUs
 load: STARTUP
 authors: [Fantamomo]
 bootstrapper: com.fantamomo.mc.amongus.AmongUsBootstrapper
+loader: com.fantamomo.mc.amongus.AmongUsPluginLoader
 website: https://docs.among-us-in-minecraft.fantamomo.com
 description: A plugin for playing Among Us in Minecraft

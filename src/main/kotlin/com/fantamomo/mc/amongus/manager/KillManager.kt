@@ -4,7 +4,7 @@ import com.fantamomo.mc.adventure.text.*
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.languages.component
-import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import com.fantamomo.mc.amongus.player.*
 import com.fantamomo.mc.amongus.player.info.DeadReason
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.role.crewmates.TheDamnedRole
@@ -22,10 +22,10 @@ import org.bukkit.entity.Pose
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
-import kotlin.uuid.toKotlinUuid
+import kotlin.time.Clock
 
 class KillManager(val game: Game) {
-    private val corpses: MutableList<Corpse> = mutableListOf()
+    internal val corpses: MutableList<Corpse> = mutableListOf()
 
     @Suppress("UnstableApiUsage")
     fun showCorpse(owner: AmongUsPlayer, location: Location) {
@@ -34,7 +34,7 @@ class KillManager(val game: Game) {
             it.pose = Pose.SLEEPING
             it.isImmovable = true
             it.persistentDataContainer.set(CORPSE_KEY, PersistentDataType.BYTE, 1)
-            it.equipment.helmet = owner.player?.inventory?.helmet
+            it.equipment.helmet = owner.color.toItemStack(owner.armorTrim)
             EntityManager.addEntityToRemoveOnEnd(game, it)
         }
         val corpse = Corpse(mannequin, owner)
@@ -45,7 +45,7 @@ class KillManager(val game: Game) {
         if (target.isInCams()) {
             game.cameraManager.leaveCams(target)
         }
-        target.player?.run {
+        target.audience.run {
             sendTitlePart(
                 TitlePart.TITLE,
                 textComponent {
@@ -72,16 +72,16 @@ class KillManager(val game: Game) {
                 }
             )
         }
-        val location = target.livingEntity.location
+        val location = target.location
 
         if (game.sabotageManager.isCurrentlySabotage()) {
-            imposter.statistics.killsAsImposterWhileSabotage.increment()
-            target.statistics.killedByImposterWhileSabotage.increment()
+            imposter.humanOrNull?.statistics?.killsAsImposterWhileSabotage?.increment()
+            target.humanOrNull?.statistics?.killedByImposterWhileSabotage?.increment()
         }
 
         updateStatistics(target, imposter)
 
-        imposter.player?.also { p ->
+        imposter.internalEntity?.also { p ->
             val clone = location.clone()
             clone.rotation = p.location.rotation
             p.teleport(clone)
@@ -89,13 +89,13 @@ class KillManager(val game: Game) {
         }
 
         showCorpse(target, location)
-        target.player?.also { p ->
+        target.humanOrNull?.player?.also { p ->
             p.addPotionEffect(blindnessEffect)
             p.closeInventory()
             p.sendHurtAnimation(0f)
         }
         markAsDead(target, DeadReason.Murdered(imposter))
-        if (target.assignedRole?.definition == TheDamnedRole) {
+        if (target.role.definition == TheDamnedRole) {
             game.meetingManager.callMeeting(
                 imposter,
                 MeetingManager.MeetingReason.BODY,
@@ -116,42 +116,43 @@ class KillManager(val game: Game) {
     fun nearestCorpse(location: Location): Corpse? = corpses.minByOrNull { Double.MAX_VALUE.takeIf { _ -> !it.valid } ?: it.mannequin.location.distanceSquared(location) }?.takeIf { it.valid }
 
     fun canKillAsSheriff(sheriff: AmongUsPlayer): Boolean {
-        val loc = sheriff.livingEntityOrNull?.location ?: return false
+        val loc = sheriff.location
         val distance = game.settings[SettingsKey.KILL.KILL_DISTANCE].distance
         if (game.ventManager.isVented(sheriff)) return false
         for (player in game.players) {
             if (player === sheriff) continue
-            if (!player.isAlive) continue
+            if (!player.isAlive()) continue
             if (game.ventManager.isVented(player)) continue
-            val location = player.mannequinController.getEntity()?.location ?: player.livingEntityOrNull?.location ?: continue
+            val location = player.location
             if (loc.distanceSquared(location) < distance * distance) return true
         }
         return false
     }
 
-    fun canKillAsImposter(player: AmongUsPlayer): Boolean {
-        val loc = player.livingEntityOrNull?.location ?: return false
+    fun canKillAsImposter(sheriff: AmongUsPlayer): Boolean {
+        val loc = sheriff.location
         val distance = game.settings[SettingsKey.KILL.KILL_DISTANCE].distance
         for (player in game.players) {
-            if (!player.isAlive) continue
+            if (player === sheriff) continue
+            if (!player.isAlive()) continue
             if (game.ventManager.isVented(player)) continue
-            if (player.assignedRole?.definition?.team == Team.IMPOSTERS) continue
-            val location = player.mannequinController.getEntity()?.location ?: player.livingEntityOrNull?.location ?: continue
+            if (player.role.definition.team == Team.IMPOSTERS) continue
+            val location = player.location
             if (loc.distanceSquared(location) < distance * distance) return true
         }
         return false
     }
 
     fun killNearestAsImposter(imposter: AmongUsPlayer) {
-        val loc = imposter.livingEntity.location
+        val loc = imposter.location
         var nearest: AmongUsPlayer? = null
         var nearestDistance = Double.MAX_VALUE
         val distance = game.settings[SettingsKey.KILL.KILL_DISTANCE].distance
         for (player in game.players) {
-            if (!player.isAlive) continue
+            if (!player.isAlive()) continue
             if (game.ventManager.isVented(player)) continue
-            if (player.assignedRole?.definition?.team == Team.IMPOSTERS) continue
-            val location = player.mannequinController.getEntity()?.location ?: player.livingEntity.location
+            if (player.role.definition.team == Team.IMPOSTERS) continue
+            val location = player.location
             val distanceSquared = loc.distanceSquared(location)
             if (distanceSquared < nearestDistance && distanceSquared < distance * distance) {
                 nearest = player
@@ -166,7 +167,7 @@ class KillManager(val game: Game) {
             game.cameraManager.leaveCams(target)
         }
         if (corpse) {
-            val location = target.livingEntity.location
+            val location = target.location
             showCorpse(target, location)
         }
         markAsDead(target, reason)
@@ -198,24 +199,28 @@ class KillManager(val game: Game) {
      * - Visibility is handled entirely server-side without packet hacks.
      */
     private fun markAsDead(target: AmongUsPlayer, reason: DeadReason) {
-        target.isAlive = false
+        target.internal
+        
         target.deadReason = reason
-        target.statistics.timeUntilDead.timerStop()
+        target.humanOrNull?.statistics?.timeUntilDead?.timerStop()
         target.mannequinController.hideFromAll()
         target.mannequinController.showToSeeingPlayers()
-        game.actionLog.add(PlayerActionElements.PlayerDeath(target.uuid.toKotlinUuid(), reason))
-        val mannequin = target.mannequinController.getEntity()
-        mannequin?.isInvisible = true
+        game.actionLog.add(PlayerActionElements.PlayerDeath(target.uuid, reason))
+        val mannequin = target.mannequin
+        mannequin.isInvisible = true
+        if (reason is DeadReason.Murdered) {
+            reason.murderer.internal.lastKillTime = Clock.System.now()
+        }
         showGhosts(target)
         val scoreboard = game.scoreboardManager.get(target)
         if (scoreboard != null) {
             val team = scoreboard.ghostTeam
-            target.player?.let { team.addPlayer(it) }
+            target.humanOrNull?.player?.let { team.addPlayer(it) }
             for (player in game.players) {
-                if (player.isAlive) continue
-                val entity = player.mannequinController.getEntity()
-                entity?.let(team::addEntity)
-                mannequin?.let { game.scoreboardManager.get(player)?.ghostTeam?.addEntity(it) }
+                if (player.isAlive()) continue
+                val entity = player.mannequin
+                entity.let(team::addEntity)
+                mannequin.let { game.scoreboardManager.get(player)?.ghostTeam?.addEntity(it) }
             }
         }
         target.addGhostImprovements()
@@ -223,14 +228,14 @@ class KillManager(val game: Game) {
     }
 
     private fun showGhosts(target: AmongUsPlayer) {
-        val player = target.player ?: return
+        val player = target.humanOrNull?.player ?: return
         for (auPlayer in game.players) {
-            if (auPlayer.isAlive || target === auPlayer) continue
+            if (auPlayer.isAlive() || target === auPlayer) continue
             auPlayer.mannequinController.showTo(player)
         }
     }
 
-    internal fun onPlayerRejoin(amongUsPlayer: AmongUsPlayer) {
+    internal fun onPlayerRejoin(amongUsPlayer: HumanAmongUsPlayer) {
         val scoreboard = game.scoreboardManager.get(amongUsPlayer)
         amongUsPlayer.player?.let { scoreboard?.ghostTeam?.addPlayer(it) }
     }
@@ -238,15 +243,15 @@ class KillManager(val game: Game) {
     fun getCorpses(): List<Corpse> = corpses.toList()
 
     fun killNearestAsSheriff(sheriff: AmongUsPlayer) {
-        val loc = sheriff.livingEntity.location
+        val loc = sheriff.location
         var nearest: AmongUsPlayer? = null
         var nearestDistance = Double.MAX_VALUE
         val distance = game.settings[SettingsKey.KILL.KILL_DISTANCE].distance
         for (player in game.players) {
             if (player === sheriff) continue
-            if (!player.isAlive) continue
+            if (!player.isAlive()) continue
             if (game.ventManager.isVented(player)) continue
-            val location = player.mannequinController.getEntity()?.location ?: player.livingEntity.location
+            val location = player.location
             val distanceSquared = loc.distanceSquared(location)
             if (distanceSquared < nearestDistance && distanceSquared < distance * distance) {
                 nearest = player
@@ -263,7 +268,7 @@ class KillManager(val game: Game) {
         if (target.isInCams()) {
             game.cameraManager.leaveCams(target)
         }
-        target.player?.run {
+        target.audience.run {
             sendTitlePart(
                 TitlePart.TITLE,
                 textComponent {
@@ -289,13 +294,13 @@ class KillManager(val game: Game) {
                 }
             )
         }
-        val location = target.livingEntity.location
+        val location = target.location
 
         updateStatistics(target, sheriff)
 
-        val sheriffLoc = sheriff.livingEntity.location
+        val sheriffLoc = sheriff.location
 
-        sheriff.player?.also { p ->
+        sheriff.internalEntity?.also { p ->
             val clone = location.clone()
             clone.rotation = p.location.rotation
             p.teleport(clone)
@@ -303,18 +308,18 @@ class KillManager(val game: Game) {
         }
 
         showCorpse(target, location)
-        target.player?.also { p ->
+        target.humanOrNull?.player?.also { p ->
             p.addPotionEffect(blindnessEffect)
             p.closeInventory()
             p.sendHurtAnimation(0f)
         }
         markAsDead(target, DeadReason.Murdered(sheriff))
 
-        if (target.assignedRole?.definition?.team?.canByKilledBySheriff != true) {
-            target.statistics.killedBySheriffWrong.increment()
-            sheriff.statistics.killedAsSheriffWrong.increment()
+        if (!target.role.definition.team.canByKilledBySheriff) {
+            target.humanOrNull?.statistics?.killedBySheriffWrong?.increment()
+            sheriff.humanOrNull?.statistics?.killedAsSheriffWrong?.increment()
             showCorpse(sheriff, sheriffLoc)
-            sheriff.player?.also { p ->
+            sheriff.humanOrNull?.player?.also { p ->
                 p.sendTitlePart(
                     TitlePart.TITLE,
                     textComponent {
@@ -342,36 +347,40 @@ class KillManager(val game: Game) {
             }
             markAsDead(sheriff, DeadReason.Suicide)
         } else {
-            target.statistics.killedBySheriffCorrect.increment()
-            sheriff.statistics.killedAsSheriffCorrect.increment()
+            target.humanOrNull?.statistics?.killedBySheriffCorrect?.increment()
+            sheriff.humanOrNull?.statistics?.killedAsSheriffCorrect?.increment()
         }
         game.checkWin()
     }
 
     private fun updateStatistics(target: AmongUsPlayer, killer: AmongUsPlayer) {
-        killer.statistics.kills[killer.assignedRole?.definition]?.increment()
-        target.statistics.killed[killer.assignedRole?.definition]?.increment()
-        target.statistics.timeUntilKilled.timerStop()
+        val killerStatistics = killer.humanOrNull?.statistics
+        val targetStatistics = target.humanOrNull?.statistics
+        if (killerStatistics == null && targetStatistics == null) return
+
+        killerStatistics?.kills[killer.role.definition]?.increment()
+        targetStatistics?.killed[killer.role.definition]?.increment()
+        targetStatistics?.timeUntilKilled?.timerStop()
         if (killer.isInGhostForm()) {
-            killer.statistics.killsInGhostForm.increment()
-            target.statistics.killedByPlayerInGhostForm.increment()
+            killerStatistics?.killsInGhostForm?.increment()
+            targetStatistics?.killedByPlayerInGhostForm?.increment()
         }
         if (game.morphManager.isMorphed(killer)) {
-            killer.statistics.killsWhileMorphed.increment()
-            target.statistics.killedByMorphedPlayer.increment()
+            killerStatistics?.killsWhileMorphed?.increment()
+            targetStatistics?.killedByMorphedPlayer?.increment()
         }
 
         if (game.morphManager.isCamouflageMode()) {
-            killer.statistics.killsWhileCamouflaged.increment()
-            target.statistics.killedWhileCamouflaged.increment()
+            killerStatistics?.killsWhileCamouflaged?.increment()
+            targetStatistics?.killedWhileCamouflaged?.increment()
         }
     }
 
     fun eatCorpse(player: AmongUsPlayer) {
-        val cannibalRole: AssignedCannibalRole = player.assignedRole as? AssignedCannibalRole
+        val cannibalRole: AssignedCannibalRole = player.role as? AssignedCannibalRole
             ?: throw IllegalStateException("Only cannibal role can eat bodies")
 
-        val corpse = nearestCorpse(player.livingEntity.location) ?: return
+        val corpse = nearestCorpse(player.location) ?: return
         game.actionLog.add(CustomAbilityActionElements.CannibalEatBody(player.uuid, corpse.owner.uuid))
         corpse.remove()
         cannibalRole.incrementEatenBodies()

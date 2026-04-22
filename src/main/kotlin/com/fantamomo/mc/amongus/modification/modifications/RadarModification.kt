@@ -10,6 +10,8 @@ import com.fantamomo.mc.amongus.manager.waypoint.WaypointManager
 import com.fantamomo.mc.amongus.modification.AssignedModification
 import com.fantamomo.mc.amongus.modification.Modification
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import com.fantamomo.mc.amongus.player.isBot
+import com.fantamomo.mc.amongus.player.isHuman
 import com.fantamomo.mc.amongus.util.TickContext
 import net.kyori.adventure.text.Component
 import org.bukkit.Color
@@ -25,7 +27,7 @@ object RadarModification : Modification<RadarModification, RadarModification.Ass
         AssignedModification<RadarModification, AssignedRadarModification> {
         override val definition = RadarModification
 
-        val mutableLocation = MutableWaypointPosProvider(player.livingEntity.location)
+        val mutableLocation = MutableWaypointPosProvider(player.location)
         private var lastDistanceSquared = 0.0
         private var lastDistanceDisplay = 0
         private var shown = false
@@ -35,30 +37,32 @@ object RadarModification : Modification<RadarModification, RadarModification.Ass
             Color.BLUE,
             mutableLocation
         )
-        val actionBar = player.game.actionBarManager.part(
+        val actionBar = if (player.isHuman) player.game.actionBarManager.part(
             player,
             "radar",
             ActionBarManager.ActionBarPartType.LEFT,
             100
-        )
+        ) else null
 
         init {
             waypoint.showDisplay = false
         }
 
         override fun onStart() {
+            if (player.isBot) return
             player.game.waypointManager.assignWaypoint(player, waypoint)
             shown = true
         }
 
         override fun onTick(tickContext: TickContext) {
             if (!shown) return
-            val thisLoc = (player.mannequinController.getEntity() ?: player.livingEntity).location
+            if (player.isBot) return
+            val thisLoc = player.location
             var nearestDistance = Double.MAX_VALUE
             var nearestLoc = thisLoc
             for (player in player.game.players) {
                 if (player === this.player) continue
-                val targetLocation = (player.mannequinController.getEntity() ?: player.livingEntity).location
+                val targetLocation = player.location
                 val d = thisLoc.distanceSquared(targetLocation)
                 if (d < nearestDistance) {
                     nearestDistance = d
@@ -75,7 +79,7 @@ object RadarModification : Modification<RadarModification, RadarModification.Ass
             if (roundToInt != lastDistanceDisplay) {
                 lastDistanceDisplay = roundToInt
                 val distanceToDisplay = if (nearestDistance > 25 * 25) ">25" else sqrt(nearestDistance).roundToInt().toString()
-                actionBar.componentLike = textComponent {
+                actionBar?.componentLike = textComponent {
                     translatable("modification.radar.display") {
                         args {
                             string("distance", distanceToDisplay)
@@ -87,6 +91,7 @@ object RadarModification : Modification<RadarModification, RadarModification.Ass
         }
 
         override fun onEnd() {
+            if (player.isBot) return
             player.game.waypointManager.removeWaypoint(player, waypoint)
             shown = false
         }

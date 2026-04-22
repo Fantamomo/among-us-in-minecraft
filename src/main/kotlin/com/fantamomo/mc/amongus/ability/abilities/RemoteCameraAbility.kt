@@ -5,6 +5,9 @@ import com.fantamomo.mc.amongus.ability.AssignedAbility
 import com.fantamomo.mc.amongus.ability.builder.*
 import com.fantamomo.mc.amongus.manager.CameraManager
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import com.fantamomo.mc.amongus.player.internalEntity
+import com.fantamomo.mc.amongus.player.isHuman
+import com.fantamomo.mc.amongus.player.isInCams
 import com.fantamomo.mc.amongus.sabotage.SabotageType
 import net.kyori.adventure.text.Component
 import org.bukkit.inventory.ItemType
@@ -47,14 +50,14 @@ object RemoteCameraAbility :
                     BlockReason.custom("inCams"),
                     Component.translatable("ability.remote_camera.camera.tooltip.in_cams")
                 ) {
-                    game.cameraManager.isInCams(player)
+                    player.isInCams()
                 }
 
                 condition(
                     BlockReason.custom("sneaking"),
                     Component.translatable("ability.remote_camera.camera.tooltip.sneaking")
                 ) {
-                    player.player?.isSneaking == true
+                    player.internalEntity?.isSneaking == true
                 }
 
                 // ---------- ACTIVE ----------
@@ -69,11 +72,12 @@ object RemoteCameraAbility :
                     onRightClick {
                         val assigned = ability as AssignedCameraAbility
                         val last = assigned.lastCamera
-
-                        if (last != null) {
-                            game.cameraManager.joinCamera(player, last)
-                        } else {
-                            game.cameraManager.joinCamera(player)
+                        if (player.isHuman) {
+                            if (last != null) {
+                                game.cameraManager.joinCamera(player, last)
+                            } else {
+                                game.cameraManager.joinCamera(player)
+                            }
                         }
                     }
                 }

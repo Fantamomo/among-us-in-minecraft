@@ -4,7 +4,7 @@ import com.fantamomo.mc.adventure.text.*
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.command.Permissions
 import com.fantamomo.mc.amongus.languages.string
-import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import com.fantamomo.mc.amongus.player.HumanAmongUsPlayer
 import com.fantamomo.mc.amongus.task.GuiAssignedTask
 import com.fantamomo.mc.amongus.util.splitLinesPreserveStyles
 import com.fantamomo.mc.amongus.util.textComponent
@@ -28,7 +28,7 @@ import org.bukkit.persistence.PersistentDataType
 
 @Suppress("UnstableApiUsage")
 class SettingsInventory(
-    val owner: AmongUsPlayer,
+    val owner: HumanAmongUsPlayer,
     private val group: SettingsGroup? = null
 ) : InventoryHolder {
 

@@ -3,6 +3,7 @@ package com.fantamomo.mc.amongus.task.tasks
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import com.fantamomo.mc.amongus.task.BotSupportingTask
 import com.fantamomo.mc.amongus.task.GuiAssignedTask
 import com.fantamomo.mc.amongus.task.Task
 import com.fantamomo.mc.amongus.task.TaskType
@@ -15,6 +16,7 @@ import org.bukkit.NamespacedKey
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.inventory.Inventory
 import org.bukkit.persistence.PersistentDataType
+import kotlin.time.Duration.Companion.milliseconds
 
 object OpenWaterwaysTask : Task<OpenWaterwaysTask, OpenWaterwaysTask.AssignedOpenWaterwaysTask> {
     override val id: String = "open_waterways"
@@ -25,7 +27,7 @@ object OpenWaterwaysTask : Task<OpenWaterwaysTask, OpenWaterwaysTask.AssignedOpe
     override fun assignTo(player: AmongUsPlayer) = AssignedOpenWaterwaysTask(player)
 
     class AssignedOpenWaterwaysTask(override val player: AmongUsPlayer) :
-        GuiAssignedTask<OpenWaterwaysTask, AssignedOpenWaterwaysTask>() {
+        GuiAssignedTask<OpenWaterwaysTask, AssignedOpenWaterwaysTask>(), BotSupportingTask {
         override val task = OpenWaterwaysTask
         override val inv: Inventory =
             Bukkit.createInventory(this, SIZE, Component.translatable("tasks.open_waterways.title"))
@@ -45,6 +47,8 @@ object OpenWaterwaysTask : Task<OpenWaterwaysTask, OpenWaterwaysTask.AssignedOpe
         private var fallingWaterCol = -1
         private var fallingWaterRow = -1
         private var fillingIn = 0
+
+        override fun getTaskDurationForBot() = BotSupportingTask.BotTaskDuration.percentage(17437.milliseconds, 5)
 
         override fun setupInventory() {
             open = true

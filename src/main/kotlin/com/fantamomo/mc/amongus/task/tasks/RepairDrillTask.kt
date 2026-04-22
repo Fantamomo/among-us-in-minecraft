@@ -14,6 +14,7 @@ import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.inventory.Inventory
 import org.bukkit.persistence.PersistentDataType
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.milliseconds
 
 object RepairDrillTask : Task<RepairDrillTask, RepairDrillTask.AssignedRepairDrillTask> {
     override val id: String = "repair_drill"
@@ -23,7 +24,7 @@ object RepairDrillTask : Task<RepairDrillTask, RepairDrillTask.AssignedRepairDri
 
     override fun assignTo(player: AmongUsPlayer) = AssignedRepairDrillTask(player)
 
-    class AssignedRepairDrillTask(override val player: AmongUsPlayer) : GuiAssignedTask<RepairDrillTask, AssignedRepairDrillTask>() {
+    class AssignedRepairDrillTask(override val player: AmongUsPlayer) : GuiAssignedTask<RepairDrillTask, AssignedRepairDrillTask>(), BotSupportingTask {
         override val task = RepairDrillTask
         override val location: Location = areaLocation ?: throw IllegalArgumentException("No location for task $id")
         override val inv: Inventory = Bukkit.createInventory(this, SIZE, Component.translatable("tasks.repair_drill.title"))
@@ -36,6 +37,8 @@ object RepairDrillTask : Task<RepairDrillTask, RepairDrillTask.AssignedRepairDri
         private val background = itemStack(Material.BLACK_STAINED_GLASS_PANE).hideTooltip()
         private val red = itemStack(Material.RED_STAINED_GLASS_PANE).hideTooltip().apply { amount = 4 }
         private val green = itemStack(Material.LIME_STAINED_GLASS_PANE).hideTooltip()
+
+        override fun getTaskDurationForBot() = BotSupportingTask.BotTaskDuration.percentage(20506.milliseconds, 5)
 
         override fun onInventoryClick(event: InventoryClickEvent) {
             val item = event.currentItem?.takeIf { it.isMine() } ?: return

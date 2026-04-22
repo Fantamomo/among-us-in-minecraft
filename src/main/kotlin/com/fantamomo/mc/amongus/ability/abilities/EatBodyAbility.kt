@@ -5,6 +5,7 @@ import com.fantamomo.mc.amongus.ability.AssignedAbility
 import com.fantamomo.mc.amongus.ability.builder.*
 import com.fantamomo.mc.amongus.ability.item.AbilityItem
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import com.fantamomo.mc.amongus.player.bot.goals.EatBodyGoal
 import com.fantamomo.mc.amongus.role.neutral.CannibalRole
 import net.kyori.adventure.text.Component
 import org.bukkit.inventory.ItemType
@@ -12,7 +13,7 @@ import org.bukkit.inventory.ItemType
 object EatBodyAbility : Ability<EatBodyAbility, EatBodyAbility.AssignedEatBodyAbility> {
     override val id: String = "eat_body"
 
-    override fun canAssignTo(player: AmongUsPlayer) = player.assignedRole?.definition === CannibalRole
+    override fun canAssignTo(player: AmongUsPlayer) = player.role.definition === CannibalRole
 
     override fun assignTo(player: AmongUsPlayer) = AssignedEatBodyAbility(player)
 
@@ -28,11 +29,15 @@ object EatBodyAbility : Ability<EatBodyAbility, EatBodyAbility.AssignedEatBodyAb
 
                 requiresAlive()
 
+                registerGoals { selector, zombie, item ->
+                    selector.addGoal(1, EatBodyGoal(zombie))
+                }
+
                 condition(
                     BlockReason.custom("notNearCorpse"),
                     Component.translatable("ability.eat_body.eat_body.tooltip")
                 ) {
-                    val loc = player.livingEntity.location
+                    val loc = player.location
                     !game.killManager.isNearCorpse(loc)
                 }
 

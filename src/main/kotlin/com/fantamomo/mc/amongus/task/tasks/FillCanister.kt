@@ -10,6 +10,7 @@ import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.inventory.Inventory
+import kotlin.time.Duration.Companion.milliseconds
 
 object FillCanister : Task<FillCanister, FillCanister.AssignedFillCanister> {
     override val id: String = "fill_canister"
@@ -19,13 +20,15 @@ object FillCanister : Task<FillCanister, FillCanister.AssignedFillCanister> {
 
     override fun assignTo(player: AmongUsPlayer): AssignedFillCanister = AssignedFillCanister(player)
 
-    class AssignedFillCanister(override val player: AmongUsPlayer) : GuiAssignedTask<FillCanister, AssignedFillCanister>() {
+    class AssignedFillCanister(override val player: AmongUsPlayer) : GuiAssignedTask<FillCanister, AssignedFillCanister>(), BotSupportingTask {
         override val task: FillCanister = FillCanister
         override val inv: Inventory = Bukkit.createInventory(this, SIZE, Component.translatable(task.title))
         override val location: Location = areaLocation ?: error("No location for task $id")
 
         private var progress = 0
         private val maxProgress = 5
+
+        override fun getTaskDurationForBot() = BotSupportingTask.BotTaskDuration.percentage(2229.milliseconds, 5)
 
         override fun setupInventory() {
             updateInventory()

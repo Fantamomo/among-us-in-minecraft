@@ -2,10 +2,7 @@ package com.fantamomo.mc.amongus.task.tasks
 
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
-import com.fantamomo.mc.amongus.task.GuiAssignedTask
-import com.fantamomo.mc.amongus.task.Steppable
-import com.fantamomo.mc.amongus.task.Task
-import com.fantamomo.mc.amongus.task.TaskType
+import com.fantamomo.mc.amongus.task.*
 import com.fantamomo.mc.amongus.util.Cooldown
 import com.fantamomo.mc.amongus.util.hideTooltip
 import net.kyori.adventure.text.Component
@@ -24,7 +21,8 @@ object TransferDataTask : Task<TransferDataTask, TransferDataTask.AssignedTransf
 
     override fun assignTo(player: AmongUsPlayer) = AssignedTransferDataTask(player)
 
-    class AssignedTransferDataTask(override val player: AmongUsPlayer) : GuiAssignedTask<TransferDataTask, AssignedTransferDataTask>(), Steppable {
+    class AssignedTransferDataTask(override val player: AmongUsPlayer) : GuiAssignedTask<TransferDataTask, AssignedTransferDataTask>(), MultiStepTask,
+        BotSupportingTask {
         override val task = TransferDataTask
         override var location: Location = player.game.area.tasks[id]?.random() ?: throw IllegalArgumentException("No location for task $id")
         private val uploadLocation = player.game.area.tasks[UPLOAD_DATA]?.random() ?: throw IllegalArgumentException("No upload location for task $id")
@@ -39,6 +37,8 @@ object TransferDataTask : Task<TransferDataTask, TransferDataTask.AssignedTransf
         private val greenItem = itemStack(Material.LIME_STAINED_GLASS_PANE).hideTooltip()
         private val lightBlueItem = itemStack(Material.LIGHT_BLUE_STAINED_GLASS_PANE).hideTooltip()
         private val grayItem = itemStack(Material.GRAY_STAINED_GLASS_PANE).hideTooltip()
+
+        override fun getTaskDurationForBot() = BotSupportingTask.BotTaskDuration.range(duration, duration + 2.seconds)
 
         override fun onInventoryClick(event: InventoryClickEvent) {
             val item = event.currentItem ?: return
@@ -65,9 +65,7 @@ object TransferDataTask : Task<TransferDataTask, TransferDataTask.AssignedTransf
         override fun tick() {
             if (!countdown.isRunning() && !countdown.isFinished()) return
             if (countdown.isFinished()) {
-                location = uploadLocation
                 player.game.taskManager.completeOneTaskStep(this)
-                step++
                 stop()
                 countdown.reset()
                 ticks = -1
@@ -92,6 +90,11 @@ object TransferDataTask : Task<TransferDataTask, TransferDataTask.AssignedTransf
 
         override var step: Int = 0
         override val maxSteps: Int = 2
+
+        override fun nextStep() {
+            step++
+            location = uploadLocation
+        }
 
         companion object {
             const val SIZE = 27

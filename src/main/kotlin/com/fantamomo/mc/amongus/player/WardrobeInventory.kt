@@ -25,12 +25,12 @@ import java.util.*
 
 @Suppress("UnstableApiUsage")
 class WardrobeInventory private constructor(
-    internal val owner: AmongUsPlayer,
+    internal val owner: HumanAmongUsPlayer,
     private val parent: WardrobeInventory? = null,
     private val type: Type = Type.MAIN
 ) : InventoryHolder {
 
-    constructor(owner: AmongUsPlayer) : this(owner, null, Type.MAIN)
+    constructor(owner: HumanAmongUsPlayer) : this(owner, null, Type.MAIN)
 
     val inv = Bukkit.createInventory(this, type.size, Component.translatable("wardrobe.title"))
 

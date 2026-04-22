@@ -2,10 +2,7 @@ package com.fantamomo.mc.amongus.task.tasks
 
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
-import com.fantamomo.mc.amongus.task.GuiAssignedTask
-import com.fantamomo.mc.amongus.task.Task
-import com.fantamomo.mc.amongus.task.TaskType
-import com.fantamomo.mc.amongus.task.areaLocation
+import com.fantamomo.mc.amongus.task.*
 import com.fantamomo.mc.amongus.util.hideTooltip
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
@@ -15,6 +12,7 @@ import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.milliseconds
 
 object VerifyIdTask : Task<VerifyIdTask, VerifyIdTask.AssignedVerifyIdTask> {
 
@@ -29,7 +27,7 @@ object VerifyIdTask : Task<VerifyIdTask, VerifyIdTask.AssignedVerifyIdTask> {
 
     class AssignedVerifyIdTask(
         override val player: AmongUsPlayer
-    ) : GuiAssignedTask<VerifyIdTask, AssignedVerifyIdTask>() {
+    ) : GuiAssignedTask<VerifyIdTask, AssignedVerifyIdTask>(), BotSupportingTask {
 
         override val task = VerifyIdTask
 
@@ -47,6 +45,8 @@ object VerifyIdTask : Task<VerifyIdTask, VerifyIdTask.AssignedVerifyIdTask> {
 
         private var greenTicksRemaining = 0
         private var lastGreenSlot = -1
+
+        override fun getTaskDurationForBot() = BotSupportingTask.BotTaskDuration.percentage(6135.milliseconds, 5)
 
         override fun setupInventory() {
             drawBackground()

@@ -2,10 +2,10 @@ package com.fantamomo.mc.amongus.role.crewmates
 
 import com.destroystokyo.paper.ParticleBuilder
 import com.fantamomo.mc.amongus.ability.Ability
-import com.fantamomo.mc.amongus.player.AmongUsPlayer
-import com.fantamomo.mc.amongus.player.PlayerColor
+import com.fantamomo.mc.amongus.player.*
 import com.fantamomo.mc.amongus.role.AssignedRole
 import com.fantamomo.mc.amongus.role.Role
+import com.fantamomo.mc.amongus.role.SupportBotsRole
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.util.TickContext
 import org.bukkit.Location
@@ -20,7 +20,7 @@ object DetectiveRole : Role<DetectiveRole, DetectiveRole.AssignedDetectiveRole> 
 
     class AssignedDetectiveRole(
         override val player: AmongUsPlayer
-    ) : AssignedRole<DetectiveRole, AssignedDetectiveRole> {
+    ) : AssignedRole<DetectiveRole, AssignedDetectiveRole>, SupportBotsRole {
 
         override val definition = DetectiveRole
 
@@ -34,6 +34,7 @@ object DetectiveRole : Role<DetectiveRole, DetectiveRole.AssignedDetectiveRole> 
         private val particleBuilder = ParticleBuilder(Particle.DUST)
 
         override fun onGameStart() {
+            if (player.isBot) return
             trails.clear()
             for (p in player.game.players) {
                 if (p != player) {
@@ -47,6 +48,7 @@ object DetectiveRole : Role<DetectiveRole, DetectiveRole.AssignedDetectiveRole> 
         }
 
         override fun tick(tickContext: TickContext) {
+            if (player.isBot) return
             if (tickContext.isBy(2)) return
 
             if (trails.isEmpty()) return
@@ -60,7 +62,7 @@ object DetectiveRole : Role<DetectiveRole, DetectiveRole.AssignedDetectiveRole> 
                     .getEntity()
                     ?.location
 
-                if (entityLoc != null && other.isAlive && !other.isVented()) {
+                if (entityLoc != null && other.isAlive() && !other.isVented()) {
                     trail.addLast(
                         TrailPoint(
                             entityLoc.clone(),

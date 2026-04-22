@@ -6,8 +6,7 @@ import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.ability.builder.AbilityTimer
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.languages.string
-import com.fantamomo.mc.amongus.player.AmongUsPlayer
-import com.fantamomo.mc.amongus.player.PlayerManager
+import com.fantamomo.mc.amongus.player.*
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.task.GuiAssignedTask
 import com.fantamomo.mc.amongus.util.CustomPersistentDataTypes
@@ -50,12 +49,12 @@ class MorphManager(val game: Game) {
             get() = (player.game.settings[SettingsKey.ROLES.MORPHLING.MORPH_DURATION] - (Clock.System.now() - start)).takeIf { it > Duration.ZERO }
                 ?: Duration.ZERO
 
-        val actionBar = player.game.actionBarManager.part(
+        val actionBar = if (player.isHuman) player.game.actionBarManager.part(
             player,
             "morph",
             ActionBarManager.ActionBarPartType.RIGHT,
             100
-        )
+        ) else null
 
         var morphing: Boolean? = null
             private set
@@ -69,7 +68,7 @@ class MorphManager(val game: Game) {
             val frames = this.frames ?: return
             morphing = true
             playAnimation(frames) {
-                actionBar.componentLike = com.fantamomo.mc.adventure.text.textComponent {
+                actionBar?.componentLike = com.fantamomo.mc.adventure.text.textComponent {
                     translatable("actionbar.morph.info") {
                         args {
                             string("player", target.name)
@@ -100,14 +99,14 @@ class MorphManager(val game: Game) {
             if (animation && frames != null) {
                 playBackwardAnimation {
                     if (camouflageStart == null) player.mannequinController.restoreAppearance()
-                    actionBar.remove()
+                    actionBar?.remove()
                     morphsToRemove.add(player)
                     abilityTimer?.start(player.game.settings[SettingsKey.ROLES.MORPHLING.MORPH_COOLDOWN])
                 }
             } else {
                 abilityTimer?.start(player.game.settings[SettingsKey.ROLES.MORPHLING.MORPH_COOLDOWN])
                 if (camouflageStart == null) player.mannequinController.restoreAppearance()
-                actionBar.remove()
+                actionBar?.remove()
                 morphsToRemove.add(player)
             }
         }
@@ -120,27 +119,28 @@ class MorphManager(val game: Game) {
             }
 
             val frames = animationFrames ?: return
-            if (player.player == null) return
 
             if (++animationDelay < animationInterval) return
             animationDelay = 0
 
-            val display = when (morphing) {
-                true -> com.fantamomo.mc.adventure.text.textComponent {
-                    translatable("actionbar.morph.info.morphing") {
-                        args { string("player", target.name) }
+            if (player.isHuman) {
+                val display = when (morphing) {
+                    true -> com.fantamomo.mc.adventure.text.textComponent {
+                        translatable("actionbar.morph.info.morphing") {
+                            args { string("player", target.name) }
+                        }
                     }
+
+                    false -> com.fantamomo.mc.adventure.text.textComponent {
+                        translatable("actionbar.morph.info.unmorphing")
+                    }
+
+                    null -> null
                 }
 
-                false -> com.fantamomo.mc.adventure.text.textComponent {
-                    translatable("actionbar.morph.info.unmorphing")
+                if (display != null) {
+                    actionBar?.componentLike = display
                 }
-
-                null -> null
-            }
-
-            if (display != null) {
-                actionBar.componentLike = display
             }
 
             if (animationIndex >= frames.size) {
@@ -230,7 +230,7 @@ class MorphManager(val game: Game) {
             }
     }
 
-    fun showMorphInventory(amongUsPlayer: AmongUsPlayer, callback: (Boolean) -> Unit) {
+    fun showMorphInventory(amongUsPlayer: HumanAmongUsPlayer, callback: (Boolean) -> Unit) {
         val player = amongUsPlayer.player ?: return
         val morphInventory = MorphInventory(amongUsPlayer, callback)
         player.openInventory(morphInventory.inventory)
@@ -311,7 +311,7 @@ class MorphManager(val game: Game) {
         val selectedPlayer = game.players.random()
         camouflageTarget = selectedPlayer
         for (player in game.players) {
-            player.statistics.camouflaged.increment()
+            player.humanOrNull?.statistics?.camouflaged?.increment()
             player.mannequinController.copyAppearanceFrom(selectedPlayer)
         }
     }
@@ -324,7 +324,7 @@ class MorphManager(val game: Game) {
         val selectedPlayer =
             item.persistentDataContainer.get(SELECTED_PLAYER, CustomPersistentDataTypes.UUID) ?: return false
         val target = PlayerManager.getPlayer(selectedPlayer.toJavaUuid()) ?: return false
-        player.player?.closeInventory()
+        player.humanOrNull?.player?.closeInventory()
         morph(player, target)
         return true
     }

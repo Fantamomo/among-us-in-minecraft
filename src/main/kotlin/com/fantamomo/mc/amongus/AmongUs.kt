@@ -1,5 +1,6 @@
 package com.fantamomo.mc.amongus
 
+import com.fantamomo.mc.amongus.ai.AiService
 import com.fantamomo.mc.amongus.area.GameAreaManager
 import com.fantamomo.mc.amongus.command.AmongUsCommands
 import com.fantamomo.mc.amongus.command.Permissions
@@ -10,11 +11,15 @@ import com.fantamomo.mc.amongus.listeners.Listeners
 import com.fantamomo.mc.amongus.manager.EntityManager
 import com.fantamomo.mc.amongus.manager.MeetingManager
 import com.fantamomo.mc.amongus.modification.Modification
+import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.player.LastPlayerLocationManager
 import com.fantamomo.mc.amongus.player.PlayerDataManager
 import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.role.Role
+import com.fantamomo.mc.amongus.role.SupportBotsRole
 import com.fantamomo.mc.amongus.statistics.StatisticsManager
+import com.fantamomo.mc.amongus.util.BotsJoinMessages
+import com.fantamomo.mc.amongus.util.JarType
 import com.fantamomo.mc.amongus.util.LogFilter
 import com.fantamomo.mc.amongus.util.applyUnless
 import com.fantamomo.mc.amongus.util.log.ActionLogManager
@@ -41,48 +46,97 @@ object AmongUs : JavaPlugin() {
     })
 
     override fun onLoad() {
-        slF4JLogger.info(buildString {
-            append("Running v")
-            append(pluginMeta.version)
-            AmongUsConstants.GIT_HASH
-                ?.applyUnless(AmongUsConstants.IN_DEVELOPMENT) { take(8) }
-                ?.let {
-                    append(" (")
-                    append(it)
-                    append(")")
+        val inDevelopment = AmongUsConstants.IN_DEVELOPMENT
+        val unattached = AmongUsConstants.UNATTACHED
+        with(slF4JLogger) {
+            info(buildString {
+                append("Running v")
+                append(pluginMeta.version)
+                AmongUsConstants.GIT_HASH
+                    ?.applyUnless(inDevelopment || unattached != false) { take(8) }
+                    ?.let {
+                        append(" (")
+                        append(it)
+                        append(")")
+                    }
+                append(" by Fantamomo")
+            })
+            when (unattached) {
+                true -> {
+                    warn("This plugin is in a unattached state")
+                    warn("This means that there have been changes to the code, without a commit")
+                    warn("If you are a developer, you can ignore this message.")
+                    warn("If you are a server admin, please switch to a official build.")
+                    warn("We do not provide support for unattached builds.")
                 }
-            append(" by Fantamomo")
-        })
+                false -> {}
+                else -> {
+                    error("The unattached state could not be determined.")
+                    error("Please report this issue to the plugin author.")
+                }
+            }
+        }
     }
 
-    @Suppress("UnusedExpression")
     override fun onEnable() {
+        if (AmongUsConstants.JAR_TYPE == JarType.THIN) {
+            // If it is really a thin jar, this code could not be reached
+            // because the kotlin runtime is not available,
+            // but just in case, the kotlin runtime is available.
+            with(slF4JLogger) {
+                warn("This Plugin is running the thin version of the jar.")
+                warn("Some libraries are not included in the jar.")
+                warn("This would lead to exception we could not catch.")
+                warn("Please switch to the LITE or the STANDALONE version.")
+                warn("The plugin will be disabled.")
+            }
+            server.pluginManager.disablePlugin(this)
+            return
+        }
         saveDefaultConfig()
         AmongUsConfig.init()
         if (AmongUsConstants.IN_DEVELOPMENT) with(slF4JLogger) {
-            info("This Plugin is running in development mode!")
-            info("In developing mode, some features work not as expected.")
-            info("This is for easier developing.")
+            info("This plugin is currently running in development mode.")
+            info("Additional development-only features are enabled to assist testing.")
+            info("These features may impact performance and must not be used in production.")
+            info("They may also expose information that should remain hidden in fair-play environments.")
         }
         LogFilter.init()
         GameAreaManager.loadAreas()
         Listeners.registerAll()
         LanguageManager.init()
         AmongUsSecrets.init()
-        ActionLogManager
 
-        Role
-        Modification
+        initClasses()
+
+        if (AmongUsConstants.IN_DEVELOPMENT) {
+            val notSupportBots: MutableList<Role<*, *>> = mutableListOf()
+            for (role in Role.roles) runCatching {
+                val method = role::class.java.getMethod("assignTo", AmongUsPlayer::class.java)
+                val returnType = method.returnType
+                if (!SupportBotsRole::class.java.isAssignableFrom(returnType)) notSupportBots.add(role)
+            }
+            if (notSupportBots.isNotEmpty()) {
+                slF4JLogger.warn("The following roles do not have bot support: ${notSupportBots.joinToString { it.id }}")
+            }
+        }
 
         AmongUs.lifecycleManager.registerEventHandler(LifecycleEvents.COMMANDS) {
             AmongUsCommands.init(it.registrar())
         }
 
         Permissions.registerAll()
+    }
 
-        runCatching { classLoader.loadClass("kotlin.io.FilesKt") }
-        @Suppress("UnusedExpression")
+    @Suppress("UnusedExpression")
+    private fun initClasses() {
+        ActionLogManager
+        AiService
+        Role
+        Modification
         PlayerDataManager
+        BotsJoinMessages
+        runCatching { classLoader.loadClass("kotlin.io.FilesKt") }
     }
 
     private val classNotFoundExceptions: MutableList<NoClassDefFoundError> = mutableListOf()

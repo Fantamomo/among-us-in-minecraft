@@ -76,11 +76,40 @@ action-log-upload:
   enabled: true
 
   # The URL to upload the ActionLogs to.
-  url: https://among-us-in-minecraft-logs.fantamomo.com
+  url: https://logs.among-us-in-minecraft.fantamomo.com
 
   # Should we send ActionLogs to all player that where in the game? (true)
   # Or only to the host? (false)
   send-to-players: true
+
+ai:
+  enabled: false
+  provider:
+    # Currently only OpenRouter is supported
+    type: openrouter
+    base-url:
+    chat-completions-path:
+    model-path:
+    embeddings-path:
+  # You can specify more then one model here, separated by ";", e.g. "google/gemini-2.5-flash;google/gemini-2.5-pro"
+  # The first model is used as the default model.
+  # If the model fails, the next model is used, and so on.
+  # The only use case for this is if you use a provider like OpenRouter and some models are down.
+  model: google/gemini-2.5-flash
+
+  generate-game-summary: true
+  latency-warning: true
+
+bots:
+  # Should bots be enabled?
+  enabled: true
+  # Should only admins be able to create bots?
+  only-admins: false
+  # Should admins be able to ignore the bots limit?
+  admin-ignore-bots-limit: true
+  # Maximum number of bots that can be created per game.
+  # Set to 0 to disable the limit. (There are only 9 bots in the game, so 0 or any number above 9 is the same as 9)
+  max-bots-per-game: 5
 
 # Should we animate the scoreboard?
 animate-scoreboard: true

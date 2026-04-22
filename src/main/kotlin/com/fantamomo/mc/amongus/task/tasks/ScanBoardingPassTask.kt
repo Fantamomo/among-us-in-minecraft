@@ -2,10 +2,7 @@ package com.fantamomo.mc.amongus.task.tasks
 
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
-import com.fantamomo.mc.amongus.task.GuiAssignedTask
-import com.fantamomo.mc.amongus.task.Task
-import com.fantamomo.mc.amongus.task.TaskType
-import com.fantamomo.mc.amongus.task.areaLocation
+import com.fantamomo.mc.amongus.task.*
 import com.fantamomo.mc.amongus.util.hideTooltip
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
@@ -13,6 +10,7 @@ import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.inventory.Inventory
+import kotlin.time.Duration.Companion.milliseconds
 
 object ScanBoardingPassTask : Task<ScanBoardingPassTask, ScanBoardingPassTask.AssignedScanBoardingPassTask> {
     override val id: String = "scan_boarding_pass"
@@ -22,13 +20,15 @@ object ScanBoardingPassTask : Task<ScanBoardingPassTask, ScanBoardingPassTask.As
 
     override fun assignTo(player: AmongUsPlayer) = AssignedScanBoardingPassTask(player)
 
-    class AssignedScanBoardingPassTask(override val player: AmongUsPlayer) : GuiAssignedTask<ScanBoardingPassTask, AssignedScanBoardingPassTask>() {
+    class AssignedScanBoardingPassTask(override val player: AmongUsPlayer) : GuiAssignedTask<ScanBoardingPassTask, AssignedScanBoardingPassTask>(), BotSupportingTask {
         override val task = ScanBoardingPassTask
         override val location: Location = areaLocation ?: error("No location found for $id")
         override val inv: Inventory = Bukkit.createInventory(this, SIZE, Component.translatable("tasks.scan_boarding_pass.title"))
 
         private var ticks = -1
         private var status = -1
+
+        override fun getTaskDurationForBot() = BotSupportingTask.BotTaskDuration.percentage(9421.milliseconds, 5)
 
         override fun onInventoryClick(event: InventoryClickEvent) {
             if (status > -1) return

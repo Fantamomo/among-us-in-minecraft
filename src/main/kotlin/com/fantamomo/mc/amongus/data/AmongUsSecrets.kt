@@ -20,5 +20,8 @@ internal object AmongUsSecrets {
     }
 
     val MINE_SKIN_API_KEY: String
-        get() = properties.getProperty("mineskin") ?: ""
+        get() = properties.getProperty("mineskin")?.trim() ?: ""
+
+    val AI_PROVIDER_KEY: String
+        get() = properties.getProperty("ai")?.trim() ?: ""
 }

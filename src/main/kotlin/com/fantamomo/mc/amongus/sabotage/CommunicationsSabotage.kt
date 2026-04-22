@@ -16,6 +16,10 @@ import com.fantamomo.mc.amongus.manager.waypoint.FixedWaypointPosProvider
 import com.fantamomo.mc.amongus.manager.waypoint.WaypointManager
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.player.PlayerHelpPreferences
+import com.fantamomo.mc.amongus.player.humanOrNull
+import com.fantamomo.mc.amongus.player.isAlive
+import com.fantamomo.mc.amongus.player.isHuman
+import com.fantamomo.mc.amongus.player.mannequin
 import com.fantamomo.mc.amongus.util.accuracyToColor
 import com.fantamomo.mc.amongus.util.getAimAccuracy
 import net.kyori.adventure.text.Component
@@ -212,25 +216,25 @@ class CommunicationsSabotage(
     override fun bossbarName(): Component = bossBarName
 
     override fun pause() {
-        game.players.forEach { it.player?.hideEntity(AmongUs, display) }
+        game.players.forEach { it.humanOrNull?.player?.hideEntity(AmongUs, display) }
         fixingPlayers.forEach(FixingPlayer::dispose)
         fixingPlayers.clear()
     }
 
     override fun resume() {
-        game.players.forEach { it.player?.showEntity(AmongUs, display) }
+        game.players.forEach { it.humanOrNull?.player?.showEntity(AmongUs, display) }
     }
 
     fun onPlayerInteract(player: AmongUsPlayer) {
-        if (!player.isAlive) {
-            player.player?.run {
+        if (!player.isAlive()) {
+            player.audience.run {
                 sendTitlePart(TitlePart.SUBTITLE, Component.translatable("sabotage.subtitle.dead"))
                 sendTitlePart(TitlePart.TITLE, Component.translatable("sabotage.title.dead"))
             }
             return
         }
         if (fixingPlayers.any { it.player == player }) return
-        player.player?.let {
+        player.humanOrNull?.player?.let {
             player.helpPreferences.showHelp(
                 PlayerHelpPreferences.PlayerHelpMessage.COMMUNICATIONS,
                 it
@@ -264,15 +268,15 @@ class CommunicationsSabotage(
         private var tickCounter = 0
         private var lastBeamLocation: Pair<Pair<Float, Float>, Location>? = null
 
-        private val actionBar = game.actionBarManager.part(
+        private val actionBar = if (player.isHuman) game.actionBarManager.part(
             player,
             "sabotage/communications/${player.uuid}",
             ActionBarManager.ActionBarPartType.CENTER,
             200
-        )
+        ) else null
 
         private fun aimAccuracy(): Float {
-            val location = player.player?.location ?: return 0f
+            val location = player.location
             return getAimAccuracy(
                 location.yaw,
                 location.pitch,
@@ -283,8 +287,8 @@ class CommunicationsSabotage(
         }
 
         fun tick() {
-            val player = player.player ?: return
-            val rotation = player.location.run { yaw to pitch }
+            val location = player.location
+            val rotation = location.run { yaw to pitch }
             val accuracy = aimAccuracy()
             val lockedOn = accuracy >= LOCK_THRESHOLD
 
@@ -323,7 +327,7 @@ class CommunicationsSabotage(
                     accuracyToColor(accuracy)
             }
 
-            actionBar.componentLike = textComponent {
+            actionBar?.componentLike = textComponent {
                 translatable("sabotage.actionbar.communications") {
                     args {
                         component("status", status)
@@ -334,14 +338,14 @@ class CommunicationsSabotage(
                 }
             }
 
-            if (outgoingBeam != null && player.location.pitch <= -10) {
+            if (outgoingBeam != null && location.pitch <= -10) {
                 val last = lastBeamLocation
                 if (last == null || last.first != rotation) {
-                    val beamAimPoint = computeAimingLocation(outgoingBeam, player.eyeLocation, 75)
-                    shootParticleBeam(beamAimPoint, player, color)
+                    val beamAimPoint = computeAimingLocation(outgoingBeam, player.mannequin.eyeLocation, 75)
+                    player.humanOrNull?.player?.let { shootParticleBeam(beamAimPoint, it, color) }
                     lastBeamLocation = rotation to beamAimPoint
                 } else if (tickCounter % 15 == 0) {
-                    shootParticleBeam(last.second, player, color)
+                    player.humanOrNull?.player?.let { shootParticleBeam(last.second, it, color) }
                 }
             }
 
@@ -368,7 +372,7 @@ class CommunicationsSabotage(
         }
 
         fun dispose() {
-            actionBar.remove()
+            actionBar?.remove()
         }
     }
 

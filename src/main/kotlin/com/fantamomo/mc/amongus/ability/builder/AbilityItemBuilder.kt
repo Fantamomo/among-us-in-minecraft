@@ -2,8 +2,10 @@ package com.fantamomo.mc.amongus.ability.builder
 
 import com.fantamomo.mc.amongus.ability.AssignedAbility
 import com.fantamomo.mc.amongus.ability.item.AbilityItem
+import com.fantamomo.mc.amongus.player.bot.AmongUsZombie
 import com.fantamomo.mc.amongus.util.Cooldown
 import net.kyori.adventure.text.Component
+import net.minecraft.world.entity.ai.goal.GoalSelector
 import java.util.*
 import kotlin.time.Duration
 
@@ -17,6 +19,8 @@ class AbilityItemBuilder(
     private val states = EnumMap<AbilityItemState, AbilityItemStateDefinition>(
         AbilityItemState::class.java
     )
+
+    private var registerGoals: (GoalSelector, AmongUsZombie, DSLAbilityItem) -> Unit = { _, _, _ -> }
 
     internal val conditions = mutableListOf<AbilityCondition>()
 
@@ -37,6 +41,10 @@ class AbilityItemBuilder(
         block: AbilityItemStateDefinition.() -> Unit
     ) {
         states[state]!!.apply(block)
+    }
+
+    fun registerGoals(block: (GoalSelector, AmongUsZombie, DSLAbilityItem) -> Unit) {
+        registerGoals = block
     }
 
     /**
@@ -67,6 +75,7 @@ class AbilityItemBuilder(
             ctx,
             states,
             conditions as List<AbilityCondition>,
-            clickDelay
+            clickDelay,
+            registerGoals
         )
 }

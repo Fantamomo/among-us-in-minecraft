@@ -7,8 +7,10 @@ import com.fantamomo.mc.amongus.ability.Ability
 import com.fantamomo.mc.amongus.ability.abilities.GhostFormAbility
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import com.fantamomo.mc.amongus.player.bot.mangement.BotVoteTargetController
 import com.fantamomo.mc.amongus.role.AssignedRole
 import com.fantamomo.mc.amongus.role.Role
+import com.fantamomo.mc.amongus.role.SupportBotsRole
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.role.util.KillerRole
 import com.fantamomo.mc.amongus.util.toSmartString
@@ -21,7 +23,7 @@ object PhantomRole : Role<PhantomRole, PhantomRole.AssignedPhantomRole>, KillerR
 
     override fun assignTo(player: AmongUsPlayer) = AssignedPhantomRole(player)
 
-    class AssignedPhantomRole(override val player: AmongUsPlayer) : AssignedRole<PhantomRole, AssignedPhantomRole> {
+    class AssignedPhantomRole(override val player: AmongUsPlayer) : AssignedRole<PhantomRole, AssignedPhantomRole>, SupportBotsRole {
         override val definition = PhantomRole
 
         override fun scoreboardLine() = player.game.ghostFormManager.getGhostPlayer(player)?.let { ghostPlayer ->
@@ -33,5 +35,7 @@ object PhantomRole : Role<PhantomRole, PhantomRole.AssignedPhantomRole>, KillerR
                 }
             }
         }
+
+        override fun createBotVoteTargetController() = BotVoteTargetController.create { avoidOnesTeam(random(player)) }
     }
 }

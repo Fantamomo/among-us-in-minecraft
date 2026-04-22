@@ -6,8 +6,10 @@ import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.ability.abilities.CreateVentAbility
 import com.fantamomo.mc.amongus.languages.numeric
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import com.fantamomo.mc.amongus.player.bot.mangement.BotVoteTargetController
 import com.fantamomo.mc.amongus.role.AssignedRole
 import com.fantamomo.mc.amongus.role.Role
+import com.fantamomo.mc.amongus.role.SupportBotsRole
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.role.util.KillerRole
 
@@ -18,7 +20,8 @@ object MinerRole : Role<MinerRole, MinerRole.AssignedMinerRole>, KillerRole {
 
     override fun assignTo(player: AmongUsPlayer) = AssignedMinerRole(player)
 
-    class AssignedMinerRole(override val player: AmongUsPlayer) : AssignedRole<MinerRole, AssignedMinerRole> {
+    class AssignedMinerRole(override val player: AmongUsPlayer) : AssignedRole<MinerRole, AssignedMinerRole>,
+        SupportBotsRole {
         override val definition: MinerRole = MinerRole
 
         var createdVents = 0
@@ -29,5 +32,7 @@ object MinerRole : Role<MinerRole, MinerRole.AssignedMinerRole>, KillerRole {
                 args { numeric("count", createdVents) }
             }
         }
+
+        override fun createBotVoteTargetController() = BotVoteTargetController.create { avoidOnesTeam(random(player)) }
     }
 }

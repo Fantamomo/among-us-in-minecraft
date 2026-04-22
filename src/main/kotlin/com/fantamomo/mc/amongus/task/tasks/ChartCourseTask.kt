@@ -2,10 +2,7 @@ package com.fantamomo.mc.amongus.task.tasks
 
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
-import com.fantamomo.mc.amongus.task.GuiAssignedTask
-import com.fantamomo.mc.amongus.task.Task
-import com.fantamomo.mc.amongus.task.TaskType
-import com.fantamomo.mc.amongus.task.areaLocation
+import com.fantamomo.mc.amongus.task.*
 import com.fantamomo.mc.amongus.util.hideTooltip
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
@@ -13,6 +10,7 @@ import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.inventory.Inventory
+import kotlin.time.DurationUnit
 
 object ChartCourseTask : Task<ChartCourseTask, ChartCourseTask.AssignedChartCourseTask> {
     override val id: String = "chart_course"
@@ -23,7 +21,7 @@ object ChartCourseTask : Task<ChartCourseTask, ChartCourseTask.AssignedChartCour
     override fun assignTo(player: AmongUsPlayer) = AssignedChartCourseTask(player)
 
     class AssignedChartCourseTask(override val player: AmongUsPlayer) :
-        GuiAssignedTask<ChartCourseTask, AssignedChartCourseTask>() {
+        GuiAssignedTask<ChartCourseTask, AssignedChartCourseTask>(), BotSupportingTask {
 
         override val task = ChartCourseTask
         override val location: Location = areaLocation ?: throw IllegalArgumentException("No location for task $id")
@@ -36,6 +34,8 @@ object ChartCourseTask : Task<ChartCourseTask, ChartCourseTask.AssignedChartCour
         
         private val courseSlots = (11..16).toList()
         private var currentPointIndex = 0
+
+        override fun getTaskDurationForBot(): BotSupportingTask.BotTaskDuration = BotSupportingTask.BotTaskDuration.range(2655, 3125, DurationUnit.MILLISECONDS)
 
         override fun onInventoryClick(event: InventoryClickEvent) {
             val item = event.currentItem ?: return

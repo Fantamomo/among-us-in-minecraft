@@ -8,7 +8,7 @@ import com.fantamomo.mc.amongus.ability.AbilityManager
 import com.fantamomo.mc.amongus.ability.abilities.RemoteCameraAbility
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.languages.component
-import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import com.fantamomo.mc.amongus.player.HumanAmongUsPlayer
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.util.TickContext
 import com.fantamomo.mc.amongus.util.internal.NMS
@@ -27,7 +27,7 @@ class CameraManager(val game: Game) {
     val cameraJoinPointMin = game.area.cameraJoinPointMin ?: throw IllegalStateException("CameraJoinPointMin not set")
     val cameraJoinPointMax = game.area.cameraJoinPointMax ?: throw IllegalStateException("CameraJoinPointMax not set")
 
-    inner class CameraPlayer(val player: AmongUsPlayer, camera: Camera) {
+    inner class CameraPlayer(val player: HumanAmongUsPlayer, camera: Camera) {
         private var invalid: Boolean = false
 
         var lastCameraChange: Long = System.currentTimeMillis()
@@ -173,13 +173,13 @@ class CameraManager(val game: Game) {
         }
     }
 
-    fun getCamera(player: AmongUsPlayer) = playersInCamera.find { it.player == player }
+    fun getCamera(player: HumanAmongUsPlayer) = playersInCamera.find { it.player == player }
 
-    fun joinCamera(amongUsPlayer: AmongUsPlayer) {
+    fun joinCamera(amongUsPlayer: HumanAmongUsPlayer) {
         joinCamera(amongUsPlayer, cameras.first())
     }
 
-    fun joinCamera(player: AmongUsPlayer, camera: Camera) {
+    fun joinCamera(player: HumanAmongUsPlayer, camera: Camera) {
         var cameraPlayer = getCamera(player)
         if (cameraPlayer != null) return
         if (player.player?.isSneaking == true) return
@@ -187,9 +187,9 @@ class CameraManager(val game: Game) {
         playersInCamera.add(cameraPlayer)
     }
 
-    fun isInCams(amongUsPlayer: AmongUsPlayer) = getCamera(amongUsPlayer) != null
+    fun isInCams(amongUsPlayer: HumanAmongUsPlayer) = getCamera(amongUsPlayer) != null
 
-    fun leaveCams(amongUsPlayer: AmongUsPlayer) {
+    fun leaveCams(amongUsPlayer: HumanAmongUsPlayer) {
         val cameraPlayer = getCamera(amongUsPlayer) ?: return
         cameraPlayer.dispose()
         playersInCamera.remove(cameraPlayer)
@@ -201,7 +201,7 @@ class CameraManager(val game: Game) {
         return cameras[(index + 1) % cameras.size]
     }
 
-    fun nextCame(amongUsPlayer: AmongUsPlayer, ignoreCooldown: Boolean = false) {
+    fun nextCame(amongUsPlayer: HumanAmongUsPlayer, ignoreCooldown: Boolean = false) {
         val cameraPlayer = getCamera(amongUsPlayer) ?: return
         if (!ignoreCooldown && System.currentTimeMillis() - cameraPlayer.lastCameraChange < game.settings[SettingsKey.UTILS.CAMERA_SWITCH_SAFE_COOLDOWN]) return
         cameraPlayer.camera = getNextCamera(cameraPlayer.camera)

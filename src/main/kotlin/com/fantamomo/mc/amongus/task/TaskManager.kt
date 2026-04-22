@@ -9,7 +9,7 @@ import com.fantamomo.mc.amongus.languages.numeric
 import com.fantamomo.mc.amongus.manager.EntityManager
 import com.fantamomo.mc.amongus.manager.waypoint.MutableWaypointPosProvider
 import com.fantamomo.mc.amongus.manager.waypoint.WaypointManager
-import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import com.fantamomo.mc.amongus.player.*
 import com.fantamomo.mc.amongus.sabotage.SabotageType
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.task.GuiAssignedTask.Companion.MOVEABLE_ITEM_KEY
@@ -25,7 +25,6 @@ import org.bukkit.Location
 import org.bukkit.entity.BlockDisplay
 import org.bukkit.entity.Player
 import org.bukkit.persistence.PersistentDataType
-import kotlin.uuid.toKotlinUuid
 
 class TaskManager(val game: Game) {
     private val tasks: MutableMap<AmongUsPlayer, MutableSet<RegisteredTask>> = mutableMapOf()
@@ -40,7 +39,7 @@ class TaskManager(val game: Game) {
     fun tick() {
         val sabotage = game.sabotageManager.isSabotage(SabotageType.Communications)
         for (player in tasks.keys) {
-            val location = player.player?.location ?: continue
+            val location = player.location
             for (registeredTask in tasks[player]!!) {
                 if (!registeredTask.completed) {
                     registeredTask.task.tick()
@@ -78,39 +77,48 @@ class TaskManager(val game: Game) {
     fun completeTask(task: AssignedTask<*, *>, modifyStatistics: Boolean = true) {
         val registeredTask = get(task) ?: return
         if (registeredTask.completed) return
-        val allTasksCompleted = tasks[task.player]?.all { it.completed } ?: true
-        game.actionLog.add(TaskActionElements.TaskCompleted(task.player.uuid.toKotlinUuid(), task.task.id))
+        val player = task.player
+        val allTasksCompleted = tasks[player]?.all { it.completed } ?: true
+        game.actionLog.add(TaskActionElements.TaskCompleted(player.uuid, task.task.id))
         registeredTask.completed = true
         registeredTask.hideCompletely()
         registeredTask.task.stop()
         updateBossbar(taskCompleted = true)
-        task.player.player?.apply {
-            sendTitlePart(TitlePart.TITLE, textComponent {
-                translatable("task.complete.title")
-            })
-        }
-        removeMoveableItems(task.player)
-        AmongUs.server.scheduler.runTask(AmongUs) { ->
-            removeMoveableItems(task.player)
-        }
-        game.scoreboardManager.refresh(task.player)
-        if (modifyStatistics) {
-            val statistics = task.player.statistics
-            statistics.tasksCompleted.increment()
-            statistics.taskCompleted[task.task]?.increment()
-            val playerHasCompletedAllTasks = tasks[task.player]?.all { it.completed } ?: false
-            if (!allTasksCompleted && playerHasCompletedAllTasks) statistics.fullyCompleteTasks.increment()
+        player.audience.sendTitlePart(TitlePart.TITLE, textComponent {
+            translatable("task.complete.title")
+        })
+        if (player.isHuman) {
+            removeMoveableItems(player)
+            AmongUs.server.scheduler.runTask(AmongUs) { ->
+                removeMoveableItems(player)
+            }
+            game.scoreboardManager.refresh(player)
+            if (modifyStatistics) {
+                val statistics = player.statistics
+                statistics.tasksCompleted.increment()
+                statistics.taskCompleted[task.task]?.increment()
+                val playerHasCompletedAllTasks = tasks[player]?.all { it.completed } ?: false
+                if (!allTasksCompleted && playerHasCompletedAllTasks) statistics.fullyCompleteTasks.increment()
+            }
         }
         if (allTaskCompleted()) game.checkWin()
     }
 
-    fun <T> completeOneTaskStep(task: T) where T : Steppable, T : AssignedTask<*, *> {
+    fun <T> completeOneTaskStep(task: T) where T : MultiStepTask, T : AssignedTask<*, *> {
         if (task.step + 1 >= task.maxSteps) {
             completeTask(task)
             return
         }
-        game.actionLog.add(TaskActionElements.TaskStepCompleted(task.player.uuid.toKotlinUuid(), task.task.id, task.step + 1))
-        task.player.player?.sendTitlePart(TitlePart.TITLE, textComponent {
+        task.nextStep()
+        val player = task.player
+        game.actionLog.add(
+            TaskActionElements.TaskStepCompleted(
+                player.uuid,
+                task.task.id,
+                task.step + 1
+            )
+        )
+        player.audience.sendTitlePart(TitlePart.TITLE, textComponent {
             translatable("task.step.title") {
                 args {
                     numeric("step", task.step + 1)
@@ -119,20 +127,21 @@ class TaskManager(val game: Game) {
             }
         })
         updateTask(task)
-        removeMoveableItems(task.player)
-        game.scoreboardManager.refresh(task.player)
+        if (player.isBot) return
+        removeMoveableItems(player)
+        game.scoreboardManager.refresh(player)
         AmongUs.server.scheduler.runTask(AmongUs) { ->
-            removeMoveableItems(task.player)
-            game.scoreboardManager.refresh(task.player)
+            removeMoveableItems(player)
+            game.scoreboardManager.refresh(player)
         }
     }
 
     internal fun taskFailed(task: AssignedTask<*, *>) {
-        task.player.statistics.failedTasks[task.task]?.increment()
-        game.actionLog.add(TaskActionElements.TaskFailed(task.player.uuid.toKotlinUuid(), task.task.id))
+        task.player.humanOrNull?.statistics?.failedTasks[task.task]?.increment()
+        game.actionLog.add(TaskActionElements.TaskFailed(task.player.uuid, task.task.id))
     }
 
-    private fun removeMoveableItems(player: AmongUsPlayer) {
+    private fun removeMoveableItems(player: HumanAmongUsPlayer) {
         player.player?.run {
             inventory.forEachIndexed { index, stack ->
                 if (stack?.persistentDataContainer?.has(
@@ -162,16 +171,16 @@ class TaskManager(val game: Game) {
                 ?: return false
         if (task.fake) return true
         task.task.start()
-        game.actionLog.add(TaskActionElements.TaskStarted(player.uuid.toKotlinUuid(), task.task.task.id))
+        game.actionLog.add(TaskActionElements.TaskStarted(player.uuid, task.task.task.id))
         return true
     }
 
     fun get(task: AmongUsPlayer): MutableSet<RegisteredTask> = tasks[task] ?: mutableSetOf()
 
     fun assignTask(player: AmongUsPlayer, task: AssignedTask<*, *>) {
-        val registeredTask = RegisteredTask(task, fake = !player.canDoTasks)
+        val registeredTask = RegisteredTask(task, fake = !player.canDoTasks())
         tasks.getOrPut(player) { mutableSetOf() }.add(registeredTask)
-        game.actionLog.add(TaskActionElements.TaskAssigned(player.uuid.toKotlinUuid(), task.task.id))
+        game.actionLog.add(TaskActionElements.TaskAssigned(player.uuid, task.task.id))
         updateBossbar(true)
     }
 
@@ -191,7 +200,7 @@ class TaskManager(val game: Game) {
             t.hideCompletely()
             true
         }
-        game.actionLog.add(TaskActionElements.TaskUnassigned(player.uuid.toKotlinUuid(), task.id))
+        game.actionLog.add(TaskActionElements.TaskUnassigned(player.uuid, task.id))
         updateBossbar(true)
     }
 
@@ -216,7 +225,7 @@ class TaskManager(val game: Game) {
         val common = commonTasks.randomListDistinct(commonTasksCount)
 
         for (player in game.players) {
-            if (showBossbar) player.player?.showBossBar(bossbar)
+            if (showBossbar && player.isHuman) player.player?.showBossBar(bossbar)
             val long = longTasks.randomListDistinct(longTasksCount)
             val short = shortTasks.randomListDistinct(shortTasksCount)
             assignTasks(player, long + short + common)
@@ -231,7 +240,7 @@ class TaskManager(val game: Game) {
         tasks.clear()
     }
 
-    internal fun onPlayerRejoin(amongUsPlayer: AmongUsPlayer) {
+    internal fun onPlayerRejoin(amongUsPlayer: HumanAmongUsPlayer) {
         if (game.settings[SettingsKey.TASK.TASK_BAR_UPDATE] != TaskBarUpdateEnum.NONE) {
             amongUsPlayer.player?.let { bossbar.addViewer(it) }
         }
@@ -245,7 +254,7 @@ class TaskManager(val game: Game) {
         var completed: Boolean = false
         var isShown: Boolean = false
         val started: Boolean
-            get() = completed || (task as? Steppable)?.step.let { it != null && it > 0 }
+            get() = completed || (task as? MultiStepTask)?.step.let { it != null && it > 0 }
 
         val display: BlockDisplay = task.location.world.spawn(task.location, BlockDisplay::class.java) { display ->
             display.isVisibleByDefault = false
@@ -264,7 +273,10 @@ class TaskManager(val game: Game) {
             )
 
         init {
-            game.waypointManager.assignWaypoint(task.player, waypoint)
+            val player = task.player
+            if (player.isHuman) {
+                game.waypointManager.assignWaypoint(player, waypoint)
+            }
         }
 
         fun update() {
@@ -275,18 +287,20 @@ class TaskManager(val game: Game) {
 
         fun hide() {
             if (!isShown) return
-            task.player.player?.hideEntity(AmongUs, display)
+            task.player.humanOrNull?.player?.hideEntity(AmongUs, display)
             isShown = false
         }
 
         fun hideCompletely() {
-            task.player.player?.hideEntity(AmongUs, display)
-            game.waypointManager.removeWaypoint(task.player, waypoint)
+            val player = task.player
+            if (player.isBot) return
+            player.player?.hideEntity(AmongUs, display)
+            game.waypointManager.removeWaypoint(player, waypoint)
         }
 
         fun show() {
             if (isShown) return
-            task.player.player?.showEntity(AmongUs, display)
+            task.player.humanOrNull?.player?.showEntity(AmongUs, display)
             isShown = true
         }
 

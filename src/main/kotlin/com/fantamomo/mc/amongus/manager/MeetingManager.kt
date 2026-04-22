@@ -3,14 +3,16 @@ package com.fantamomo.mc.amongus.manager
 import com.fantamomo.mc.adventure.text.*
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.ability.AbilityManager
+import com.fantamomo.mc.amongus.ai.AiService
+import com.fantamomo.mc.amongus.data.AmongUsDebug
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.game.GamePhase
 import com.fantamomo.mc.amongus.languages.LanguageManager
 import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.languages.numeric
 import com.fantamomo.mc.amongus.languages.string
-import com.fantamomo.mc.amongus.player.AmongUsPlayer
-import com.fantamomo.mc.amongus.player.PlayerManager
+import com.fantamomo.mc.amongus.player.*
+import com.fantamomo.mc.amongus.player.bot.mangement.BotVoteTargetController
 import com.fantamomo.mc.amongus.player.info.DeadReason
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.role.crewmates.MayorRole
@@ -18,6 +20,7 @@ import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.util.Cooldown
 import com.fantamomo.mc.amongus.util.internal.NMS
 import com.fantamomo.mc.amongus.util.log.elements.MeetingActionElement
+import com.fantamomo.mc.amongus.util.sendComponent
 import com.fantamomo.mc.amongus.util.textComponent
 import io.papermc.paper.datacomponent.DataComponentTypes
 import io.papermc.paper.datacomponent.item.ResolvableProfile
@@ -35,7 +38,6 @@ import org.bukkit.NamespacedKey
 import org.bukkit.craftbukkit.entity.CraftEntity
 import org.bukkit.craftbukkit.entity.CraftPlayer
 import org.bukkit.entity.ArmorStand
-import org.bukkit.event.Listener
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.MenuType.STONECUTTER
@@ -55,7 +57,7 @@ import kotlin.time.DurationUnit
  * @author Fantamomo
  * @since 1.0-SNAPSHOT
  */
-class MeetingManager(private val game: Game) : Listener {
+class MeetingManager(private val game: Game) {
 
     var meeting: Meeting? = null
         private set
@@ -70,6 +72,8 @@ class MeetingManager(private val game: Game) : Listener {
         game.area.ejectedViewPoint ?: error("Ejection view point not found")
 
     private val buttonCooldown = Cooldown(game.settings[SettingsKey.MEETING.MEETING_BUTTON_COOLDOWN], true)
+
+    private var currentMeetingNumber = 0
 
     private val actionBar = game.actionBarManager.ActionBarPart(
         "meeting",
@@ -132,25 +136,26 @@ class MeetingManager(private val game: Game) : Listener {
         body: AmongUsPlayer? = null
     ) {
         if (meeting != null) return
-        if (!caller.isAlive) return
+        caller.internal
+        if (!caller.isAlive()) return
         val body = if (reason == MeetingReason.BODY) body
-            ?: game.killManager.nearestCorpse(caller.livingEntity.location)?.owner else body
+            ?: game.killManager.nearestCorpse(caller.location)?.owner else body
         if (force) {
             meeting = Meeting(caller, reason, body)
             return
         }
 
         if (caller.isInGhostForm()) {
-            caller.player?.sendMessage(Component.translatable("meeting.ghost_form"))
+            caller.audience.sendMessage(Component.translatable("meeting.ghost_form"))
             return
         }
 
         if (game.sabotageManager.isCurrentlySabotage()) {
-            caller.player?.sendMessage(Component.translatable("meeting.sabotage_in_progress"))
+            caller.audience.sendMessage(Component.translatable("meeting.sabotage_in_progress"))
             return
         }
         if (buttonCooldown.isRunning()) {
-            caller.player?.sendMessage(textComponent {
+            caller.audience.sendMessage(textComponent {
                 translatable("meeting.button_cooldown") {
                     args { string("time", buttonCooldown.remaining().toString(DurationUnit.SECONDS, 0)) }
                 }
@@ -158,13 +163,13 @@ class MeetingManager(private val game: Game) : Listener {
             return
         }
         if (caller.meetingButtonsPressed >= game.settings[SettingsKey.MEETING.MEETING_BUTTONS]) {
-            caller.player?.sendMessage(Component.translatable("meeting.button_limit_reached"))
+            caller.audience.sendMessage(Component.translatable("meeting.button_limit_reached"))
             return
         }
         caller.meetingButtonsPressed++
         buttonCooldown.reset()
         meeting = Meeting(caller, reason, body)
-        if (updateStatistics) {
+        if (updateStatistics && caller.isHuman) {
             val statistics = caller.statistics
             statistics.calledEmergency.increment()
             when (reason) {
@@ -182,7 +187,7 @@ class MeetingManager(private val game: Game) : Listener {
         private val foundBody: AmongUsPlayer?
     ) {
         private var timer: Cooldown? = null
-        private val votes: MutableMap<Voter, Vote> = mutableMapOf()
+        internal val votes: MutableMap<Voter, Vote> = mutableMapOf()
         var respawnLocation: Location? = null
             private set
         var ejectedPlayer: AmongUsPlayer? = null
@@ -194,6 +199,7 @@ class MeetingManager(private val game: Game) : Listener {
         var disableEventHandler: Boolean = false
             private set
         val foundBodies: List<AmongUsPlayer> = game.killManager.getCorpses().map { it.owner }
+        val number: Int = currentMeetingNumber++
 
         init {
             registerRecipes()
@@ -203,8 +209,7 @@ class MeetingManager(private val game: Game) : Listener {
         private fun registerRecipes() {
             val server = AmongUs.server
             for (amongUsPlayer in game.players) {
-                if (!amongUsPlayer.isAlive) continue
-                val player = amongUsPlayer.player ?: continue
+                if (!amongUsPlayer.isAlive()) continue
                 val key = NamespacedKey(AmongUs, "meeting/voting/${amongUsPlayer.uuid}")
                 recipeKeys.add(key)
 
@@ -217,7 +222,7 @@ class MeetingManager(private val game: Game) : Listener {
                 val result = ItemStack(Material.PLAYER_HEAD).apply {
                     setData(
                         DataComponentTypes.PROFILE,
-                        ResolvableProfile.resolvableProfile(player.playerProfile)
+                        ResolvableProfile.resolvableProfile(amongUsPlayer.profile)
                     )
                     val value = textComponent(LanguageManager.ROOT_LOCALE) {
                         translatable("meeting.voting.vote_for") {
@@ -320,21 +325,33 @@ class MeetingManager(private val game: Game) : Listener {
                     }
                 }
 
+            val meetingSpawn = meetingBlock.toCenterLocation().add(0.0, 1.0, 0.0)
+
             game.players.forEach { p ->
-                if (game.cameraManager.isInCams(p)) game.cameraManager.leaveCams(p)
-                if (game.ventManager.isVented(p)) game.ventManager.ventOut(p)
+                if (p.isInCams()) game.cameraManager.leaveCams(p)
+                if (p.isVented()) game.ventManager.ventOut(p)
 
-                p.livingEntity.teleport(meetingBlock)
+                p.teleport(meetingSpawn)
 
-                p.player?.apply {
-                    closeInventory()
-                    sendTitlePart(TitlePart.TITLE, title)
-                    sendTitlePart(TitlePart.SUBTITLE, subtitle)
-                    sendMessage(chatMessage)
-                    showBossBar(bossBar)
+                if (p.isHuman) {
+                    p.humanOrNull?.player?.apply {
+                        closeInventory()
+                        sendTitlePart(TitlePart.TITLE, title)
+                        sendTitlePart(TitlePart.SUBTITLE, subtitle)
+                        sendMessage(chatMessage)
+                        showBossBar(bossBar)
+                    }
+
+                    game.actionBarManager.bar(p).add(if (p.isAlive()) actionBar else actionBarDead)
                 }
+            }
 
-                game.actionBarManager.bar(p).add(if (p.isAlive) actionBar else actionBarDead)
+            if (AiService.isEnabled()) {
+                if (AiService.isNotAvailable()) {
+                    game.audienceAll.sendComponent {
+                        translatable("meeting.ai_service_not_available")
+                    }
+                }
             }
 
             startDiscussion()
@@ -351,7 +368,9 @@ class MeetingManager(private val game: Game) : Listener {
         }
 
         private fun startVoting() {
-            for (amongUsPlayer in game.players) {
+            val players = game.players
+            for (amongUsPlayer in players) {
+                if (amongUsPlayer.isBot) continue
                 val player = amongUsPlayer.player ?: continue
                 for (key in recipes.keys) {
                     player.discoverRecipe(key)
@@ -371,14 +390,27 @@ class MeetingManager(private val game: Game) : Listener {
                     Component.translatable("meeting.voting.start.subtitle.dead")
                 )
             }
+
+//            for (amongUsPlayer in players) {
+//                if (amongUsPlayer.isHuman) continue
+//                if (!amongUsPlayer.isAlive()) continue
+//                val voteTargetController = amongUsPlayer.controller.voteTargetController ?: continue
+//                if (!voteTargetController.executesAtTheStartOfTheMeeting()) continue
+//                when (val target = voteTargetController.getTarget()) {
+//                    is BotVoteTargetController.Target.Player -> voteFor(amongUsPlayer, target.player)
+//                    BotVoteTargetController.Target.Skip -> voteSkip(amongUsPlayer)
+//                    else -> {}
+//                }
+//            }
         }
 
         private fun endVoting() {
+            if (game.phase == GamePhase.ENDING_MEETING) return
             setPhase(GamePhase.ENDING_MEETING)
             timer = null
 
             ejectedPlayer = calculateVoteResult()
-            respawnLocation = ejectedPlayer?.livingEntity?.location
+            respawnLocation = ejectedPlayer?.location
             showVoteResult(ejectedPlayer)
             showVoteDetails()
 
@@ -386,29 +418,33 @@ class MeetingManager(private val game: Game) : Listener {
 
             votes.entries.forEach { (voter, vote) ->
                 val player = voter.player
-                player.statistics.voted.increment()
+                val playerStatistics = player.humanOrNull?.statistics
+                playerStatistics?.voted?.increment()
                 when (vote) {
                     is Vote.For -> {
                         val target = vote.target
-                        if (target === player) player.statistics.votedSelf.increment()
-                        target.statistics.accused.increment()
-                        target.statistics.accusedAs[target.assignedRole?.definition]?.increment()
-                        player.statistics.votedAt[target.assignedRole?.definition]?.increment()
-                        if (target.assignedRole?.definition?.team == Team.IMPOSTERS) {
-                            player.statistics.votedCorrect.increment()
-                            target.statistics.accusedCorrect.increment()
+                        if (player.isBot && target.isBot) return@forEach
+                        if (target === player) playerStatistics?.votedSelf?.increment()
+                        val targetStatistics = target.humanOrNull?.statistics
+                        targetStatistics?.accused?.increment()
+                        targetStatistics?.accusedAs[target.role.definition]?.increment()
+                        playerStatistics?.votedAt[target.role.definition]?.increment()
+                        if (target.role.definition.team == Team.IMPOSTERS) {
+                            playerStatistics?.votedCorrect?.increment()
+                            targetStatistics?.accusedCorrect?.increment()
                         } else {
-                            player.statistics.votedWrong.increment()
-                            target.statistics.accusedWrong.increment()
+                            playerStatistics?.votedWrong?.increment()
+                            targetStatistics?.accusedWrong?.increment()
                         }
                     }
 
-                    Vote.Skip -> player.statistics.votedSkip.increment()
+                    Vote.Skip -> if (player.isHuman) player.statistics.votedSkip.increment()
                 }
             }
 
             for (player in game.players) {
-                if (player !== ejectedPlayer && player.isAlive) {
+                if (player.isBot) continue
+                if (player !== ejectedPlayer && player.isAlive()) {
                     player.statistics.emergencyMeetingsSurvived.increment()
                 }
                 player.player?.closeInventory()
@@ -422,29 +458,49 @@ class MeetingManager(private val game: Game) : Listener {
         }
 
         fun voteFor(voter: AmongUsPlayer, target: AmongUsPlayer): Boolean {
-            val mayorVote = voter.assignedRole?.definition === MayorRole && hasVoted(voter)
+            val mayorVote = voter.role.definition === MayorRole && hasVoted(voter)
             return voteFor(voter, target, mayorVote)
         }
 
         fun voteFor(voter: AmongUsPlayer, target: AmongUsPlayer, mayorVote: Boolean): Boolean {
             val voter = if (mayorVote) Voter.MayorVoter(voter) else Voter.NormalPlayer(voter)
             if (game.phase != GamePhase.VOTING || voter in votes) return false
-            if (!target.isAlive) return false
+            if (!target.isAlive()) return false
             votes[voter] = Vote.For(target)
             game.actionLog.add(MeetingActionElement.VoteFor(voter.player.uuid, target.uuid, mayorVote))
             mayEndVoting()
             return true
         }
 
-        private fun mayEndVoting() {
-            val end = game.players.all { !it.isAlive || hasVoted(it) }
+        private fun mayEndVoting(second: Boolean = false) {
+            val ignoreBots = second && AmongUsDebug.DebugValues.IGNORE_BOT_VOTES_ON_MEETING_END_CHECK.isEnabled()
+            val end = game.players.all { !it.isAlive() || hasVoted(it) || (ignoreBots && it.isBot) }
             if (end) {
                 endVoting()
+                return
+            }
+            if (second) return
+            if (AiService.isEnabled()) return
+            val endByPlayer = game.players.all { !it.isAlive() || hasVoted(it) || it.isBot }
+            if (endByPlayer) {
+                for (auPlayer in game.players) {
+                    if (auPlayer.isHuman) continue
+                    if (!auPlayer.isAlive()) continue
+                    if (hasVoted(auPlayer)) continue
+                    val voteTargetController = auPlayer.controller.voteTargetController ?: continue
+//                    if (voteTargetController.executesAtTheStartOfTheMeeting()) continue
+                    when (val target = voteTargetController.getTarget()) {
+                        is BotVoteTargetController.Target.Player -> voteFor(auPlayer, target.player)
+                        BotVoteTargetController.Target.Skip -> voteSkip(auPlayer)
+                        else -> {}
+                    }
+                }
+                mayEndVoting(second = true)
             }
         }
 
         fun voteSkip(voter: AmongUsPlayer): Boolean {
-            val mayorVote = voter.assignedRole?.definition === MayorRole && hasVoted(voter)
+            val mayorVote = voter.role.definition === MayorRole && hasVoted(voter)
             return voteSkip(voter, mayorVote)
         }
 
@@ -460,6 +516,11 @@ class MeetingManager(private val game: Game) : Listener {
         fun hasVoted(player: AmongUsPlayer, mayorVote: Boolean = false): Boolean {
             val voter = if (mayorVote) Voter.MayorVoter(player) else Voter.NormalPlayer(player)
             return voter in votes
+        }
+
+        fun getVoteTarget(voter: AmongUsPlayer, mayorVote: Boolean = false): AmongUsPlayer? {
+            val voter = if (mayorVote) Voter.MayorVoter(voter) else Voter.NormalPlayer(voter)
+            return votes[voter]?.let { if (it is Vote.For) it.target else null }
         }
 
         private fun calculateVoteResult(): AmongUsPlayer? {
@@ -589,7 +650,7 @@ class MeetingManager(private val game: Game) : Listener {
 
         @NMS
         private fun startEjection(player: AmongUsPlayer?) {
-            if (player == null || !player.isAlive) {
+            if (player == null || !player.isAlive()) {
                 finishMeeting()
                 return
             }
@@ -599,26 +660,30 @@ class MeetingManager(private val game: Game) : Listener {
             game.players
                 .filter { it != player }
                 .forEach {
-                    it.player?.visualFire = TriState.FALSE
                     it.mannequinController.freeze()
-                    it.player?.showEntity(AmongUs, cameraAnchor)
-                    (it.player as? CraftPlayer)?.handle?.setCamera(handle)
+                    if (it.isHuman) {
+                        it.player?.visualFire = TriState.FALSE
+                        it.player?.showEntity(AmongUs, cameraAnchor)
+                        (it.player as? CraftPlayer)?.handle?.setCamera(handle)
+                    }
                 }
 
-            player.livingEntity.teleport(ejectionFallPoint)
+            player.teleport(ejectionFallPoint)
             currentlyEjecting = true
 
-            val statistics = player.statistics
+            val statistics = player.humanOrNull?.statistics
 
-            statistics.ejected.increment()
+            if (statistics != null) {
+                statistics.ejected.increment()
 
-            if (player.assignedRole?.definition?.team == Team.IMPOSTERS) {
-                statistics.ejectedCorrect.increment()
-            } else {
-                statistics.ejectedWrong.increment()
+                if (player.role.definition.team == Team.IMPOSTERS) {
+                    statistics.ejectedCorrect.increment()
+                } else {
+                    statistics.ejectedWrong.increment()
+                }
+
+                statistics.ejectedAs[player.role.definition]?.increment()
             }
-
-            statistics.ejectedAs[player.assignedRole?.definition]?.increment()
 
             Bukkit.getScheduler().runTaskLater(AmongUs, { ->
                 if (currentlyEjecting) finishMeeting(true)
@@ -644,12 +709,12 @@ class MeetingManager(private val game: Game) : Listener {
             }, 40L)
         }
 
-        fun openVoteInventory(player: AmongUsPlayer) {
-            if (hasVoted(player) && player.assignedRole?.definition !== MayorRole || hasVoted(player, true)) {
+        fun openVoteInventory(player: HumanAmongUsPlayer) {
+            if (hasVoted(player) && player.role.definition !== MayorRole || hasVoted(player, true)) {
                 voteInventories.remove(player)
                 return
             }
-            val mayorVoting = player.assignedRole?.definition === MayorRole && hasVoted(player, false)
+            val mayorVoting = player.role.definition === MayorRole && hasVoted(player, false)
             val view = STONECUTTER.builder()
                 .title(Component.translatable("meeting.voting.title" + if (mayorVoting) ".mayor" else ""))
                 .build(player.player ?: return)
@@ -670,6 +735,8 @@ class MeetingManager(private val game: Game) : Listener {
             view.open()
             view.topInventory.setItem(0, item)
         }
+
+        fun timeLeft(): Duration? = timer?.remaining()
 
         fun tick() {
             val timer = timer ?: return
@@ -701,6 +768,7 @@ class MeetingManager(private val game: Game) : Listener {
             bossBar.progress(time / total.toFloat())
         }
 
+        @NMS
         private fun finishMeeting(hasEjected: Boolean = false) {
             game.sabotageManager.currentSabotage()?.resume()
 
@@ -711,20 +779,20 @@ class MeetingManager(private val game: Game) : Listener {
             game.players.forEach { p ->
 
                 if (hasEjected && p != ejectedPlayer) {
-                    (p.player as? CraftPlayer)?.handle?.setCamera(null)
-                    p.player?.hideEntity(AmongUs, cameraAnchor)
-                    p.mannequinController.getEntity()?.let { p.player?.teleport(it.location) }
+                    if (p.isHuman) {
+                        (p.player as? CraftPlayer)?.handle?.setCamera(null)
+                        p.player?.hideEntity(AmongUs, cameraAnchor)
+                        p.mannequinController.getEntity()?.let { p.player?.teleport(it.location) }
+                    }
                     p.mannequinController.unfreeze()
                 }
-                val player = p.player
-                if (player != null) {
-                    player.hideBossBar(bossBar)
-                    player.fireTicks = 0
-                    player.visualFire = TriState.NOT_SET
-
-//                    for (key in recipes.keys) {
-//                        player.undiscoverRecipe(key)
-//                    }
+                if (p.isHuman) {
+                    val player = p.player
+                    if (player != null) {
+                        player.hideBossBar(bossBar)
+                        player.fireTicks = 0
+                        player.visualFire = TriState.NOT_SET
+                    }
                 }
 
                 actionBar.remove()
@@ -736,12 +804,14 @@ class MeetingManager(private val game: Game) : Listener {
                 Bukkit.removeRecipe(key)
             }
 
+            game.meetingAiService.clear()
+
             Bukkit.updateRecipes()
 
             ejectedPlayer?.let { player ->
-                player.statistics.timeUntilDead.timerStop()
-                player.statistics.timeUntilVotedOut.timerStop()
-                respawnLocation?.let { loc -> player.player?.teleport(loc) }
+                player.humanOrNull?.statistics?.timeUntilDead?.timerStop()
+                player.humanOrNull?.statistics?.timeUntilVotedOut?.timerStop()
+                respawnLocation?.let { loc -> player.humanOrNull?.player?.teleport(loc) }
                 player.mannequinController.getEntity()?.let { mannequin ->
                     mannequin.fireTicks = 0
                 }
@@ -761,7 +831,7 @@ class MeetingManager(private val game: Game) : Listener {
             require(phase.isMeeting || phase == GamePhase.RUNNING) {
                 "Invalid meeting phase: $phase"
             }
-            game.phase = phase
+            if (game.phase != GamePhase.FINISHED) game.phase = phase
         }
     }
 

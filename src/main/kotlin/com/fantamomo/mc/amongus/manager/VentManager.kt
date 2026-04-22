@@ -6,7 +6,7 @@ import com.fantamomo.mc.amongus.ability.abilities.VentAbility
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.manager.waypoint.FixedWaypointPosProvider
 import com.fantamomo.mc.amongus.manager.waypoint.WaypointManager
-import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import com.fantamomo.mc.amongus.player.*
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.util.TickContext
 import com.fantamomo.mc.amongus.util.getClosestLocationOnLine
@@ -18,6 +18,7 @@ import org.bukkit.Color
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.entity.BlockDisplay
+import org.bukkit.entity.LivingEntity
 import org.bukkit.entity.Player
 import org.bukkit.util.Transformation
 import java.util.*
@@ -42,21 +43,26 @@ class VentManager(val game: Game) {
             set(value) {
                 checkIsValid()
                 if (field == value) return
-                val player = player.player
+                val entity = player.internalEntity
+                val player = entity as? Player
 
                 val hiddenDisplay = getDisplay(field)
                 player?.showEntity(AmongUs, hiddenDisplay)
                 if (game.settings[SettingsKey.VENT.VENT_VISIBLY_AS_WAYPOINT]) {
-                    game.waypointManager.assignWaypoint(this.player, field.waypoint)
+                    if (this.player.isHuman) {
+                        game.waypointManager.assignWaypoint(this.player, field.waypoint)
+                    }
                 }
 
                 val visibleDisplay = getDisplay(value)
                 player?.hideEntity(AmongUs, visibleDisplay)
-                game.waypointManager.removeWaypoint(this.player, value.waypoint)
+                if (this.player.isHuman) {
+                    game.waypointManager.removeWaypoint(this.player, value.waypoint)
+                }
 
-                if (player != null) {
-                    val location = value.normalizedLocation.withRotation(player)
-                    player.teleport(location)
+                if (entity != null) {
+                    val location = value.normalizedLocation.withRotation(entity)
+                    this.player.teleport(location)
                     orientationChange(this.player, location)
                 }
 
@@ -86,7 +92,7 @@ class VentManager(val game: Game) {
                     .mapKeys { it.key.normalizedLocation }.also { _otherVentByLocation = it }
             }
 
-        val actionBar = game.actionBarManager.part(
+        val actionBar = if (player.isHuman) game.actionBarManager.part(
             player,
             "vent",
             ActionBarManager.ActionBarPartType.CENTER,
@@ -94,19 +100,18 @@ class VentManager(val game: Game) {
             Component.translatable("actionbar.vent.next")
         ).apply {
             visible = false
-        }
+        } else null
 
         init {
-            val player = player.player
-            if (player != null) {
-                val location = vent.normalizedLocation.withRotation(player)
-                player.teleport(location)
-                orientationChange(this.player, location)
-                val ventsAsWaypoints = game.settings[SettingsKey.VENT.VENT_VISIBLY_AS_WAYPOINT]
-                for (entry in displays) {
-                    if (vent == entry.key) continue
-                    player.showEntity(AmongUs, entry.value)
-                    if (ventsAsWaypoints) {
+            val location = vent.normalizedLocation.withRotation(player.mannequin)
+            player.teleport(location)
+            orientationChange(this.player, location)
+            val ventsAsWaypoints = game.settings[SettingsKey.VENT.VENT_VISIBLY_AS_WAYPOINT]
+            for (entry in displays) {
+                if (vent == entry.key) continue
+                player.humanOrNull?.player?.showEntity(AmongUs, entry.value)
+                if (ventsAsWaypoints) {
+                    if (this.player.isHuman) {
                         game.waypointManager.assignWaypoint(this.player, entry.key.waypoint)
                     }
                 }
@@ -120,7 +125,7 @@ class VentManager(val game: Game) {
             )
 
             this.player.mannequinController.hideFromAll()
-            actionBar.remove()
+            actionBar?.remove()
         }
 
         private var lastActive: Vent? = null
@@ -137,7 +142,7 @@ class VentManager(val game: Game) {
                     display.glowColorOverride = new
                 }
             }
-            actionBar.visible = vent != null
+            actionBar?.visible = vent != null
         }
 
         private fun checkIsValid() {
@@ -175,7 +180,9 @@ class VentManager(val game: Game) {
                 display.remove()
             }
             vent.group.vents.forEach { vent ->
-                game.waypointManager.removeWaypoint(player, vent.waypoint)
+                if (player.isHuman) {
+                    game.waypointManager.removeWaypoint(player, vent.waypoint)
+                }
             }
             player.mannequinController.showToSeeingPlayers()
             AbilityManager.invalidatePlayer(this.player)
@@ -269,10 +276,10 @@ class VentManager(val game: Game) {
     }
 
     fun nearestVent(player: AmongUsPlayer, maxDistance: Double = Double.MAX_VALUE): Vent? =
-        nearestVent(player.player?.location ?: return null, maxDistance)
+        nearestVent(player.location, maxDistance)
 
     fun isNearVent(amongUsPlayer: AmongUsPlayer): Boolean {
-        val location = amongUsPlayer.player?.location ?: return false
+        val location = amongUsPlayer.location
         val maxDistance = game.settings[SettingsKey.VENT.VENT_DISTANCE].distance
         return vents.any { it.normalizedLocation.distanceSquared(location) < maxDistance * maxDistance }
     }
@@ -295,7 +302,7 @@ class VentManager(val game: Game) {
         ventedPlayer.vent = to
     }
 
-    private fun Location.withRotation(player: Player) = clone().setRotation(player.yaw, player.pitch)
+    private fun Location.withRotation(player: LivingEntity) = clone().setRotation(player.yaw, player.pitch)
 
     private fun changeVentAndGroup(player: AmongUsPlayer, to: Vent) {
         ventOut(player)
@@ -303,7 +310,7 @@ class VentManager(val game: Game) {
     }
 
     fun nextVent(player: AmongUsPlayer) {
-        val location: Location = player.player?.location ?: return
+        val location: Location = player.location
         val ventedPlayer = ventedPlayers[player] ?: return
         val otherVents = ventedPlayer.otherVentByLocation
         val targetUuid = getClosestLocationOnLine(location, otherVents, 2.0, 0.1) ?: return
@@ -327,19 +334,19 @@ class VentManager(val game: Game) {
         // if (game.phase != GamePhase.RUNNING) return // todo: uncommit it
         if (!tickContext.isBy(2)) return
         for (amongUsPlayer in game.players) {
-            val player = amongUsPlayer.player ?: continue
+            val player = amongUsPlayer.humanOrNull?.player
             if (amongUsPlayer.hasAbility(VentAbility)) {
                 val nearestVent = if (isVented(amongUsPlayer)) null else nearestVent(amongUsPlayer, 10.0 * 10.0)
                 for (otherVent in vents) {
                     if (otherVent == nearestVent) continue
                     if (!otherVent.displayEntityVisible.remove(amongUsPlayer.uuid)) continue
-                    player.hideEntity(AmongUs, otherVent.displayEntity)
+                    player?.hideEntity(AmongUs, otherVent.displayEntity)
                     break
                 }
                 if (nearestVent == null) continue
                 if (!nearestVent.displayEntityVisible.add(amongUsPlayer.uuid)) continue
                 val entity = nearestVent.displayEntity
-                player.showEntity(AmongUs, entity)
+                player?.showEntity(AmongUs, entity)
             }
         }
         for (creatingVentPlayer in creatingVentPlayers) {
@@ -354,9 +361,9 @@ class VentManager(val game: Game) {
     private val creatingVentPlayers: MutableMap<AmongUsPlayer, VentCreation> = mutableMapOf()
 
     inner class VentCreation(val player: AmongUsPlayer, private val onStop: (Boolean) -> Unit) {
-        private val targets = get3x3BlocksUnderPlayer(player.livingEntity.location)
+        private val targets = get3x3BlocksUnderPlayer(player.location)
             .associateWith { EntityIdManager.getFreeId() }
-        private val actionBar = game.actionBarManager.part(
+        private val actionBar = if (player.isHuman) game.actionBarManager.part(
             player,
             "create_vent",
             ActionBarManager.ActionBarPartType.CENTER,
@@ -369,26 +376,36 @@ class VentManager(val game: Game) {
 
                 Component.text(bar, NamedTextColor.RED)
             }
-        )
+        ) else null
 
         private var state = 0.0f
         private var called = false
 
         init {
-            game.actionLog.add(VentActionElement.StartCreating(player.uuid, player.uuid.mostSignificantBits.toInt(), player.livingEntity.location.run { Triple(blockX, blockY, blockZ) }))
+            game.actionLog.add(
+                VentActionElement.StartCreating(
+                    player.uuid,
+                    player.uuid.mostSignificantBits.toInt(),
+                    player.location.run { Triple(blockX, blockY, blockZ) })
+            )
         }
 
         fun stop() {
             creatingVentPlayers.remove(player)
             if (!called) {
-                game.actionLog.add(VentActionElement.FailedCreating(player.uuid, player.uuid.mostSignificantBits.toInt(), player.livingEntity.location.run { Triple(blockX, blockY, blockZ) }))
+                game.actionLog.add(
+                    VentActionElement.FailedCreating(
+                        player.uuid,
+                        player.uuid.mostSignificantBits.toInt(),
+                        player.location.run { Triple(blockX, blockY, blockZ) })
+                )
                 called = true
                 onStop(false)
             }
             targets.values.forEach { i -> EntityIdManager.freeId(i) }
-            actionBar.remove()
+            actionBar?.remove()
             for (player in game.players) {
-                val p = player.player ?: continue
+                val p = player.humanOrNull?.player ?: continue
                 for ((loc, id) in targets) {
                     p.sendBlockDamage(loc, 0.0f, id)
                 }
@@ -404,7 +421,7 @@ class VentManager(val game: Game) {
                 return
             }
             for (player in game.players) {
-                val p = player.player ?: continue
+                val p = player.humanOrNull?.player ?: continue
                 for ((loc, id) in targets) {
                     p.sendBlockDamage(loc, state, id)
                 }
@@ -413,7 +430,12 @@ class VentManager(val game: Game) {
 
         private fun place() {
             called = true
-            game.actionLog.add(VentActionElement.FinishCreating(player.uuid, player.uuid.mostSignificantBits.toInt(), player.livingEntity.location.run { Triple(blockX, blockY, blockZ) }))
+            game.actionLog.add(
+                VentActionElement.FinishCreating(
+                    player.uuid,
+                    player.uuid.mostSignificantBits.toInt(),
+                    player.location.run { Triple(blockX, blockY, blockZ) })
+            )
             onStop(true)
             stop()
             val groupId = player.uuid.mostSignificantBits.toInt()
@@ -421,7 +443,7 @@ class VentManager(val game: Game) {
             val ventGroup =
                 groups.find { it.groupId == groupId } ?: VentGroup(groupId, mutableListOf()).also { groups.add(it) }
 
-            val loc = player.livingEntity.location.toBlockLocation()
+            val loc = player.location.toBlockLocation()
 
             loc.yaw = 0.0f
             loc.pitch = 0.0f

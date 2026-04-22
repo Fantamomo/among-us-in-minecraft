@@ -3,6 +3,8 @@ package com.fantamomo.mc.amongus.role
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.player.editStatistics
+import com.fantamomo.mc.amongus.player.internal
+import com.fantamomo.mc.amongus.player.isHuman
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.util.TickContext
 import com.fantamomo.mc.amongus.util.log.elements.AssignActionElements
@@ -28,18 +30,19 @@ class RoleManager(private val game: Game) {
         phase4AssignTeams(unassigned, rolePool)
 
         for (player in players) {
+            player.internal
             if (player.assignedRole == null) assign(player, Team.CREWMATES.defaultRole)
         }
         forcedRoles.clear()
     }
 
     fun start() {
-        game.players.forEach { it.assignedRole?.onGameStart() }
+        game.players.forEach { it.role.onGameStart() }
     }
 
-    fun end() = game.players.forEach { it.assignedRole?.onGameEnd() }
+    fun end() = game.players.forEach { it.role.onGameEnd() }
 
-    fun tick(tickContext: TickContext) = game.players.forEach { it.assignedRole?.tick(tickContext) }
+    fun tick(tickContext: TickContext) = game.players.forEach { it.internal.assignedRole?.tick(tickContext) }
 
     private fun phase1AssignForced(unassigned: MutableList<AmongUsPlayer>) {
         forcedRoles.forEach { (player, role) ->
@@ -122,9 +125,9 @@ class RoleManager(private val game: Game) {
     }
 
     private fun assign(player: AmongUsPlayer, role: Role<*, *>) {
-        player.assignedRole = role.assignTo(player)
+        player.internal.assignedRole = role.assignTo(player)
         game.actionLog.add(AssignActionElements.AssignRole(player.uuid, role.id))
-        player.editStatistics {
+        if (player.isHuman) player.editStatistics {
             assignedRole[role]?.increment()
             assignedTeam[role.team]?.increment()
         }

@@ -108,9 +108,9 @@ object PlayerListener : Listener {
         if (game.phase != GamePhase.LOBBY && game.phase != GamePhase.STARTING) return
         val rightClicked = event.rightClicked
         if (rightClicked !is Mannequin) return
-        if (!rightClicked.persistentDataContainer.has(AmongUsPlayer.WARDROBE_MANNEQUIN_OWNER)) return
+        if (!rightClicked.persistentDataContainer.has(HumanAmongUsPlayer.WARDROBE_MANNEQUIN_OWNER)) return
         val owner = rightClicked.persistentDataContainer.get(
-            AmongUsPlayer.WARDROBE_MANNEQUIN_OWNER,
+            HumanAmongUsPlayer.WARDROBE_MANNEQUIN_OWNER,
             RefPersistentDataType.refPersistentDataType<AmongUsPlayer>()
         )?.getOrNull() ?: return
         if (usPlayer !== owner) return

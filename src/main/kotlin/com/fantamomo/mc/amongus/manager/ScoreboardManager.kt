@@ -11,6 +11,9 @@ import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.languages.numeric
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import com.fantamomo.mc.amongus.player.HumanAmongUsPlayer
+import com.fantamomo.mc.amongus.player.isAlive
+import com.fantamomo.mc.amongus.player.isBot
 import com.fantamomo.mc.amongus.sabotage.SabotageType
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.task.TaskState
@@ -43,7 +46,7 @@ import org.bukkit.scoreboard.DisplaySlot
  */
 class ScoreboardManager(private val game: Game) {
 
-    private val scoreboards = mutableMapOf<AmongUsPlayer, AmongUsScoreboard>()
+    private val scoreboards = mutableMapOf<HumanAmongUsPlayer, AmongUsScoreboard>()
 
     fun tick() {
         if (scoreboards.isEmpty()) return
@@ -54,8 +57,9 @@ class ScoreboardManager(private val game: Game) {
         if (scoreboards.isNotEmpty()) {
             scoreboards.values.forEach { it.update() }
         } else {
-            game.players.forEach {
-                scoreboards[it] = AmongUsScoreboard(it).also { sb -> sb.show() }
+            for (player in game.players) {
+                if (player.isBot) continue
+                scoreboards[player] = AmongUsScoreboard(player).also { sb -> sb.show() }
             }
         }
     }
@@ -65,21 +69,21 @@ class ScoreboardManager(private val game: Game) {
         scoreboards.clear()
     }
 
-    fun refresh(player: AmongUsPlayer) {
+    fun refresh(player: HumanAmongUsPlayer) {
         scoreboards[player]?.update()
     }
 
-    internal fun removePlayer(player: AmongUsPlayer) {
+    internal fun removePlayer(player: HumanAmongUsPlayer) {
         scoreboards.remove(player)?.hide()
     }
 
-    internal fun addLobbyPlayer(player: AmongUsPlayer) {
+    internal fun addLobbyPlayer(player: HumanAmongUsPlayer) {
         if (game.phase == GamePhase.LOBBY || game.phase == GamePhase.STARTING) {
             scoreboards[player] = AmongUsScoreboard(player).also { sb -> sb.show() }
         }
     }
 
-    inner class AmongUsScoreboard(private val player: AmongUsPlayer) {
+    inner class AmongUsScoreboard(private val player: HumanAmongUsPlayer) {
         private val scoreboard = Bukkit.getScoreboardManager().newScoreboard
 
         private val animate: Boolean get() = AmongUsConfig.animateScoreboard
@@ -318,7 +322,7 @@ class ScoreboardManager(private val game: Game) {
         }
 
         private fun renderDeath() {
-            if (!player.isAlive) {
+            if (!player.isAlive()) {
                 val id = "$ENTRY_DEATH#0"
                 register(id)
                 score(id, SCORE_DEATH, textComponent { translatable("scoreboard.death") })

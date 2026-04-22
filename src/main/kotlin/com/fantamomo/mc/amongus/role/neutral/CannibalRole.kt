@@ -10,8 +10,11 @@ import com.fantamomo.mc.amongus.languages.numeric
 import com.fantamomo.mc.amongus.manager.waypoint.MutableWaypointPosProvider
 import com.fantamomo.mc.amongus.manager.waypoint.WaypointManager
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import com.fantamomo.mc.amongus.player.humanOrNull
+import com.fantamomo.mc.amongus.player.isBot
 import com.fantamomo.mc.amongus.role.AssignedRole
 import com.fantamomo.mc.amongus.role.Role
+import com.fantamomo.mc.amongus.role.SupportBotsRole
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.util.TickContext
@@ -28,7 +31,7 @@ object CannibalRole : Role<CannibalRole, CannibalRole.AssignedCannibalRole> {
 
     override fun assignTo(player: AmongUsPlayer) = AssignedCannibalRole(player)
 
-    class AssignedCannibalRole(override val player: AmongUsPlayer) : AssignedRole<CannibalRole, AssignedCannibalRole> {
+    class AssignedCannibalRole(override val player: AmongUsPlayer) : AssignedRole<CannibalRole, AssignedCannibalRole>, SupportBotsRole {
         override val definition = CannibalRole
 
         val bodiesToEat: Int
@@ -38,7 +41,7 @@ object CannibalRole : Role<CannibalRole, CannibalRole.AssignedCannibalRole> {
         private var doTick = false
         private var lastSeenCorpse = false
 
-        val mutableLocation = MutableWaypointPosProvider(player.livingEntity.location)
+        val mutableLocation = MutableWaypointPosProvider(player.location)
         val waypoint = WaypointManager.Waypoint(
             Component.empty(),
             Color.MAROON,
@@ -51,14 +54,16 @@ object CannibalRole : Role<CannibalRole, CannibalRole.AssignedCannibalRole> {
         }
 
         override fun onGameStart() {
+            if (player.isBot) return
             player.game.waypointManager.assignWaypoint(player, waypoint)
             doTick = true
         }
 
         override fun tick(tickContext: TickContext) {
             if (!doTick) return
+            if (player.isBot) return
             if (tickContext.isBy(20)) return
-            val nearestCorpse = player.game.killManager.nearestCorpse(player.livingEntity.location)
+            val nearestCorpse = player.game.killManager.nearestCorpse(player.location)
             if (lastSeenCorpse != (nearestCorpse != null)) {
                 lastSeenCorpse = nearestCorpse != null
                 waypoint.isVisible = lastSeenCorpse
@@ -70,12 +75,13 @@ object CannibalRole : Role<CannibalRole, CannibalRole.AssignedCannibalRole> {
 
         override fun onGameEnd() {
             doTick = false
+            if (player.isBot) return
             player.game.waypointManager.removeWaypoint(player, waypoint)
         }
 
         fun incrementEatenBodies() {
             eatenBodies++
-            player.statistics.cannibalEatenBodies.increment()
+            player.humanOrNull?.statistics?.cannibalEatenBodies?.increment()
         }
 
         override val description: Component

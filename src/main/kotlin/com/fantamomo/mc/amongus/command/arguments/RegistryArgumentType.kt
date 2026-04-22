@@ -14,7 +14,7 @@ import io.papermc.paper.registry.TypedKey
 import org.bukkit.Keyed
 import java.util.concurrent.CompletableFuture
 
-class RegistryArgumentType<T : Keyed>(private val registryKey: RegistryKey<T>) : CustomArgumentType<T, TypedKey<T>> {
+class RegistryArgumentType<T : Keyed>(registryKey: RegistryKey<T>) : CustomArgumentType<T, TypedKey<T>> {
     val type: ArgumentType<TypedKey<T>> = ArgumentTypes.resourceKey(registryKey)
     val registry = RegistryAccess.registryAccess().getRegistry(registryKey)
     override fun parse(reader: StringReader): T {

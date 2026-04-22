@@ -5,6 +5,9 @@ import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
+import com.fantamomo.mc.amongus.player.HumanAmongUsPlayer
+import com.fantamomo.mc.amongus.player.humanOrNull
+import com.fantamomo.mc.amongus.player.isBot
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.util.Cooldown
@@ -102,6 +105,7 @@ class SabotageManager(private val game: Game) {
         val packet = if (real) ClientboundSetBorderWarningDistancePacket((game.world as CraftWorld).handle.worldBorder)
         else ClientboundSetBorderWarningDistancePacket(fakeWordBorder)
         for (amongUsPlayer in game.players) {
+            if (amongUsPlayer.isBot) continue
             val craftPlayer = amongUsPlayer.player as? CraftPlayer ?: continue
             craftPlayer.handle.connection.send(packet)
         }
@@ -139,7 +143,8 @@ class SabotageManager(private val game: Game) {
         endSabotage(false)
         game.actionLog.add(SabotageActionElements.End(sabotage.sabotageType.id, sabotage.sabotageType.stopOnBodyReport))
         for (player in game.players) {
-            if (player.assignedRole?.definition?.team == Team.IMPOSTERS) {
+            if (player.isBot) continue
+            if (player.role.definition.team == Team.IMPOSTERS) {
                 player.statistics.winBySabotage.increment()
             } else {
                 player.statistics.loseBySabotage.increment()
@@ -165,6 +170,7 @@ class SabotageManager(private val game: Game) {
                 bossBar.removeViewer(it as? Player ?: continue)
             }
             for (player in game.players) {
+                if (player.isBot) continue
                 for (sabotage in supportedSabotages.values) {
                     for (waypoint in sabotage.waypoints) {
                         game.waypointManager.removeWaypoint(player, waypoint)
@@ -177,9 +183,10 @@ class SabotageManager(private val game: Game) {
         bossBar.name(
             sabotage.bossbarName() ?: Component.translatable("sabotage.bossbar.${sabotage.sabotageType.id}")
         )
-        game.players.mapNotNull { it.player }.forEach(bossBar::addViewer)
+        game.players.mapNotNull { it.humanOrNull?.player }.forEach(bossBar::addViewer)
 
         for (player in game.players) {
+            if (player.isBot) continue
             for (waypoint in sabotage.waypoints) {
                 game.waypointManager.assignWaypoint(player, waypoint)
             }
@@ -200,7 +207,7 @@ class SabotageManager(private val game: Game) {
         currentSabotage?.pauseFor(player)
     }
 
-    internal fun onPlayerRejoin(player: AmongUsPlayer) {
+    internal fun onPlayerRejoin(player: HumanAmongUsPlayer) {
         if (!isCurrentlySabotage()) return
         if (!isSabotagePaused()) currentSabotage?.resumeFor(player)
         player.player?.let { bossBar.addViewer(it) }

@@ -2,8 +2,11 @@ package com.fantamomo.mc.amongus.ability.item
 
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.ability.AssignedAbility
+import com.fantamomo.mc.amongus.player.bot.AmongUsZombie
+import com.fantamomo.mc.amongus.player.internal
 import com.fantamomo.mc.amongus.util.CustomPersistentDataTypes
 import net.kyori.adventure.text.Component
+import net.minecraft.world.entity.ai.goal.GoalSelector
 import org.bukkit.NamespacedKey
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.ItemType
@@ -55,10 +58,11 @@ abstract class AbilityItem(val ability: AssignedAbility<*, *>, val id: String) {
     open fun onLeftClick() {}
 
     fun notifyItemChange() {
-        ability.player.notifyAbilityItemChange(this)
+        ability.player.internal.notifyAbilityItemChange(this)
     }
 
     open fun startCooldown() {}
+    open fun registerGoals(gs: GoalSelector, zombie: AmongUsZombie) {}
 
     companion object {
         val ABILITY_UUID = NamespacedKey(AmongUs, "ability/uuid")
