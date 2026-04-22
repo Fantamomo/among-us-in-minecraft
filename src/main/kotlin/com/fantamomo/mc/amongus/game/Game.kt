@@ -155,6 +155,9 @@ class Game(
 
     internal val audiences = listOf(audienceAll, audienceAlive, audienceDead, audienceImposter)
 
+    private var botHasJoined = false
+    private var lobbyChatAiServiceDownWarningSend = false
+
     init {
         navGraph = NavGraphBuilder(this).build()
     }
@@ -178,6 +181,12 @@ class Game(
         if (players.size >= maxPlayers) return false
         if (players.any { it.isBot && it.botName == name }) return false
         val bot = PlayerManager.addBot(name, this)
+        if (!botHasJoined && AiService.isNotAvailable()) {
+            audienceAll.sendComponent {
+                translatable("game.ai_service_not_available")
+            }
+        }
+        botHasJoined = true
         actionLog.add(PlayerActionElements.PlayerJoin(bot.uuid, AmongUsPlayerType.BOT))
         AmongUs.scope.launch {
             delay((10..500).random().milliseconds)
@@ -268,6 +277,11 @@ class Game(
             } else if (startCooldownTicks == tickContext.ticks) {
                 startCooldownTicks = -1
                 start()
+            }
+
+            if (!lobbyChatAiServiceDownWarningSend && AiService.isEnabled() && AiService.isNotAvailable()) {
+                lobbyChatAiServiceDownWarningSend = true
+                audienceAll.sendMessage(Component.translatable("game.ai_service_not_available"))
             }
 
             return
