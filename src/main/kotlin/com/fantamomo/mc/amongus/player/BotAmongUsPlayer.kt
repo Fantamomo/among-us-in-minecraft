@@ -3,6 +3,7 @@ package com.fantamomo.mc.amongus.player
 import com.destroystokyo.paper.profile.PlayerProfile
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.player.bot.BotController
+import com.fantamomo.mc.amongus.player.bot.BotMemory
 import com.fantamomo.mc.amongus.player.bot.BotName
 import net.kyori.adventure.audience.Audience
 import org.bukkit.Location
@@ -23,6 +24,7 @@ class BotAmongUsPlayer internal constructor(
     override var armorTrim: ArmorTrim? = null
 
     internal val hiddenPlayers: MutableSet<AmongUsPlayer> = mutableSetOf()
+    internal val memory = BotMemory(this)
 
     val controller = BotController(this)
     override val audience: Audience = Audience.audience(controller.entity)
