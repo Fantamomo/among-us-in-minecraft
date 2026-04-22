@@ -1,5 +1,6 @@
 package com.fantamomo.mc.amongus.ai
 
+import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.game.GamePhase
@@ -11,6 +12,7 @@ import com.fantamomo.mc.amongus.player.isHuman
 import com.fantamomo.mc.amongus.role.RoleDescriptionPromptProvider
 import com.fantamomo.mc.amongus.role.crewmates.MayorRole
 import com.fantamomo.mc.amongus.util.coroutines.toLineFlow
+import com.fantamomo.mc.amongus.util.sendComponent
 import com.fantamomo.mc.amongus.util.toSmartString
 import io.ktor.util.collections.*
 import kotlinx.coroutines.*
@@ -29,6 +31,9 @@ class MeetingAiService(val game: Game) {
     private val botAnswerChance: MutableMap<BotAmongUsPlayer, AnswerChance> = ConcurrentMap()
 
     private val aiJobs: MutableList<AiJob> = mutableListOf()
+
+    private var firstRequestWasSuccess = false
+    private var aiOutOfOrder = false
 
     private class AiJob(
         val bot: BotAmongUsPlayer,
@@ -55,6 +60,18 @@ class MeetingAiService(val game: Game) {
         if (game.phase != GamePhase.DISCUSSION && game.phase != GamePhase.VOTING) return
 
         val meeting = game.meetingManager.meeting ?: return
+
+        if (firstRequestWasSuccess && !aiOutOfOrder) {
+            if (AiService.isNotAvailable()) {
+                aiOutOfOrder = true
+                game.audienceAll.sendComponent {
+                    translatable("meeting.ai_service_not_available_any_more")
+                }
+                return
+            }
+        }
+
+        if (AiService.isNotAvailable()) return
 
         for (job in aiJobs) {
             @Suppress("SENSELESS_COMPARISON")
@@ -189,7 +206,8 @@ class MeetingAiService(val game: Game) {
                 } else if (phase == GamePhase.VOTING) {
                     callVotingAi(bot, meeting, commands)
                 }
-            } catch (e: CancellationException) {
+                firstRequestWasSuccess = true
+            } catch (_: CancellationException) {
                 aiJob?.state = AiJobState.CANCELLED
             } catch (e: Exception) {
                 logger.error("Meeting: Bot ${bot.name} AI error", e)
