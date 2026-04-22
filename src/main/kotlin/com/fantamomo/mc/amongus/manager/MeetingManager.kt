@@ -3,6 +3,7 @@ package com.fantamomo.mc.amongus.manager
 import com.fantamomo.mc.adventure.text.*
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.ability.AbilityManager
+import com.fantamomo.mc.amongus.ai.AiService
 import com.fantamomo.mc.amongus.data.AmongUsDebug
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.game.GamePhase
@@ -70,6 +71,8 @@ class MeetingManager(private val game: Game) {
         game.area.ejectedViewPoint ?: error("Ejection view point not found")
 
     private val buttonCooldown = Cooldown(game.settings[SettingsKey.MEETING.MEETING_BUTTON_COOLDOWN], true)
+
+    private var currentMeetingNumber = 0
 
     private val actionBar = game.actionBarManager.ActionBarPart(
         "meeting",
@@ -195,6 +198,7 @@ class MeetingManager(private val game: Game) {
         var disableEventHandler: Boolean = false
             private set
         val foundBodies: List<AmongUsPlayer> = game.killManager.getCorpses().map { it.owner }
+        val number: Int = currentMeetingNumber++
 
         init {
             registerRecipes()
@@ -378,20 +382,21 @@ class MeetingManager(private val game: Game) {
                 )
             }
 
-            for (amongUsPlayer in players) {
-                if (amongUsPlayer.isHuman) continue
-                if (!amongUsPlayer.isAlive()) continue
-                val voteTargetController = amongUsPlayer.controller.voteTargetController ?: continue
-                if (!voteTargetController.executesAtTheStartOfTheMeeting()) continue
-                when (val target = voteTargetController.getTarget()) {
-                    is BotVoteTargetController.Target.Player -> voteFor(amongUsPlayer, target.player)
-                    BotVoteTargetController.Target.Skip -> voteSkip(amongUsPlayer)
-                    else -> {}
-                }
-            }
+//            for (amongUsPlayer in players) {
+//                if (amongUsPlayer.isHuman) continue
+//                if (!amongUsPlayer.isAlive()) continue
+//                val voteTargetController = amongUsPlayer.controller.voteTargetController ?: continue
+//                if (!voteTargetController.executesAtTheStartOfTheMeeting()) continue
+//                when (val target = voteTargetController.getTarget()) {
+//                    is BotVoteTargetController.Target.Player -> voteFor(amongUsPlayer, target.player)
+//                    BotVoteTargetController.Target.Skip -> voteSkip(amongUsPlayer)
+//                    else -> {}
+//                }
+//            }
         }
 
         private fun endVoting() {
+            if (game.phase == GamePhase.ENDING_MEETING) return
             setPhase(GamePhase.ENDING_MEETING)
             timer = null
 
@@ -466,6 +471,7 @@ class MeetingManager(private val game: Game) {
                 return
             }
             if (second) return
+            if (AiService.isEnabled()) return
             val endByPlayer = game.players.all { !it.isAlive() || hasVoted(it) || it.isBot }
             if (endByPlayer) {
                 for (auPlayer in game.players) {
@@ -473,7 +479,7 @@ class MeetingManager(private val game: Game) {
                     if (!auPlayer.isAlive()) continue
                     if (hasVoted(auPlayer)) continue
                     val voteTargetController = auPlayer.controller.voteTargetController ?: continue
-                    if (voteTargetController.executesAtTheStartOfTheMeeting()) continue
+//                    if (voteTargetController.executesAtTheStartOfTheMeeting()) continue
                     when (val target = voteTargetController.getTarget()) {
                         is BotVoteTargetController.Target.Player -> voteFor(auPlayer, target.player)
                         BotVoteTargetController.Target.Skip -> voteSkip(auPlayer)
@@ -501,6 +507,11 @@ class MeetingManager(private val game: Game) {
         fun hasVoted(player: AmongUsPlayer, mayorVote: Boolean = false): Boolean {
             val voter = if (mayorVote) Voter.MayorVoter(player) else Voter.NormalPlayer(player)
             return voter in votes
+        }
+
+        fun getVoteTarget(voter: AmongUsPlayer, mayorVote: Boolean = false): AmongUsPlayer? {
+            val voter = if (mayorVote) Voter.MayorVoter(voter) else Voter.NormalPlayer(voter)
+            return votes[voter]?.let { if (it is Vote.For) it.target else null }
         }
 
         private fun calculateVoteResult(): AmongUsPlayer? {
@@ -716,6 +727,8 @@ class MeetingManager(private val game: Game) {
             view.topInventory.setItem(0, item)
         }
 
+        fun timeLeft(): Duration? = timer?.remaining()
+
         fun tick() {
             val timer = timer ?: return
 
@@ -782,6 +795,8 @@ class MeetingManager(private val game: Game) {
                 Bukkit.removeRecipe(key)
             }
 
+            game.meetingAiService.clear()
+
             Bukkit.updateRecipes()
 
             ejectedPlayer?.let { player ->
@@ -807,7 +822,7 @@ class MeetingManager(private val game: Game) {
             require(phase.isMeeting || phase == GamePhase.RUNNING) {
                 "Invalid meeting phase: $phase"
             }
-            game.phase = phase
+            if (game.phase != GamePhase.FINISHED) game.phase = phase
         }
     }
 
