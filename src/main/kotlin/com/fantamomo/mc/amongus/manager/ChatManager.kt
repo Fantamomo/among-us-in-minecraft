@@ -53,8 +53,9 @@ class ChatManager(val game: Game) {
         sendMeetingMessage(sender, message)
     }
 
-    fun sendMeetingMessage(sender: AmongUsPlayer, message: Component) {
+    fun sendMeetingMessage(sender: AmongUsPlayer, message: Component, triggerAi: Boolean = true) {
         logMessage(sender, "meeting", message)
+        if (triggerAi) game.meetingAiService.onChatMessage(sender)
         val message = getMessage("chat.message.meeting", sender, message)
         game.sendChatMessage(message)
         game.logger.info(message)
@@ -68,8 +69,8 @@ class ChatManager(val game: Game) {
         game.logger.info(message)
     }
 
-    fun sendLobbyMessage(sender: AmongUsPlayer, input: Component, triggerAi: Boolean = true) {
-        logMessage(sender, "lobby", input)
+    fun sendLobbyMessage(sender: AmongUsPlayer, input: Component, triggerAi: Boolean = true, logMessage: Boolean = true) {
+        if (logMessage) logMessage(sender, "lobby", input)
         if (triggerAi) game.lobbyChatAiService.chatMessage(sender)
         val message = getMessage("chat.message.lobby", sender, input)
         game.sendChatMessage(message)

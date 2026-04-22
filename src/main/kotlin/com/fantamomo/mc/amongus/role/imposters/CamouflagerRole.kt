@@ -6,6 +6,7 @@ import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.ability.Ability
 import com.fantamomo.mc.amongus.ability.abilities.CamouflageAbility
 import com.fantamomo.mc.amongus.ability.builder.DSLAbilityItem
+import com.fantamomo.mc.amongus.game.GamePhase
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.player.bot.mangement.BotVoteTargetController
@@ -55,7 +56,7 @@ object CamouflagerRole : Role<CamouflagerRole, CamouflagerRole.AssignedCamouflag
             if (items.size != 1) return
             val item = items.first() as? DSLAbilityItem ?: return
             if (item.remainingCooldown() <= Duration.ZERO) {
-                if (!player.game.morphManager.isCamouflageMode()) {
+                if (!player.game.morphManager.isCamouflageMode() && player.game.phase == GamePhase.RUNNING) {
                     item.startCooldown()
                     player.game.morphManager.camouflageMode()
                 }

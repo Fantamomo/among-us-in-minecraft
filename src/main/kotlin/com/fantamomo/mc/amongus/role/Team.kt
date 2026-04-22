@@ -1,5 +1,6 @@
 package com.fantamomo.mc.amongus.role
 
+import com.fantamomo.mc.amongus.player.BotAmongUsPlayer
 import com.fantamomo.mc.amongus.role.crewmates.CrewmateRole
 import com.fantamomo.mc.amongus.role.imposters.ImposterRole
 import com.fantamomo.mc.amongus.role.neutral.ArsonistRole
@@ -30,7 +31,11 @@ sealed class Team(val name: String, private val default: Role<*, *>?, val textCo
     val description = Component.translatable("team.$id")
 
     data object CREWMATES : Team("crewmates", CrewmateRole, NamedTextColor.BLUE)
-    data object IMPOSTERS : Team("imposters", ImposterRole, NamedTextColor.RED)
+    data object IMPOSTERS : Team("imposters", ImposterRole, NamedTextColor.RED), RoleDescriptionPromptProvider {
+        override fun getPromptPlaceholders(bot: BotAmongUsPlayer) =
+            mapOf("imposter_teammates" to bot.game.players.filter { it.role.definition.team == this }
+                .joinToString("\n") { it.name })
+    }
 
     @ConsistentCopyVisibility
     data class NEUTRAL private constructor(
