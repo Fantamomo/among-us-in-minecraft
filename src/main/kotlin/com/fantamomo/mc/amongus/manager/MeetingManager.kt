@@ -20,6 +20,7 @@ import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.util.Cooldown
 import com.fantamomo.mc.amongus.util.internal.NMS
 import com.fantamomo.mc.amongus.util.log.elements.MeetingActionElement
+import com.fantamomo.mc.amongus.util.sendComponent
 import com.fantamomo.mc.amongus.util.textComponent
 import io.papermc.paper.datacomponent.DataComponentTypes
 import io.papermc.paper.datacomponent.item.ResolvableProfile
@@ -342,6 +343,14 @@ class MeetingManager(private val game: Game) {
                     }
 
                     game.actionBarManager.bar(p).add(if (p.isAlive()) actionBar else actionBarDead)
+                }
+            }
+
+            if (AiService.isEnabled()) {
+                if (AiService.isNotAvailable()) {
+                    game.audienceAll.sendComponent {
+                        translatable("meeting.ai_service_not_available")
+                    }
                 }
             }
 
