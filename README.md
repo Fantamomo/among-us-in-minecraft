@@ -16,23 +16,23 @@
 
 ## Features
 
-- **18+ Roles** - And more coming soon. ([List](https://among-us-in-minecraft.docs.fantamomo.com/roles/roles))
+- **18+ Roles** - And more coming soon. ([List](https://docs.among-us-in-minecraft.fantamomo.com/roles/roles))
 - **Fully Customizable** – Play on every map – customize where tasks, sabotages, vents, cameras, and much more is.
 - **Various tasks** – Inspired by Among Us (especially Polus), fully rebuilt in Minecraft.
 - **Maps** – Create your own maps or use the pre-built one.
 
-Check out the [documentation](https://among-us-in-minecraft.docs.fantamomo.com/) for more information.
+Check out the [documentation](https://docs.among-us-in-minecraft.fantamomo.com/) for more information.
 
 ---
 
 ## Getting Started
 
-Visit the [documentation](https://among-us-in-minecraft.docs.fantamomo.com/guides/getting-started) for more information.
+Visit the [documentation](https://docs.among-us-in-minecraft.fantamomo.com/guides/getting-started) for more information.
 
 In short, you'll need:
 1. A Minecraft server. (Paper: `1.21.11`)
 2. Place the plugin in your `/plugins` folder.
-3. Set up a map or download the [pre-built](https://among-us-in-minecraft.docs.fantamomo.com/demo/map) one.
+3. Set up a map or download the [pre-built](https://docs.among-us-in-minecraft.fantamomo.com/demo/map) one.
 4. Play with your friends!
 
 ---
@@ -51,7 +51,7 @@ Also, there are some known bugs that are being worked on.
 
 ## Demo
 
-We have a demo server running the plugin. [Check it out](https://among-us-in-minecraft.docs.fantamomo.com/demo/demo)
+We have a demo server running the plugin. [Check it out](https://docs.among-us-in-minecraft.fantamomo.com/demo/server)
 
 ---
 
