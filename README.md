@@ -4,7 +4,7 @@
 
 > A fan-made Minecraft plugin that brings the gameplay of Among Us to Minecraft.
 
-**[🕮 Documentation](https://among-us-in-minecraft.docs.fantamomo.com/)** · **[🗺️ Map Setup](https://among-us-in-minecraft.docs.fantamomo.com/demo/map/)** · **[🎮 Demo Server](https://among-us-in-minecraft.docs.fantamomo.com/demo/demo)**
+**[🕮 Documentation](https://docs.among-us-in-minecraft.fantamomo.com/)** · **[🗺️ Map Setup](https://docs.among-us-in-minecraft.fantamomo.com/demo/map/)** · **[🎮 Demo Server](https://docs.among-us-in-minecraft.fantamomo.com/demo/server)**
 
 > [!WARNING]  
 > This project is **not affiliated with, endorsed by, or associated with Innersloth or Mojang Studios**.  
