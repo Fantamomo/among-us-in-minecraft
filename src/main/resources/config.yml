@@ -82,6 +82,15 @@ action-log-upload:
   # Or only to the host? (false)
   send-to-players: true
 
+  # Time to live for uploaded ActionLogs, after which they will be deleted from the server.
+  # A value over the server maximal time to live will be truncated to that value.
+  # The default value of logs.among-us-in-minecraft.fantamomo.com is 48 hours.
+  # Avoidable formats: s (seconds), m (minutes), h (hours), d (days)
+  # Examples: 1h, 2d, 30m, 48s
+  # They can be a combination of these formats, e.g. 1h30m
+  # Set to 0 to use the default value of the server.
+  ttl: 48h
+
 ai:
   enabled: false
   provider:
