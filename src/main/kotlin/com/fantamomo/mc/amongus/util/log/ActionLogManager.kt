@@ -9,6 +9,7 @@ import kotlinx.serialization.json.*
 import org.slf4j.LoggerFactory
 import java.net.URL
 import kotlin.io.path.writeText
+import kotlin.time.Duration
 import kotlin.uuid.Uuid
 
 object ActionLogManager {
@@ -39,7 +40,7 @@ object ActionLogManager {
         logToType.remove(log)
     }
 
-    suspend fun saveUploadAndRemove(log: ActionLog): URL? {
+    suspend fun saveUploadAndRemove(log: ActionLog): Pair<URL, Duration?>? {
         val type = logToType[log] ?: throw IllegalArgumentException("Log not registered: $log")
         val data = toJson(log)
         save(type, log.id, data)
@@ -64,7 +65,7 @@ object ActionLogManager {
         })
     }
 
-    private suspend fun upload(data: JsonObject): URL? {
+    private suspend fun upload(data: JsonObject): Pair<URL, Duration?>? {
         if (!ActionLogUploader.enabled()) return null
         val text = jsonCompact.encodeToString(data)
         return ActionLogUploader.upload(text)
