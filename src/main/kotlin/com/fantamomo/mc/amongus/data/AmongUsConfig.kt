@@ -5,6 +5,7 @@ import com.fantamomo.mc.amongus.ai.AiProvider
 import com.fantamomo.mc.amongus.util.internal.MorphSkinManager
 import com.fantamomo.mc.amongus.util.skinblender.VirusSkinBlender
 import org.bukkit.configuration.ConfigurationSection
+import kotlin.time.Duration
 
 object AmongUsConfig {
 
@@ -52,6 +53,7 @@ object AmongUsConfig {
         val url =
             section.getString("url", "http://localhost:29243") // todo: replace with url of the real server when it's up
         val sendToPlayers = section.getBoolean("send-to-players", true)
+        val ttl = section.getString("ttl", "24h")?.let { Duration.parseOrNull(it) }?.takeIf { it.isPositive() }
     }
 
     object AI : ConfigSection("ai") {

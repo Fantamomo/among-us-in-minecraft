@@ -679,8 +679,9 @@ class Game(
             val targets =
                 if (AmongUsConfig.ActionLogUpload.sendToPlayers) bukkitPlayerList else listOfNotNull(hostPlayer)
             AmongUs.scope.launch {
-                val uploadPath = ActionLogManager.saveUploadAndRemove(actionLog)
-                if (uploadPath != null) {
+                val data = ActionLogManager.saveUploadAndRemove(actionLog)
+                if (data != null) {
+                    val (uploadPath, ttl) = data
                     if (uploadPath.host == "localhost") {
                         val uri = uploadPath.toURI()
                         for (target in targets) {
@@ -708,6 +709,14 @@ class Game(
                                         }
                                     }
                                 }
+                                if (ttl != null) {
+                                    newLine()
+                                    translatable("action_log.uploaded.ttl") {
+                                        args {
+                                            string("time", ttl.toSmartString())
+                                        }
+                                    }
+                                }
                             }
                         }
                     } else {
@@ -726,10 +735,23 @@ class Game(
                                     }
                                 }
                             }
+                            if (ttl != null) {
+                                newLine()
+                                translatable("action_log.uploaded.ttl") {
+                                    args {
+                                        string("time", ttl.toSmartString())
+                                    }
+                                }
+                            }
                         }
                         targets.forEach { it.sendMessage(message) }
                     }
                     logger.info("Uploaded action log to $uploadPath")
+                    if (ttl != null) {
+                        logger.info("Action log will expire in ${ttl.toSmartString()}")
+                    } else {
+                        logger.warn("Server didn't provide TTL for action log, it may be stored indefinitely")
+                    }
                 } else {
                     val err = Component.translatable("action_log.upload_failed")
                     targets.forEach { it.sendMessage(err) }
