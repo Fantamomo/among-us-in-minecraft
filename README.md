@@ -55,6 +55,16 @@ We have a demo server running the plugin. [Check it out](https://docs.among-us-i
 
 ---
 
+## Repositories
+
+This project is split into multiple repositories:
+
+- The plugin itself: this repository
+- The documentation: [https://github.com/Fantamomo/among-us-in-minecraft-docs](https://github.com/Fantamomo/among-us-in-minecraft-docs)
+- The action log server: [https://github.com/Fantamomo/among-us-in-minecraft-action-log](https://github.com/Fantamomo/among-us-in-minecraft-action-log)
+
+---
+
 ## Intellectual Property
 
 This project uses **no original Among Us assets** — no textures, sounds, models, UI elements, or source code.
