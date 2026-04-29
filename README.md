@@ -61,7 +61,7 @@ This project is split into multiple repositories:
 
 - The plugin itself: this repository
 - The documentation: [https://github.com/Fantamomo/among-us-in-minecraft-docs](https://github.com/Fantamomo/among-us-in-minecraft-docs)
-- The action log server: [https://github.com/Fantamomo/among-us-in-minecraft-action-log](https://github.com/Fantamomo/among-us-in-minecraft-action-log)
+- The action log server: [https://github.com/Fantamomo/among-us-in-minecraft-logs](https://github.com/Fantamomo/among-us-in-minecraft-logs)
 
 ---
 
