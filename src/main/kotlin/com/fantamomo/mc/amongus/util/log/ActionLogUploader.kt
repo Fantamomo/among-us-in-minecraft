@@ -7,9 +7,15 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
 import org.slf4j.LoggerFactory
 import java.net.URI
 import java.net.URL
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 object ActionLogUploader {
     private val BASE_URL = AmongUsConfig.ActionLogUpload.url?.takeIf { it.isValidUrl() }?.removeSuffix("/")
@@ -29,7 +35,7 @@ object ActionLogUploader {
 
     fun enabled() = AmongUsConfig.ActionLogUpload.enabled
 
-    internal suspend fun upload(log: String): URL? {
+    internal suspend fun upload(log: String): Pair<URL, Duration?>? {
         checkValid()
         return withContext(Dispatchers.IO) {
             val url = UPLOAD_URL ?: return@withContext null
@@ -52,13 +58,34 @@ object ActionLogUploader {
                 if (body.isEmpty()) {
                     logger.error("Action log upload failed: empty response")
                     return@withContext null
-                } else if (body.length != 8) {
-                    logger.error("Action log upload failed: invalid response code: $body")
+                }
+
+                val json = Json.parseToJsonElement(body)
+
+                var ttl: Duration? = null
+                var code: String?
+                when (json) {
+                    is JsonPrimitive -> code = json.contentOrNull
+                    is JsonObject -> {
+                        code = (json["id"] as? JsonPrimitive)?.contentOrNull
+                        ttl = (json["ttl"] as? JsonPrimitive)?.let { it.contentOrNull?.toIntOrNull()?.seconds }
+                    }
+                    else -> {
+                        logger.error("Action log upload failed: invalid response: $body")
+                        return@withContext null
+                    }
+                }
+
+                if (code == null) {
+                    logger.error("Action log upload failed: invalid response: $body")
+                    return@withContext null
+                } else if (code.length != 8) {
+                    logger.error("Action log upload failed: invalid response code: $code")
                     return@withContext null
                 }
 
                 @Suppress("DEPRECATION")
-                return@withContext URL(BASE_URL!! + "/log/" + body)
+                return@withContext URL(BASE_URL!! + "/log/" + code) to ttl?.takeIf { it > Duration.ZERO }
             } catch (e: Exception) {
                 logger.error("Action log upload failed", e)
                 null
