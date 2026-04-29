@@ -22,6 +22,7 @@ object ActionLogUploader {
     private val BASE_URI = BASE_URL?.let { runCatching { URI.create(it) }.getOrNull() }
     private val UPLOAD_URL_STRING = BASE_URL?.let { "$it/upload" }
     private val UPLOAD_URL = UPLOAD_URL_STRING?.let { runCatching { Url(it) }.getOrNull() }
+    private val ttl = AmongUsConfig.ActionLogUpload.ttl?.inWholeSeconds
 
     private val logger = LoggerFactory.getLogger("AmongUsActionLogUploader")
 
@@ -45,6 +46,9 @@ object ActionLogUploader {
                     contentType(ContentType.Application.Json.withCharset(Charsets.UTF_8))
                     header(HttpHeaders.UserAgent, "Fantamomo/among-us-in-minecraft/2.0")
                     setBody(log)
+                    if (ttl != null) {
+                        parameter("ttl", ttl)
+                    }
                 }
 
                 val status = response.status
