@@ -137,6 +137,7 @@ class Game(
     val roleRevealManager = RoleRevealManager(this)
     val lobbyChatAiService = LobbyChatAiService(this)
     val meetingAiService = MeetingAiService(this)
+    val lobbyItemManger = LobbyItemManger(this)
 
     internal val players: MutableList<AmongUsPlayer> = mutableListOf()
     internal val bannedPlayers: MutableSet<UUID> = mutableSetOf()
@@ -179,6 +180,7 @@ class Game(
         scoreboardManager.addLobbyPlayer(newPlayer)
         actionLog.add(PlayerActionElements.PlayerJoin(player.uniqueId, AmongUsPlayerType.HUMAN))
         abortStartCooldown(GameActionElements.StartCountdownAborted.Reason.PLAYER_JOIN)
+        lobbyItemManger.addPlayer(newPlayer)
         audiences.forEach { it.setDirty() }
         logger.info("Adding player: ${player.name}")
         return true
@@ -260,6 +262,7 @@ class Game(
                 player.mannequinController.syncFromOwner()
             }
             scoreboardManager.tick()
+            lobbyItemManger.tick(tickContext)
 
             if (startCooldownTicks > tickContext.ticks) {
                 val remainingTicks = startCooldownTicks - tickContext.ticks
@@ -272,12 +275,10 @@ class Game(
                 }
 
                 val title = Title.title(
-                    Component.text(remaining.toString())
-                        .color(color)
-                        .decorate(TextDecoration.BOLD),
+                    Component.text(remaining.toString(), color, TextDecoration.BOLD),
                     Component.empty(),
                     0,
-                    20,
+                    if (remaining < 1) 20 else 25,
                     0
                 )
 
@@ -473,6 +474,7 @@ class Game(
         if (area.gameSpawn == null) throw IllegalStateException("Game spawn is not set")
         if (area.lobbySpawn == null) throw IllegalStateException("Lobby spawn is not set")
         phase = GamePhase.REVEALING_ROLES
+        lobbyItemManger.stop()
         roleManager.assign()
         chatManager.start()
         lobbyChatAiService.stop()
