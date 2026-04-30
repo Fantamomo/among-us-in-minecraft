@@ -1,6 +1,7 @@
 package com.fantamomo.mc.amongus.listeners
 
 import com.fantamomo.mc.amongus.game.GamePhase
+import com.fantamomo.mc.amongus.game.LobbyItemManger
 import com.fantamomo.mc.amongus.player.*
 import com.fantamomo.mc.amongus.sabotage.SabotageType
 import com.fantamomo.mc.amongus.util.RefPersistentDataType
@@ -74,11 +75,21 @@ object PlayerListener : Listener {
         val player = event.player
         if (player.gameMode == GameMode.CREATIVE) return
         val amongUsPlayer = PlayerManager.getPlayer(player) ?: return
+        val item = event.item
+        if (amongUsPlayer.game.phase == GamePhase.LOBBY || amongUsPlayer.game.phase == GamePhase.STARTING) {
+            if (event.action.isRightClick && item != null) {
+                if (item.persistentDataContainer.has(LobbyItemManger.LOBBY_ITEM_TYPE_KEY)) {
+                    event.isCancelled = true
+                    amongUsPlayer.game.lobbyItemManger.onItemUse(amongUsPlayer, item)
+                    return
+                }
+            }
+        }
         if (event.action == Action.PHYSICAL || event.action.isLeftClick) {
             event.isCancelled = true
             return
         }
-        if (event.item?.type?.asItemType() in PlayerColor.helmetTypes) {
+        if (item?.type?.asItemType() in PlayerColor.helmetTypes) {
             event.isCancelled = true
             return
         }
@@ -118,13 +129,30 @@ object PlayerListener : Listener {
         usPlayer.game.updateAllWardrobeInventories()
     }
 
+    @EventHandler
+    fun onItemDrop(event: PlayerDropItemEvent) {
+        val item = event.itemDrop.itemStack
+        if (item.persistentDataContainer.has(LobbyItemManger.LOBBY_ITEM_TYPE_KEY)) {
+            event.isCancelled = true
+        }
+    }
+
     @EventHandler(priority = EventPriority.HIGH)
     fun onInventoryInteract(event: InventoryClickEvent) {
         val inventory = event.inventory
         val holder = inventory.holder
-        if (holder !is WardrobeInventory) return
-        event.isCancelled = true
         val player = event.whoClicked as? Player ?: return
+        val amongUsPlayer = PlayerManager.getPlayer(player) ?: return
+        val phase = amongUsPlayer.game.phase
+        if (phase != GamePhase.LOBBY && phase != GamePhase.STARTING) return
+        if (holder !is WardrobeInventory) {
+            if (event.clickedInventory === player.inventory) {
+                event.isCancelled = true
+                return
+            }
+            return
+        }
+        event.isCancelled = true
         if (holder.owner.player !== player) return
         holder.onClick(event)
     }

@@ -17,6 +17,7 @@ import org.bukkit.Keyed
 import org.bukkit.NamespacedKey
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.inventory.*
+import org.bukkit.inventory.meta.ItemMeta
 import org.bukkit.inventory.meta.trim.ArmorTrim
 import org.bukkit.inventory.meta.trim.TrimMaterial
 import org.bukkit.inventory.meta.trim.TrimPattern
@@ -30,7 +31,9 @@ class WardrobeInventory private constructor(
     private val type: Type = Type.MAIN
 ) : InventoryHolder {
 
-    constructor(owner: HumanAmongUsPlayer) : this(owner, null, Type.MAIN)
+    constructor(owner: HumanAmongUsPlayer) : this(owner, Type.MAIN)
+
+    constructor(owner: HumanAmongUsPlayer, type: Type) : this(owner, null, type)
 
     val inv = Bukkit.createInventory(this, type.size, Component.translatable("wardrobe.title"))
 
@@ -287,7 +290,7 @@ class WardrobeInventory private constructor(
 
         private val FAKE_PATTERN_ITEM_TYPE = ItemType.BARRIER
 
-        private val PATTERN_TO_ITEM_TYPE: Map<TrimPattern, ItemType> = mapOf(
+        private val PATTERN_TO_ITEM_TYPE: Map<TrimPattern, ItemType.Typed<out ItemMeta>> = mapOf(
             TrimPattern.BOLT to ItemType.BOLT_ARMOR_TRIM_SMITHING_TEMPLATE,
             TrimPattern.COAST to ItemType.COAST_ARMOR_TRIM_SMITHING_TEMPLATE,
             TrimPattern.DUNE to ItemType.DUNE_ARMOR_TRIM_SMITHING_TEMPLATE,
@@ -308,7 +311,7 @@ class WardrobeInventory private constructor(
             TrimPattern.WILD to ItemType.WILD_ARMOR_TRIM_SMITHING_TEMPLATE
         )
 
-        private val MATERIAL_TO_ITEM_TYPE: Map<TrimMaterial, ItemType> = mapOf(
+        private val MATERIAL_TO_ITEM_TYPE: Map<TrimMaterial, ItemType.Typed<out ItemMeta>> = mapOf(
             TrimMaterial.AMETHYST to ItemType.AMETHYST_SHARD,
             TrimMaterial.COPPER to ItemType.COPPER_INGOT,
             TrimMaterial.DIAMOND to ItemType.DIAMOND,
@@ -321,6 +324,12 @@ class WardrobeInventory private constructor(
             TrimMaterial.REDSTONE to ItemType.REDSTONE,
             TrimMaterial.RESIN to ItemType.RESIN_CLUMP,
         )
+
+        fun patternToItemType(pattern: TrimPattern) =
+            PATTERN_TO_ITEM_TYPE[pattern] ?: throw IllegalArgumentException("Pattern not found: $pattern")
+
+        fun materialToItemType(material: TrimMaterial) =
+            MATERIAL_TO_ITEM_TYPE[material] ?: throw IllegalArgumentException("Material not found: $material")
     }
 
     enum class Type(val size: Int, val backSlot: Int = size - 5) {

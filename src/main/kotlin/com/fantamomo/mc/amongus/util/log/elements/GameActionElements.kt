@@ -28,6 +28,7 @@ object GameActionElements {
         enum class Reason {
             SETTING_CHANGED,
             PLAYER_JOIN,
+            HOST,
             UNKNOWN
         }
     }
