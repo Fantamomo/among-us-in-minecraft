@@ -37,6 +37,19 @@ import java.util.concurrent.CompletableFuture
 import kotlin.time.Instant
 import kotlin.uuid.toKotlinUuid
 
+/**
+ * Represents a human player in the "Among Us" game adapted to Minecraft.
+ * This class provides the implementation for actions, properties, and states
+ * associated with a player controlled by a real human user.
+ *
+ * @param uuid The unique identifier associated with the player.
+ * @param name The display name of the player.
+ * @param game The game instance this player belongs to.
+ * @param locationBeforeGame The player's location in the world before joining the game.
+ *
+ * @author Fantamomo
+ * @since 2.0-SNAPSHOT
+ */
 class HumanAmongUsPlayer internal constructor(
     uuid: UUID,
     name: String,

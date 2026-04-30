@@ -10,6 +10,18 @@ import org.bukkit.Location
 import org.bukkit.inventory.meta.trim.ArmorTrim
 import java.util.*
 
+/**
+ * Represents a bot-controlled player in an Among Us-style game environment.
+ * This class extends the abstract player type and provides specific implementations
+ * and behavior for bot players.
+ *
+ * @param uuid The unique identifier associated with this bot player.
+ * @param game The game instance to which the bot player is assigned.
+ * @param botName The name and associated profile information of the bot player.
+ *
+ * @author Fantamomo
+ * @since 2.0-SNAPSHOT
+ */
 class BotAmongUsPlayer internal constructor(
     uuid: UUID,
     game: Game,

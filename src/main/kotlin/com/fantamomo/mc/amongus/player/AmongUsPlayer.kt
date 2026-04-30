@@ -24,6 +24,10 @@ import kotlin.time.Instant
  *
  * @author Fantamomo
  * @since 2.0-SNAPSHOT
+ *
+ * @see AbstractAmongUsPlayer
+ * @see HumanAmongUsPlayer
+ * @see BotAmongUsPlayer
  */
 sealed interface AmongUsPlayer : AudienceHolder {
     val uuid: UUID

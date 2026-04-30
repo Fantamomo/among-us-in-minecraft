@@ -26,6 +26,18 @@ import org.bukkit.potion.PotionEffectType
 import java.util.*
 import kotlin.time.Instant
 
+/**
+ * Represents an abstract implementation of an Among Us player, defining core properties and behaviors
+ * that all player types must implement or override. This includes details such as name, color, abilities,
+ * and role management within the game.
+ *
+ * @see AmongUsPlayer
+ * @see HumanAmongUsPlayer
+ * @see BotAmongUsPlayer
+ *
+ * @author Fantamomo
+ * @since 2.0-SNAPSHOT
+ */
 sealed class AbstractAmongUsPlayer(
     override val uuid: UUID,
     override val game: Game
