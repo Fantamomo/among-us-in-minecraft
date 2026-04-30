@@ -48,7 +48,8 @@ enum class PlayerColor(val color: Color, val helmet: ItemType.Typed<out ArmorMet
 
     val textColor = TextColor.color(color.asRGB())
     val coloredName = Component.text(name.lowercase(), textColor)
-    val capitalizeColoredName = Component.text(name.lowercase().replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }, textColor)
+    val capitalizeColoredNameWithoutColor = name.lowercase().replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+    val capitalizeColoredName = Component.text(capitalizeColoredNameWithoutColor, textColor)
 
     internal val cooldownGroup = Key.key("amongus", "player_color/cooldown_group/${name.lowercase()}")
 
