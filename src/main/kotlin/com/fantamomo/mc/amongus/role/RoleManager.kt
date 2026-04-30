@@ -1,39 +1,28 @@
 package com.fantamomo.mc.amongus.role
 
 import com.fantamomo.mc.amongus.game.Game
-import com.fantamomo.mc.amongus.player.AmongUsPlayer
-import com.fantamomo.mc.amongus.player.editStatistics
-import com.fantamomo.mc.amongus.player.internal
-import com.fantamomo.mc.amongus.player.isHuman
+import com.fantamomo.mc.amongus.player.*
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.util.TickContext
 import com.fantamomo.mc.amongus.util.log.elements.AssignActionElements
+import org.slf4j.LoggerFactory
 import kotlin.random.Random
 
-class RoleManager(private val game: Game) {
+class RoleManager(private val game: Game, private val random: Random = Random.Default) {
 
-    private val forcedRoles = mutableMapOf<AmongUsPlayer, Role<*, *>>()
-    private val blockedRoles = mutableMapOf<AmongUsPlayer, MutableSet<Role<*, *>>>()
-    private val allowedRoles = mutableMapOf<AmongUsPlayer, MutableSet<Role<*, *>>>()
-    private val restrictedTeams = mutableMapOf<AmongUsPlayer, Team?>()
+    private val forcedRoles: MutableMap<AbstractAmongUsPlayer, Role<*, *>> = mutableMapOf()
+    private val blockedRoles: MutableMap<AbstractAmongUsPlayer, MutableSet<Role<*, *>>> = mutableMapOf()
+    private val allowedRoles: MutableMap<AbstractAmongUsPlayer, MutableSet<Role<*, *>>> = mutableMapOf()
+    private val restrictedTeams: MutableMap<AbstractAmongUsPlayer, Team?> = mutableMapOf()
 
     fun assign() {
-        val players = game.players.toList()
+        @Suppress("UNCHECKED_CAST")
+        val players = game.players.toList() as List<AbstractAmongUsPlayer>
         if (players.isEmpty()) return
 
-        val rolePool = buildRolePool()
-        val unassigned = players.toMutableList()
+        val assigner = RoleAssigner(this, random, players.shuffled(random), forcedRoles, blockedRoles, allowedRoles, restrictedTeams)
 
-        phase1AssignForced(unassigned)
-        phase2AssignNeutralRestricted(unassigned, rolePool)
-        phase3AssignNeutralRandom(unassigned, rolePool)
-        phase4AssignTeams(unassigned, rolePool)
-
-        for (player in players) {
-            player.internal
-            if (player.assignedRole == null) assign(player, Team.CREWMATES.defaultRole)
-        }
-        forcedRoles.clear()
+        assigner.assign()
     }
 
     fun start() {
@@ -44,124 +33,149 @@ class RoleManager(private val game: Game) {
 
     fun tick(tickContext: TickContext) = game.players.forEach { it.internal.assignedRole?.tick(tickContext) }
 
-    private fun phase1AssignForced(unassigned: MutableList<AmongUsPlayer>) {
-        forcedRoles.forEach { (player, role) ->
-            assign(player, role)
-            unassigned.remove(player)
-        }
-    }
 
-    private fun phase2AssignNeutralRestricted(
-        unassigned: MutableList<AmongUsPlayer>,
-        rolePool: RolePool
+    private class RoleAssigner(
+        val manger: RoleManager,
+        val random: Random,
+        val players: List<AbstractAmongUsPlayer>,
+        val forcedRoles: Map<AbstractAmongUsPlayer, Role<*, *>>,
+        val blockedRoles: Map<AbstractAmongUsPlayer, Set<Role<*, *>>>,
+        val allowedRoles: Map<AbstractAmongUsPlayer, Set<Role<*, *>>>,
+        val restrictedTeams: Map<AbstractAmongUsPlayer, Team?>,
     ) {
-        val neutralRestricted = unassigned.associateWith { restrictedTeams[it] as? Team.NEUTRAL }
-        if (neutralRestricted.isEmpty()) return
-
-        for ((player, team) in neutralRestricted) {
-            if (team == null) continue
-            val role = rolePool.pickFor(player, team) ?: Team.CREWMATES.defaultRole
-            assign(player, role)
-            unassigned.remove(player)
-        }
-    }
-
-    private fun phase3AssignNeutralRandom(
-        unassigned: MutableList<AmongUsPlayer>,
-        rolePool: RolePool
-    ) {
-        val totalPlayers = game.players.size
-        val imposterTarget = resolvedImposterTarget()
-
-        val reservedSlots = imposterTarget + 1
-        val maxNeutralSlots = (totalPlayers / 4).coerceAtLeast(0)
-
-        var neutralsAssigned = 0
-
-        for (role in rolePool.neutralRoles()) {
-            if (neutralsAssigned >= maxNeutralSlots) break
-            if (unassigned.size <= reservedSlots) break
-            if (!rolePool.rolls(role)) continue
-
-            val candidate = unassigned.firstOrNull { isEligibleFor(it, role) } ?: continue
-            assign(candidate, role)
-            unassigned.remove(candidate)
-            neutralsAssigned++
-        }
-    }
-
-    private fun phase4AssignTeams(
-        unassigned: MutableList<AmongUsPlayer>,
-        rolePool: RolePool
-    ) {
-        if (unassigned.isEmpty()) return
-
-        val forcedImposterCount = forcedRoles.count { it.value.team == Team.IMPOSTERS }
-        val targetImposters = (resolvedImposterTarget() - forcedImposterCount)
-            .coerceIn(0, unassigned.size)
-
-        val (imposterPool, crewPool) = splitByTeam(unassigned, targetImposters)
-
-        imposterPool.forEach { assign(it, rolePool.pickFor(it, Team.IMPOSTERS) ?: Team.IMPOSTERS.defaultRole) }
-        crewPool.forEach { assign(it, rolePool.pickFor(it, Team.CREWMATES) ?: Team.CREWMATES.defaultRole) }
-    }
-
-    private fun splitByTeam(
-        players: List<AmongUsPlayer>,
-        targetImposters: Int
-    ): Pair<List<AmongUsPlayer>, List<AmongUsPlayer>> {
-        val shuffled = players.shuffled()
-        val preferredImposters = shuffled.filter { restrictedTeams[it] == Team.IMPOSTERS }
-        val rest = shuffled.filter { restrictedTeams[it] != Team.IMPOSTERS }
-
-        val imposters = (preferredImposters + rest).take(targetImposters)
-        val crewmates = players - imposters.toSet()
-        return imposters to crewmates
-    }
-
-    private fun resolvedImposterTarget(): Int {
-        val total = game.players.size
-        return game.settings[SettingsKey.ROLES.IMPOSTERS].coerceIn(0, total)
-    }
-
-    private fun assign(player: AmongUsPlayer, role: Role<*, *>) {
-        player.internal.assignedRole = role.assignTo(player)
-        game.actionLog.add(AssignActionElements.AssignRole(player.uuid, role.id))
-        if (player.isHuman) player.editStatistics {
-            assignedRole[role]?.increment()
-            assignedTeam[role.team]?.increment()
-        }
-    }
-
-    private fun isEligibleFor(player: AmongUsPlayer, role: Role<*, *>): Boolean {
-        val whitelist = allowedRoles[player]
-        if (!whitelist.isNullOrEmpty() && role !in whitelist) return false
-
-        val blocked = blockedRoles[player]
-        if (blocked != null && role in blocked) return false
-
-        val teamRestriction = restrictedTeams[player]
-        return !(teamRestriction != null && teamRestriction != role.team)
-    }
-
-    private fun buildRolePool(): RolePool {
-        val chances = SettingsKey.ROLES.ROLE_CHANCES.roles
-            .mapValues { (_, key) -> game.settings[key].coerceIn(0, 100) }
+        private val chances: Map<Role<*, *>, Int> = SettingsKey.ROLES.ROLE_CHANCES.roles
+            .mapValues { (_, key) -> manger.game.settings[key].coerceIn(0, 100) }
             .filterValues { it > 0 }
-        return RolePool(chances)
-    }
 
-    private inner class RolePool(private val chances: Map<Role<*, *>, Int>) {
+        private val equalChances = isEqualChances(chances)
 
-        fun neutralRoles(): List<Role<*, *>> =
+        private val unassigned = players.toMutableList()
+
+        private val assignedNeutralRoles: MutableSet<Role<*, *>> = mutableSetOf()
+
+        fun assign() {
+            if (unassigned.isEmpty()) throw IllegalStateException("No players to assign roles to.")
+
+            phase1AssignForced()
+            phase2AssignNeutralRestricted()
+            phase3AssignNeutralRandom()
+            phase4AssignTeams()
+            for (player in players) {
+                if (player.assignedRole == null) assignRole(player, Team.CREWMATES.defaultRole)
+            }
+            unassigned.clear()
+        }
+
+        private fun phase1AssignForced() {
+            forcedRoles.forEach { (player, role) ->
+                assignRole(player, role)
+                unassigned.remove(player)
+            }
+        }
+
+        private fun phase2AssignNeutralRestricted() {
+            val neutralRestricted = unassigned.associateWith { restrictedTeams[it] as? Team.NEUTRAL }
+            if (neutralRestricted.isEmpty()) return
+
+            for ((player, team) in neutralRestricted) {
+                if (team == null) continue
+                val role = pickFor(player, team) ?: continue
+                assignRole(player, role)
+                unassigned.remove(player)
+            }
+        }
+
+        private fun phase3AssignNeutralRandom() {
+            val totalPlayers = manger.game.players.size
+            val imposterTarget = resolvedImposterTarget()
+
+            val reservedSlots = imposterTarget + 1
+            val maxNeutralSlots = (if (totalPlayers == 4) (totalPlayers / 4).takeIf { random.nextDouble() > 0.7 }
+                ?: 0 else totalPlayers / 5).coerceAtLeast(0)
+
+            if (maxNeutralSlots == 0) return
+
+            var neutralsAssigned = players.count { restrictedTeams[it] == Team.NEUTRAL }
+
+            if (neutralsAssigned >= maxNeutralSlots) return
+
+            val neutralRoles = neutralRoles().filter { it !in assignedNeutralRoles }
+
+            for (role in neutralRoles) {
+                if (neutralsAssigned >= maxNeutralSlots) break
+                if (unassigned.size <= reservedSlots) break
+                if (!rolls(role)) continue
+
+                val candidate = unassigned.firstOrNull { isEligibleFor(it, role) } ?: continue
+                assignRole(candidate, role)
+                unassigned.remove(candidate)
+                neutralsAssigned++
+            }
+        }
+
+        private fun phase4AssignTeams() {
+            if (unassigned.isEmpty()) return
+
+            val forcedImposterCount = forcedRoles.count { it.value.team == Team.IMPOSTERS }
+            val targetImposters = (resolvedImposterTarget() - forcedImposterCount)
+                .coerceIn(0, unassigned.size)
+
+            val (imposterPool, crewPool) = splitByTeam(unassigned, targetImposters)
+
+            imposterPool.forEach { assignRole(it, pickFor(it, Team.IMPOSTERS) ?: Team.IMPOSTERS.defaultRole) }
+            crewPool.forEach { assignRole(it, pickFor(it, Team.CREWMATES) ?: Team.CREWMATES.defaultRole) }
+        }
+
+        private fun splitByTeam(
+            players: List<AbstractAmongUsPlayer>,
+            targetImposters: Int
+        ): Pair<List<AbstractAmongUsPlayer>, List<AbstractAmongUsPlayer>> {
+            val shuffled = players.shuffled(random)
+            val preferredImposters = shuffled.filter { restrictedTeams[it] == Team.IMPOSTERS }
+            val rest = shuffled.filter { restrictedTeams[it] != Team.IMPOSTERS }
+
+            val imposters = (preferredImposters + rest).take(targetImposters)
+            val crewmates = players - imposters.toSet()
+            return imposters to crewmates
+        }
+
+        private fun resolvedImposterTarget(): Int {
+            val total = manger.game.players.size
+            return manger.game.settings[SettingsKey.ROLES.IMPOSTERS].coerceIn(0, total)
+        }
+
+        private fun assignRole(player: AbstractAmongUsPlayer, role: Role<*, *>) {
+            if (player.assignedRole != null) {
+                logger.warn("Player ${player.name} already has a role assigned. Overwriting.")
+            }
+            player.assignedRole = role.assignTo(player)
+            manger.game.actionLog.add(AssignActionElements.AssignRole(player.uuid, role.id))
+            if (player.isHuman) player.editStatistics {
+                assignedRole[role]?.increment()
+                assignedTeam[role.team]?.increment()
+            }
+        }
+
+        private fun isEligibleFor(player: AbstractAmongUsPlayer, role: Role<*, *>): Boolean {
+            val whitelist = allowedRoles[player]
+            if (!whitelist.isNullOrEmpty() && role !in whitelist) return false
+
+            val blocked = blockedRoles[player]
+            if (blocked != null && role in blocked) return false
+
+            val teamRestriction = restrictedTeams[player]
+            return !(teamRestriction != null && teamRestriction != role.team)
+        }
+
+        private fun neutralRoles(): List<Role<*, *>> =
             chances.keys.filter { it.team is Team.NEUTRAL }.shuffled()
 
-        fun rolls(role: Role<*, *>): Boolean {
+        private fun rolls(role: Role<*, *>): Boolean {
             val chance = chances[role] ?: return false
-            return chance >= 100 || Random.nextInt(100) < chance
+            return chance >= 100 || random.nextInt(100) < chance
         }
 
-        fun pickFor(player: AmongUsPlayer, team: Team): Role<*, *>? {
+        fun pickFor(player: AbstractAmongUsPlayer, team: Team): Role<*, *>? {
             var candidates = chances.filterKeys { it.team == team }
             if (candidates.isEmpty()) return null
 
@@ -170,24 +184,27 @@ class RoleManager(private val game: Game) {
                 candidates.filterKeys { it in whitelist }.ifEmpty { candidates }
 
             val blocked = blockedRoles[player]
-            if (!blocked.isNullOrEmpty()) candidates = candidates.filterKeys { it !in blocked }.ifEmpty { candidates }
+            if (!blocked.isNullOrEmpty()) candidates =
+                candidates.filterKeys { it !in blocked }.ifEmpty { candidates }
 
-            if (candidates.isEmpty()) return null
+            if (candidates.isEmpty()) return null // should never be true
+
+            if (equalChances) return candidates.keys.random(random)
 
             val guaranteed = candidates.filterValues { it >= 100 }.keys.toList()
-            if (guaranteed.isNotEmpty()) return guaranteed.random()
+            if (guaranteed.isNotEmpty()) return guaranteed.random(random)
 
             val weighted = candidates.filterValues { it in 1..99 }.toList()
             if (weighted.isNotEmpty()) return pickWeighted(weighted)
 
-            return candidates.keys.randomOrNull()
+            return candidates.keys.randomOrNull(random)
         }
 
         private fun pickWeighted(roles: List<Pair<Role<*, *>, Int>>): Role<*, *> {
             val total = roles.sumOf { it.second }
             if (total <= 0) return roles.first().first
 
-            var remaining = Random.nextInt(total)
+            var remaining = random.nextInt(total)
             for ((role, weight) in roles) {
                 remaining -= weight
                 if (remaining < 0) return role
@@ -197,14 +214,14 @@ class RoleManager(private val game: Game) {
     }
 
     fun forceRole(player: AmongUsPlayer, role: Role<*, *>) {
-        forcedRoles[player] = role
+        forcedRoles[player.internal] = role
         restrictedTeams.remove(player)
     }
 
     fun clearForcedRole(player: AmongUsPlayer) = forcedRoles.remove(player)
 
     fun blockRole(player: AmongUsPlayer, role: Role<*, *>) {
-        blockedRoles.computeIfAbsent(player) { mutableSetOf() }.add(role)
+        blockedRoles.computeIfAbsent(player.internal) { mutableSetOf() }.add(role)
         allowedRoles[player]?.remove(role)
     }
 
@@ -213,12 +230,12 @@ class RoleManager(private val game: Game) {
     }
 
     fun allowRole(player: AmongUsPlayer, role: Role<*, *>) {
-        allowedRoles.computeIfAbsent(player) { mutableSetOf() }.add(role)
+        allowedRoles.computeIfAbsent(player.internal) { mutableSetOf() }.add(role)
         blockedRoles[player]?.remove(role)
     }
 
     fun restrictTeam(player: AmongUsPlayer, team: Team?) {
-        if (player !in forcedRoles) restrictedTeams[player] = team
+        if (player !in forcedRoles) restrictedTeams[player.internal] = team
     }
 
     fun clearRestrictions(player: AmongUsPlayer) {
@@ -233,5 +250,19 @@ class RoleManager(private val game: Game) {
         blockedRoles.clear()
         allowedRoles.clear()
         restrictedTeams.clear()
+    }
+
+    companion object {
+        private val logger = LoggerFactory.getLogger("RoleManager")
+
+        private fun isEqualChances(chances: Map<Role<*, *>, Int>): Boolean {
+            val iterator = chances.values.iterator()
+            if (!iterator.hasNext()) return true
+            val first = iterator.next()
+            for (element in iterator) {
+                if (element != first) return false
+            }
+            return true
+        }
     }
 }
