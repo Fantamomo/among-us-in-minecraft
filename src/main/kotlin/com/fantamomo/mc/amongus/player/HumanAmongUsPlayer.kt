@@ -170,6 +170,7 @@ class HumanAmongUsPlayer internal constructor(
         if (!game.morphManager.isMorphed(this)) {
             mannequinController.getEntity()?.equipment?.helmet = helmet
         }
+        game.lobbyItemManger.updateItems(this)
         game.updateAllWardrobeInventories()
     }
 
