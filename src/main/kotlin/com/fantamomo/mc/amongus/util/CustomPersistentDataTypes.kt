@@ -2,6 +2,8 @@ package com.fantamomo.mc.amongus.util
 
 import org.bukkit.persistence.PersistentDataAdapterContext
 import org.bukkit.persistence.PersistentDataType
+import kotlin.enums.EnumEntries
+import kotlin.enums.enumEntries
 import kotlin.reflect.KClass
 import kotlin.uuid.Uuid
 
@@ -29,4 +31,15 @@ object CustomPersistentDataTypes {
             context: PersistentDataAdapterContext
         ) = Uuid.fromByteArray(primitive)
     }
+
+    private class EnumPersistentDataType<E : Enum<E>>(enumClass: KClass<E>, val entries: EnumEntries<E>) : CustomPersistentDataType<Int, E>(Int::class, enumClass) {
+        override fun toPrimitive(complex: E, context: PersistentDataAdapterContext) = complex.ordinal
+
+        override fun fromPrimitive(primitive: Int, context: PersistentDataAdapterContext): E = entries[primitive]
+    }
+
+    @PublishedApi
+    internal fun <E : Enum<E>> enum(enumClass: KClass<E>, enumEntries: EnumEntries<E>): PersistentDataType<Int, E> = EnumPersistentDataType(enumClass, enumEntries)
+
+    inline fun <reified E : Enum<E>> enum(): PersistentDataType<Int, E> = enum(E::class, enumEntries())
 }
