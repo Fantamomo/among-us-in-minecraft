@@ -96,7 +96,7 @@ object TaskListener : Listener {
         PlayerManager.getPlayer(player) ?: return
         val cursorItem = event.cursor
         val newItems = event.newItems
-        val task = event.inventory.holder as GuiAssignedTask<*, *>
+        val task = event.inventory.holder as? GuiAssignedTask<*, *> ?: return
         if (cursorItem?.isMoveable() != true && !newItems.any { it.value.isMoveable() }) {
             event.isCancelled = true
         }
