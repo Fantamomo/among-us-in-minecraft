@@ -4,6 +4,11 @@ import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 
+/**
+ * A value class representing the context of ticks in a system.
+ *
+ * @property ticks The current tick count.
+ */
 @JvmInline
 value class TickContext(val ticks: Long) {
 

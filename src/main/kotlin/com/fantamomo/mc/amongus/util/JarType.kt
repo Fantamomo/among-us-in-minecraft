@@ -21,6 +21,10 @@ enum class JarType {
      * The plugin will disable itself.
      */
     THIN,
+
+    /**
+     * The type of the JAR is unknown.
+     */
     UNKNOWN;
 
     val shouldDownloadDependencies: Boolean

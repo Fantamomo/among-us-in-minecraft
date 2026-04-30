@@ -12,6 +12,12 @@ object CustomPersistentDataTypes {
         override fun getPrimitiveType() = primitiveType
         override fun getComplexType() = customType
     }
+
+    /**
+     * A custom persistent data type for UUIDs.
+     *
+     * It stores kotlin [Uuid]s as byte arrays.
+     */
     val UUID: PersistentDataType<ByteArray, Uuid> = object : CustomPersistentDataType<ByteArray, Uuid>(ByteArray::class, Uuid::class) {
         override fun toPrimitive(
             complex: Uuid,

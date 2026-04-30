@@ -63,6 +63,14 @@ import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.Uuid
 import kotlin.uuid.toKotlinUuid
 
+/**
+ * Represents the main game instance.
+ *
+ * This class is responsible for managing the complete game.
+ *
+ * @author Fantamomo
+ * @since 1.0-SNAPSHOT
+ */
 class Game(
     area: GameArea,
     val world: World,

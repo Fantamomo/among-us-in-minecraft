@@ -4,6 +4,13 @@ import kotlin.reflect.KClass
 import kotlin.time.Clock
 import kotlin.uuid.Uuid
 
+/**
+ * The action log is a list of actions that have been recorded by the plugin in a game.
+ *
+ * See [Action Log](https://docs.among-us-in-minecraft.fantamomo.com/misc/action-log/)
+ *
+ * @author Fantamomo
+ */
 class ActionLog(
     val id: Uuid,
     var metadata: Map<String, Any> = emptyMap()
