@@ -8,7 +8,7 @@ import com.fantamomo.mc.amongus.util.log.elements.AssignActionElements
 import org.slf4j.LoggerFactory
 import kotlin.random.Random
 
-class RoleManager(private val game: Game) {
+class RoleManager(private val game: Game, private val random: Random = Random.Default) {
 
     private val forcedRoles: MutableMap<AbstractAmongUsPlayer, Role<*, *>> = mutableMapOf()
     private val blockedRoles: MutableMap<AbstractAmongUsPlayer, MutableSet<Role<*, *>>> = mutableMapOf()
@@ -20,7 +20,7 @@ class RoleManager(private val game: Game) {
         val players = game.players.toList() as List<AbstractAmongUsPlayer>
         if (players.isEmpty()) return
 
-        val assigner = RoleAssigner(this, players.shuffled(), forcedRoles, blockedRoles, allowedRoles, restrictedTeams)
+        val assigner = RoleAssigner(this, random, players.shuffled(random), forcedRoles, blockedRoles, allowedRoles, restrictedTeams)
 
         assigner.assign()
     }
@@ -36,6 +36,7 @@ class RoleManager(private val game: Game) {
 
     private class RoleAssigner(
         val manger: RoleManager,
+        val random: Random,
         val players: List<AbstractAmongUsPlayer>,
         val forcedRoles: Map<AbstractAmongUsPlayer, Role<*, *>>,
         val blockedRoles: Map<AbstractAmongUsPlayer, Set<Role<*, *>>>,
@@ -89,7 +90,7 @@ class RoleManager(private val game: Game) {
             val imposterTarget = resolvedImposterTarget()
 
             val reservedSlots = imposterTarget + 1
-            val maxNeutralSlots = (if (totalPlayers == 4) (totalPlayers / 4).takeIf { Random.nextDouble() > 0.7 }
+            val maxNeutralSlots = (if (totalPlayers == 4) (totalPlayers / 4).takeIf { random.nextDouble() > 0.7 }
                 ?: 0 else totalPlayers / 5).coerceAtLeast(0)
 
             if (maxNeutralSlots == 0) return
@@ -129,7 +130,7 @@ class RoleManager(private val game: Game) {
             players: List<AbstractAmongUsPlayer>,
             targetImposters: Int
         ): Pair<List<AbstractAmongUsPlayer>, List<AbstractAmongUsPlayer>> {
-            val shuffled = players.shuffled()
+            val shuffled = players.shuffled(random)
             val preferredImposters = shuffled.filter { restrictedTeams[it] == Team.IMPOSTERS }
             val rest = shuffled.filter { restrictedTeams[it] != Team.IMPOSTERS }
 
@@ -171,7 +172,7 @@ class RoleManager(private val game: Game) {
 
         private fun rolls(role: Role<*, *>): Boolean {
             val chance = chances[role] ?: return false
-            return chance >= 100 || Random.nextInt(100) < chance
+            return chance >= 100 || random.nextInt(100) < chance
         }
 
         fun pickFor(player: AbstractAmongUsPlayer, team: Team): Role<*, *>? {
@@ -188,22 +189,22 @@ class RoleManager(private val game: Game) {
 
             if (candidates.isEmpty()) return null // should never be true
 
-            if (equalChances) return candidates.keys.random()
+            if (equalChances) return candidates.keys.random(random)
 
             val guaranteed = candidates.filterValues { it >= 100 }.keys.toList()
-            if (guaranteed.isNotEmpty()) return guaranteed.random()
+            if (guaranteed.isNotEmpty()) return guaranteed.random(random)
 
             val weighted = candidates.filterValues { it in 1..99 }.toList()
             if (weighted.isNotEmpty()) return pickWeighted(weighted)
 
-            return candidates.keys.randomOrNull()
+            return candidates.keys.randomOrNull(random)
         }
 
         private fun pickWeighted(roles: List<Pair<Role<*, *>, Int>>): Role<*, *> {
             val total = roles.sumOf { it.second }
             if (total <= 0) return roles.first().first
 
-            var remaining = Random.nextInt(total)
+            var remaining = random.nextInt(total)
             for ((role, weight) in roles) {
                 remaining -= weight
                 if (remaining < 0) return role
