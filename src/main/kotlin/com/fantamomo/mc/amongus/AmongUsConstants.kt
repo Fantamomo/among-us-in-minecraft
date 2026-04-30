@@ -9,11 +9,41 @@ import java.nio.file.Path
 import java.util.jar.Manifest
 import kotlin.io.path.exists
 
+/**
+ * Represents constants and metadata related to the AmongUs plugin.
+ *
+ * This interface provides access to various configuration values and runtime metadata information
+ * required by the application. The constants can either be retrieved from specific configuration
+ * files or dynamically calculated at runtime.
+ *
+ * The values are lazily loaded.
+ *
+ * @author Fantamomo
+ */
 @Suppress("PropertyName")
 sealed interface AmongUsConstants {
+    /**
+     * Represents whether the plugin is running in development mode.
+     *
+     * The development mode is determined by the presence of a debug file in the plugin's data directory.
+     */
     val IN_DEVELOPMENT: Boolean
+
+    /**
+     * Represents the Git hash of the latest commit, in the environment the plugin was built.
+     */
     val GIT_HASH: String?
+
+    /**
+     * Represents the type of the plugin's JAR file.
+     */
     val JAR_TYPE: JarType
+
+    /**
+     * Represents whether the plugin is running in an unattached environment.
+     *
+     * The plugin is running in an unattached environment if there have been changes to the code without a commit, so that with [GIT_HASH] it is not possible to determine the exact version of the plugin.
+     */
     val UNATTACHED: Boolean?
 
     companion object : AmongUsConstants {
