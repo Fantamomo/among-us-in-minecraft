@@ -2,6 +2,7 @@ package com.fantamomo.mc.amongus.ai
 
 import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.AmongUs
+import com.fantamomo.mc.amongus.data.AmongUsDebug
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.game.GamePhase
 import com.fantamomo.mc.amongus.manager.MeetingManager
@@ -292,7 +293,9 @@ class MeetingAiService(val game: Game) {
     }
 
     private suspend fun executeCommand(bot: BotAmongUsPlayer, command: String, meeting: MeetingManager.Meeting) {
-        logger.info("Meeting: Bot ${bot.name}: $command")
+        if (AmongUsDebug.DebugValues.LOG_AI_RESPONSE.isEnabled()) {
+            logger.info("Meeting: Bot ${bot.name}: $command")
+        }
         val commands = command.split(" ")
         val commandType = commands.firstOrNull() ?: return
         val argument = commands.drop(1)
