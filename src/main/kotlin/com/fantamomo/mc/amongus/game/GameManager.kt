@@ -1,6 +1,7 @@
 package com.fantamomo.mc.amongus.game
 
 import com.fantamomo.mc.amongus.AmongUs
+import com.fantamomo.mc.amongus.AmongUsConstants
 import com.fantamomo.mc.amongus.area.GameArea
 import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.util.TickContext
@@ -9,6 +10,7 @@ import org.bukkit.NamespacedKey
 import org.bukkit.World
 import org.bukkit.WorldCreator
 import org.slf4j.LoggerFactory
+import java.lang.reflect.Field
 import java.nio.file.LinkOption
 import java.nio.file.StandardCopyOption
 import kotlin.io.path.*
@@ -16,10 +18,14 @@ import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalPathApi::class)
 object GameManager {
+    private const val AMONG_US_WORLD_DIR_DETECTION_FILE = "AMONG_US_WORLD_DIR_DETECTION_FILE.txt"
+    private const val AMONG_US_WORLD_DIR_DETECTION_FILE_CONTENT =
+        "This file is used to detect and delete Among Us worlds where a game has been played.\n" +
+                "Please do not delete this file"
+
     private val gamesByCode = mutableMapOf<String, Game>()
     private val games = mutableListOf<Game>()
     private var taskId = -1
-    private val worldsPath = AmongUs.dataPath.resolve("worlds")
     private val logger = LoggerFactory.getLogger("AmongUsGameManager")
     private val markedForRemove: MutableSet<Game> = mutableSetOf()
     private val worlds: MutableSet<World> = mutableSetOf()
@@ -38,11 +44,34 @@ object GameManager {
         return true
     }
 
-    init {
+    fun removeAmongUsWorlds() {
         try {
-            worldsPath.deleteRecursively()
+            val serverRootFolder = AmongUs.server.worldContainer.toPath().toAbsolutePath()
+
+            serverRootFolder.listDirectoryEntries().forEach { worldFolder ->
+                logger.info("Debug: $worldFolder")
+                if (!worldFolder.isDirectory()) return@forEach
+
+                if (!worldFolder.resolve("level.dat").isRegularFile()) {
+                    return@forEach
+                }
+
+                val amongUsFolder = worldFolder
+                    .resolve("dimensions")
+                    .resolve("among-us")
+
+                if (!amongUsFolder.isDirectory()) return@forEach
+
+                val detectionFile = amongUsFolder
+                    .resolve(AMONG_US_WORLD_DIR_DETECTION_FILE)
+
+                if (detectionFile.isRegularFile()) {
+                    logger.info("Deleting Among Us worlds directory: $amongUsFolder")
+                    amongUsFolder.deleteRecursively()
+                }
+            }
         } catch (e: Exception) {
-            logger.error("Failed to delete worlds directory", e)
+            logger.error("Failed to delete Among Us worlds directories", e)
         }
     }
 
@@ -88,20 +117,41 @@ object GameManager {
         val worldContainer = AmongUs.server.worldContainer.toPath().toAbsolutePath()
         val path = worldContainer.resolve(worldFolder).toAbsolutePath()
         if (worldContainer == path) throw IllegalArgumentException("Area ${area.name} is in the same directory as the server")
+
         val uuid = Uuid.random()
-        val gameWorldPath = worldsPath.resolve(uuid.toString()).toAbsolutePath()
+        val worldKey = NamespacedKey("among-us", "world/$uuid")
+
+        // TODO: this might not work for all cases, so fix it
+        val dimensionFolder = worldContainer.resolve(Path(worldFolder).subpath(0, 2))
+
+        val amongUsNamespacedPath = dimensionFolder.resolve(worldKey.namespace)
+
+
+        val gameWorldPath = amongUsNamespacedPath.resolve(worldKey.key).toAbsolutePath()
+
+        logger.info("Copying area from $path to $gameWorldPath")
 
         AmongUs.server.scheduler.runTaskAsynchronously(AmongUs, Runnable {
             try {
                 gameWorldPath.safeCreateDirectories()
-                path.copyToRecursively(gameWorldPath, { source, _, ex ->
-                    if (source.name == "session.lock") OnErrorResult.SKIP_SUBTREE
-                    else throw ex
-                }, followLinks = false) { src, dst ->
+                path.copyToRecursively(
+                    target = gameWorldPath,
+                    onError = { source, _, ex ->
+                        if (source.name == "session.lock") OnErrorResult.SKIP_SUBTREE
+                        else throw ex
+                    },
+                    followLinks = false,
+                ) { src, dst ->
                     if (src.name == "session.lock" || src.name == "uid.dat")
                         return@copyToRecursively CopyActionResult.CONTINUE
                     val dstIsDirectory = dst.isDirectory(LinkOption.NOFOLLOW_LINKS)
                     val srcIsDirectory = src.isDirectory(LinkOption.NOFOLLOW_LINKS)
+                    val relative = src.relativeTo(path).invariantSeparatorsPathString
+
+                    if (relative == "data/paper") {
+                        return@copyToRecursively CopyActionResult.SKIP_SUBTREE
+                    }
+
                     if (!(srcIsDirectory && dstIsDirectory)) {
                         if (dstIsDirectory) dst.deleteRecursively()
                         src.copyTo(dst, LinkOption.NOFOLLOW_LINKS, StandardCopyOption.REPLACE_EXISTING)
@@ -114,12 +164,19 @@ object GameManager {
                 return@Runnable
             }
 
+            try {
+                val detectionFile = amongUsNamespacedPath.resolve(AMONG_US_WORLD_DIR_DETECTION_FILE)
+                if (detectionFile.notExists()) {
+                    detectionFile.bufferedWriter().use {
+                        it.write(AMONG_US_WORLD_DIR_DETECTION_FILE_CONTENT)
+                    }
+                }
+            } catch (ex: Exception) {
+                logger.error("Failed to create detection file", ex)
+            }
+
             AmongUs.server.scheduler.runTask(AmongUs, Runnable {
-                val worldContainer = worldContainer
-                val creator = WorldCreator(
-                    worldContainer.relativize(gameWorldPath).toString(),
-                    NamespacedKey("among-us", "world/$uuid")
-                )
+                val creator = WorldCreator(worldKey)
                 val newWorld = creator.createWorld()
                 if (newWorld == null) {
                     callback(null)
@@ -154,5 +211,29 @@ object GameManager {
 
     internal fun markForRemove(game: Game) {
         markedForRemove.add(game)
+    }
+
+    private class CustomWorldCreator(name: String, key: NamespacedKey) : WorldCreator(key) {
+
+        init {
+            val nameField = nameField ?: throw IllegalStateException("Failed to access WorldCreator.name field")
+            nameField.set(this, name)
+        }
+
+        companion object {
+            val nameField: Field?
+
+            init {
+                var nameField: Field? = null
+                try {
+                    nameField = WorldCreator::class.java.getDeclaredField("name")
+                    nameField.isAccessible = true
+                } catch (e: Exception) {
+                    logger.error("Failed to access WorldCreator.name field", e)
+                    nameField = null
+                }
+                this.nameField = nameField
+            }
+        }
     }
 }
