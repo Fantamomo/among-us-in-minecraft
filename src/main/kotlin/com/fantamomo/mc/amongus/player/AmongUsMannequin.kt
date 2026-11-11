@@ -6,6 +6,7 @@ import io.papermc.paper.datacomponent.item.ResolvableProfile
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.util.debug.DebugValueSource
 import net.minecraft.world.entity.EntityType
+import net.minecraft.world.entity.EntityTypes
 import net.minecraft.world.entity.decoration.Mannequin
 import org.bukkit.craftbukkit.CraftWorld
 import org.bukkit.event.entity.CreatureSpawnEvent
@@ -13,14 +14,14 @@ import org.bukkit.event.entity.CreatureSpawnEvent
 @Suppress("UnstableApiUsage")
 class AmongUsMannequin internal constructor(
     val controller: MannequinController
-) : Mannequin(EntityType.MANNEQUIN, (controller.owner.game.world as CraftWorld).handle) {
+) : Mannequin(EntityTypes.MANNEQUIN, (controller.owner.game.world as CraftWorld).handle) {
 
     init {
         val mannequin = bukkitEntity as org.bukkit.entity.Mannequin
         EntityManager.addEntityToRemoveOnEnd(controller.owner.game, mannequin)
 
         persist = true
-        isInvulnerable = true
+        isPermanentlyInvulnerable = true
         immovable = true
 
         val owner = controller.owner

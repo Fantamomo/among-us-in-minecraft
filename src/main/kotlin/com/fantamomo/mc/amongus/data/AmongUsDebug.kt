@@ -47,7 +47,7 @@ object AmongUsDebug {
         /**
          * Displays the path that the bots will take.
          *
-         * Requires the client to have the `PATHFINDING` debug propertie enabled.
+         * Requires the client to have the `PATHFINDING` debug property enabled.
          *
          * Will be ignored if [BOT_SHOW_ZOMBIE] is enabled.
          */
@@ -56,7 +56,7 @@ object AmongUsDebug {
         /**
          * Displays the goals that a bot has.
          *
-         * Requires the client to have the `GOAL_SELECTOR` debug propertie enabled.
+         * Requires the client to have the `GOAL_SELECTOR` debug property enabled.
          *
          * Will be ignored if [BOT_SHOW_ZOMBIE] is enabled.
          */

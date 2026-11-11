@@ -9,7 +9,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType
 import io.papermc.paper.command.brigadier.CommandSourceStack
 import it.unimi.dsi.fastutil.objects.ObjectArrayList
-import net.minecraft.advancements.criterion.MinMaxBounds
+import net.minecraft.advancements.predicates.MinMaxBounds
 import net.minecraft.commands.arguments.EntityArgument
 import net.minecraft.commands.arguments.selector.EntitySelector
 import net.minecraft.commands.arguments.selector.EntitySelectorParser
@@ -190,7 +190,7 @@ class AmongUsPlayerSelectorArgumentResolver(
 
     @Suppress("UNCHECKED_CAST")
     private inline fun <reified T> getField(id: String): T =
-        getField(id, T::class as KClass<T & Any>)
+        getField(id, T::class)
 
     @Suppress("UNCHECKED_CAST")
     private fun <T> getField(id: String, type: KClass<T & Any>): T {

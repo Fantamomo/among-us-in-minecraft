@@ -29,3 +29,11 @@ inline fun <T> T.applyUnless(condition: Boolean, block: () -> T): T {
     contract { callsInPlace(block, InvocationKind.AT_MOST_ONCE) }
     return if (!condition) block() else this
 }
+
+inline fun <T, R> T.catch(block: T.() -> R): Result<R> {
+    return try {
+        Result.success(block())
+    } catch (e: Throwable) {
+        Result.failure(e)
+    }
+}

@@ -18,10 +18,7 @@ import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.role.Role
 import com.fantamomo.mc.amongus.role.SupportBotsRole
 import com.fantamomo.mc.amongus.statistics.StatisticsManager
-import com.fantamomo.mc.amongus.util.BotsJoinMessages
-import com.fantamomo.mc.amongus.util.JarType
-import com.fantamomo.mc.amongus.util.LogFilter
-import com.fantamomo.mc.amongus.util.applyUnless
+import com.fantamomo.mc.amongus.util.*
 import com.fantamomo.mc.amongus.util.log.ActionLogManager
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -111,7 +108,7 @@ object AmongUs : JavaPlugin() {
 
         if (AmongUsConstants.IN_DEVELOPMENT) {
             val notSupportBots: MutableList<Role<*, *>> = mutableListOf()
-            for (role in Role.roles) runCatching {
+            for (role in Role.roles) catch {
                 val method = role::class.java.getMethod("assignTo", AmongUsPlayer::class.java)
                 val returnType = method.returnType
                 if (!SupportBotsRole::class.java.isAssignableFrom(returnType)) notSupportBots.add(role)
@@ -130,13 +127,16 @@ object AmongUs : JavaPlugin() {
 
     @Suppress("UnusedExpression")
     private fun initClasses() {
+        // Preload classes that may be used during the plugin shutdown
+        // This ensures that class loading does not trigger NoClassDefFoundError, if the JAR is changed
+        // (read more in onDisable)
         ActionLogManager
         AiService
         Role
         Modification
         PlayerDataManager
         BotsJoinMessages
-        runCatching { classLoader.loadClass("kotlin.io.FilesKt") }
+        catch { classLoader.loadClass("kotlin.io.FilesKt") }
     }
 
     private val classNotFoundExceptions: MutableList<NoClassDefFoundError> = mutableListOf()
@@ -147,7 +147,7 @@ object AmongUs : JavaPlugin() {
         // This prevents NoClassDefFoundError from being thrown outside the try-catch block
         // in saveRun when classes like EntityManager haven't been loaded yet.
         // Method references (e.g., EntityManager::dispose) would trigger class loading
-        // at the call site before entering the saveRun function.
+        // at the call site before entering the saveRun function. (even though the function is inline)
         saveRun { PlayerManager.stop() }
         saveRun { EntityManager.dispose() }
         saveRun { MeetingManager.dispose() }

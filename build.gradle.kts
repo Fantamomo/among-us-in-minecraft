@@ -1,10 +1,10 @@
 import io.papermc.paperweight.userdev.ReobfArtifactConfiguration
 
 plugins {
-    kotlin("jvm") version "2.3.20-Beta2"
-    kotlin("plugin.serialization") version "2.3.20-Beta2"
-    id("com.gradleup.shadow") version "8.3.0"
-    id("io.papermc.paperweight.userdev") version "2.0.0-beta.19"
+    kotlin("jvm") version "2.5.0-Beta2"
+    kotlin("plugin.serialization") version "2.5.0-Beta2"
+    id("com.gradleup.shadow") version "9.6.1"
+    id("io.papermc.paperweight.userdev") version "2.0.0-beta.24"
 }
 
 group = "com.fantamomo.mc"
@@ -33,24 +33,25 @@ fun RepositoryHandler.github(user: String = "Fantamomo", repo: String): MavenArt
 }
 
 dependencies {
-    paperweight.paperDevBundle("1.21.11-R0.1-SNAPSHOT")
+    paperweight.paperDevBundle("26.3.build.+")
 
     implementation(kotlin("stdlib"))
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.12.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
 
     implementation("com.fantamomo.mc:kotlin-adventure:1.4-SNAPSHOT")
     implementation("com.fantamomo.mc:brigadier-kt:1.5-SNAPSHOT")
     implementation("com.fantamomo.mc:brigadier-interception:1.1-SNAPSHOT")
 
-    implementation("org.mineskin:java-client:3.2.1-SNAPSHOT")
-    implementation("ai.koog:koog-agents:0.7.1")
+    implementation("org.mineskin:java-client:3.2.7")
+    implementation("ai.koog:koog-agents-jvm:1.3.0")
+    implementation("ai.koog:prompt-executor-openrouter-client:1.3.0")
 
 
     testImplementation(kotlin("test"))
 }
 
-val targetJavaVersion = 21
+val targetJavaVersion = 25
 kotlin {
     jvmToolchain(targetJavaVersion)
     compilerOptions {
@@ -109,7 +110,7 @@ tasks.jar {
     }
 }
 
-val liteJar by tasks.registering(com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar::class) {
+val liteJar = tasks.register<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("liteJar") {
     archiveClassifier.set("lite")
     mergeServiceFiles()
 
@@ -144,7 +145,7 @@ val liteJar by tasks.registering(com.github.jengelman.gradle.plugins.shadow.task
     }
 }
 
-val standaloneJar by tasks.registering(com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar::class) {
+val standaloneJar = tasks.register<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("standaloneJar") {
     archiveClassifier.set("standalone")
 
     from(sourceSets.main.get().output)

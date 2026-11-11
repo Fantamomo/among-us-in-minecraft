@@ -8,6 +8,7 @@ import net.minecraft.util.debug.DebugValueSource
 import net.minecraft.world.DifficultyInstance
 import net.minecraft.world.entity.EntitySpawnReason
 import net.minecraft.world.entity.EntityType
+import net.minecraft.world.entity.EntityTypes
 import net.minecraft.world.entity.SpawnGroupData
 import net.minecraft.world.entity.monster.zombie.Zombie
 import net.minecraft.world.level.Level
@@ -17,13 +18,13 @@ import org.bukkit.craftbukkit.entity.CraftZombie
 import org.bukkit.event.entity.CreatureSpawnEvent
 
 class AmongUsZombie internal constructor(val controller: BotController, level: ServerLevel) :
-    Zombie(EntityType.ZOMBIE, level) {
+    Zombie(EntityTypes.ZOMBIE, level) {
 
     init {
         val lobbySpawn = controller.player.game.area.lobbySpawn ?: throw IllegalStateException("Lobby spawn not found")
         EntityManager.addEntityToRemoveOnEnd(controller.player.game, bukkitEntity)
         isCustomNameVisible = false
-        isInvulnerable = true
+        isPermanentlyInvulnerable = true
         isSilent = true
         bukkitEntity.isVisibleByDefault = AmongUsDebug.isEnabled(AmongUsDebug.DebugValues.BOT_SHOW_ZOMBIE)
         (bukkitEntity as CraftZombie).removeWhenFarAway = false

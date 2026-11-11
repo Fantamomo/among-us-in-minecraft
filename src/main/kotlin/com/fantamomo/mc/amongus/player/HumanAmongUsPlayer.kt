@@ -82,7 +82,7 @@ class HumanAmongUsPlayer internal constructor(
                             RefPersistentDataType.refPersistentDataType(),
                             RefPersistentDataType.newRef(this)
                         )
-                        mannequin.equipment.helmet = color.toItemStack(armorTrim)
+                        mannequin.equipment.setHelmet(color.toItemStack(armorTrim))
                         EntityManager.addEntityToRemoveOnEnd(game, mannequin)
                     }
                 }
@@ -165,10 +165,10 @@ class HumanAmongUsPlayer internal constructor(
 
     override fun updateHelmet() {
         val helmet = color.toItemStack(armorTrim)
-        player?.inventory?.helmet = helmet
-        if (_wardrobeMannequin is Mannequin) wardrobeMannequin?.equipment?.helmet = helmet
+        player?.inventory?.setHelmet(helmet)
+        if (_wardrobeMannequin is Mannequin) wardrobeMannequin?.equipment?.setHelmet(helmet)
         if (!game.morphManager.isMorphed(this)) {
-            mannequinController.getEntity()?.equipment?.helmet = helmet
+            mannequinController.getEntity()?.equipment?.setHelmet(helmet)
         }
         game.lobbyItemManger.updateItems(this)
         game.updateAllWardrobeInventories()
