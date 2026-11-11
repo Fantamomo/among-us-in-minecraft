@@ -91,11 +91,11 @@ sealed class AbstractAmongUsPlayer(
     internal open fun updateHelmet() {
         val helmet = color.toItemStack(armorTrim)
         if (this is HumanAmongUsPlayer) {
-            player?.inventory?.helmet = helmet
-            if (_wardrobeMannequin is Mannequin) wardrobeMannequin?.equipment?.helmet = helmet
+            player?.inventory?.setHelmet(helmet)
+            if (_wardrobeMannequin is Mannequin) wardrobeMannequin?.equipment?.setHelmet(helmet)
         }
         if (!game.morphManager.isMorphed(this)) {
-            mannequinController.getEntity()?.equipment?.helmet = helmet
+            mannequinController.getEntity()?.equipment?.setHelmet(helmet)
         }
         game.updateAllWardrobeInventories()
     }
