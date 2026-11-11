@@ -15,10 +15,10 @@ private fun minAndMaxNullable(l1: Location?, l2: Location?): Pair<Location?, Loc
 }
 
 fun GameArea.toDTO(): GameAreaDTO {
-    val (minCorner, maxCorner) = minAndMaxNullable(minCorner, maxCorner)
-    val (cameraJoinPointMin, cameraJoinPointMax) = minAndMaxNullable(cameraJoinPointMin, cameraJoinPointMax)
-    val (lightPosMin, lightPosMax) = minAndMaxNullable(lightPosMin, lightPosMax)
-    val (meetingRoomMin, meetingRoomMax) = minAndMaxNullable(meetingRoomMin, meetingRoomMax)
+    val [minCorner, maxCorner] = minAndMaxNullable(minCorner, maxCorner)
+    val [cameraJoinPointMin, cameraJoinPointMax] = minAndMaxNullable(cameraJoinPointMin, cameraJoinPointMax)
+    val [lightPosMin, lightPosMax] = minAndMaxNullable(lightPosMin, lightPosMax)
+    val [meetingRoomMin, meetingRoomMax] = minAndMaxNullable(meetingRoomMin, meetingRoomMax)
     return GameAreaDTO(
         name = name,
         uuid = uuid.toString(),
