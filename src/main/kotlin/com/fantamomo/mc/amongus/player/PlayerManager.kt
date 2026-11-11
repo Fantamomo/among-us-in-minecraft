@@ -101,12 +101,6 @@ object PlayerManager {
         LastPlayerLocationManager.set(player.uniqueId, player.location)
         auPlayer.player = player
 
-        auPlayer.mannequinController.spawn()
-
-        AmongUs.server.scheduler.runTaskLater(AmongUs, { ->
-            auPlayer.mannequinController.showToAll()
-        }, 1L)
-
         players.add(auPlayer)
         game.players.add(auPlayer)
 
@@ -123,8 +117,11 @@ object PlayerManager {
         }
         player.teleportAsync(game.area.lobbySpawn ?: throw IllegalStateException("Lobby spawn not set"))
             .thenAccept {
+                auPlayer.mannequinController.spawn()
+                auPlayer.updateHelmet()
                 auPlayer.wardrobeMannequin?.let { player.showEntity(AmongUs, it) }
                 AmongUs.server.scheduler.runTaskLater(AmongUs, { ->
+                    auPlayer.mannequinController.showToAll()
                     auPlayer.mannequinController.showToSelf()
                     auPlayer.mannequinController.hideFromSelf()
                     game.scoreboardManager.addLobbyPlayer(auPlayer)
