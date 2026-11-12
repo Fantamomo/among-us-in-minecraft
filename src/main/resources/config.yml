@@ -100,7 +100,7 @@ ai:
     chat-completions-path:
     model-path:
     embeddings-path:
-  # You can specify more then one model here, separated by ";", e.g. "google/gemini-2.5-flash;google/gemini-2.5-pro"
+  # You can specify more than one model here, separated by ";", e.g. "google/gemini-2.5-flash;google/gemini-2.5-pro"
   # The first model is used as the default model.
   # If the model fails, the next model is used, and so on.
   # The only use case for this is if you use a provider like OpenRouter and some models are down.
