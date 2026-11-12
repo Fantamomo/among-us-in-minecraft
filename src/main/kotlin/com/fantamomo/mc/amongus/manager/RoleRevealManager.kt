@@ -122,7 +122,6 @@ class RoleRevealManager(val game: Game) {
             it.isInvulnerable = true
             it.isImmovable = true
             it.equipment.setHelmet(player.color.toItemStack(player.armorTrim))
-            @Suppress("UnstableApiUsage")
             it.profile = ResolvableProfile.resolvableProfile(player.profile)
             EntityManager.addEntityToRemoveOnEnd(game, it)
         }
@@ -235,10 +234,9 @@ class RoleRevealManager(val game: Game) {
     }
 
     private fun updateAbilityDescription(player: AmongUsPlayer) {
-        val entities = playerEntities[player] ?: return
-        val abilityDescription = entities.abilityDescriptionDisplay
-        if (entities.abilityEntries.isEmpty()) return
-        val abilityEntry = entities.abilityEntries[playerAbilityIndex[player] ?: 0]
+        (val abilityDescription = abilityDescriptionDisplay, val abilityEntries) = playerEntities[player] ?: return
+        if (abilityEntries.isEmpty()) return
+        val abilityEntry = abilityEntries[playerAbilityIndex[player] ?: 0]
 
         abilityDescription.text(abilityEntry.descriptionText)
     }
@@ -338,7 +336,7 @@ class RoleRevealManager(val game: Game) {
     }
 
     private fun finish() {
-        for ((_, entities) in playerEntities) entities.remove()
+        for ([_, entities] in playerEntities) entities.remove()
         playerEntities.clear()
         playerAbilityIndex.clear()
         viewEntity?.remove()

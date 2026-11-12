@@ -17,7 +17,7 @@ fun <T> getClosestLocationOnLine(
     var closestValue: T? = null
     var closestDistance = Double.MAX_VALUE
 
-    for ((loc, value) in locations) {
+    for ([loc, value] in locations) {
         if (loc.world != world) continue
 
         val toTarget = loc.toVector().subtract(origin)

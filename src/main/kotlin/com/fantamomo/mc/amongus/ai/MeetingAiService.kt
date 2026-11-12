@@ -129,7 +129,7 @@ class MeetingAiService(val game: Game) {
 
             var score = BASE_SCORE
 
-            messages.forEachIndexed { index, (author, text) ->
+            messages.forEachIndexed { index, [author, text] ->
                 val ageFactor = index.toDouble() / messages.size
                 val decay = exp(-3 * (1 - ageFactor))
 
@@ -273,7 +273,7 @@ class MeetingAiService(val game: Game) {
         "color" to bot.color.name.lowercase(),
         "role" to bot.role.definition.id,
         "team" to bot.role.definition.team.name.lowercase(),
-        "role_description" to PlainTextComponentSerializer.plainText().serialize(bot.role.definition.description),
+        //"role_description" to PlainTextComponentSerializer.plainText().serialize(bot.role.definition.description),
         "meeting_number" to meeting.number.toString(),
         "time_left" to (meeting.timeLeft()?.toSmartString(DurationUnit.SECONDS) ?: "Unknown"),
         "phase" to game.phase.name.lowercase(),

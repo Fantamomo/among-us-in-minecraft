@@ -51,11 +51,11 @@ object ActionLogUploader {
                     }
                 }
 
-                val status = response.status
+                (val value, val description) = response.status
                 val body = response.bodyAsText()
 
-                if (status.value !in 200..299) {
-                    logger.error("Action log upload failed with status code ${status.value} (${status.description}): $body")
+                if (value !in 200..299) {
+                    logger.error("Action log upload failed with status code $value ($description): $body")
                     return@withContext null
                 }
 

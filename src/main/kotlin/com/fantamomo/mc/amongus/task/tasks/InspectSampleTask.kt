@@ -252,7 +252,6 @@ object InspectSampleTask :
 
         private fun blueBottle(): ItemStack =
             itemStack(Material.POTION).hideTooltip().apply {
-                @Suppress("UnstableApiUsage")
                 setData(
                     DataComponentTypes.POTION_CONTENTS,
                     PotionContents.potionContents().customColor(Color.BLUE)
@@ -261,7 +260,6 @@ object InspectSampleTask :
 
         private fun waterBottle(): ItemStack =
             itemStack(Material.POTION).hideTooltip().markWith("wrong").apply {
-                @Suppress("UnstableApiUsage")
                 setData(
                     DataComponentTypes.POTION_CONTENTS,
                     PotionContents.potionContents().potion(PotionType.WATER)
@@ -269,7 +267,6 @@ object InspectSampleTask :
             }
 
         private fun targetBottle(): ItemStack = itemStack(Material.POTION).hideTooltip().markWith("target").apply {
-            @Suppress("UnstableApiUsage")
             setData(
                 DataComponentTypes.POTION_CONTENTS,
                 PotionContents.potionContents().customColor(color)

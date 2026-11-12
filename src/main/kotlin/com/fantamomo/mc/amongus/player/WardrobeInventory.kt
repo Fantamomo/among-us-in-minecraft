@@ -92,7 +92,7 @@ class WardrobeInventory private constructor(
         if (owner.player?.hasPermission(Permissions.SET_PLAYER_TRIM) != true) return
 
         val armorTrim = owner.armorTrim
-        val (materialItem, patternItem) = if (armorTrim != null) {
+        val [materialItem, patternItem] = if (armorTrim != null) {
             val materialItem = (MATERIAL_TO_ITEM_TYPE[armorTrim.material]?.createItemStack()
                 ?: throw IllegalStateException("Armor material not found for ${armorTrim.material}"))
             materialItem.setData(
@@ -176,7 +176,7 @@ class WardrobeInventory private constructor(
     private fun buildPattern() {
         val middleSlots = GuiAssignedTask.getMiddleItemSlots(type.size)
         var index = 0
-        PATTERN_TO_ITEM_TYPE.forEach { (pattern, patternType) ->
+        PATTERN_TO_ITEM_TYPE.forEach { [pattern, patternType] ->
             val item = createItemStack(FAKE_PATTERN_ITEM_TYPE, pattern, owner.armorTrim?.pattern)
             item.setData(
                 DataComponentTypes.ITEM_MODEL,
@@ -200,7 +200,7 @@ class WardrobeInventory private constructor(
     private fun buildMaterial() {
         val middleSlots = GuiAssignedTask.getMiddleItemSlots(type.size)
         var index = 0
-        MATERIAL_TO_ITEM_TYPE.forEach { (material, itemType) ->
+        MATERIAL_TO_ITEM_TYPE.forEach { [material, itemType] ->
             val item = createItemStack(itemType, material, owner.armorTrim?.material)
             item.setData(DataComponentTypes.ITEM_NAME, material.description())
             item.editPersistentDataContainer {

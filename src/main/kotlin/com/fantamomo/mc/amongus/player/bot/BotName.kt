@@ -23,11 +23,11 @@ data class BotName private constructor(val name: String, val textureBase64: Stri
         _all.add(this)
     }
 
-    @Suppress("UnstableApiUsage")
     val resolvableProfile = ResolvableProfile.resolvableProfile(profile)
 
     val gameProfile = craftPlayerProfileField.get(profile) as GameProfile
 
+    @Suppress("unused")
     companion object {
         private val craftPlayerProfileField = CraftPlayerProfile::class.java.getDeclaredField("profile").apply {
             isAccessible = true

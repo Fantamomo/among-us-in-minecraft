@@ -22,7 +22,7 @@ class DurationSettingsType(
 ) : SettingsType<Duration> {
     override val type = Duration::class
     override val argumentType = DurationArgumentType(min, max)
-    @Suppress("UnstableApiUsage")
+
     override fun itemRepresentation(value: Duration) = ItemStack(Material.CLOCK).apply {
         if (min == null && max == null) return@apply
         val lore = ItemLore.lore()

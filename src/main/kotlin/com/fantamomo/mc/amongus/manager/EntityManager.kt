@@ -2,9 +2,6 @@ package com.fantamomo.mc.amongus.manager
 
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.game.Game
-import com.fantamomo.mc.amongus.manager.EntityManager.addEntityToRemoveOnEnd
-import com.fantamomo.mc.amongus.manager.EntityManager.addEntityToRemoveOnStop
-import com.fantamomo.mc.amongus.manager.EntityManager.dispose
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Entity
 import org.bukkit.persistence.PersistentDataType

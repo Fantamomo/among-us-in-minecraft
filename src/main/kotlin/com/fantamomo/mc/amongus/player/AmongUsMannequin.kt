@@ -5,13 +5,11 @@ import com.fantamomo.mc.amongus.manager.EntityManager
 import io.papermc.paper.datacomponent.item.ResolvableProfile
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.util.debug.DebugValueSource
-import net.minecraft.world.entity.EntityType
 import net.minecraft.world.entity.EntityTypes
 import net.minecraft.world.entity.decoration.Mannequin
 import org.bukkit.craftbukkit.CraftWorld
 import org.bukkit.event.entity.CreatureSpawnEvent
 
-@Suppress("UnstableApiUsage")
 class AmongUsMannequin internal constructor(
     val controller: MannequinController
 ) : Mannequin(EntityTypes.MANNEQUIN, (controller.owner.game.world as CraftWorld).handle) {
@@ -27,6 +25,7 @@ class AmongUsMannequin internal constructor(
         val owner = controller.owner
         mannequin.profile = ResolvableProfile.resolvableProfile(owner.profile)
 
+        @Suppress("CanBeVal") // cant be val
         var realLocation = owner.realLocation
         if (realLocation.world !== owner.game.world) {
             realLocation = owner.game.world.spawnLocation.clone()

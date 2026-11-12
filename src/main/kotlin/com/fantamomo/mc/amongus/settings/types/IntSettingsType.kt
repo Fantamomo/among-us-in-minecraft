@@ -23,7 +23,6 @@ open class IntSettingsType(
 
     protected open fun itemStack(value: Int) = ItemStack(Material.COAL)
 
-    @Suppress("UnstableApiUsage")
     override fun itemRepresentation(value: Int) = itemStack(value).apply {
         if (min == null && max == null) return@apply
         val lore = ItemLore.lore()

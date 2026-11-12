@@ -1,7 +1,6 @@
 package com.fantamomo.mc.amongus.game
 
 import com.fantamomo.mc.amongus.AmongUs
-import com.fantamomo.mc.amongus.AmongUsConstants
 import com.fantamomo.mc.amongus.area.GameArea
 import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.util.TickContext
@@ -10,7 +9,6 @@ import org.bukkit.NamespacedKey
 import org.bukkit.World
 import org.bukkit.WorldCreator
 import org.slf4j.LoggerFactory
-import java.lang.reflect.Field
 import java.nio.file.LinkOption
 import java.nio.file.StandardCopyOption
 import kotlin.io.path.*
@@ -49,7 +47,6 @@ object GameManager {
             val serverRootFolder = AmongUs.server.worldContainer.toPath().toAbsolutePath()
 
             serverRootFolder.listDirectoryEntries().forEach { worldFolder ->
-                logger.info("Debug: $worldFolder")
                 if (!worldFolder.isDirectory()) return@forEach
 
                 if (!worldFolder.resolve("level.dat").isRegularFile()) {
@@ -211,29 +208,5 @@ object GameManager {
 
     internal fun markForRemove(game: Game) {
         markedForRemove.add(game)
-    }
-
-    private class CustomWorldCreator(name: String, key: NamespacedKey) : WorldCreator(key) {
-
-        init {
-            val nameField = nameField ?: throw IllegalStateException("Failed to access WorldCreator.name field")
-            nameField.set(this, name)
-        }
-
-        companion object {
-            val nameField: Field?
-
-            init {
-                var nameField: Field? = null
-                try {
-                    nameField = WorldCreator::class.java.getDeclaredField("name")
-                    nameField.isAccessible = true
-                } catch (e: Exception) {
-                    logger.error("Failed to access WorldCreator.name field", e)
-                    nameField = null
-                }
-                this.nameField = nameField
-            }
-        }
     }
 }

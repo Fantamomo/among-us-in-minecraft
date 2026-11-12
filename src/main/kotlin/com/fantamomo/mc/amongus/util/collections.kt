@@ -35,7 +35,7 @@ fun <E> Collection<E>.randomListDistinct(
 fun <E> Map<E, Double>.randomWithWeights(random: Random = Random): E {
     val totalWeight = values.sum()
     var randomWeight = random.nextDouble() * totalWeight
-    for ((key, weight) in this) {
+    for ([key, weight] in this) {
         randomWeight -= weight
         if (randomWeight <= 0) return key
     }

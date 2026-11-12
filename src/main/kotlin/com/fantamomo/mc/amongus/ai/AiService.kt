@@ -153,13 +153,13 @@ internal object AiService {
                 } else {
                     modelErrors.decrementAndFetch()
                 }
-                val result = start.end()
-                if (result.isHardViolation) {
+                (val latencyMs, val mean, val stdDev, val softThreshold, val hardThreshold, val isHardViolation, val hardViolationCount) = start.end()
+                if (isHardViolation) {
                     val now = System.currentTimeMillis()
-                    if (now - lastLatencyWarning > 100_000 && result.hardViolationCount > 5) {
-                        logger.warn("Hard latency violation detected: ${result.hardViolationCount} violations")
-                        logger.warn("The latency was violated by the AI taking ${result.latencyMs} ms, which exceeds the hard threshold of ${result.hardThreshold} ms.")
-                        logger.warn("Mean latency: ${result.mean} ms, StdDev: ${result.stdDev} ms, Soft threshold: ${result.softThreshold} ms.")
+                    if (now - lastLatencyWarning > 100_000 && hardViolationCount > 5) {
+                        logger.warn("Hard latency violation detected: $hardViolationCount violations")
+                        logger.warn("The latency was violated by the AI taking $latencyMs ms, which exceeds the hard threshold of $hardThreshold ms.")
+                        logger.warn("Mean latency: $mean ms, StdDev: $stdDev ms, Soft threshold: $softThreshold ms.")
                         logger.warn("Consider switching to a different AI provider or model.")
                         logger.warn("The AI response time should be as short as possible to ensure a smooth gameplay experience.")
                         logger.warn("You can disable this warning by setting the 'ai.latency-warning' config option to false.")

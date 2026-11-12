@@ -39,10 +39,7 @@ import com.fantamomo.mc.amongus.util.log.elements.GameActionElements
 import com.fantamomo.mc.amongus.util.log.elements.PlayerActionElements
 import com.fantamomo.mc.amongus.util.sendComponent
 import com.fantamomo.mc.amongus.util.toSmartString
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.JoinConfiguration
 import net.kyori.adventure.text.format.NamedTextColor
@@ -399,8 +396,8 @@ class Game(
             val topInventory = p.openInventory.topInventory
             val holder = topInventory.holder as? WardrobeInventory ?: continue
             holder.update()
-            for (entry in cooldowns) {
-                p.setCooldown(entry.key.cooldownGroup, entry.value)
+            for ((key, value) in cooldowns) {
+                p.setCooldown(key.cooldownGroup, value)
             }
         }
     }
@@ -668,13 +665,14 @@ class Game(
         if (AmongUsConfig.AI.generateGameSummary && AiService.isEnabled()) {
             AmongUs.scope.launch {
                 try {
-                    val (short, long) = summarizer.generate()
+                    val [short, long] = summarizer.generate()
                     actionLog.customData["ai_long_summary"] = long
                     actionLog.customData["ai_short_summary"] = short
                     logger.info("Short summary: $short")
                     logger.info("Long summary: $long")
                     storeActionLog(bukkitPlayerList, hostPlayer)
                 } catch (e: Exception) {
+                    if (e is CancellationException) ensureActive()
                     logger.error("Failed to generate AI summary", e)
                     storeActionLog(bukkitPlayerList, hostPlayer)
                 }
@@ -691,7 +689,7 @@ class Game(
             AmongUs.scope.launch {
                 val data = ActionLogManager.saveUploadAndRemove(actionLog)
                 if (data != null) {
-                    val (uploadPath, ttl) = data
+                    val [uploadPath, ttl] = data
                     if (uploadPath.host == "localhost") {
                         val uri = uploadPath.toURI()
                         for (target in targets) {
@@ -837,7 +835,7 @@ class Game(
         val MAX_DISCONNECT_TIME = 30.seconds
         const val DEFAULT_MAX_PLAYERS = 16
         const val NEEDED_PLAYERS_FOR_START = 4
-        val CODE_CHARS = ('A'..'Z') + ('0'..'9')
+        val CODE_CHARS = ('A'..'Z') + ('0'..'9').toList()
         const val CODE_LENGTH = 4
 
         fun validCode(code: String) = code.length == CODE_LENGTH && code.all { it in CODE_CHARS }

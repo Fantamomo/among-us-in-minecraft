@@ -25,7 +25,6 @@ import kotlin.uuid.toKotlinUuid
 object PlayerListener : Listener {
 
     @EventHandler
-    @Suppress("UnstableApiUsage")
     fun onPlayerSpawnEvent(event: AsyncPlayerSpawnLocationEvent) {
         val id = event.connection.profile.id?.toKotlinUuid() ?: return
         val lastPlayerLocation = LastPlayerLocationManager.get(id) ?: return

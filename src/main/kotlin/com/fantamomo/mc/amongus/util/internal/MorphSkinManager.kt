@@ -227,14 +227,14 @@ object MorphSkinManager {
                 else -> {
                     val t = i.toFloat() / (variants + 1)
                     val hash = buildHash(baseId, targetId, t)
-                    val data = getTexture(hash) ?: return null
-                    val skin = valueToSkin.getOrPut(data.value) {
+                    (val value, val signature) = getTexture(hash) ?: return null
+                    val skin = valueToSkin.getOrPut(value) {
                         Skin.GeneratedSkin(
                             hash = hash,
                             t = t,
                             pngFile = skinDir.resolve("$hash.png").toFile(),
-                            value = data.value,
-                            signature = data.signature
+                            value = value,
+                            signature = signature
                         )
                     }
                     frames += skin
@@ -348,8 +348,8 @@ object MorphSkinManager {
                 if (duplicate != null) {
                     logger.debug("Blend == previous frame at t=${"%.4f".format(t)}, reusing upload")
                     val dedupFuture = duplicate.dataFuture
-                        .thenApply { originalData ->
-                            val redirectData = SkinData(hash, originalData.value, originalData.signature)
+                        .thenApply { (val value, val signature) ->
+                            val redirectData = SkinData(hash, value, signature)
                             try {
                                 json.encodeToStream(redirectData, dataDir.resolve("$hash.json").toFile().outputStream())
                                 textureCache[hash] = WeakReference(redirectData)
@@ -358,10 +358,10 @@ object MorphSkinManager {
                             }
                             redirectData
                         }
-                        .thenApply<Skin> { data ->
+                        .thenApply<Skin> { (val value, val signature) ->
                             Skin.GeneratedSkin(
                                 hash = hash, t = t, pngFile = pngFile,
-                                value = data.value, signature = data.signature
+                                value = value, signature = signature
                             )
                         }
                         .exceptionally { throwable ->
@@ -379,10 +379,10 @@ object MorphSkinManager {
                 pendingFrames += PendingFrame(blendedPixels, uploadFuture)
 
                 futures += uploadFuture
-                    .thenApply<Skin> { skinData ->
+                    .thenApply<Skin> { (val value, val signature) ->
                         Skin.GeneratedSkin(
                             hash = hash, t = t, pngFile = pngFile,
-                            value = skinData.value, signature = skinData.signature
+                            value = value, signature = signature
                         )
                     }
                     .exceptionally { throwable ->

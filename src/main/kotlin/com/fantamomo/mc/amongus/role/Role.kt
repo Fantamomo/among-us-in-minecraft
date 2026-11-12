@@ -59,6 +59,10 @@ interface Role<R : Role<R, A>, A : AssignedRole<R, A>> {
             ExecutionerRole
         )
 
-        val roles: Set<Role<*, *>> = crewmates + imposters + neutrals
+        val roles: Set<Role<*, *>> = buildSet {
+            addAll(crewmates)
+            addAll(imposters)
+            addAll(neutrals)
+        }
     }
 }

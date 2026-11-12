@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "com.fantamomo.mc"
-version = "2.3-SNAPSHOT"
+version = "2.3.1-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -90,7 +90,7 @@ abstract class GitUnattachedSource : ValueSource<Boolean, ValueSourceParameters.
             .readLines()
             .filterNot {
                 it.startsWith("?? ") || // skip untracked files
-                        it == " M gradlew" || // ignore chmod changes on gradlew caused by github actions
+                        it == " M gradlew" || // ignore chmod changes on gradlew caused by GitHub Actions
                         it.isBlank() // ignore empty lines
             }
         return output.isNotEmpty()
@@ -111,6 +111,7 @@ tasks.jar {
 }
 
 val liteJar = tasks.register<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("liteJar") {
+    description = "Create the lite jar, with only the bare minimum dependencies"
     archiveClassifier.set("lite")
     mergeServiceFiles()
 
@@ -146,6 +147,7 @@ val liteJar = tasks.register<com.github.jengelman.gradle.plugins.shadow.tasks.Sh
 }
 
 val standaloneJar = tasks.register<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("standaloneJar") {
+    description = "Create the standalone jar, with all dependencies"
     archiveClassifier.set("standalone")
 
     from(sourceSets.main.get().output)

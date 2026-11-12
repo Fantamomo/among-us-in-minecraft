@@ -31,7 +31,7 @@ object VirusSkinBlender : SkinBlender {
                 val index = y * width + x
                 var alpha = t + pseudoNoise(x.toFloat(), y.toFloat()) * NOISE_STRENGTH
 
-                for ((i, path) in rankenPaths.withIndex()) {
+                for ([i, path] in rankenPaths.withIndex()) {
                     val distance = distanceToPath(x.toFloat(), y.toFloat(), path)
                     if (distance < RANKEN_WIDTH) {
                         val v = y.toFloat() / height
@@ -76,8 +76,8 @@ object VirusSkinBlender : SkinBlender {
     private fun distanceToPath(x: Float, y: Float, path: List<Pair<Float, Float>>): Float {
         var minDist = Float.MAX_VALUE
         for (i in 0 until path.size - 1) {
-            val (x1, y1) = path[i]
-            val (x2, y2) = path[i + 1]
+            val [x1, y1] = path[i]
+            val [x2, y2] = path[i + 1]
             minDist = minOf(minDist, pointLineDistance(x, y, x1, y1, x2, y2))
         }
         return minDist

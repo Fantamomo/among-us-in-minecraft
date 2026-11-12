@@ -44,7 +44,7 @@ class DSLAbilityItem(
     override val displayItem: ItemType = states[AbilityItemState.ACTIVE]?.render(ctx)?.type?.asItemType() ?: ItemType.AIR
 
     override fun getItemStack(): ItemStack {
-        val (state, _) = computeState()
+        val [state, _] = computeState()
 
         if (state != lastState) {
             lastState?.let { states[it]?.onExit?.invoke(ctx) }
@@ -62,7 +62,7 @@ class DSLAbilityItem(
             lastClick = now
         }
 
-        val (state, _) = computeState()
+        val [state, _] = computeState()
 
         ctx.restartCooldown = true
 
@@ -82,7 +82,7 @@ class DSLAbilityItem(
             lastClick = now
         }
 
-        val (state, _) = computeState()
+        val [state, _] = computeState()
 
         states[state]!!.onLeftClick(ctx)
 

@@ -113,7 +113,7 @@ class LobbyItemManger(val game: Game) {
             if (itemType != null) Triple(index, stack, itemType) else null
         }
 
-        for ((index, stack, itemType) in indexes) {
+        for ([index, _, itemType] in indexes) {
             if (!itemType.isAccessible(player)) continue
             val item = itemType.getItemType(player).createItemStack { config ->
                 val displayName = itemType.getName(player)

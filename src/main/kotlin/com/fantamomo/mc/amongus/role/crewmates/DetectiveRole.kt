@@ -56,7 +56,7 @@ object DetectiveRole : Role<DetectiveRole, DetectiveRole.AssignedDetectiveRole> 
             val viewer = player.player ?: return
             val viewerLoc = viewer.location
 
-            for ((other, trail) in trails) {
+            for ([other, trail] in trails) {
 
                 val entityLoc = other.mannequinController
                     .getEntity()
@@ -76,12 +76,12 @@ object DetectiveRole : Role<DetectiveRole, DetectiveRole.AssignedDetectiveRole> 
                     trail.removeFirst()
                 }
 
-                for (point in trail) {
-                    if (point.location.distanceSquared(viewerLoc) > MAX_DISTANCE) continue
+                for ((val location, val color) in trail) {
+                    if (location.distanceSquared(viewerLoc) > MAX_DISTANCE) continue
 
                     particleBuilder
-                        .location(point.location)
-                        .color(point.color.color)
+                        .location(location)
+                        .color(color.color)
                         .receivers(viewer)
                         .spawn()
                 }

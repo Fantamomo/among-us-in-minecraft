@@ -416,7 +416,7 @@ class MeetingManager(private val game: Game) {
 
             game.actionLog.add(MeetingActionElement.MeetingResult(ejectedPlayer?.uuid))
 
-            votes.entries.forEach { (voter, vote) ->
+            votes.entries.forEach { [voter, vote] ->
                 val player = voter.player
                 val playerStatistics = player.humanOrNull?.statistics
                 playerStatistics?.voted?.increment()
@@ -572,7 +572,7 @@ class MeetingManager(private val game: Game) {
             val playerVotes: MutableMap<AmongUsPlayer, MutableList<Voter>> = mutableMapOf()
             val skipVoters: MutableList<Voter> = mutableListOf()
 
-            votes.entries.shuffled().forEach { (voter, vote) ->
+            votes.entries.shuffled().forEach { [voter, vote] ->
                 when (vote) {
                     Vote.Skip -> skipVoters.add(voter)
                     is Vote.For -> playerVotes
@@ -605,7 +605,7 @@ class MeetingManager(private val game: Game) {
                 repeat(3) { newLine() }
                 translatable("meeting.votes.header")
 
-                for ((target, voters) in sortedEntries) {
+                for ([target, voters] in sortedEntries) {
                     newLine()
 
                     objectComponent { playerHead { id(target.uuid) } }

@@ -285,7 +285,7 @@ private fun KtArgumentCommandBuilder<CommandSourceStack, String>.areaSetLocation
     argument("location_name", StringArgumentType.word()) {
         suggests {
             val remaining = builder.remaining
-            for ((name, _) in locationProperties) {
+            for ([name, _] in locationProperties) {
                 if (name.startsWith(remaining, ignoreCase = true)) {
                     suggest(name)
                 }

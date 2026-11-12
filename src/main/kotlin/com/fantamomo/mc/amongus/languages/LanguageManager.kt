@@ -180,7 +180,7 @@ object LanguageManager {
     private fun checkKeyConsistency() {
         logger.info("Checking key consistency across all language files...")
 
-        val keysByLocale: Map<Locale, Set<String>> = loadedLanguages.mapValues { (_, language) ->
+        val keysByLocale: Map<Locale, Set<String>> = loadedLanguages.mapValues { [_, language] ->
             language.keys()
         }
 
@@ -191,7 +191,7 @@ object LanguageManager {
 
         var inconsistenciesFound = false
 
-        keysByLocale.forEach { (locale, keys) ->
+        keysByLocale.forEach { [locale, keys] ->
             val missingKeys = allKeys - keys
             if (missingKeys.isNotEmpty()) {
                 inconsistenciesFound = true

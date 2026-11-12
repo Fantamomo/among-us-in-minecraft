@@ -29,7 +29,6 @@ import org.slf4j.LoggerFactory
 import java.util.function.Consumer
 import java.util.function.Predicate
 
-@Suppress("UnstableApiUsage")
 object AmongUsCommands {
 
     private val logger = LoggerFactory.getLogger("AmongUs-MsgInterceptor")
@@ -71,7 +70,6 @@ object AmongUsCommands {
      *
      * For more info: [brigadier-interception](https://github.com/Fantamomo/brigadier-interception)
      */
-    @Suppress("UnstableApiUsage")
     private fun interceptMsgCommand(registrar: Commands): Boolean {
         logger.debug("Attempting to intercept /msg command")
 

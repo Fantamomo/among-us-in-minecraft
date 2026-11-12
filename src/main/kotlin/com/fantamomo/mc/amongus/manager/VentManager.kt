@@ -107,12 +107,12 @@ class VentManager(val game: Game) {
             player.teleport(location)
             orientationChange(this.player, location)
             val ventsAsWaypoints = game.settings[SettingsKey.VENT.VENT_VISIBLY_AS_WAYPOINT]
-            for (entry in displays) {
-                if (vent == entry.key) continue
-                player.humanOrNull?.player?.showEntity(AmongUs, entry.value)
+            for ((key, value) in displays) {
+                if (vent == key) continue
+                player.humanOrNull?.player?.showEntity(AmongUs, value)
                 if (ventsAsWaypoints) {
                     if (this.player.isHuman) {
-                        game.waypointManager.assignWaypoint(this.player, entry.key.waypoint)
+                        game.waypointManager.assignWaypoint(this.player, key.waypoint)
                     }
                 }
             }
@@ -133,8 +133,7 @@ class VentManager(val game: Game) {
         fun setActive(vent: Vent?) {
             if (vent == lastActive) return
             lastActive = vent
-            for (entry in displays) {
-                val (v, display) = entry
+            for ([v, display] in displays) {
                 if (v == this.vent) continue
                 val current = display.glowColorOverride
                 val new = if (v == vent) Color.YELLOW else Color.RED
@@ -176,7 +175,7 @@ class VentManager(val game: Game) {
                 )
             )
 
-            displays.forEach { (_, display) ->
+            displays.forEach { [_, display] ->
                 display.remove()
             }
             vent.group.vents.forEach { vent ->
@@ -406,7 +405,7 @@ class VentManager(val game: Game) {
             actionBar?.remove()
             for (player in game.players) {
                 val p = player.humanOrNull?.player ?: continue
-                for ((loc, id) in targets) {
+                for ([loc, id] in targets) {
                     p.sendBlockDamage(loc, 0.0f, id)
                 }
             }
@@ -422,7 +421,7 @@ class VentManager(val game: Game) {
             }
             for (player in game.players) {
                 val p = player.humanOrNull?.player ?: continue
-                for ((loc, id) in targets) {
+                for ([loc, id] in targets) {
                     p.sendBlockDamage(loc, state, id)
                 }
             }

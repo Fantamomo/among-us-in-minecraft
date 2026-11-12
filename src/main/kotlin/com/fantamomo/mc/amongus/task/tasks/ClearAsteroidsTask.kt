@@ -83,9 +83,9 @@ object ClearAsteroidsTask : Task<ClearAsteroidsTask, ClearAsteroidsTask.Assigned
                         asteroids[target] = ticks + SHOW_FRAME
                     }
                 }
-                for (entry in asteroids) {
-                    if (entry.value.absoluteValue < ticks) {
-                        inv.setItem(entry.key, backgroundItem)
+                for ((key, value) in asteroids) {
+                    if (value.absoluteValue < ticks) {
+                        inv.setItem(key, backgroundItem)
                     }
                 }
                 asteroids.entries.removeIf { entry -> entry.value.absoluteValue < ticks }

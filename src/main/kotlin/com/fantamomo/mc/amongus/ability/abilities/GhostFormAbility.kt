@@ -44,7 +44,6 @@ object GhostFormAbility : Ability<GhostFormAbility, GhostFormAbility.AssignedGho
 
                 state(AbilityItemState.ACTIVE) {
 
-                    @Suppress("UnstableApiUsage")
                     renderOverride {
                         val ghostPlayer = player.game.ghostFormManager.getGhostPlayer(player)
                         val item = ItemStack(Material.WIND_CHARGE)

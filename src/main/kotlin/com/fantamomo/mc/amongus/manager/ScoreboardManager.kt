@@ -354,7 +354,7 @@ class ScoreboardManager(private val game: Game) {
                         return@forEachIndexed
                     }
 
-                    val (defaultStyle, format) = task.state()
+                    val [defaultStyle, format] = task.state()
                     val style = if (task.completed) COMPLETED_TASK_STYLE else defaultStyle
                     val line = task.task.scoreboardLine(style)
 
@@ -590,7 +590,6 @@ class ScoreboardManager(private val game: Game) {
                 cursorProgress += step
                 if (cursorProgress >= totalChanged) {
                     val mutable = chars.toMutableList()
-                    @Suppress("EmptyRange") // no clue why IntelliJ says that
                     for (i in cursorStart until cursorEnd) mutable[i] = targetChars[i]
                     chars = mutable.toList()
                     cursorMode = false

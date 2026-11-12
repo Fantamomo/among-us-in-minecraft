@@ -467,18 +467,16 @@ class MannequinController(
         copyAppearanceFrom(target)
     }
 
-    @Suppress("UnstableApiUsage")
     fun copyAppearanceFrom(player: AmongUsPlayer) {
         mannequin?.profile =
             ResolvableProfile.resolvableProfile(player.profile)
         val helmet = player.color.toItemStack(player.armorTrim)
         mannequin?.equipment?.setHelmet(helmet)
-        for ((color, display) in colorDisplays) {
+        for ([color, display] in colorDisplays) {
             display.text(Component.text(player.name, color))
         }
     }
 
-    @Suppress("UnstableApiUsage")
     fun setSkinTexture(textureBase64: String, signature: String? = null) {
         val mannequin = mannequin ?: return
 

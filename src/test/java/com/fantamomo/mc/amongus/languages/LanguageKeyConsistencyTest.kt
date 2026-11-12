@@ -40,7 +40,7 @@ class LanguageKeyConsistencyTest {
         val allKeys: Set<String> = loadedLocales.values.flatten().toSet()
         val missingReport = StringBuilder()
 
-        loadedLocales.forEach { (locale, keys) ->
+        loadedLocales.forEach { [locale, keys] ->
             val missingKeys = allKeys - keys
             if (missingKeys.isNotEmpty()) {
                 val message = "Language '${locale.toLanguageTag()}' is missing " +

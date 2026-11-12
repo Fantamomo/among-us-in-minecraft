@@ -46,14 +46,14 @@ fun GameArea.toDTO(): GameAreaDTO {
         outgoingCommunicationBeam = outgoingCommunicationBeam?.let(::fromBukkit),
 
         cams = cams.mapValues { fromBukkit(it.value) },
-        vents = vents.map {
+        vents = vents.map { (val id, val vents1 = vents) ->
             VentGroupDTO(
-                id = it.id,
-                vents = it.vents.map(::fromBukkit)
+                id = id,
+                vents = vents1.map(::fromBukkit)
             )
         },
         lightLevers = lightLevers.mapTo(mutableSetOf()) { fromBukkit(it.toBlockLocation()) },
-        tasks = tasks.mapValuesTo(mutableMapOf()) { (_, locations) -> locations.mapTo(mutableSetOf()) { fromBukkit(it) } }
+        tasks = tasks.mapValuesTo(mutableMapOf()) { [_, locations] -> locations.mapTo(mutableSetOf()) { fromBukkit(it) } }
     )
 }
 
@@ -84,10 +84,10 @@ fun GameAreaDTO.toGameArea(): GameArea {
 
     area.cams.putAll(cams.mapValues { it.value.toBukkit() })
     area.vents.addAll(
-        vents.map {
+        vents.map { (val id, val vents1 = vents) ->
             VentGroup(
-                id = it.id,
-                vents = it.vents.map { loc -> loc.toBukkit() }.toSet()
+                id = id,
+                vents = vents1.map { loc -> loc.toBukkit() }.toSet()
             )
         }
     )
