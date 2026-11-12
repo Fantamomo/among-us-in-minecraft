@@ -44,7 +44,7 @@ class RoleManager(private val game: Game, private val random: Random = Random.De
         val restrictedTeams: Map<AbstractAmongUsPlayer, Team?>,
     ) {
         private val chances: Map<Role<*, *>, Int> = SettingsKey.ROLES.ROLE_CHANCES.roles
-            .mapValues { (_, key) -> manger.game.settings[key].coerceIn(0, 100) }
+            .mapValues { [_, key] -> manger.game.settings[key].coerceIn(0, 100) }
             .filterValues { it > 0 }
 
         private val equalChances = isEqualChances(chances)
@@ -67,7 +67,7 @@ class RoleManager(private val game: Game, private val random: Random = Random.De
         }
 
         private fun phase1AssignForced() {
-            forcedRoles.forEach { (player, role) ->
+            forcedRoles.forEach { [player, role] ->
                 assignRole(player, role)
                 unassigned.remove(player)
             }
@@ -77,7 +77,7 @@ class RoleManager(private val game: Game, private val random: Random = Random.De
             val neutralRestricted = unassigned.associateWith { restrictedTeams[it] as? Team.NEUTRAL }
             if (neutralRestricted.isEmpty()) return
 
-            for ((player, team) in neutralRestricted) {
+            for ([player, team] in neutralRestricted) {
                 if (team == null) continue
                 val role = pickFor(player, team) ?: continue
                 assignRole(player, role)
@@ -120,7 +120,7 @@ class RoleManager(private val game: Game, private val random: Random = Random.De
             val targetImposters = (resolvedImposterTarget() - forcedImposterCount)
                 .coerceIn(0, unassigned.size)
 
-            val (imposterPool, crewPool) = splitByTeam(unassigned, targetImposters)
+            val [imposterPool, crewPool] = splitByTeam(unassigned, targetImposters)
 
             imposterPool.forEach { assignRole(it, pickFor(it, Team.IMPOSTERS) ?: Team.IMPOSTERS.defaultRole) }
             crewPool.forEach { assignRole(it, pickFor(it, Team.CREWMATES) ?: Team.CREWMATES.defaultRole) }
@@ -205,7 +205,7 @@ class RoleManager(private val game: Game, private val random: Random = Random.De
             if (total <= 0) return roles.first().first
 
             var remaining = random.nextInt(total)
-            for ((role, weight) in roles) {
+            for ([role, weight] in roles) {
                 remaining -= weight
                 if (remaining < 0) return role
             }

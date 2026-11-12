@@ -473,7 +473,7 @@ class MannequinController(
             ResolvableProfile.resolvableProfile(player.profile)
         val helmet = player.color.toItemStack(player.armorTrim)
         mannequin?.equipment?.setHelmet(helmet)
-        for ((color, display) in colorDisplays) {
+        for ([color, display] in colorDisplays) {
             display.text(Component.text(player.name, color))
         }
     }

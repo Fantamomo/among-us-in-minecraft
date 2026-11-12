@@ -176,7 +176,7 @@ class VentManager(val game: Game) {
                 )
             )
 
-            displays.forEach { (_, display) ->
+            displays.forEach { [_, display] ->
                 display.remove()
             }
             vent.group.vents.forEach { vent ->
@@ -406,7 +406,7 @@ class VentManager(val game: Game) {
             actionBar?.remove()
             for (player in game.players) {
                 val p = player.humanOrNull?.player ?: continue
-                for ((loc, id) in targets) {
+                for ([loc, id] in targets) {
                     p.sendBlockDamage(loc, 0.0f, id)
                 }
             }
@@ -422,7 +422,7 @@ class VentManager(val game: Game) {
             }
             for (player in game.players) {
                 val p = player.humanOrNull?.player ?: continue
-                for ((loc, id) in targets) {
+                for ([loc, id] in targets) {
                     p.sendBlockDamage(loc, state, id)
                 }
             }

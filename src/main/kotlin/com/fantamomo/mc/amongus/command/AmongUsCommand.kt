@@ -818,7 +818,7 @@ private fun PaperCommand.statsCommand() = literal("stats") {
         setArgument("map", map)
         continueCommand()
     }
-    for ((key, type) in PlayerStatistics.statistics) {
+    for ([key, type] in PlayerStatistics.statistics) {
         literal(key) {
             guard {
                 val map = arg<StatisticMap>("map")

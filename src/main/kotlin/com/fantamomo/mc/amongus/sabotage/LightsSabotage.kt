@@ -70,7 +70,7 @@ class LightsSabotage internal constructor(override val game: Game) :
     override fun start() {
         val random = Random.Default
 
-        levers.forEach { (block, display) ->
+        levers.forEach { [block, display] ->
             val data = block.blockData as Switch
             val value = random.nextBoolean()
             data.isPowered = value
@@ -80,7 +80,7 @@ class LightsSabotage internal constructor(override val game: Game) :
         }
 
         if (progress() >= 1.0f) {
-            val (lever, display) = levers.entries.random()
+            val [lever, display] = levers.entries.random()
             val data = lever.blockData as Switch
             data.isPowered = false
             lever.blockData = data

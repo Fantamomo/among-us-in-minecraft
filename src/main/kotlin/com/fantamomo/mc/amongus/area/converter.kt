@@ -53,7 +53,7 @@ fun GameArea.toDTO(): GameAreaDTO {
             )
         },
         lightLevers = lightLevers.mapTo(mutableSetOf()) { fromBukkit(it.toBlockLocation()) },
-        tasks = tasks.mapValuesTo(mutableMapOf()) { (_, locations) -> locations.mapTo(mutableSetOf()) { fromBukkit(it) } }
+        tasks = tasks.mapValuesTo(mutableMapOf()) { [_, locations] -> locations.mapTo(mutableSetOf()) { fromBukkit(it) } }
     )
 }
 

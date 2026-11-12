@@ -56,7 +56,7 @@ object DetectiveRole : Role<DetectiveRole, DetectiveRole.AssignedDetectiveRole> 
             val viewer = player.player ?: return
             val viewerLoc = viewer.location
 
-            for ((other, trail) in trails) {
+            for ([other, trail] in trails) {
 
                 val entityLoc = other.mannequinController
                     .getEntity()

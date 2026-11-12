@@ -354,7 +354,7 @@ class ScoreboardManager(private val game: Game) {
                         return@forEachIndexed
                     }
 
-                    val (defaultStyle, format) = task.state()
+                    val [defaultStyle, format] = task.state()
                     val style = if (task.completed) COMPLETED_TASK_STYLE else defaultStyle
                     val line = task.task.scoreboardLine(style)
 

@@ -60,7 +60,7 @@ class NavGraphBuilder(val game: Game) {
         }
 
         val xzIndex = HashMap<Long, NavNode>()
-        for ((cx, cz) in candidates) {
+        for ([cx, cz] in candidates) {
             if (cx !in minX..maxX || cz !in minZ..maxZ) continue
             val y = findWalkableY(level, cx, minY, maxY, cz, spawn.blockY) ?: continue
             xzIndex[xzKey(cx, cz)] = NavNode(BlockPos(cx, y, cz), NavNodeType.NORMAL)
@@ -69,7 +69,7 @@ class NavGraphBuilder(val game: Game) {
         if (xzIndex.isEmpty()) return NavGraph(emptyList())
 
         for (node in xzIndex.values) {
-            for ((dx, dz) in ALL_OFFSETS) {
+            for ([dx, dz] in ALL_OFFSETS) {
                 val neighbor = xzIndex[xzKey(node.pos.x + dx, node.pos.z + dz)] ?: continue
                 if (node.neighbors.any { it.node === neighbor }) continue
                 if (!canConnect(level, node.pos, neighbor.pos)) continue
@@ -217,7 +217,7 @@ class NavGraphBuilder(val game: Game) {
         area.meetingBlock?.let { list += it }
         area.wardrobe?.let { list += it }
         for (vg in area.vents) for (v in vg.vents) list += v.toCenterLocation()
-        for ((_, locs) in area.tasks) list += locs
+        for ([_, locs] in area.tasks) list += locs
         return list.filter { it.world != null }
     }
 

@@ -338,7 +338,7 @@ class RoleRevealManager(val game: Game) {
     }
 
     private fun finish() {
-        for ((_, entities) in playerEntities) entities.remove()
+        for ([_, entities] in playerEntities) entities.remove()
         playerEntities.clear()
         playerAbilityIndex.clear()
         viewEntity?.remove()

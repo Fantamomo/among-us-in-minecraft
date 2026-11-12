@@ -43,7 +43,7 @@ object AbilityManager {
             for (ability in player.abilities) {
                 for (item in ability.items) {
                     if (item !is DSLAbilityItem) continue
-                    for ((_, timer) in item.ctx.timers) {
+                    for ([_, timer] in item.ctx.timers) {
                         if (timer.resetAfterMeeting) timer.reset(true)
                     }
                     item.notifyItemChange()

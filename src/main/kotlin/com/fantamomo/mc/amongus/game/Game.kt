@@ -668,7 +668,7 @@ class Game(
         if (AmongUsConfig.AI.generateGameSummary && AiService.isEnabled()) {
             AmongUs.scope.launch {
                 try {
-                    val (short, long) = summarizer.generate()
+                    val [short, long] = summarizer.generate()
                     actionLog.customData["ai_long_summary"] = long
                     actionLog.customData["ai_short_summary"] = short
                     logger.info("Short summary: $short")
@@ -691,7 +691,7 @@ class Game(
             AmongUs.scope.launch {
                 val data = ActionLogManager.saveUploadAndRemove(actionLog)
                 if (data != null) {
-                    val (uploadPath, ttl) = data
+                    val [uploadPath, ttl] = data
                     if (uploadPath.host == "localhost") {
                         val uri = uploadPath.toURI()
                         for (target in targets) {

@@ -129,7 +129,7 @@ class MeetingAiService(val game: Game) {
 
             var score = BASE_SCORE
 
-            messages.forEachIndexed { index, (author, text) ->
+            messages.forEachIndexed { index, [author, text] ->
                 val ageFactor = index.toDouble() / messages.size
                 val decay = exp(-3 * (1 - ageFactor))
 

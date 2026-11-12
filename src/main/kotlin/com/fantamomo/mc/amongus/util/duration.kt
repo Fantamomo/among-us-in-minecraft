@@ -28,7 +28,7 @@ fun Duration.toSmartString(minUnit: DurationUnit = DurationUnit.NANOSECONDS): St
     var remainder = abs.inWholeNanoseconds
 
     val parts = buildList {
-        for ((unit, factor) in UNITS) {
+        for ([unit, factor] in UNITS) {
             if (unit.ordinal < minUnit.ordinal) continue
 
             val value = remainder / factor

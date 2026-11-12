@@ -191,7 +191,7 @@ object LanguageManager {
 
         var inconsistenciesFound = false
 
-        keysByLocale.forEach { (locale, keys) ->
+        keysByLocale.forEach { [locale, keys] ->
             val missingKeys = allKeys - keys
             if (missingKeys.isNotEmpty()) {
                 inconsistenciesFound = true
