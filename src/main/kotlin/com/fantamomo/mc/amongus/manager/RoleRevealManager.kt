@@ -234,10 +234,9 @@ class RoleRevealManager(val game: Game) {
     }
 
     private fun updateAbilityDescription(player: AmongUsPlayer) {
-        val entities = playerEntities[player] ?: return
-        val abilityDescription = entities.abilityDescriptionDisplay
-        if (entities.abilityEntries.isEmpty()) return
-        val abilityEntry = entities.abilityEntries[playerAbilityIndex[player] ?: 0]
+        (val abilityDescription = abilityDescriptionDisplay, val abilityEntries) = playerEntities[player] ?: return
+        if (abilityEntries.isEmpty()) return
+        val abilityEntry = abilityEntries[playerAbilityIndex[player] ?: 0]
 
         abilityDescription.text(abilityEntry.descriptionText)
     }

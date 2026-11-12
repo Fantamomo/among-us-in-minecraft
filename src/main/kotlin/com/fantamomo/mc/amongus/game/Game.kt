@@ -399,8 +399,8 @@ class Game(
             val topInventory = p.openInventory.topInventory
             val holder = topInventory.holder as? WardrobeInventory ?: continue
             holder.update()
-            for (entry in cooldowns) {
-                p.setCooldown(entry.key.cooldownGroup, entry.value)
+            for ((key, value) in cooldowns) {
+                p.setCooldown(key.cooldownGroup, value)
             }
         }
     }
