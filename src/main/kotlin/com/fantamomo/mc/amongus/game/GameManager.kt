@@ -47,7 +47,6 @@ object GameManager {
             val serverRootFolder = AmongUs.server.worldContainer.toPath().toAbsolutePath()
 
             serverRootFolder.listDirectoryEntries().forEach { worldFolder ->
-                logger.info("Debug: $worldFolder")
                 if (!worldFolder.isDirectory()) return@forEach
 
                 if (!worldFolder.resolve("level.dat").isRegularFile()) {
@@ -209,29 +208,5 @@ object GameManager {
 
     internal fun markForRemove(game: Game) {
         markedForRemove.add(game)
-    }
-
-    private class CustomWorldCreator(name: String, key: NamespacedKey) : WorldCreator(key) {
-
-        init {
-            val nameField = nameField ?: throw IllegalStateException("Failed to access WorldCreator.name field")
-            nameField.set(this, name)
-        }
-
-        companion object {
-            val nameField: Field?
-
-            init {
-                var nameField: Field? = null
-                try {
-                    nameField = WorldCreator::class.java.getDeclaredField("name")
-                    nameField.isAccessible = true
-                } catch (e: Exception) {
-                    logger.error("Failed to access WorldCreator.name field", e)
-                    nameField = null
-                }
-                this.nameField = nameField
-            }
-        }
     }
 }

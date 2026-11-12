@@ -24,7 +24,7 @@ class ChatManager(val game: Game) {
         event.isCancelled = true
         val message = event.message()
         if (game.phase == GamePhase.LOBBY || game.phase == GamePhase.STARTING) {
-            sendLobbyMessage(sender, message,)
+            sendLobbyMessage(sender, message)
             return
         }
         val meetingManager = game.meetingManager

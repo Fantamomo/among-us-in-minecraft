@@ -672,6 +672,7 @@ class Game(
                     logger.info("Long summary: $long")
                     storeActionLog(bukkitPlayerList, hostPlayer)
                 } catch (e: Exception) {
+                    if (e is CancellationException) ensureActive()
                     logger.error("Failed to generate AI summary", e)
                     storeActionLog(bukkitPlayerList, hostPlayer)
                 }
@@ -834,7 +835,7 @@ class Game(
         val MAX_DISCONNECT_TIME = 30.seconds
         const val DEFAULT_MAX_PLAYERS = 16
         const val NEEDED_PLAYERS_FOR_START = 4
-        val CODE_CHARS = ('A'..'Z') + ('0'..'9')
+        val CODE_CHARS = ('A'..'Z') + ('0'..'9').toList()
         const val CODE_LENGTH = 4
 
         fun validCode(code: String) = code.length == CODE_LENGTH && code.all { it in CODE_CHARS }

@@ -15,7 +15,7 @@ fun registerDebugValues(entity: PathfinderMob, registrar: DebugValueSource.Regis
     if (AmongUsDebug.DebugValues.BOT_SHOW_PATH.isEnabled()) {
         registrar.register(DebugSubscriptions.ENTITY_PATHS) {
             val path = entity.getNavigation().getPath()
-            if (path != null && path.debugData() != null) DebugPathInfo(
+            if (path?.debugData() != null) DebugPathInfo(
                 path.copy(),
                 entity.getNavigation().getMaxDistanceToWaypoint()
             ) else null

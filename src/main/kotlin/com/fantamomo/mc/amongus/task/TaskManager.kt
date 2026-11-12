@@ -228,7 +228,11 @@ class TaskManager(val game: Game) {
             if (showBossbar && player.isHuman) player.player?.showBossBar(bossbar)
             val long = longTasks.randomListDistinct(longTasksCount)
             val short = shortTasks.randomListDistinct(shortTasksCount)
-            assignTasks(player, long + short + common)
+            assignTasks(player, buildList {
+                addAll(long)
+                addAll(short)
+                addAll(common)
+            })
         }
     }
 

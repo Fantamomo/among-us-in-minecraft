@@ -64,7 +64,7 @@ sealed interface AmongUsConstants {
                 if (delegate != null) throw IllegalStateException("AmongUsConstants already initialized")
                 delegate = this
                 paperPluginYml = try {
-                    val url: URL? = this::class.java.getClassLoader().getResource("paper-plugin.yml")
+                    val url: URL? = this::class.java.classLoader.getResource("paper-plugin.yml")
 
                     if (url != null) {
                         val connection = url.openConnection()
@@ -75,7 +75,7 @@ sealed interface AmongUsConstants {
                     null
                 }
                 manifest = try {
-                    val url: URL? = this::class.java.getClassLoader().getResource("META-INF/MANIFEST.MF")
+                    val url: URL? = this::class.java.classLoader.getResource("META-INF/MANIFEST.MF")
                     if (url != null) {
                         val connection = url.openConnection()
                         connection.setUseCaches(false)

@@ -105,9 +105,8 @@ class HumanAmongUsPlayer internal constructor(
             }
         }
     override var armorTrim: ArmorTrim? = persistencePlayerData
-        .let { it.trimMaterial to it.trimPattern }
-        .takeIf { it.first != null && it.second != null }
-        ?.let { ArmorTrim(it.first!!, it.second!!) }
+        .takeIf { it.trimMaterial != null && it.trimPattern != null }
+        ?.let { ArmorTrim(it.trimMaterial!!, it.trimPattern!!) }
         internal set(value) {
             field = value
             persistencePlayerData.trimMaterial = value?.material
