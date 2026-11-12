@@ -11,7 +11,6 @@ import net.minecraft.world.entity.decoration.Mannequin
 import org.bukkit.craftbukkit.CraftWorld
 import org.bukkit.event.entity.CreatureSpawnEvent
 
-@Suppress("UnstableApiUsage")
 class AmongUsMannequin internal constructor(
     val controller: MannequinController
 ) : Mannequin(EntityTypes.MANNEQUIN, (controller.owner.game.world as CraftWorld).handle) {

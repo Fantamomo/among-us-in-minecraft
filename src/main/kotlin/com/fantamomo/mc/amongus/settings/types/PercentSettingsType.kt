@@ -16,7 +16,6 @@ object PercentSettingsType : IntSettingsType(0, 100) {
         }
 
         val itemStack = ItemStack(material)
-        @Suppress("UnstableApiUsage")
         itemStack.setData(DataComponentTypes.RARITY, ItemRarity.COMMON)
         if (value in 1..99) itemStack.amount = value.coerceAtMost(64)
         return itemStack

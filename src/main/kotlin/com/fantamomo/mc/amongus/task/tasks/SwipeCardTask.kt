@@ -73,7 +73,6 @@ object SwipeCardTask : Task<SwipeCardTask, SwipeCardTask.AssignedSwipeCardTask> 
             for (slot in border) inv.setItem(slot, item)
             val stack = itemStack(Material.NAME_TAG).hideTooltip().markAsMoveable().markWith("card")
             stack.amount = 9
-            @Suppress("UnstableApiUsage")
             stack.setData(DataComponentTypes.MAX_STACK_SIZE, 1)
             inv.setItem(9, stack)
         }

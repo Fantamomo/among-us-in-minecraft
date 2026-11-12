@@ -27,7 +27,6 @@ import kotlin.time.Clock
 class KillManager(val game: Game) {
     internal val corpses: MutableList<Corpse> = mutableListOf()
 
-    @Suppress("UnstableApiUsage")
     fun showCorpse(owner: AmongUsPlayer, location: Location) {
         val mannequin = game.world.spawn(location, Mannequin::class.java) {
             it.profile = ResolvableProfile.resolvableProfile(owner.profile)

@@ -467,7 +467,6 @@ class MannequinController(
         copyAppearanceFrom(target)
     }
 
-    @Suppress("UnstableApiUsage")
     fun copyAppearanceFrom(player: AmongUsPlayer) {
         mannequin?.profile =
             ResolvableProfile.resolvableProfile(player.profile)
@@ -478,7 +477,6 @@ class MannequinController(
         }
     }
 
-    @Suppress("UnstableApiUsage")
     fun setSkinTexture(textureBase64: String, signature: String? = null) {
         val mannequin = mannequin ?: return
 

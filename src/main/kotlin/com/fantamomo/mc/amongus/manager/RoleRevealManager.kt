@@ -122,7 +122,6 @@ class RoleRevealManager(val game: Game) {
             it.isInvulnerable = true
             it.isImmovable = true
             it.equipment.setHelmet(player.color.toItemStack(player.armorTrim))
-            @Suppress("UnstableApiUsage")
             it.profile = ResolvableProfile.resolvableProfile(player.profile)
             EntityManager.addEntityToRemoveOnEnd(game, it)
         }

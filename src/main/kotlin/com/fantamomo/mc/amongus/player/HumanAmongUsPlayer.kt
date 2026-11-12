@@ -75,7 +75,6 @@ class HumanAmongUsPlayer internal constructor(
                         mannequin.isVisibleByDefault = false
                         mannequin.isInvulnerable = true
                         mannequin.isImmovable = true
-                        @Suppress("UnstableApiUsage")
                         mannequin.profile = ResolvableProfile.resolvableProfile(profile)
                         mannequin.persistentDataContainer.set(
                             WARDROBE_MANNEQUIN_OWNER,

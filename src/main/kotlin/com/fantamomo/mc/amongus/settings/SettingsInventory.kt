@@ -36,7 +36,6 @@ class SettingsInventory(
     private lateinit var inv: Inventory
     private var addToRecentlyChanged = true
 
-    @Suppress("UnstableApiUsage")
     companion object {
         val KEY_SETTINGS = NamespacedKey(AmongUs, "settings/key")
         val KEY_GROUP = NamespacedKey(AmongUs, "settings/group")
@@ -150,7 +149,6 @@ class SettingsInventory(
         }
     }
 
-    @Suppress("UnstableApiUsage")
     private fun buildGroupItem(g: SettingsGroup): ItemStack {
         val item = g.itemType.createItemStack()
 
@@ -181,7 +179,6 @@ class SettingsInventory(
         return item
     }
 
-    @Suppress("UnstableApiUsage")
     private fun buildSettingItem(keyRaw: SettingsKey<*, *>): ItemStack {
         @Suppress("UNCHECKED_CAST")
         val key = keyRaw as SettingsKey<Any, *>

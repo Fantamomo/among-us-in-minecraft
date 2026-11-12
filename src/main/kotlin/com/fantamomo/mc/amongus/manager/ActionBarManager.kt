@@ -168,7 +168,6 @@ class ActionBarManager(private val game: Game) {
 
     class RenderContext(val player: HumanAmongUsPlayer)
 
-    @OptIn(ExperimentalContracts::class)
     fun part(
         player: HumanAmongUsPlayer,
         id: String,
@@ -182,7 +181,7 @@ class ActionBarManager(private val game: Game) {
         bar(player).add(part)
         return part
     }
-    @OptIn(ExperimentalContracts::class)
+
     fun part(
         player: HumanAmongUsPlayer,
         id: String,

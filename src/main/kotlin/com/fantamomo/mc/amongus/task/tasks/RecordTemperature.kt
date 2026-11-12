@@ -42,7 +42,6 @@ object RecordTemperature : Task<RecordTemperature, RecordTemperature.AssignedRec
             updateInventory()
         }
 
-        @Suppress("UnstableApiUsage")
         private fun updateInventory() {
             inv.clear()
             val border = itemStack(Material.BLACK_STAINED_GLASS_PANE).hideTooltip()

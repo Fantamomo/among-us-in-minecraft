@@ -11,7 +11,6 @@ import org.bukkit.event.inventory.ClickType
 import org.bukkit.inventory.ItemStack
 import kotlin.reflect.KClass
 
-@Suppress("UnstableApiUsage")
 object BooleanSettingsType : SettingsType<Boolean> {
     override val type: KClass<Boolean> = Boolean::class
     override val argumentType: ArgumentType<Boolean> = BoolArgumentType.bool()
