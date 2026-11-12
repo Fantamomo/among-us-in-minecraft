@@ -1,7 +1,6 @@
 package com.fantamomo.mc.amongus.game
 
 import com.fantamomo.mc.amongus.AmongUs
-import com.fantamomo.mc.amongus.AmongUsConstants
 import com.fantamomo.mc.amongus.area.GameArea
 import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.util.TickContext
@@ -10,7 +9,6 @@ import org.bukkit.NamespacedKey
 import org.bukkit.World
 import org.bukkit.WorldCreator
 import org.slf4j.LoggerFactory
-import java.lang.reflect.Field
 import java.nio.file.LinkOption
 import java.nio.file.StandardCopyOption
 import kotlin.io.path.*

@@ -5,7 +5,6 @@ import com.fantamomo.mc.amongus.manager.EntityManager
 import io.papermc.paper.datacomponent.item.ResolvableProfile
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.util.debug.DebugValueSource
-import net.minecraft.world.entity.EntityType
 import net.minecraft.world.entity.EntityTypes
 import net.minecraft.world.entity.decoration.Mannequin
 import org.bukkit.craftbukkit.CraftWorld
