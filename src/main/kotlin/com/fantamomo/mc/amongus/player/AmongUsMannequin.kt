@@ -26,6 +26,7 @@ class AmongUsMannequin internal constructor(
         val owner = controller.owner
         mannequin.profile = ResolvableProfile.resolvableProfile(owner.profile)
 
+        @Suppress("CanBeVal") // cant be val
         var realLocation = owner.realLocation
         if (realLocation.world !== owner.game.world) {
             realLocation = owner.game.world.spawnLocation.clone()

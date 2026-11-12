@@ -63,7 +63,9 @@ object RevealTeamAbility : Ability<RevealTeamAbility, RevealTeamAbility.Assigned
                         restartCooldown = false
                         val thisLoc = player.location
                         val maxDistance = player.game.settings[SettingsKey.ROLES.REVEAL_TEAM.DISTANCE].distance.let { it * it }
+                        @Suppress("CanBeVal") // it cant be val we modify it in 78
                         var nearestPlayer: AmongUsPlayer? = null
+                        @Suppress("CanBeVal") // it cant be val we modify it in 79
                         var nearestDistance = Double.MAX_VALUE
                         for (player in game.players) {
                             if (player === this@AssignedRevealTeamAbility.player) continue
