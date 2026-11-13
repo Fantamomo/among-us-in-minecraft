@@ -13,13 +13,17 @@ class EventManager(val game: Game) {
     private val listeners: MutableMap<Class<out AmongUsEvent>, MutableList<(AmongUsEvent) -> Unit>> = mutableMapOf()
     private val markAsDeleted = mutableSetOf<(AmongUsEvent) -> Unit>()
 
+    private var gameStopped = false
+
     fun <E : AmongUsEvent> register(clazz: Class<E>, handler: (E) -> Unit) {
+        if (gameStopped) return
         @Suppress("UNCHECKED_CAST")
         val eventHandler = handler as (AmongUsEvent) -> Unit
         listeners.getOrPut(clazz) { mutableListOf() }.add(eventHandler)
     }
 
     fun unregister(handler: (AmongUsEvent) -> Unit) {
+        if (gameStopped) return
         listeners.values.forEach { it.remove(handler) }
         for (deleted in markAsDeleted) {
             listeners.values.forEach { it.remove(deleted) }
@@ -57,6 +61,7 @@ class EventManager(val game: Game) {
     suspend inline fun <reified E : AmongUsEvent> awaitEvent() = awaitEvent(E::class.java)
 
     fun call(event: AmongUsEvent) {
+        if (gameStopped) throw IllegalStateException("Cannot call event $event because game is stopped")
         val eventListeners = listeners[event::class.java] ?: return
         val suspendCallbacks = mutableListOf<SuspendCallback<AmongUsEvent>>()
         for (handler in eventListeners) {
@@ -76,6 +81,7 @@ class EventManager(val game: Game) {
     }
 
     fun onGameStop() {
+        gameStopped = true
         listeners.values.forEach { listeners ->
             listeners.forEach {
                 (it as? SuspendCallback<*>)?.stop()
@@ -83,9 +89,11 @@ class EventManager(val game: Game) {
             listeners.clear()
         }
         listeners.clear()
+        markAsDeleted.clear()
     }
 
     fun removeListener(continuation: Continuation<*>) {
+        if (gameStopped) return
         listeners.values.forEach { listeners ->
             listeners.removeIf {
                 (it as? SuspendCallback<*>)?.continuation == continuation
