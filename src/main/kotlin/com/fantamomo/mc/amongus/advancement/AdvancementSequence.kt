@@ -5,11 +5,13 @@ import com.fantamomo.mc.amongus.events.PlayerKillEvent
 import com.fantamomo.mc.amongus.events.VentEnterEvent
 import com.fantamomo.mc.amongus.events.VentExitEvent
 import com.fantamomo.mc.amongus.player.HumanAmongUsPlayer
-import kotlinx.coroutines.TimeoutCancellationException
+import com.fantamomo.mc.amongus.util.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.ensureActive
+import kotlin.coroutines.Continuation
 import kotlin.coroutines.RestrictsSuspension
-import kotlin.time.Clock
 import kotlin.time.Duration
-import kotlin.time.Instant
+
 
 /**
  * This will be used in Advancements that require a sequence of events to be completed.
@@ -45,50 +47,95 @@ import kotlin.time.Instant
  *
  */
 @RestrictsSuspension
-class AdvancementSequence(val advancement: Advancement<*, *>, val player: HumanAmongUsPlayer) {
+class AdvancementSequence(
+    val advancement: SequencedAdvancement,
+    val player: HumanAmongUsPlayer,
+    private val job: Job,
 
-    private val timeoutStack: MutableList<Instant> = mutableListOf()
+    private val scheduleTimeout: (
+        Duration,
+        () -> Unit
+    ) -> TimeoutHandle,
 
-    private var exception: Exception? = null
+    private val cancelEventWait: (Continuation<*>) -> Unit
+) {
 
-    internal fun addTimeoutStart(duration: Duration) {
-        val timeoutAt = Clock.System.now().plus(duration)
-        timeoutStack.add(timeoutAt)
+    private class TimeoutFrame {
+        var expired = false
     }
 
-    internal fun removeTimeout() {
-        timeoutStack.removeFirst()
+    private class PendingWait(
+        val continuation: Continuation<*>,
+        val timeoutFrame: TimeoutFrame?
+    )
+
+    private val timeoutStack = mutableListOf<TimeoutFrame>()
+
+    private var pendingWait: PendingWait? = null
+
+    fun cancel(cause: Throwable) {
+        val wait = pendingWait ?: return
+
+        pendingWait = null
+
+        cancelEventWait(wait.continuation)
+        wait.continuation.resumeWith(Result.failure(cause))
+    }
+
+    suspend fun <T> withTimeout(
+        duration: Duration,
+        block: suspend AdvancementSequence.() -> T
+    ): T {
+        ensureActive()
+
+        val frame = TimeoutFrame()
+        timeoutStack.add(frame)
+
+        val timeoutHandle = scheduleTimeout(duration) {
+            if (frame.expired) return@scheduleTimeout
+
+            frame.expired = true
+
+            val wait = pendingWait ?: return@scheduleTimeout
+
+            val frameIndex = timeoutStack.indexOf(frame)
+            val waitFrameIndex = timeoutStack.indexOf(wait.timeoutFrame)
+
+            if (wait.timeoutFrame == null || waitFrameIndex >= frameIndex) {
+                cancel(TimeoutCancellationException("Advancement timed out after $duration"))
+            }
+        }
+
+        try {
+            ensureActive()
+
+            return block(this)
+        } finally {
+            timeoutHandle.cancel()
+            timeoutStack.remove(frame)
+        }
     }
 
     private suspend inline fun <reified E : AmongUsEvent> awaitEvent(): E {
         ensureActive()
-        val event = player.game.eventManager.awaitEvent<E>()
+
+        val event = player.game.eventManager.awaitEvent<E> { continuation ->
+            pendingWait = PendingWait(
+                continuation = continuation,
+                timeoutFrame = timeoutStack.lastOrNull()
+            )
+        }
+
+        pendingWait = null
+
         ensureActive()
+
         return event
     }
 
     fun ensureActive() {
-        if (exception != null) {
-            throw exception!!
-        }
-        if (timeoutStack.isNotEmpty()) {
-            val now = Clock.System.now()
-            for (timeoutAt in timeoutStack) {
-                if (now > timeoutAt) {
-                    exception = TimeoutCancellationException("Timeout reached")
-                    throw exception!!
-                }
-            }
-        }
+        job.ensureActive()
     }
-
-//    suspend fun awaitMeetingCall(): MeetingCallEvent {
-//        TODO("Not yet implemented")
-//    }
-//
-//    suspend fun awaitMeetingEnd(): MeetingEndEvent {
-//        TODO("Not yet implemented")
-//    }
 
     suspend fun awaitEnterVent(): VentEnterEvent = awaitEvent()
 
@@ -97,16 +144,4 @@ class AdvancementSequence(val advancement: Advancement<*, *>, val player: HumanA
     suspend fun awaitKill(): PlayerKillEvent = awaitEvent()
 
     // MORE EVENTS
-
-    companion object {
-        private val TimeoutCancellationExceptionConstructor = run {
-            val constructor =
-                kotlinx.coroutines.TimeoutCancellationException::class.java.getConstructor(String::class.java)
-            constructor.isAccessible = true
-            constructor
-        }
-        private val TimeoutCancellationException = { message: String ->
-            TimeoutCancellationExceptionConstructor.newInstance(message) as TimeoutCancellationException
-        }
-    }
 }
