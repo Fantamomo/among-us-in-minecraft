@@ -11,6 +11,7 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.*
 import org.slf4j.LoggerFactory
 import java.util.*
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.coroutines.startCoroutine
@@ -72,6 +73,18 @@ object AdvancementManager {
     ) {
         if (!advancement.applicableTo(player)) return
         if (assigned.isCompleted) return
+
+        val goingThough = Advancement.goingThroughSequences[advancement]
+        if (goingThough != null) {
+            val value = goingThough.get()
+            if (value == Advancement.GOING_THROUGH_SEQUENCES_DISABLED) return
+            if (value > Advancement.GOING_THROUGH_SEQUENCES_LIMIT) {
+                logger.warn("Sequence runner of $advancement is running without any blocker, please report this to the plugin author (we disabled the advancement, because $value is to high)")
+                goingThough.set(Advancement.GOING_THROUGH_SEQUENCES_DISABLED)
+            } else if (AmongUsConstants.IN_DEVELOPMENT || value > Advancement.GOING_THROUGH_SEQUENCES_WARNING) {
+                logger.warn("Sequence runner of $advancement is running without any blocker (currently at $value), please report this to the plugin author")
+            }
+        }
 
         val runner = advancement.runner
 
@@ -197,6 +210,9 @@ object AdvancementManager {
 
         var finishedFirstAction = false
 
+        var finished = false
+        var started = false
+
         private fun scheduleTimeout(duration: Duration, callback: () -> Unit): TimeoutHandle {
             var canceled = false
             val task = AmongUs.server.scheduler.runTaskLater(AmongUs, { ->
@@ -224,6 +240,13 @@ object AdvancementManager {
         }
 
         override fun resumeWith(result: Result<Unit>) {
+            finished = true
+            if (started) {
+                val integer = Advancement.goingThroughSequences[advancement]
+                if (integer != null && integer.get() != Advancement.GOING_THROUGH_SEQUENCES_DISABLED && integer.addAndGet(-Advancement.GOING_THROUGH_SEQUENCES_DECREMENT) <= 0) {
+                    Advancement.goingThroughSequences.remove(advancement)
+                }
+            }
             activeSequencesByPlayer[player.uuid]?.let {
                 it.remove(this)
                 if (it.isEmpty()) {
@@ -245,6 +268,13 @@ object AdvancementManager {
                 advancementSequence,
                 completion = this
             )
+            if (finished) {
+                val integer = Advancement.goingThroughSequences.putIfAbsent(advancement, AtomicInteger())
+                if (integer?.get() != Advancement.GOING_THROUGH_SEQUENCES_DISABLED) {
+                    integer?.addAndGet(Advancement.GOING_THROUGH_SEQUENCES_INCREMENT)
+                }
+            }
+            started = true
         }
     }
 }

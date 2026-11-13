@@ -4,6 +4,7 @@ import com.fantamomo.mc.amongus.advancement.sequenced.FastVentKillAdvancement
 import kotlinx.serialization.json.JsonElement
 import net.kyori.adventure.text.Component
 import java.util.*
+import java.util.concurrent.atomic.AtomicInteger
 
 interface Advancement<A : Advancement<A, AA>, AA : AssignedAdvancement<A, AA>> {
     val id: String
@@ -28,10 +29,19 @@ interface Advancement<A : Advancement<A, AA>, AA : AssignedAdvancement<A, AA>> {
     fun createOf(player: UUID, data: JsonElement): AA
 
     companion object {
+        internal const val GOING_THROUGH_SEQUENCES_DISABLED = 10000
+        internal const val GOING_THROUGH_SEQUENCES_LIMIT = 100
+        internal const val GOING_THROUGH_SEQUENCES_WARNING = 40
+        internal const val GOING_THROUGH_SEQUENCES_INCREMENT = 7
+        internal const val GOING_THROUGH_SEQUENCES_DECREMENT = 1
+
         val advancements = listOf<Advancement<*, *>>(
             FastVentKillAdvancement,
         )
 
         val advancementMap = advancements.associateBy { it.id }
+
+        @OptIn(ExperimentalAdvancementApi::class)
+        internal val goingThroughSequences = mutableMapOf<SequencedAdvancement, AtomicInteger>()
     }
 }
