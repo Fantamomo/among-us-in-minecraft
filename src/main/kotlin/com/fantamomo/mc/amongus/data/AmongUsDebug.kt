@@ -2,6 +2,7 @@ package com.fantamomo.mc.amongus.data
 
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.AmongUsConstants
+import org.slf4j.LoggerFactory
 import java.util.*
 import kotlin.io.path.notExists
 import kotlin.io.path.readLines
@@ -12,9 +13,17 @@ import kotlin.io.path.readLines
  * @author Fantamomo
  */
 object AmongUsDebug {
+    private val logger = LoggerFactory.getLogger(AmongUsDebug::class.java)
+
     const val DEBUG_FILE_NAME = "IN_DEVELOPMENT"
 
     private val debugValues: Set<DebugValues> by lazy(::load)
+
+    init {
+        if (DebugValues.PRINT_DEBUG_VALUES.isEnabled()) {
+            logger.info("Debug values: {}", debugValues.joinToString(", "))
+        }
+    }
 
     fun isEnabled() = AmongUsConstants.IN_DEVELOPMENT
 
@@ -39,6 +48,11 @@ object AmongUsDebug {
      * Debug values that can be enabled in the debug file.
      */
     enum class DebugValues {
+        /**
+         * Prints the debug values to the console.
+         */
+        PRINT_DEBUG_VALUES,
+
         /**
          * Displays the internal zombie used by the bots.
          */
@@ -97,7 +111,12 @@ object AmongUsDebug {
          *
          * Used in [com.fantamomo.mc.amongus.ai.LobbyChatAiService] and [com.fantamomo.mc.amongus.ai.MeetingAiService]
          */
-        LOG_AI_RESPONSE;
+        LOG_AI_RESPONSE,
+
+        /**
+         * Stops the plugin from deleting previously created game worlds on startup
+         */
+        DISABLE_DELETING_GAME_WORLDS_ON_STARTUP;
 
         fun isEnabled() = isEnabled(this)
 
