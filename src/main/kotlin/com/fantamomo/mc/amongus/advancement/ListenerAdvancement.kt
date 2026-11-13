@@ -25,7 +25,7 @@ interface ListenerAdvancement {
     fun shouldCreateAdvancementStateOnGameStart(player: HumanAmongUsPlayer): Boolean = true
 
     interface AssignedListenerAdvancement {
-        fun start()
+        fun start(player: HumanAmongUsPlayer)
 
         fun stop()
     }
