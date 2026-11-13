@@ -29,7 +29,7 @@ interface Advancement<A : Advancement<A, AA>, AA : AssignedAdvancement<A, AA>> {
 
     companion object {
         val advancements = listOf<Advancement<*, *>>(
-            FastVentKillAdvancement
+            FastVentKillAdvancement,
         )
 
         val advancementMap = advancements.associateBy { it.id }
