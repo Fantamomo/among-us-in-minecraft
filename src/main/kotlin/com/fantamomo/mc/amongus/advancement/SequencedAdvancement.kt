@@ -1,12 +1,16 @@
 package com.fantamomo.mc.amongus.advancement
 
+import com.fantamomo.mc.amongus.player.HumanAmongUsPlayer
 import kotlinx.serialization.json.*
 import java.util.*
 
+@ExperimentalAdvancementApi
 abstract class SequencedAdvancement(override val id: String) :
     Advancement<SequencedAdvancement, SequencedAdvancement.AssignedSequencedAdvancement> {
 
     abstract val runner: AdvancementSequenceRunner
+
+    open fun applicableTo(player: HumanAmongUsPlayer): Boolean = true
 
     override fun new(player: UUID) = AssignedSequencedAdvancement(this, player)
 
