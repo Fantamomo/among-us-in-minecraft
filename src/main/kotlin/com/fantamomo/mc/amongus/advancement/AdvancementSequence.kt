@@ -1,9 +1,6 @@
 package com.fantamomo.mc.amongus.advancement
 
 import com.fantamomo.mc.amongus.events.AmongUsEvent
-import com.fantamomo.mc.amongus.events.PlayerKillEvent
-import com.fantamomo.mc.amongus.events.VentEnterEvent
-import com.fantamomo.mc.amongus.events.VentExitEvent
 import com.fantamomo.mc.amongus.player.HumanAmongUsPlayer
 import com.fantamomo.mc.amongus.util.coroutines.TimeoutCancellationException
 import kotlin.contracts.ExperimentalContracts
@@ -154,7 +151,7 @@ class AdvancementSequence(
         }
     }
 
-    private suspend fun <E : AmongUsEvent> awaitEvent(type: Class<E>): E {
+    suspend fun <E : AmongUsEvent> awaitEvent(type: Class<E>): E {
         ensureActive()
 
         @Suppress("UNCHECKED_CAST")
@@ -182,17 +179,9 @@ class AdvancementSequence(
         noinline continuationHandler: ((Continuation<E>) -> Unit)
     ) = player.game.eventManager.awaitEvent(type, continuationHandler)
 
-    private suspend inline fun <reified E : AmongUsEvent> awaitEvent() = awaitEvent(E::class.java)
+    suspend inline fun <reified E : AmongUsEvent> awaitEvent() = awaitEvent(E::class.java)
 
     fun ensureActive() {
         if (exception != null) throw exception!!
     }
-
-    suspend fun awaitEnterVent(): VentEnterEvent = awaitEvent()
-
-    suspend fun awaitExitVent(): VentExitEvent = awaitEvent()
-
-    suspend fun awaitKill(): PlayerKillEvent = awaitEvent()
-
-    // MORE EVENTS
 }
