@@ -6,8 +6,9 @@ import com.fantamomo.mc.amongus.events.VentEnterEvent
 import com.fantamomo.mc.amongus.events.VentExitEvent
 import com.fantamomo.mc.amongus.player.HumanAmongUsPlayer
 import com.fantamomo.mc.amongus.util.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.ensureActive
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.RestrictsSuspension
 import kotlin.time.Duration
@@ -45,19 +46,22 @@ import kotlin.time.Duration
  *
  * There are many more events that can be added and used to extend the sequence of events.
  *
+ * @author Fantamomo
+ * @since 2.4-SNAPSHOT
  */
 @RestrictsSuspension
+@ExperimentalAdvancementApi
 class AdvancementSequence(
     val advancement: SequencedAdvancement,
     val player: HumanAmongUsPlayer,
-    private val job: Job,
 
     private val scheduleTimeout: (
         Duration,
         () -> Unit
     ) -> TimeoutHandle,
 
-    private val cancelEventWait: (Continuation<*>) -> Unit
+    private val cancelEventWait: (Continuation<*>) -> Unit,
+    private val onBlockerChange: (List<AdvancementSequenceBlocker>, element: AdvancementSequenceBlocker, removed: Boolean) -> Unit,
 ) {
 
     private class TimeoutFrame {
@@ -70,16 +74,50 @@ class AdvancementSequence(
     )
 
     private val timeoutStack = mutableListOf<TimeoutFrame>()
+    private val blockerStack = mutableListOf<AdvancementSequenceBlocker>()
+
+    private var exception: Throwable? = null
 
     private var pendingWait: PendingWait? = null
 
     fun cancel(cause: Throwable) {
+        if (exception != null) return
+        exception = cause
         val wait = pendingWait ?: return
 
         pendingWait = null
 
         cancelEventWait(wait.continuation)
         wait.continuation.resumeWith(Result.failure(cause))
+    }
+
+//    fun stop() {
+//        cancel(CancellationException("Advancement sequence stopped"))
+//    }
+
+    fun award() {
+        if (pendingWait != null) return
+        player.awardAdvancement(advancement)
+    }
+
+    @OptIn(ExperimentalContracts::class)
+    internal suspend inline fun <R> withBlocker(
+        blocker: AdvancementSequenceBlocker,
+        block: suspend AdvancementSequence.() -> R
+    ): R {
+        contract {
+            callsInPlace(block, InvocationKind.EXACTLY_ONCE)
+            returnsResultOf(block)
+        }
+        blockerStack.add(blocker)
+        onBlockerChange(blockerStack, blocker, false)
+        try {
+            return block()
+        } finally {
+            val last = blockerStack.removeLastOrNull()
+            if (last != null) onBlockerChange(blockerStack, last, true)
+            if (last != blocker) throw IllegalStateException("Blocker stack is corrupted (expected $blocker, got $last)")
+        }
     }
 
     suspend fun <T> withTimeout(
@@ -116,14 +154,20 @@ class AdvancementSequence(
         }
     }
 
-    private suspend inline fun <reified E : AmongUsEvent> awaitEvent(): E {
+    private suspend fun <E : AmongUsEvent> awaitEvent(type: Class<E>): E {
         ensureActive()
 
-        val event = player.game.eventManager.awaitEvent<E> { continuation ->
-            pendingWait = PendingWait(
-                continuation = continuation,
-                timeoutFrame = timeoutStack.lastOrNull()
-            )
+        @Suppress("UNCHECKED_CAST")
+        val blocker = AdvancementSequenceBlocker.AwaitingEvent(null, type as Class<AmongUsEvent>)
+
+        val event = withBlocker(blocker) {
+            awaitEvent0<E>(type) { continuation ->
+                blocker.continuation = continuation
+                pendingWait = PendingWait(
+                    continuation = continuation,
+                    timeoutFrame = timeoutStack.lastOrNull()
+                )
+            }
         }
 
         pendingWait = null
@@ -133,8 +177,15 @@ class AdvancementSequence(
         return event
     }
 
+    private suspend inline fun <E : AmongUsEvent> awaitEvent0(
+        type: Class<E>,
+        noinline continuationHandler: ((Continuation<E>) -> Unit)
+    ) = player.game.eventManager.awaitEvent(type, continuationHandler)
+
+    private suspend inline fun <reified E : AmongUsEvent> awaitEvent() = awaitEvent(E::class.java)
+
     fun ensureActive() {
-        job.ensureActive()
+        if (exception != null) throw exception!!
     }
 
     suspend fun awaitEnterVent(): VentEnterEvent = awaitEvent()
