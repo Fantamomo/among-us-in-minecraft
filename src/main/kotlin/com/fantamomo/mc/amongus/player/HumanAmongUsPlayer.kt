@@ -8,6 +8,8 @@ import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.ability.Ability
 import com.fantamomo.mc.amongus.ability.AssignedAbility
 import com.fantamomo.mc.amongus.ability.item.AbilityItem
+import com.fantamomo.mc.amongus.advancement.Advancement
+import com.fantamomo.mc.amongus.advancement.AdvancementManager
 import com.fantamomo.mc.amongus.advancement.AssignedAdvancement
 import com.fantamomo.mc.amongus.data.AmongUsDebug
 import com.fantamomo.mc.amongus.game.Game
@@ -278,7 +280,11 @@ class HumanAmongUsPlayer internal constructor(
     }
 
     fun awardAdvancement(advancement: AssignedAdvancement<*, *>) {
-        TODO("Not yet implemented")
+        AdvancementManager.awardAdvancement(advancement)
+    }
+
+    fun awardAdvancement(advancement: Advancement<*, *>) {
+        AdvancementManager.awardAdvancement(advancement)
     }
 
     companion object {
