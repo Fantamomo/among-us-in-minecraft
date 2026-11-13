@@ -5,6 +5,8 @@ import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.ability.AbilityManager
 import com.fantamomo.mc.amongus.ai.AiService
 import com.fantamomo.mc.amongus.data.AmongUsDebug
+import com.fantamomo.mc.amongus.events.meeting.MeetingCallEvent
+import com.fantamomo.mc.amongus.events.meeting.MeetingEndEvent
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.game.GamePhase
 import com.fantamomo.mc.amongus.languages.LanguageManager
@@ -270,6 +272,8 @@ class MeetingManager(private val game: Game) {
         private fun startMeeting() {
             game.actionLog.add(MeetingActionElement.Called(caller.uuid, reason, foundBody?.uuid))
 
+            game.eventManager.call(MeetingCallEvent(caller, reason, foundBody))
+
             setPhase(GamePhase.CALLING_MEETING)
 
             game.logger.info("Meeting started by ${caller.name} for ${reason.name}")
@@ -413,6 +417,8 @@ class MeetingManager(private val game: Game) {
             respawnLocation = ejectedPlayer?.location
             showVoteResult(ejectedPlayer)
             showVoteDetails()
+
+            game.eventManager.call(MeetingEndEvent(ejectedPlayer))
 
             game.actionLog.add(MeetingActionElement.MeetingResult(ejectedPlayer?.uuid))
 
