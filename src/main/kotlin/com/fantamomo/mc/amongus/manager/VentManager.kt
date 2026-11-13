@@ -3,6 +3,8 @@ package com.fantamomo.mc.amongus.manager
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.ability.AbilityManager
 import com.fantamomo.mc.amongus.ability.abilities.VentAbility
+import com.fantamomo.mc.amongus.events.VentEnterEvent
+import com.fantamomo.mc.amongus.events.VentExitEvent
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.manager.waypoint.FixedWaypointPosProvider
 import com.fantamomo.mc.amongus.manager.waypoint.WaypointManager
@@ -124,6 +126,8 @@ class VentManager(val game: Game) {
                     vent.normalizedLocation.run { Triple(blockX, blockY, blockZ) })
             )
 
+            game.eventManager.call(VentEnterEvent(this.player))
+
             this.player.mannequinController.hideFromAll()
             actionBar?.remove()
         }
@@ -184,6 +188,7 @@ class VentManager(val game: Game) {
                 }
             }
             player.mannequinController.showToSeeingPlayers()
+            game.eventManager.call(VentExitEvent(this.player))
             AbilityManager.invalidatePlayer(this.player)
         }
     }
