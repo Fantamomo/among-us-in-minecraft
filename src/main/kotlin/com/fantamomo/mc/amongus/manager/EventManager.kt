@@ -2,11 +2,10 @@ package com.fantamomo.mc.amongus.manager
 
 import com.fantamomo.mc.amongus.events.AmongUsEvent
 import com.fantamomo.mc.amongus.game.Game
+import kotlinx.coroutines.suspendCancellableCoroutine
 import org.slf4j.LoggerFactory
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.cancellation.CancellationException
-import kotlin.coroutines.intrinsics.COROUTINE_SUSPENDED
-import kotlin.coroutines.intrinsics.suspendCoroutineUninterceptedOrReturn
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -31,24 +30,49 @@ class EventManager(val game: Game) {
         register(E::class.java, handler)
     }
 
-    suspend fun <E : AmongUsEvent> awaitEvent(clazz: Class<E>): E {
-        return suspendCoroutineUninterceptedOrReturn { continuation ->
+    internal suspend fun <E : AmongUsEvent> awaitEvent(
+        clazz: Class<E>,
+        continuationHandler: ((Continuation<E>) -> Unit)?
+    ): E {
+//        logger.info("Awaiting event of type $clazz")
+        return suspendCancellableCoroutine { continuation ->
             val callback = SuspendCallback(continuation)
+//            logger.info("Registered callback for event of type $clazz for $continuation")
             register(clazz, callback)
-            COROUTINE_SUSPENDED
+
+            continuationHandler?.invoke(continuation)
+
+            continuation.invokeOnCancellation {
+//                logger.info("Unregistering callback for event of type $clazz for $continuation")
+                @Suppress("UNCHECKED_CAST")
+                unregister(callback as SuspendCallback<AmongUsEvent>)
+            }
         }
     }
 
+    internal suspend inline fun <reified E : AmongUsEvent> awaitEvent(noinline continuationHandler: ((Continuation<E>) -> Unit)? = null) =
+        awaitEvent(E::class.java, continuationHandler)
+
+    suspend fun <E : AmongUsEvent> awaitEvent(clazz: Class<E>) = awaitEvent(clazz, null)
     suspend inline fun <reified E : AmongUsEvent> awaitEvent() = awaitEvent(E::class.java)
 
     fun call(event: AmongUsEvent) {
-        listeners[event::class.java]?.forEach {
+        val eventListeners = listeners[event::class.java] ?: return
+        val suspendCallbacks = mutableListOf<SuspendCallback<AmongUsEvent>>()
+        for (handler in eventListeners) {
+            if (handler is SuspendCallback<AmongUsEvent>) {
+                suspendCallbacks.add(handler)
+                continue
+            }
             try {
-                it(event)
+                handler(event)
             } catch (e: Exception) {
-                logger.error("Error while calling event handler $it with $event", e)
+                logger.error("Error while calling event handler $handler with $event", e)
             }
         }
+        suspendCallbacks.forEach { it.invoke(event) }
+        eventListeners.removeAll(suspendCallbacks)
+
     }
 
     fun onGameStop() {
@@ -61,11 +85,18 @@ class EventManager(val game: Game) {
         listeners.clear()
     }
 
+    fun removeListener(continuation: Continuation<*>) {
+        listeners.values.forEach { listeners ->
+            listeners.removeIf {
+                (it as? SuspendCallback<*>)?.continuation == continuation
+            }
+        }
+    }
+
     private inner class SuspendCallback<E : AmongUsEvent>(val continuation: Continuation<E>) : (E) -> Unit {
         override fun invoke(event: E) {
+//            logger.info("Resumed $continuation with $event", Throwable("Just for the stacktrace"))
             continuation.resume(event)
-            @Suppress("UNCHECKED_CAST")
-            markAsDeleted.add(this as (AmongUsEvent) -> Unit)
         }
 
         fun stop() {
