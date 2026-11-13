@@ -7,7 +7,6 @@ import com.fantamomo.mc.amongus.player.HumanAmongUsPlayer
 import com.fantamomo.mc.amongus.player.isBot
 import com.fantamomo.mc.amongus.util.ticks
 import io.ktor.utils.io.*
-import kotlinx.coroutines.Job
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.*
 import org.slf4j.LoggerFactory
@@ -18,8 +17,11 @@ import kotlin.coroutines.startCoroutine
 import kotlin.io.path.exists
 import kotlin.io.path.inputStream
 import kotlin.io.path.outputStream
+import kotlin.time.Duration
 
+@OptIn(ExperimentalAdvancementApi::class)
 object AdvancementManager {
+    private val WARNING_SEQUENCE_COUNT = if (AmongUsConstants.IN_DEVELOPMENT) 5 else 15
     private val logger = LoggerFactory.getLogger(AdvancementManager::class.java)
     private val json = Json {
         prettyPrint = AmongUsConstants.IN_DEVELOPMENT
@@ -27,9 +29,9 @@ object AdvancementManager {
     }
 
     private val players: MutableMap<UUID, Advancements> = mutableMapOf()
-    private val dataPath = AmongUs.dataPath.resolve("advancements")
+    private val dataPath = AmongUs.dataPath.resolve("data").resolve("advancements")
 
-    private val sequenceJobs = mutableMapOf<UUID, MutableSet<Job>>()
+    private val activeSequencesByPlayer = mutableMapOf<UUID, MutableSet<RunningAdvancementSequence>>()
 
     private class Advancements(val uuid: UUID) {
         val advancements: MutableMap<Advancement<*, *>, AssignedAdvancement<*, *>> = mutableMapOf()
@@ -53,59 +55,47 @@ object AdvancementManager {
                     assigned.start(player)
                 }
                 if (advancement is SequencedAdvancement) {
-                    runSequencedAdvancement(player, advancement, assigned as SequencedAdvancement.AssignedSequencedAdvancement)
+                    runSequencedAdvancement(
+                        player,
+                        advancement,
+                        assigned as SequencedAdvancement.AssignedSequencedAdvancement
+                    )
                 }
             }
         }
     }
 
-    private fun runSequencedAdvancement(player: HumanAmongUsPlayer, advancement: SequencedAdvancement, assigned: SequencedAdvancement.AssignedSequencedAdvancement) {
-        val job = Job()
-        sequenceJobs.getOrPut(player.uuid) { mutableSetOf() }.add(job)
-        val advancementSequence = AdvancementSequence(
-            advancement = advancement,
-            player = player,
-            job = job,
-            scheduleTimeout = { duration, callback ->
-                val task = AmongUs.server.scheduler.runTaskLater(AmongUs, { ->
-                    callback()
-                }, duration.ticks)
+    private fun runSequencedAdvancement(
+        player: HumanAmongUsPlayer,
+        advancement: SequencedAdvancement,
+        assigned: SequencedAdvancement.AssignedSequencedAdvancement
+    ) {
+        if (!advancement.applicableTo(player)) return
+        if (assigned.isCompleted) return
 
-                TimeoutHandle(task::cancel)
-            },
-            cancelEventWait = { continuation ->
-                player.game.eventManager.removeListener(continuation)
-            }
-        )
-        advancement.runner.runner.startCoroutine(
-            advancementSequence,
-            completion = object : Continuation<Unit> {
-                override val context = EmptyCoroutineContext
+        val runner = advancement.runner
 
-                override fun resumeWith(result: Result<Unit>) {
-                    sequenceJobs[player.uuid]?.let {
-                        it.remove(job)
-                        if (it.isEmpty()) {
-                            sequenceJobs.remove(player.uuid)
-                        }
-                    }
-                    val throwable = result.exceptionOrNull()
-                    if (throwable == null) {
-                        logger.info("Advancement sequence completed ($advancement) successfully") // TODO: remove success log
-                    } else if (throwable !is CancellationException) {
-                        logger.error("Advancement sequence failed ($advancement)", throwable)
-                    }
-                    runSequencedAdvancement(player, advancement, assigned)
-                }
-            }
-        )
+        val runningSequence = RunningAdvancementSequence(player, advancement, runner, assigned)
+        val playerSequences = activeSequencesByPlayer.getOrPut(player.uuid) { mutableSetOf() }
+        if (playerSequences.any { it.runner == runner && !it.finishedFirstAction }) return
+
+        val thisRunnerCount = playerSequences.count { it.runner == runner }
+        if (thisRunnerCount > WARNING_SEQUENCE_COUNT) {
+            logger.warn(
+                "Player $player has more than $WARNING_SEQUENCE_COUNT running sequences for runner $runner ($advancement)" +
+                        if (!AmongUsConstants.IN_DEVELOPMENT) " please report this to the plugin author" else " please fix this"
+            )
+        }
+        playerSequences.add(runningSequence)
+
+        runningSequence.start()
     }
 
     fun gameEnd(game: Game) {
         for (player in game.players) {
             if (player.isBot) continue
 
-            sequenceJobs.remove(player.uuid)?.clear()
+            activeSequencesByPlayer.remove(player.uuid)?.clear()
             savePlayer(player.uuid)
         }
     }
@@ -174,6 +164,87 @@ object AdvancementManager {
 
 
     fun stop() {
+        for (player in players) {
+            savePlayer(player.key)
+        }
+        players.clear()
+    }
 
+    fun awardAdvancement(advancement: AssignedAdvancement<*, *>) {
+        TODO("Not yet implemented")
+    }
+
+    fun awardAdvancement(advancement: Advancement<*, *>) {
+        TODO("Not yet implemented")
+    }
+
+    private class RunningAdvancementSequence(
+        val player: HumanAmongUsPlayer,
+        val advancement: SequencedAdvancement,
+        val runner: AdvancementSequenceRunner,
+        val assigned: SequencedAdvancement.AssignedSequencedAdvancement,
+    ) : Continuation<Unit> {
+
+        override val context = EmptyCoroutineContext
+
+        val advancementSequence = AdvancementSequence(
+            advancement = advancement,
+            player = player,
+            scheduleTimeout = ::scheduleTimeout,
+            cancelEventWait = player.game.eventManager::removeListener,
+            onBlockerChange = ::onBlockerChange
+        )
+
+        var finishedFirstAction = false
+
+        private fun scheduleTimeout(duration: Duration, callback: () -> Unit): TimeoutHandle {
+            var canceled = false
+            val task = AmongUs.server.scheduler.runTaskLater(AmongUs, { ->
+                if (!canceled) {
+                    callback()
+                }
+            }, duration.ticks)
+
+            return TimeoutHandle {
+                canceled = true
+                task.cancel()
+            }
+        }
+
+        private fun onBlockerChange(
+            blockers: List<AdvancementSequenceBlocker>,
+            element: AdvancementSequenceBlocker,
+            removed: Boolean
+        ) {
+            if (finishedFirstAction) return
+            if (blockers.isEmpty() && removed) {
+                finishedFirstAction = true
+                runSequencedAdvancement(player, advancement, assigned)
+            }
+        }
+
+        override fun resumeWith(result: Result<Unit>) {
+            activeSequencesByPlayer[player.uuid]?.let {
+                it.remove(this)
+                if (it.isEmpty()) {
+                    activeSequencesByPlayer.remove(player.uuid)
+                }
+            }
+            val throwable = result.exceptionOrNull()
+            if (throwable == null) {
+                logger.info("Advancement sequence completed ($advancement) successfully") // TODO: remove success log
+            } else if (throwable !is CancellationException) {
+                logger.error("Advancement sequence failed ($advancement)", throwable)
+            }
+
+            runSequencedAdvancement(player, advancement, assigned)
+        }
+
+        fun start() {
+            runner.runner.startCoroutine(
+                advancementSequence,
+                completion = this
+            )
+        }
     }
 }
