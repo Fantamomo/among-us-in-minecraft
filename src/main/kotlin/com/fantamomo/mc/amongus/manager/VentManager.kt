@@ -3,8 +3,8 @@ package com.fantamomo.mc.amongus.manager
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.ability.AbilityManager
 import com.fantamomo.mc.amongus.ability.abilities.VentAbility
-import com.fantamomo.mc.amongus.events.VentEnterEvent
-import com.fantamomo.mc.amongus.events.VentExitEvent
+import com.fantamomo.mc.amongus.events.vents.VentEnterEvent
+import com.fantamomo.mc.amongus.events.vents.VentExitEvent
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.manager.waypoint.FixedWaypointPosProvider
 import com.fantamomo.mc.amongus.manager.waypoint.WaypointManager

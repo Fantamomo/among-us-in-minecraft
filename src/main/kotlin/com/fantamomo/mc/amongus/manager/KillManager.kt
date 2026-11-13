@@ -2,7 +2,7 @@ package com.fantamomo.mc.amongus.manager
 
 import com.fantamomo.mc.adventure.text.*
 import com.fantamomo.mc.amongus.AmongUs
-import com.fantamomo.mc.amongus.events.PlayerKillEvent
+import com.fantamomo.mc.amongus.events.player.PlayerKillEvent
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.player.*
