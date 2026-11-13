@@ -2,6 +2,7 @@ package com.fantamomo.mc.amongus.manager
 
 import com.fantamomo.mc.adventure.text.*
 import com.fantamomo.mc.amongus.AmongUs
+import com.fantamomo.mc.amongus.events.PlayerKillEvent
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.player.*
@@ -356,6 +357,8 @@ class KillManager(val game: Game) {
         val killerStatistics = killer.humanOrNull?.statistics
         val targetStatistics = target.humanOrNull?.statistics
         if (killerStatistics == null && targetStatistics == null) return
+
+        game.eventManager.call(PlayerKillEvent(killer, target))
 
         killerStatistics?.kills[killer.role.definition]?.increment()
         targetStatistics?.killed[killer.role.definition]?.increment()
