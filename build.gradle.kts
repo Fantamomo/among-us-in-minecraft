@@ -113,6 +113,8 @@ tasks.jar {
 val liteJar = tasks.register<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("liteJar") {
     description = "Create the lite jar, with only the bare minimum dependencies"
     archiveClassifier.set("lite")
+
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
     mergeServiceFiles()
 
     from(sourceSets.main.get().output)
@@ -150,10 +152,11 @@ val standaloneJar = tasks.register<com.github.jengelman.gradle.plugins.shadow.ta
     description = "Create the standalone jar, with all dependencies"
     archiveClassifier.set("standalone")
 
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    mergeServiceFiles()
+
     from(sourceSets.main.get().output)
     configurations = listOf(project.configurations.runtimeClasspath.get())
-
-    mergeServiceFiles()
 
     manifest {
         attributes(
