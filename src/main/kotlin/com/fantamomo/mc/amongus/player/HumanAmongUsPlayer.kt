@@ -284,7 +284,7 @@ class HumanAmongUsPlayer internal constructor(
     }
 
     fun awardAdvancement(advancement: Advancement<*, *>) {
-        AdvancementManager.awardAdvancement(advancement)
+        AdvancementManager.awardAdvancement(this, advancement)
     }
 
     companion object {

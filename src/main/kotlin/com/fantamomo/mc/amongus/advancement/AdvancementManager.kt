@@ -5,6 +5,7 @@ import com.fantamomo.mc.amongus.AmongUsConstants
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.player.HumanAmongUsPlayer
 import com.fantamomo.mc.amongus.player.isBot
+import com.fantamomo.mc.amongus.util.safeCreateDirectories
 import com.fantamomo.mc.amongus.util.ticks
 import io.ktor.utils.io.*
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -36,6 +37,16 @@ object AdvancementManager {
 
     private class Advancements(val uuid: UUID) {
         val advancements: MutableMap<Advancement<*, *>, AssignedAdvancement<*, *>> = mutableMapOf()
+
+        fun <A : Advancement<A, AA>, AA : AssignedAdvancement<A, AA>> get(advancement: A): AA? {
+            @Suppress("UNCHECKED_CAST")
+            return advancements[advancement] as? AA
+        }
+
+        fun <A : Advancement<A, AA>, AA : AssignedAdvancement<A, AA>> getOrCreate(advancement: A): AA {
+            @Suppress("UNCHECKED_CAST")
+            return advancements.getOrPut(advancement) { advancement.new(uuid) } as AA
+        }
     }
 
     fun init() {
@@ -45,7 +56,7 @@ object AdvancementManager {
     fun gameStart(game: Game) {
         for (player in game.players) {
             if (player.isBot) continue
-            val advancements = loadPlayer0(player.uuid)
+            val advancements = getOrLoad(player.uuid)
             for (advancement in Advancement.advancements) {
                 var assigned = advancements.advancements[advancement]
                 if (assigned == null) {
@@ -115,14 +126,20 @@ object AdvancementManager {
 
     fun savePlayer(uuid: UUID) {
         val advancements = players[uuid] ?: return
+        dataPath.safeCreateDirectories()
         val file = dataPath.resolve("$uuid.json")
         try {
             file.outputStream().use { outputStream ->
                 @OptIn(ExperimentalSerializationApi::class)
-                json.encodeToStream(buildJsonObject {
-                    for ([advancement, data] in advancements.advancements) {
+                json.encodeToStream(buildJsonArray {
+                    for ([advancement, assignedAdvancement] in advancements.advancements) {
                         try {
-                            put(advancement.id, data.toJson())
+                            addJsonObject {
+                                put("id", advancement.id)
+                                put("is_completed", assignedAdvancement.isCompleted)
+                                val data = assignedAdvancement.toJson()
+                                if (data != JsonNull) put("data", data)
+                            }
                         } catch (e: Exception) {
                             logger.error("Failed to save advancement ${advancement.id} for player $uuid", e)
                         }
@@ -136,10 +153,10 @@ object AdvancementManager {
 
 
     fun loadPlayer(uuid: UUID) {
-        loadPlayer0(uuid)
+        getOrLoad(uuid)
     }
 
-    private fun loadPlayer0(uuid: UUID): Advancements {
+    private fun getOrLoad(uuid: UUID): Advancements {
         if (players.containsKey(uuid)) return players[uuid]!!
         val file = dataPath.resolve("$uuid.json")
         val advancements = Advancements(uuid)
@@ -153,15 +170,29 @@ object AdvancementManager {
             }
             try {
                 @OptIn(ExperimentalSerializationApi::class)
-                val playerData = json.decodeFromStream<JsonObject>(inputStream)
-                for ([id, element] in playerData) {
+                val playerData = json.decodeFromStream<JsonArray>(inputStream)
+                for (element in playerData) {
+                    if (element !is JsonObject) {
+                        logger.warn("Found invalid advancement data for player $uuid: $element")
+                        continue
+                    }
+                    val id = (element["id"] as? JsonPrimitive)?.contentOrNull
+                    if (id == null) {
+                        logger.warn("Missing id in advancement data for player $uuid: $element")
+                        continue
+                    }
+                    val isCompleted = (element["is_completed"] as? JsonPrimitive)?.booleanOrNull ?: false
+                    val data = element["data"]
                     val advancement = Advancement.advancementMap[id]
                     if (advancement == null) {
                         logger.warn("Found unknown advancement $id by $uuid")
                     } else {
                         try {
-                            val data = advancement.createOf(uuid, element)
-                            advancements.advancements[advancement] = data
+                            val assignedAdvancement =
+                                if (data != null) advancement.createOf(uuid, data) else advancement.new(uuid)
+                            @Suppress("DEPRECATION_ERROR")
+                            assignedAdvancement.isCompleted = isCompleted
+                            advancements.advancements[advancement] = assignedAdvancement
                         } catch (e: Exception) {
                             logger.error("Failed to load advancement $id for player $uuid", e)
                         }
@@ -184,12 +215,22 @@ object AdvancementManager {
     }
 
     fun awardAdvancement(advancement: AssignedAdvancement<*, *>) {
-        TODO("Not yet implemented")
+        loadPlayer(advancement.player)
+        @Suppress("DEPRECATION_ERROR")
+        advancement.isCompleted = true
+
+        logger.info("Awarding advancement ${advancement.definition.id} to player ${advancement.player}")
+        // TODO: tell the player
     }
 
-    fun awardAdvancement(advancement: Advancement<*, *>) {
-        TODO("Not yet implemented")
+    fun awardAdvancement(player: HumanAmongUsPlayer, advancement: Advancement<*, *>) {
+        val assignedAdvancement = getOrLoad(player.uuid)
+            .getOrCreate(advancement.castHelper())
+        awardAdvancement(assignedAdvancement)
     }
+
+    @Suppress("UNCHECKED_CAST", "NOTHING_TO_INLINE")
+    private inline fun <A : Advancement<A, AA>, AA : AssignedAdvancement<A, AA>> Advancement<A, AA>.castHelper(): A = this as A
 
     private class RunningAdvancementSequence(
         val player: HumanAmongUsPlayer,

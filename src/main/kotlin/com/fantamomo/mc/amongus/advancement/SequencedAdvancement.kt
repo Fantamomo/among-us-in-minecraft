@@ -25,10 +25,9 @@ abstract class SequencedAdvancement(override val id: String) :
     class AssignedSequencedAdvancement(
         override val definition: SequencedAdvancement,
         override val player: UUID,
+        @Suppress("OVERRIDE_DEPRECATION")
         override var isCompleted: Boolean = false,
     ) : AssignedAdvancement<SequencedAdvancement, AssignedSequencedAdvancement> {
-        override fun toJson() = buildJsonObject {
-            put("is_completed", isCompleted)
-        }
+        override fun toJson() = JsonNull
     }
 }
