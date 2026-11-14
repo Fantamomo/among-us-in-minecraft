@@ -7,6 +7,7 @@ import com.fantamomo.mc.amongus.area.GameArea
 import com.fantamomo.mc.amongus.area.GameAreaManager
 import com.fantamomo.mc.amongus.area.VentGroup
 import com.fantamomo.mc.amongus.command.Permissions.required
+import com.fantamomo.mc.amongus.data.AmongUsDebug
 import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.PlayerManager
@@ -23,6 +24,7 @@ import io.papermc.paper.command.brigadier.argument.resolvers.BlockPositionResolv
 import io.papermc.paper.command.brigadier.argument.resolvers.FinePositionResolver
 import io.papermc.paper.command.brigadier.argument.resolvers.RotationResolver
 import io.papermc.paper.math.Rotation
+import net.kyori.adventure.text.Component
 import org.bukkit.Location
 import org.bukkit.entity.Player
 
@@ -84,7 +86,24 @@ private fun PaperCommand.settingsCommand() = literal("settings") {
                                     }
                                 }
                             }
-                            string("default_value", type.stringRepresentation(key.defaultValue))
+                            val defaultDebugValue =
+                                key.defaultValueOnDebug?.takeIf { AmongUsDebug.DebugValues.SET_SETTING_VALUES_FOR_DEBUG.isEnabled() }
+                            if (defaultDebugValue != null) {
+                                component("original") {
+                                    translatable("command.success.admin.settings.get.original") {
+                                        args {
+                                            string("original_value", type.stringRepresentation(defaultDebugValue))
+                                        }
+                                        hoverEvent(
+                                            KHoverEventType.ShowText,
+                                            Component.translatable("command.success.admin.settings.get.original.tooltip")
+                                        )
+                                    }
+                                }
+                            } else {
+                                component("original", Component.empty())
+                            }
+                            string("default_value", type.stringRepresentation(key.effectiveDefaultValue))
                             string("value", type.stringRepresentation(value))
                         }
                     }

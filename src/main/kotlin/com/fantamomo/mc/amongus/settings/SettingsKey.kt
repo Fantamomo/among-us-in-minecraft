@@ -3,6 +3,7 @@ package com.fantamomo.mc.amongus.settings
 import com.fantamomo.mc.adventure.text.args
 import com.fantamomo.mc.adventure.text.textComponent
 import com.fantamomo.mc.adventure.text.translatable
+import com.fantamomo.mc.amongus.data.AmongUsDebug
 import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.role.Role
 import com.fantamomo.mc.amongus.settings.types.*
@@ -21,8 +22,16 @@ data class SettingsKey<T : Any, S : SettingsType<T>>(
     val defaultValue: T,
     val settingsDisplayName: Component = Component.translatable(LANGUAGE_NAME_PREFIX + key),
     val settingsDescription: Component? = Component.translatable(LANGUAGE_DESCRIPTION_PREFIX + key),
-    val group: SettingsGroup? = null
+    val group: SettingsGroup? = null,
+    /**
+     * If [com.fantamomo.mc.amongus.data.AmongUsDebug.DebugValues.SET_SETTING_VALUES_FOR_DEBUG] is set,
+     * the value in this property will be used instead of [defaultValue] if it's not `null`.
+     */
+    internal val defaultValueOnDebug: T? = null
 ) {
+    val effectiveDefaultValue: T
+        get() = defaultValueOnDebug?.takeIf { AmongUsDebug.DebugValues.SET_SETTING_VALUES_FOR_DEBUG.isEnabled() } ?: defaultValue
+
     init {
         keys.add(this)
         group?.directKeys?.add(this)
@@ -48,12 +57,12 @@ data class SettingsKey<T : Any, S : SettingsType<T>>(
 
     object MEETING : SettingsGroup("meeting", ItemType.COMPASS) {
         val MEETING_DISCUSSION_TIME =
-            key("meeting.discussion.time", DurationSettingsType.range(Duration.ZERO, 3.minutes), 10.seconds)
+            key("meeting.discussion.time", DurationSettingsType.range(Duration.ZERO, 3.minutes), 10.seconds, defaultValueOnDebug = Duration.ZERO)
         val MEETING_VOTING_TIME =
-            key("meeting.voting.time", DurationSettingsType.range(15.seconds, 3.minutes), 60.seconds)
+            key("meeting.voting.time", DurationSettingsType.range(15.seconds, 3.minutes), 60.seconds, defaultValueOnDebug = 15.seconds)
         val MEETING_BUTTONS = key("meeting.buttons", IntSettingsType.positive, 3)
         val MEETING_BUTTON_COOLDOWN =
-            key("meeting.button.cooldown", DurationSettingsType.range(Duration.ZERO, 1.minutes), 15.seconds)
+            key("meeting.button.cooldown", DurationSettingsType.range(Duration.ZERO, 1.minutes), 15.seconds, defaultValueOnDebug = Duration.ZERO)
         val SHOW_VOTES = key("meeting.show.votes", BooleanSettingsType, true)
         val ANONYMOUS_VOTING = key("meeting.anonymous.voting", BooleanSettingsType, false)
     }
@@ -91,16 +100,16 @@ data class SettingsKey<T : Any, S : SettingsType<T>>(
 
         object MINER : SettingsGroup("roles.miner", ItemType.IRON_PICKAXE, parent = ROLES) {
             val CREATE_VENT_COOLDOWN =
-                key("miner.create_vent.cooldown", DurationSettingsType.min(1.seconds), 45.seconds)
+                key("miner.create_vent.cooldown", DurationSettingsType.min(1.seconds), 45.seconds, defaultValueOnDebug = 1.seconds)
         }
 
         object MORPHLING : SettingsGroup("roles.morphling", ItemType.ARMOR_STAND, parent = ROLES) {
-            val MORPH_COOLDOWN = key("morphling.morph.cooldown", DurationSettingsType.min(5.seconds), 30.seconds)
+            val MORPH_COOLDOWN = key("morphling.morph.cooldown", DurationSettingsType.min(5.seconds), 30.seconds, defaultValueOnDebug = 5.seconds)
             val MORPH_DURATION = key("morphling.morph.duration", DurationSettingsType.min(5.seconds), 15.seconds)
         }
 
         object GHOST : SettingsGroup("roles.ghost", ItemType.PHANTOM_MEMBRANE, parent = ROLES) {
-            val FORM_COOLDOWN = key("ghost.form.cooldown", DurationSettingsType.min(1.seconds), 30.seconds)
+            val FORM_COOLDOWN = key("ghost.form.cooldown", DurationSettingsType.min(1.seconds), 30.seconds, defaultValueOnDebug = 1.seconds)
             val FORM_DURATION = key("ghost.form.duration", DurationSettingsType.min(1.seconds), 15.seconds)
         }
 
@@ -109,22 +118,22 @@ data class SettingsKey<T : Any, S : SettingsType<T>>(
         }
 
         object ARSONIST : SettingsGroup("roles.arsonist", ItemType.FLINT_AND_STEEL, parent = ROLES) {
-            val DOUSE_COOLDOWN = key("arsonist.douse.cooldown", DurationSettingsType.min(1.seconds), 30.seconds)
+            val DOUSE_COOLDOWN = key("arsonist.douse.cooldown", DurationSettingsType.min(1.seconds), 30.seconds, defaultValueOnDebug = 1.seconds)
             val DOUSE_DISTANCE =
                 key("arsonist.douse.distance", EnumSettingsType.create<DistanceEnum>(), DistanceEnum.NORMAL)
         }
 
         object REVEAL_TEAM : SettingsGroup("roles.reveal_team", ItemType.SPYGLASS, parent = ROLES) {
             val START_COOLDOWN =
-                key("reveal.team.start.cooldown", DurationSettingsType.min(1.seconds), 30.seconds)
+                key("reveal.team.start.cooldown", DurationSettingsType.min(1.seconds), 30.seconds, defaultValueOnDebug = 1.seconds)
             val COOLDOWN_INCREMENT =
-                key("reveal.team.cooldown.increment", DurationSettingsType.min(0.seconds), 10.seconds)
+                key("reveal.team.cooldown.increment", DurationSettingsType.min(0.seconds), 10.seconds, defaultValueOnDebug = 0.seconds)
             val DISTANCE =
                 key("reveal.team.distance", EnumSettingsType.create<DistanceEnum>(), DistanceEnum.NORMAL)
         }
 
         object CAMOUFLAGE : SettingsGroup("roles.camouflage", ItemType.LEATHER, parent = ROLES) {
-            val COOLDOWN = key("roles.camouflage.cooldown", DurationSettingsType.min(1.seconds), 30.seconds)
+            val COOLDOWN = key("roles.camouflage.cooldown", DurationSettingsType.min(1.seconds), 30.seconds, defaultValueOnDebug = 1.seconds)
             val DURATION = key("roles.camouflage.duration", DurationSettingsType.min(1.seconds), 10.seconds)
         }
 
@@ -136,7 +145,7 @@ data class SettingsKey<T : Any, S : SettingsType<T>>(
 
     object KILL : SettingsGroup("kill", ItemType.BONE) {
         val KILL_DISTANCE = key("kill.distance", EnumSettingsType.create<DistanceEnum>(), DistanceEnum.NORMAL)
-        val KILL_COOLDOWN = key("kill.cooldown", DurationSettingsType.min(1.seconds), 45.seconds)
+        val KILL_COOLDOWN = key("kill.cooldown", DurationSettingsType.min(1.seconds), 45.seconds, defaultValueOnDebug = 1.seconds)
     }
 
     object MESSAGES : SettingsGroup("messages", ItemType.BOOK) {
@@ -151,11 +160,11 @@ data class SettingsKey<T : Any, S : SettingsType<T>>(
     }
 
     object MODIFIER : SettingsGroup("modifier", ItemType.POTION, useCustomName = true) {
-        val ENABLED = key("modifier.enabled", BooleanSettingsType, false)
+        val ENABLED = key("modifier.enabled", BooleanSettingsType, false, defaultValueOnDebug = true)
     }
 
     object DEV : SettingsGroup("dev", ItemType.REDSTONE) {
-        val DO_WIN_CHECK = key("dev.do.win.check", BooleanSettingsType, true)
+        val DO_WIN_CHECK = key("dev.do.win.check", BooleanSettingsType, true) // no defaultValueOnDebug because this as already done vie another DEBUG PROPERTY: DEFAULT_DISABLE_WIN_CHECK
         val DO_WIN_CHECK_ON_TICK = key("dev.do.win.check.on.tick", BooleanSettingsType, true)
     }
 }

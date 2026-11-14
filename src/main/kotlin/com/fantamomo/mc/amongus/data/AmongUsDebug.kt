@@ -116,7 +116,17 @@ object AmongUsDebug {
         /**
          * Stops the plugin from deleting previously created game worlds on startup
          */
-        DISABLE_DELETING_GAME_WORLDS_ON_STARTUP;
+        DISABLE_DELETING_GAME_WORLDS_ON_STARTUP,
+
+        /**
+         * Sets some default values in settings for debugging.
+         *
+         * This includes things like cooldowns which are set to very low values, to avoid waiting for cooldowns.
+         *
+         * This **not** includes the [com.fantamomo.mc.amongus.settings.SettingsKey.DEV.DO_WIN_CHECK],
+         * because this is already done via [DEFAULT_DISABLE_WIN_CHECK]
+         */
+        SET_SETTING_VALUES_FOR_DEBUG;
 
         fun isEnabled() = isEnabled(this)
 
