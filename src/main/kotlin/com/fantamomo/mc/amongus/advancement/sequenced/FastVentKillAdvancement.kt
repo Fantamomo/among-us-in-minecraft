@@ -18,5 +18,6 @@ data object FastVentKillAdvancement : SequencedAdvancement("fast_vent_kill") {
             awaitOwnPlayer { awaitKill() }
             awaitOwnPlayer { awaitEnterVent() }
         }
+        award()
     }
 }
