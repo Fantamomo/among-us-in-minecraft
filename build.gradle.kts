@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "com.fantamomo.mc"
-version = "2.3.1-SNAPSHOT"
+version = "2.4-SNAPSHOT"
 
 repositories {
     mavenCentral()
