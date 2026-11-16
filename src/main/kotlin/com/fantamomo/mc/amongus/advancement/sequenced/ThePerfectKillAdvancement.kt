@@ -4,6 +4,7 @@ import com.fantamomo.mc.amongus.advancement.*
 import com.fantamomo.mc.amongus.player.HumanAmongUsPlayer
 import com.fantamomo.mc.amongus.player.internalEntity
 import com.fantamomo.mc.amongus.role.Team
+import org.bukkit.inventory.ItemType
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -14,6 +15,9 @@ import kotlin.time.Duration.Companion.seconds
  */
 @OptIn(ExperimentalAdvancementApi::class)
 object ThePerfectKillAdvancement : SequencedAdvancement("the_perfect_kill") {
+
+    @Suppress("UnstableApiUsage")
+    override val icon: ItemType = ItemType.IRON_SWORD
 
     private const val WITNESS_DISTANCE = 16.0
 

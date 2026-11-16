@@ -4,6 +4,7 @@ import com.fantamomo.mc.amongus.advancement.sequenced.FastVentKillAdvancement
 import com.fantamomo.mc.amongus.advancement.sequenced.ThePerfectKillAdvancement
 import kotlinx.serialization.json.JsonElement
 import net.kyori.adventure.text.Component
+import org.bukkit.inventory.ItemType
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -45,6 +46,13 @@ interface Advancement<A : Advancement<A, AA>, AA : AssignedAdvancement<A, AA>> {
      */
     val hasGameAdvantage: Boolean
         get() = false
+
+    /**
+     * The icon representing this advancement in the inventory GUI.
+     */
+    @Suppress("UnstableApiUsage")
+    val icon: ItemType
+        get() = ItemType.BOOK
 
     fun new(player: UUID): AA
 
