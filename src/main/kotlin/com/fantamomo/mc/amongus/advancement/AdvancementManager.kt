@@ -1,15 +1,22 @@
 package com.fantamomo.mc.amongus.advancement
 
+import com.fantamomo.mc.adventure.text.*
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.AmongUsConstants
 import com.fantamomo.mc.amongus.game.Game
+import com.fantamomo.mc.amongus.languages.component
+import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.HumanAmongUsPlayer
+import com.fantamomo.mc.amongus.player.PlayerManager
+import com.fantamomo.mc.amongus.player.humanOrNull
 import com.fantamomo.mc.amongus.player.isBot
 import com.fantamomo.mc.amongus.util.safeCreateDirectories
 import com.fantamomo.mc.amongus.util.ticks
 import io.ktor.utils.io.*
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.*
+import net.kyori.adventure.text.Component
+import org.bukkit.Bukkit
 import org.slf4j.LoggerFactory
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
@@ -34,6 +41,8 @@ object AdvancementManager {
     private val dataPath = AmongUs.dataPath.resolve("data").resolve("advancements")
 
     private val activeSequencesByPlayer = mutableMapOf<UUID, MutableSet<RunningAdvancementSequence>>()
+    private val earnedAdvancementsByGame = mutableMapOf<Game, MutableList<Pair<UUID, Advancement<*, *>>>>()
+    private val gamePlayersByGame = mutableMapOf<Game, MutableSet<UUID>>()
 
     private class Advancements(val uuid: UUID) {
         val advancements: MutableMap<Advancement<*, *>, AssignedAdvancement<*, *>> = mutableMapOf()
@@ -54,8 +63,10 @@ object AdvancementManager {
     }
 
     fun gameStart(game: Game) {
+        val playerSet = gamePlayersByGame.getOrPut(game) { mutableSetOf() }
         for (player in game.players) {
             if (player.isBot) continue
+            playerSet.add(player.uuid)
             val advancements = getOrLoad(player.uuid)
             for (advancement in Advancement.advancements) {
                 var assigned = advancements.advancements[advancement]
@@ -116,11 +127,28 @@ object AdvancementManager {
     }
 
     fun gameEnd(game: Game) {
-        for (player in game.players) {
-            if (player.isBot) continue
+        val earned = earnedAdvancementsByGame.remove(game) ?: emptyList()
+        val allGamePlayerUuids = gamePlayersByGame.remove(game) ?: emptySet()
 
-            activeSequencesByPlayer.remove(player.uuid)?.clear()
-            savePlayer(player.uuid)
+        for ([earningUuid, definition] in earned) {
+            val earningPlayer = Bukkit.getPlayer(earningUuid)
+            val earningName = earningPlayer?.name ?: Bukkit.getOfflinePlayer(earningUuid).name ?: "Player"
+
+            if (definition.hasGameAdvantage) {
+                earningPlayer?.sendMessage(createAdvancementMessageSelf(definition))
+            }
+
+            val otherMessage = createAdvancementMessageOther(earningName, definition)
+            for (otherUuid in allGamePlayerUuids) {
+                if (otherUuid != earningUuid) {
+                    Bukkit.getPlayer(otherUuid)?.sendMessage(otherMessage)
+                }
+            }
+        }
+
+        for (uuid in allGamePlayerUuids) {
+            activeSequencesByPlayer.remove(uuid)?.clear()
+            savePlayer(uuid)
         }
     }
 
@@ -216,17 +244,78 @@ object AdvancementManager {
 
     fun awardAdvancement(advancement: AssignedAdvancement<*, *>) {
         loadPlayer(advancement.player)
+        if (advancement.isCompleted) return
         @Suppress("DEPRECATION_ERROR")
         advancement.isCompleted = true
 
-        logger.info("Awarding advancement ${advancement.definition.id} to player ${advancement.player}")
-        // TODO: tell the player
+        val definition = advancement.definition
+        logger.info("Awarding advancement ${definition.id} to player ${advancement.player}")
+
+        val auPlayer = PlayerManager.getPlayer(advancement.player)
+        val game = auPlayer?.game
+
+        if (game != null) {
+            earnedAdvancementsByGame.getOrPut(game) { mutableListOf() }.add(advancement.player to definition)
+            gamePlayersByGame.getOrPut(game) { mutableSetOf() }.add(advancement.player)
+
+            if (!definition.hasGameAdvantage) {
+                auPlayer.humanOrNull?.player?.sendMessage(createAdvancementMessageSelf(definition))
+                    ?: Bukkit.getPlayer(advancement.player)?.sendMessage(createAdvancementMessageSelf(definition))
+            }
+        } else {
+            auPlayer?.humanOrNull?.player?.sendMessage(createAdvancementMessageSelf(definition))
+                ?: Bukkit.getPlayer(advancement.player)?.sendMessage(createAdvancementMessageSelf(definition))
+        }
     }
 
     fun awardAdvancement(player: HumanAmongUsPlayer, advancement: Advancement<*, *>) {
         val assignedAdvancement = getOrLoad(player.uuid)
             .getOrCreate(advancement.castHelper())
         awardAdvancement(assignedAdvancement)
+    }
+
+    fun getAdvancementsForPlayer(uuid: UUID): List<Pair<Advancement<*, *>, AssignedAdvancement<*, *>>> {
+        val playerAdvancements = getOrLoad(uuid)
+        return Advancement.advancements.map { adv ->
+            val assigned = playerAdvancements.advancements[adv]
+                ?: adv.new(uuid).also { playerAdvancements.advancements[adv] = it }
+            adv to assigned
+        }
+    }
+
+    fun createAdvancementMessageSelf(advancement: Advancement<*, *>): Component {
+        return textComponent {
+            translatable("advancement.award.self") {
+                args {
+                    component("name") {
+                        append(advancement.name)
+                        hoverEvent(KHoverEventType.ShowText) {
+                            append(advancement.name)
+                            newLine()
+                            append(advancement.description)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    fun createAdvancementMessageOther(playerName: String, advancement: Advancement<*, *>): Component {
+        return textComponent {
+            translatable("advancement.award.other") {
+                args {
+                    string("player", playerName)
+                    component("name") {
+                        append(advancement.name)
+                        hoverEvent(KHoverEventType.ShowText) {
+                            append(advancement.name)
+                            newLine()
+                            append(advancement.descriptionOther)
+                        }
+                    }
+                }
+            }
+        }
     }
 
     @Suppress("UNCHECKED_CAST", "NOTHING_TO_INLINE")
