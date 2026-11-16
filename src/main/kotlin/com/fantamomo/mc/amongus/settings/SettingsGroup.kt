@@ -29,14 +29,16 @@ open class SettingsGroup(
     fun <T : Any, S : SettingsType<T>> key(
         key: String,
         type: S,
-        defaultValue: T
-    ) = SettingsKey(key, type, defaultValue, group = this)
+        defaultValue: T,
+        defaultValueOnDebug: T? = null
+    ) = SettingsKey(key, type, defaultValue, group = this, defaultValueOnDebug = defaultValueOnDebug)
 
     fun <T : Any, S : SettingsType<T>> key(
         key: String,
         type: S,
         defaultValue: T,
         displayName: Component,
-        description: Component?
-    ) = SettingsKey(key, type, defaultValue, displayName, description, this)
+        description: Component?,
+        defaultValueOnDebug: T? = null
+    ) = SettingsKey(key, type, defaultValue, displayName, description, this, defaultValueOnDebug = defaultValueOnDebug)
 }

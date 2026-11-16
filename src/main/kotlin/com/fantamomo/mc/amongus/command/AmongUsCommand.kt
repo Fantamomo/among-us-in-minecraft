@@ -2,6 +2,7 @@ package com.fantamomo.mc.amongus.command
 
 import com.fantamomo.mc.adventure.text.*
 import com.fantamomo.mc.amongus.AmongUs
+import com.fantamomo.mc.amongus.advancement.AdvancementsInventory
 import com.fantamomo.mc.amongus.area.GameArea
 import com.fantamomo.mc.amongus.command.Permissions.required
 import com.fantamomo.mc.amongus.command.arguments.*
@@ -40,6 +41,7 @@ val AmongUsCommand = paperCommand("amongus") {
     startCommand()
     banCommand()
     inviteCommand()
+    advancementsCommand()
     if (AmongUsConfig.Bots.enabled) botCommand()
 }
 
@@ -931,6 +933,24 @@ private fun PaperCommand.statsCommand() = literal("stats") {
                     }
                 }
             }
+        }
+    }
+}
+
+private fun PaperCommand.advancementsCommand() {
+    literal("advancements") {
+        Permissions.PLAYER_ADVANCEMENTS.required()
+        execute {
+            val player = source.sender as? Player
+            if (player == null) {
+                sendMessage {
+                    translatable("command.error.advancements.not_player")
+                }
+                return@execute NO_SUCCESS
+            }
+            val inv = AdvancementsInventory(player)
+            player.openInventory(inv.inventory)
+            SINGLE_SUCCESS
         }
     }
 }

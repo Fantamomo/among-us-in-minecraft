@@ -3,6 +3,7 @@ package com.fantamomo.mc.amongus.settings
 import com.fantamomo.mc.adventure.text.*
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.command.Permissions
+import com.fantamomo.mc.amongus.data.AmongUsDebug
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.HumanAmongUsPlayer
 import com.fantamomo.mc.amongus.task.GuiAssignedTask
@@ -203,9 +204,19 @@ class SettingsInventory(
         }
 
         if (lore.isEmpty()) lore.add(Component.empty())
+        val defaultDebugValue = key.defaultValueOnDebug?.takeIf { AmongUsDebug.DebugValues.SET_SETTING_VALUES_FOR_DEBUG.isEnabled() }
+        if (defaultDebugValue != null) {
+            lore.add(
+                textComponent {
+                    translatable("setting.ui.default.debug") {
+                        args { string("value", key.type.stringRepresentation(defaultDebugValue)) }
+                    }
+                }
+            )
+        }
         lore.add(
             textComponent {
-                translatable("setting.ui.default") {
+                translatable(if (defaultDebugValue != null) "setting.ui.default.original" else "setting.ui.default") {
                     args { string("value", key.type.stringRepresentation(key.defaultValue)) }
                 }
             }

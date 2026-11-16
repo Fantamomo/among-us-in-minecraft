@@ -1,11 +1,14 @@
 package com.fantamomo.mc.amongus
 
+import com.fantamomo.mc.amongus.advancement.AdvancementManager
 import com.fantamomo.mc.amongus.ai.AiService
 import com.fantamomo.mc.amongus.area.GameAreaManager
 import com.fantamomo.mc.amongus.command.AmongUsCommands
 import com.fantamomo.mc.amongus.command.Permissions
 import com.fantamomo.mc.amongus.data.AmongUsConfig
+import com.fantamomo.mc.amongus.data.AmongUsDebug.DebugValues
 import com.fantamomo.mc.amongus.data.AmongUsSecrets
+import com.fantamomo.mc.amongus.game.GameManager
 import com.fantamomo.mc.amongus.languages.LanguageManager
 import com.fantamomo.mc.amongus.listeners.Listeners
 import com.fantamomo.mc.amongus.manager.EntityManager
@@ -102,7 +105,11 @@ object AmongUs : JavaPlugin() {
         GameAreaManager.loadAreas()
         Listeners.registerAll()
         LanguageManager.init()
+        AdvancementManager.init()
         AmongUsSecrets.init()
+        if (!DebugValues.DISABLE_DELETING_GAME_WORLDS_ON_STARTUP.isEnabled()) {
+            GameManager.removeAmongUsWorlds()
+        }
 
         initClasses()
 
@@ -156,6 +163,7 @@ object AmongUs : JavaPlugin() {
         saveRun { PlayerDataManager.saveAll() }
         saveRun { LastPlayerLocationManager.save() }
         saveRun { ActionLogManager.saveAll() }
+        saveRun { AdvancementManager.stop() }
         saveRun { scope.cancel() }
 
         val ex = classNotFoundExceptions

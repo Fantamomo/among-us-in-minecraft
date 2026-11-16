@@ -4,6 +4,7 @@ import com.fantamomo.mc.adventure.text.args
 import com.fantamomo.mc.adventure.text.textComponent
 import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.AmongUs
+import com.fantamomo.mc.amongus.advancement.AdvancementsInventory
 import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.HumanAmongUsPlayer
@@ -91,6 +92,11 @@ class LobbyItemManger(val game: Game) {
                 val wardrobeInventory = WardrobeInventory(player, WardrobeInventory.Type.MATERIAL)
                 bukkitPlayer.openInventory(wardrobeInventory.inventory)
                 game.updateAllWardrobeInventories()
+            }
+
+            LobbyItemType.ADVANCEMENTS -> {
+                val advancementsInventory = AdvancementsInventory(bukkitPlayer)
+                bukkitPlayer.openInventory(advancementsInventory.inventory)
             }
         }
     }
@@ -205,6 +211,10 @@ class LobbyItemManger(val game: Game) {
                     }
                 }
             }
+        },
+        ADVANCEMENTS(6) {
+            override fun getItemType(player: HumanAmongUsPlayer) = ItemType.BOOK
+            override fun getName(player: HumanAmongUsPlayer) = Component.translatable("game.lobby.item.name.advancements")
         };
 
         open fun isAccessible(player: HumanAmongUsPlayer) = true

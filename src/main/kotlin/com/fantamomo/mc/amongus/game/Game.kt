@@ -4,6 +4,7 @@ import com.fantamomo.mc.adventure.text.*
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.AmongUsConstants
 import com.fantamomo.mc.amongus.ability.AbilityManager
+import com.fantamomo.mc.amongus.advancement.AdvancementManager
 import com.fantamomo.mc.amongus.ai.AiGameSummarizer
 import com.fantamomo.mc.amongus.ai.AiService
 import com.fantamomo.mc.amongus.ai.LobbyChatAiService
@@ -135,6 +136,7 @@ class Game(
     val lobbyChatAiService = LobbyChatAiService(this)
     val meetingAiService = MeetingAiService(this)
     val lobbyItemManger = LobbyItemManger(this)
+    val eventManager = EventManager(this)
 
     internal val players: MutableList<AmongUsPlayer> = mutableListOf()
     internal val bannedPlayers: MutableSet<UUID> = mutableSetOf()
@@ -494,6 +496,7 @@ class Game(
         logger.info("Game started")
 
         chatManager.clearChatHistory()
+        AdvancementManager.gameStart(this)
         roleManager.start()
         taskManager.start()
 
@@ -661,6 +664,8 @@ class Game(
 
         GameManager.gameEnd(this)
         actionLog.add(GameActionElements.End)
+        eventManager.onGameStop()
+        AdvancementManager.gameEnd(this)
 
         if (AmongUsConfig.AI.generateGameSummary && AiService.isEnabled()) {
             AmongUs.scope.launch {

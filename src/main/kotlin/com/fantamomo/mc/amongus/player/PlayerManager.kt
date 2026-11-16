@@ -4,6 +4,7 @@ import com.fantamomo.mc.adventure.text.append
 import com.fantamomo.mc.adventure.text.content
 import com.fantamomo.mc.adventure.text.textComponent
 import com.fantamomo.mc.amongus.AmongUs
+import com.fantamomo.mc.amongus.advancement.AdvancementManager
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.game.GameManager
 import com.fantamomo.mc.amongus.game.GamePhase
@@ -99,6 +100,7 @@ object PlayerManager {
         if (exists(player.uniqueId)) throw IllegalStateException("Player already in a game")
         val auPlayer = HumanAmongUsPlayer(player.uniqueId, player.name, game, player.location)
         LastPlayerLocationManager.set(player.uniqueId, player.location)
+        AdvancementManager.loadPlayer(player.uniqueId)
         auPlayer.player = player
 
         players.add(auPlayer)
@@ -170,6 +172,7 @@ object PlayerManager {
     internal fun onPlayerQuit(player: Player) {
         val auPlayer = getHumanPlayer(player.uniqueId) ?: return
         auPlayer.restorePlayer()
+        AdvancementManager.savePlayer(player.uniqueId)
 
         if (auPlayer.game.phase.onDisconnectRemove) {
             auPlayer.modification?.onEnd()

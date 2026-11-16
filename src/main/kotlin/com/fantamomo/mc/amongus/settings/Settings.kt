@@ -19,7 +19,7 @@ class Settings(val game: Game) {
 
     fun <T : Any> getOrDefault(key: SettingsKey<T, *>, defaultValue: T) = getOrNull(key) ?: defaultValue
 
-    operator fun <T : Any> get(key: SettingsKey<T, *>) = getOrDefault(key, key.defaultValue)
+    operator fun <T : Any> get(key: SettingsKey<T, *>) = getOrDefault(key, key.effectiveDefaultValue)
 
     operator fun <T : Any> set(key: SettingsKey<T, *>, value: T) {
         set(key, value, true)
@@ -39,7 +39,7 @@ class Settings(val game: Game) {
             val type = GameActionElements.SettingsChange.of(
                 this,
                 key as SettingsKey<Any, *>,
-                key.defaultValue
+                key.effectiveDefaultValue
             )
             game.actionLog.add(type)
         }
