@@ -24,6 +24,11 @@ object VentAbility :
 
         override val definition = VentAbility
 
+        /**
+         * See [com.fantamomo.mc.amongus.advancement.progressive.VentRatAdvancement]
+         */
+        var markedAsVentCheater = false
+
         @Suppress("UnstableApiUsage")
         override val items = listOf(
             abilityItem("vent") {
@@ -44,6 +49,13 @@ object VentAbility :
 
                     !ventManager.isVented(player) &&
                         !ventManager.isNearVent(player)
+                }
+
+                condition(
+                    BlockReason.custom("markedAsVentCheater"),
+                    Component.translatable("ability.vent.vent.marked_as_vent_cheater")
+                ) {
+                    markedAsVentCheater && !player.isVented()
                 }
 
                 requiresNotInGhostForm()
