@@ -57,7 +57,7 @@ val targetJavaVersion = 25
 kotlin {
     jvmToolchain(targetJavaVersion)
     compilerOptions {
-        freeCompilerArgs = listOf("-opt-in=kotlin.uuid.ExperimentalUuidApi", "-Xcontext-parameters")
+        freeCompilerArgs = listOf("-opt-in=kotlin.uuid.ExperimentalUuidApi")
     }
 }
 
