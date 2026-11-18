@@ -58,8 +58,9 @@ class AdvancementSequence(
     ) -> TimeoutHandle,
 
     private val cancelEventWait: (Continuation<*>) -> Unit,
-    private val onBlockerChange: (List<AdvancementSequenceBlocker>, element: AdvancementSequenceBlocker, removed: Boolean) -> Unit,
+    private val partChangeListener: PartChangeListener = PartChangeListener.Empty,
 ) {
+
 
     private class TimeoutFrame {
         var expired = false
@@ -71,7 +72,7 @@ class AdvancementSequence(
     )
 
     private val timeoutStack = mutableListOf<TimeoutFrame>()
-    private val blockerStack = mutableListOf<AdvancementSequenceBlocker>()
+    private val blockerStack = mutableListOf<AdvancementSequencePart>()
 
     private var exception: Throwable? = null
 
@@ -98,22 +99,28 @@ class AdvancementSequence(
     }
 
     @OptIn(ExperimentalContracts::class)
-    internal suspend inline fun <R> withBlocker(
-        blocker: AdvancementSequenceBlocker,
+    internal suspend inline fun <R> withPart(
+        part: AdvancementSequencePart,
         block: suspend AdvancementSequence.() -> R
     ): R {
         contract {
             callsInPlace(block, InvocationKind.EXACTLY_ONCE)
             returnsResultOf(block)
         }
-        blockerStack.add(blocker)
-        onBlockerChange(blockerStack, blocker, false)
+        blockerStack.add(part)
+        if (partChangeListener !== PartChangeListener.Empty) partChangeListener.onPartAdded(blockerStack, part)
+
+        var exceptional = false
+
         try {
             return block()
+        } catch (e: Throwable) {
+            exceptional = true
+            throw e
         } finally {
             val last = blockerStack.removeLastOrNull()
-            if (last != null) onBlockerChange(blockerStack, last, true)
-            if (last != blocker) throw IllegalStateException("Blocker stack is corrupted (expected $blocker, got $last)")
+            if (last != null && partChangeListener !== PartChangeListener.Empty) partChangeListener.onPartRemoved(blockerStack, last, exceptional)
+            if (last != part) throw IllegalStateException("Blocker stack is corrupted (expected $part, got $last)")
         }
     }
 
@@ -155,11 +162,10 @@ class AdvancementSequence(
         ensureActive()
 
         @Suppress("UNCHECKED_CAST")
-        val blocker = AdvancementSequenceBlocker.AwaitingEvent(null, type as Class<AmongUsEvent>)
+        val blocker = AdvancementSequencePart.Blocking.AwaitingEvent(type as Class<AmongUsEvent>)
 
-        val event = withBlocker(blocker) {
+        val event = withPart(blocker) {
             awaitEvent0<E>(type) { continuation ->
-                blocker.continuation = continuation
                 pendingWait = PendingWait(
                     continuation = continuation,
                     timeoutFrame = timeoutStack.lastOrNull()
