@@ -1,9 +1,11 @@
 package com.fantamomo.mc.amongus.advancement
 
 import com.fantamomo.mc.adventure.text.args
+import com.fantamomo.mc.adventure.text.color
 import com.fantamomo.mc.adventure.text.textComponent
 import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.AmongUs
+import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.languages.numeric
 import com.fantamomo.mc.amongus.task.GuiAssignedTask
 import com.fantamomo.mc.amongus.util.splitLinesPreserveStyles
@@ -214,9 +216,11 @@ class AdvancementsInventory(
 
         // Status line
         val progressive = assigned as? ProgressiveAdvancement.AssignedProgressiveAdvancement<*, *>
+        val sequenced = assigned as? SequencedAdvancement.AssignedSequencedAdvancement
         val statusKey = when {
             isCompleted -> "advancement.ui.status.completed"
             progressive != null && progressive.current > 0 -> "advancement.ui.status.in_progress"
+            sequenced != null && sequenced.startedParts.isNotEmpty() -> "advancement.ui.status.in_progress"
             else -> "advancement.ui.status.incomplete"
         }
         lore.add(Component.translatable(statusKey).loreLine(locale))
@@ -236,6 +240,48 @@ class AdvancementsInventory(
                 }.loreLine(locale)
             )
             lore.add(progressBar(current, max))
+        }
+
+        if (sequenced != null && !isHidden) {
+            val partIds = sequenced.definition.runner.partIds
+            val startedParts = sequenced.startedParts
+            val completedParts = sequenced.completedParts
+
+            lore.add(
+                textComponent {
+                    translatable("advancement.ui.steps") {
+                        args {
+                            val completedSize = completedParts.size
+                            val startedSize = startedParts.size
+                            val totalSize = partIds.size
+                            numeric("completed", completedSize)
+                            numeric("started", startedSize - completedSize)
+                            numeric("untouched", totalSize - startedSize)
+                        }
+                    }
+                }.loreLine(locale)
+            )
+            for ([index, id] in partIds.withIndex()) {
+                lore.add(textComponent {
+                    translatable("advancement.ui.steps.part") {
+                        args {
+                            numeric("index", index + 1)
+                            component("explanation") {
+                                // TODO: replace this with the real language key from the part
+                                translatable("advancement.${advancement.id}.part.$id") {
+                                    color(
+                                        when (id) {
+                                            in completedParts -> NamedTextColor.GREEN
+                                            in startedParts -> NamedTextColor.YELLOW
+                                            else -> NamedTextColor.GRAY
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }.loreLine(locale))
+            }
         }
 
         lore.add(Component.empty())
