@@ -4,6 +4,8 @@ import com.fantamomo.mc.adventure.text.args
 import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.ability.builder.AbilityTimer
+import com.fantamomo.mc.amongus.events.roles.MorphStartEvent
+import com.fantamomo.mc.amongus.events.roles.MorphStopEvent
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.*
@@ -64,6 +66,8 @@ class MorphManager(val game: Game) {
         private var animationOnFinish: (() -> Unit)? = null
         private val animationInterval = 5
 
+        fun isValid() = getMorphedPlayer(player) === this
+
         fun playForwardAnimation() {
             val frames = this.frames ?: return
             morphing = true
@@ -109,6 +113,7 @@ class MorphManager(val game: Game) {
                 actionBar?.remove()
                 morphsToRemove.add(player)
             }
+            game.eventManager.call(MorphStopEvent(player, target))
         }
 
         fun tick() {
@@ -212,6 +217,7 @@ class MorphManager(val game: Game) {
 
         val variants = 10
         val morphed = MorphedPlayer(player, target, abilityTimer)
+        game.eventManager.call(MorphStartEvent(morphed))
         morphs[player] = morphed
 
         val cachedFrames = MorphSkinManager.getCachedFrames(player.profile, target.profile, variants)
