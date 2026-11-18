@@ -243,7 +243,7 @@ class AdvancementsInventory(
         }
 
         if (sequenced != null && !isHidden) {
-            val partIds = sequenced.definition.runner.partIds
+            val steps = sequenced.definition.runner.allSteps
             val startedParts = sequenced.startedParts
             val completedParts = sequenced.completedParts
 
@@ -253,7 +253,7 @@ class AdvancementsInventory(
                         args {
                             val completedSize = completedParts.size
                             val startedSize = startedParts.size
-                            val totalSize = partIds.size
+                            val totalSize = steps.size
                             numeric("completed", completedSize)
                             numeric("started", startedSize - completedSize)
                             numeric("untouched", totalSize - startedSize)
@@ -261,16 +261,15 @@ class AdvancementsInventory(
                     }
                 }.loreLine(locale)
             )
-            for ([index, id] in partIds.withIndex()) {
-                lore.add(textComponent {
+            for (step in steps) {
+                val line = textComponent {
                     translatable("advancement.ui.steps.part") {
                         args {
-                            numeric("index", index + 1)
+                            numeric("index", step.index + 1)
                             component("explanation") {
-                                // TODO: replace this with the real language key from the part
-                                translatable("advancement.${advancement.id}.part.$id") {
+                                translatable(step.languageKey) {
                                     color(
-                                        when (id) {
+                                        when (step.key) {
                                             in completedParts -> NamedTextColor.GREEN
                                             in startedParts -> NamedTextColor.YELLOW
                                             else -> NamedTextColor.GRAY
@@ -280,7 +279,9 @@ class AdvancementsInventory(
                             }
                         }
                     }
-                }.loreLine(locale))
+                }
+                // indent nested steps below their parent
+                lore.add(Component.text("  ".repeat(step.depth)).append(line).loreLine(locale))
             }
         }
 
