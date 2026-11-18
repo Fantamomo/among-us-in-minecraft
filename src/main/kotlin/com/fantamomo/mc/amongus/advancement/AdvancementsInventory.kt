@@ -47,6 +47,9 @@ class AdvancementsInventory(
         private val HIDDEN_TOOLTIP_DISPLAY = TooltipDisplay.tooltipDisplay()
             .hideTooltip(true)
             .build()
+
+        private const val PROGRESS_BAR_LENGTH = 20
+        private const val PROGRESS_BAR_CHAR = "|"
     }
 
     override fun getInventory(): Inventory {
@@ -70,6 +73,7 @@ class AdvancementsInventory(
         val background = ItemType.BLACK_STAINED_GLASS_PANE.createItemStack()
         background.setData(DataComponentTypes.TOOLTIP_DISPLAY, HIDDEN_TOOLTIP_DISPLAY)
         borderSlots.forEach { inv.setItem(it, background) }
+        inv.setItem(4, buildSummaryItem(advancementsList, player.locale()))
 
         val startIndex = page * pageSize
         val pageItems = advancementsList.drop(startIndex).take(pageSize)
@@ -133,18 +137,66 @@ class AdvancementsInventory(
         }
     }
 
+    private fun buildSummaryItem(
+        advancementsList: List<Pair<Advancement<*, *>, AssignedAdvancement<*, *>>>,
+        locale: Locale
+    ): ItemStack {
+        val completed = advancementsList.count { it.second.isCompleted }
+        val total = advancementsList.size
+        val item = ItemType.NETHER_STAR.createItemStack()
+        item.setData(
+            DataComponentTypes.CUSTOM_NAME,
+            Component.translatable("advancement.ui.title")
+                .color(NamedTextColor.GOLD)
+                .decoration(TextDecoration.ITALIC, false)
+                .translateTo(locale)
+        )
+        val lore = listOf(
+            textComponent {
+                translatable("advancement.ui.summary") {
+                    args {
+                        numeric("current", completed)
+                        numeric("total", total)
+                    }
+                }
+            }.decoration(TextDecoration.ITALIC, false).translateTo(locale),
+            progressBar(completed, total)
+        )
+        item.setData(DataComponentTypes.LORE, ItemLore.lore(lore))
+        item.setData(DataComponentTypes.TOOLTIP_DISPLAY, TOOLTIP_DISPLAY)
+        return item
+    }
+
+    private fun progressBar(current: Int, max: Int): Component {
+        val ratio = if (max <= 0) 1.0 else (current.toDouble() / max).coerceIn(0.0, 1.0)
+        val filled = (ratio * PROGRESS_BAR_LENGTH).toInt()
+        val percent = (ratio * 100).toInt()
+        return Component.text()
+            .append(Component.text(PROGRESS_BAR_CHAR.repeat(filled), NamedTextColor.GREEN))
+            .append(Component.text(PROGRESS_BAR_CHAR.repeat(PROGRESS_BAR_LENGTH - filled), NamedTextColor.DARK_GRAY))
+            .append(Component.text(" $percent%", NamedTextColor.GRAY))
+            .decoration(TextDecoration.ITALIC, false)
+            .build()
+    }
+
+    private fun Component.loreLine(locale: Locale, color: NamedTextColor? = null): Component {
+        val styled = if (color != null) color(color) else this
+        return styled.decoration(TextDecoration.ITALIC, false).translateTo(locale)
+    }
+
+    @OptIn(ExperimentalAdvancementApi::class)
     private fun buildAdvancementItem(
         advancement: Advancement<*, *>,
         assigned: AssignedAdvancement<*, *>,
         locale: Locale
     ): ItemStack {
         val isCompleted = assigned.isCompleted
-        val itemType = advancement.icon
-        val item = itemType.createItemStack()
+        val isHidden = advancement.isSecret && !isCompleted
+        val item = (if (isHidden) ItemType.GRAY_DYE else advancement.icon).createItemStack()
 
         val nameColor = if (isCompleted) NamedTextColor.GOLD else NamedTextColor.WHITE
-        val nameComponent = advancement.name.translateTo(locale).color(nameColor).decoration(TextDecoration.ITALIC, false)
-        item.setData(DataComponentTypes.CUSTOM_NAME, nameComponent)
+        val name = if (isHidden) Component.translatable("advancement.ui.secret.name") else advancement.name
+        item.setData(DataComponentTypes.CUSTOM_NAME, name.loreLine(locale, nameColor))
 
         if (isCompleted) {
             item.setData(DataComponentTypes.ENCHANTMENT_GLINT_OVERRIDE, true)
@@ -152,29 +204,27 @@ class AdvancementsInventory(
 
         val lore = mutableListOf<Component>()
 
+        // Type line
+        val typeKey = when (advancement) {
+            is SequencedAdvancement -> "advancement.ui.type.sequenced"
+            is ProgressiveAdvancement<*, *> -> "advancement.ui.type.progressive"
+            else -> "advancement.ui.type.single"
+        }
+        lore.add(Component.translatable(typeKey).loreLine(locale, NamedTextColor.DARK_GRAY))
+
         // Status line
-        if (isCompleted) {
-            lore.add(
-                Component.translatable("advancement.ui.status.completed")
-                    .color(NamedTextColor.GREEN)
-                    .decoration(TextDecoration.ITALIC, false)
-                    .translateTo(locale)
-            )
-        } else if (assigned is ProgressiveAdvancement.AssignedProgressiveAdvancement<*, *>) {
-            val current = assigned.current
+        val progressive = assigned as? ProgressiveAdvancement.AssignedProgressiveAdvancement<*, *>
+        val statusKey = when {
+            isCompleted -> "advancement.ui.status.completed"
+            progressive != null && progressive.current > 0 -> "advancement.ui.status.in_progress"
+            else -> "advancement.ui.status.incomplete"
+        }
+        lore.add(Component.translatable(statusKey).loreLine(locale))
+
+        // Progress
+        if (progressive != null && !isHidden) {
             val max = (advancement as? ProgressiveAdvancement<*, *>)?.max ?: 1
-            val statusComp = if (current > 0) {
-                Component.translatable("advancement.ui.status.in_progress")
-                    .color(NamedTextColor.YELLOW)
-                    .decoration(TextDecoration.ITALIC, false)
-                    .translateTo(locale)
-            } else {
-                Component.translatable("advancement.ui.status.incomplete")
-                    .color(NamedTextColor.RED)
-                    .decoration(TextDecoration.ITALIC, false)
-                    .translateTo(locale)
-            }
-            lore.add(statusComp)
+            val current = if (isCompleted) max else progressive.current
             lore.add(
                 textComponent {
                     translatable("advancement.ui.progress") {
@@ -183,25 +233,24 @@ class AdvancementsInventory(
                             numeric("max", max)
                         }
                     }
-                }.decoration(TextDecoration.ITALIC, false).translateTo(locale)
+                }.loreLine(locale)
             )
-        } else {
-            lore.add(
-                Component.translatable("advancement.ui.status.incomplete")
-                    .color(NamedTextColor.RED)
-                    .decoration(TextDecoration.ITALIC, false)
-                    .translateTo(locale)
-            )
+            lore.add(progressBar(current, max))
         }
 
         lore.add(Component.empty())
 
         // Description / What is needed to complete
-        val descComponent = advancement.description.translateTo(locale)
-        val descLines = splitLinesPreserveStyles(descComponent).map {
+        val description = if (isHidden) Component.translatable("advancement.ui.secret.description") else advancement.description
+        val descLines = splitLinesPreserveStyles(description.translateTo(locale)).map {
             it.color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)
         }
         lore.addAll(descLines)
+
+        if (advancement.hasGameAdvantage && !isCompleted && !isHidden) {
+            lore.add(Component.empty())
+            lore.add(Component.translatable("advancement.ui.awarded_after_game").loreLine(locale, NamedTextColor.DARK_GRAY))
+        }
 
         item.setData(DataComponentTypes.LORE, ItemLore.lore(lore))
         item.setData(DataComponentTypes.TOOLTIP_DISPLAY, TOOLTIP_DISPLAY)
