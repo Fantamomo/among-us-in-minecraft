@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalContracts::class)
+
 package com.fantamomo.mc.amongus.advancement
 
 import com.fantamomo.mc.amongus.events.PlayerAmongUsEvent
@@ -5,7 +7,6 @@ import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 
-@OptIn(ExperimentalContracts::class)
 @ExperimentalAdvancementApi
 suspend fun <E : PlayerAmongUsEvent> AdvancementSequence.awaitOwnPlayer(block: suspend AdvancementSequence.() -> E): E {
     contract {
@@ -13,7 +14,7 @@ suspend fun <E : PlayerAmongUsEvent> AdvancementSequence.awaitOwnPlayer(block: s
         returnsResultOf(block)
     }
     ensureActive()
-    withBlocker(AdvancementSequenceBlocker.AwaitingOwnPlayer()) {
+    withPart(AdvancementSequencePart.Blocking.AwaitingOwnPlayer) {
         while (true) {
             val event = block()
             ensureActive()
@@ -24,8 +25,12 @@ suspend fun <E : PlayerAmongUsEvent> AdvancementSequence.awaitOwnPlayer(block: s
 
 @ExperimentalAdvancementApi
 suspend fun <R> AdvancementSequence.awaitCustomLogic(block: suspend AdvancementSequence.() -> R): R {
+    contract {
+        callsInPlace(block, InvocationKind.EXACTLY_ONCE)
+        returnsResultOf(block)
+    }
     ensureActive()
-    withBlocker(AdvancementSequenceBlocker.AwaitingCustomLogic()) {
+    withPart(AdvancementSequencePart.Blocking.AwaitingCustomLogic) {
         return block()
     }
 }
