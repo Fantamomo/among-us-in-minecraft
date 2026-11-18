@@ -12,7 +12,11 @@ import com.fantamomo.mc.amongus.player.HumanAmongUsPlayer
  * (via [Advancement.createOf] and [Advancement.new]),
  * but here we will create it immediately, if [shouldCreateAdvancementStateOnGameStart] is true (default).
  *
- * After the creation of the [AssignedAdvancement] we call [AssignedListenerAdvancement.start] and after the game [AssignedListenerAdvancement.stop]
+ * After the creation of the [AssignedAdvancement] we call [AssignedListenerAdvancement.start] and after the game
+ * (or as soon as the advancement is completed) [AssignedListenerAdvancement.stop].
+ *
+ * [SingleAdvancement] and [CounterAdvancement] already implement this,
+ * they only need to override `listen()` (see [AdvancementListenerScope]).
  */
 interface ListenerAdvancement {
 
