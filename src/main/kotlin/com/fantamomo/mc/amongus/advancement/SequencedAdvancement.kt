@@ -18,8 +18,17 @@ abstract class SequencedAdvancement(override val id: String) :
         player: UUID,
         data: JsonElement
     ): AssignedSequencedAdvancement {
-        val isCompleted = ((data as? JsonObject)?.get("is_completed") as? JsonPrimitive)?.booleanOrNull ?: false
-        return AssignedSequencedAdvancement(this, player, isCompleted)
+        val jsonObject = data as? JsonObject
+            ?: return AssignedSequencedAdvancement(this, player)
+        val isCompleted = (jsonObject["is_completed"] as? JsonPrimitive)
+            ?.booleanOrNull ?: false
+        val startedParts = (jsonObject["started_parts"] as? JsonArray)
+            ?.mapNotNullTo(mutableSetOf()) { (it as? JsonPrimitive)?.contentOrNull }
+            ?: mutableSetOf()
+        val completedParts = (jsonObject["completed_parts"] as? JsonArray)
+            ?.mapNotNullTo(mutableSetOf()) { (it as? JsonPrimitive)?.contentOrNull }
+            ?: mutableSetOf()
+        return AssignedSequencedAdvancement(this, player, isCompleted, startedParts, completedParts)
     }
 
     class AssignedSequencedAdvancement(
@@ -27,7 +36,20 @@ abstract class SequencedAdvancement(override val id: String) :
         override val player: UUID,
         @Suppress("OVERRIDE_DEPRECATION")
         override var isCompleted: Boolean = false,
+        internal val startedParts: MutableSet<String> = mutableSetOf(),
+        internal val completedParts: MutableSet<String> = mutableSetOf()
     ) : AssignedAdvancement<SequencedAdvancement, AssignedSequencedAdvancement> {
-        override fun toJson() = JsonNull
+        override fun toJson(): JsonElement {
+            if (startedParts.isEmpty() && completedParts.isEmpty()) return JsonNull
+            return buildJsonObject {
+                if (startedParts.isNotEmpty()) putJsonArray("started_parts") {
+                    startedParts.forEach { add(it) }
+                }
+                if (completedParts.isNotEmpty()) putJsonArray("completed_parts") {
+                    completedParts.forEach { add(it) }
+                }
+            }
+        }
+
     }
 }
