@@ -57,7 +57,7 @@ object VentRatAdvancement : CounterAdvancement("vent_rat", 15) {
             val cheaterData = (data as? JsonObject)?.get("cheater") as? JsonObject
             if (cheaterData != null) {
                 val count = (cheaterData["count"] as? JsonPrimitive)?.intOrNull
-                val lastCheat = (cheaterData["lastCheat"] as? JsonPrimitive)?.longOrNull ?: 0L
+                val lastCheat = (cheaterData["last_cheat"] as? JsonPrimitive)?.longOrNull ?: 0L
                 if (count != null) {
                     cheaters[player] = VentCheater(count, lastCheat)
                 }
