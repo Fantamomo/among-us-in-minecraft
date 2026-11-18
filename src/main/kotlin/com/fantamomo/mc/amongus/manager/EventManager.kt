@@ -63,21 +63,29 @@ class EventManager(val game: Game) {
     fun call(event: AmongUsEvent) {
         if (gameStopped) throw IllegalStateException("Cannot call event $event because game is stopped")
         val eventListeners = listeners[event::class.java] ?: return
-        val suspendCallbacks = mutableListOf<SuspendCallback<AmongUsEvent>>()
-        for (handler in eventListeners) {
+        if (eventListeners.isEmpty()) return
+        if (eventListeners.size == 1) {
+            val handler = eventListeners.first()
             if (handler is SuspendCallback<AmongUsEvent>) {
-                suspendCallbacks.add(handler)
-                continue
+                handler.invoke(event)
+                eventListeners.remove(handler)
+            } else {
+                try {
+                    handler.invoke(event)
+                } catch (e: Exception) {
+                    logger.error("Error while calling event handler $handler with $event", e)
+                }
             }
+            return
+        }
+        // iterate over a copy, handlers are allowed to (un)register listeners
+        for (handler in eventListeners.toList()) {
             try {
                 handler(event)
             } catch (e: Exception) {
                 logger.error("Error while calling event handler $handler with $event", e)
             }
         }
-        suspendCallbacks.forEach { it.invoke(event) }
-        eventListeners.removeAll(suspendCallbacks)
-
     }
 
     fun onGameStop() {
