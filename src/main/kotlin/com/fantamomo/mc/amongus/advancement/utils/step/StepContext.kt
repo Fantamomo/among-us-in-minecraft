@@ -1,3 +1,9 @@
 package com.fantamomo.mc.amongus.advancement.utils.step
 
-data class StepContext(val id: String, val languageKey: String)
+import com.fantamomo.mc.amongus.advancement.ExperimentalAdvancementApi
+
+@ExperimentalAdvancementApi
+data class StepContext(val step: StepInfo) {
+    val id: String get() = step.key
+    val languageKey: String get() = step.languageKey
+}
