@@ -43,6 +43,7 @@ object AdvancementManager {
     private val activeSequencesByPlayer = mutableMapOf<UUID, MutableSet<RunningAdvancementSequence>>()
     private val earnedAdvancementsByGame = mutableMapOf<Game, MutableList<Pair<UUID, Advancement<*, *>>>>()
     private val gamePlayersByGame = mutableMapOf<Game, MutableSet<UUID>>()
+    private val activeListenersByGame = mutableMapOf<Game, MutableSet<ListenerAdvancement.AssignedListenerAdvancement>>()
 
     private class Advancements(val uuid: UUID) {
         val advancements: MutableMap<Advancement<*, *>, AssignedAdvancement<*, *>> = mutableMapOf()
@@ -75,7 +76,7 @@ object AdvancementManager {
                     advancements.advancements[advancement] = assigned
                 }
                 if (assigned is ListenerAdvancement.AssignedListenerAdvancement) {
-                    assigned.start(player)
+                    startListener(game, player, advancement, assigned)
                 }
                 if (advancement is SequencedAdvancement) {
                     runSequencedAdvancement(
@@ -85,6 +86,36 @@ object AdvancementManager {
                     )
                 }
             }
+        }
+    }
+
+    private fun startListener(
+        game: Game,
+        player: HumanAmongUsPlayer,
+        advancement: Advancement<*, *>,
+        assigned: AssignedAdvancement<*, *>,
+    ) {
+        if (assigned !is ListenerAdvancement.AssignedListenerAdvancement) return
+        if (assigned.isCompleted) return
+        if (advancement is ListenerAdvancement && !advancement.shouldCreateAdvancementStateOnGameStart(player)) return
+        try {
+            assigned.start(player)
+        } catch (e: Exception) {
+            logger.error("Failed to start listener of advancement ${advancement.id} for player ${player.uuid}", e)
+            stopListener(assigned)
+            return
+        }
+        // the advancement could have been completed while starting (e.g. by mirroring a statistic)
+        if (assigned.isCompleted) stopListener(assigned)
+        else activeListenersByGame.getOrPut(game) { mutableSetOf() }.add(assigned)
+    }
+
+    private fun stopListener(assigned: ListenerAdvancement.AssignedListenerAdvancement) {
+        for (listeners in activeListenersByGame.values) listeners.remove(assigned)
+        try {
+            assigned.stop()
+        } catch (e: Exception) {
+            logger.error("Failed to stop listener advancement $assigned", e)
         }
     }
 
@@ -127,6 +158,8 @@ object AdvancementManager {
     }
 
     fun gameEnd(game: Game) {
+        activeListenersByGame.remove(game)?.forEach(::stopListener)
+
         val earned = earnedAdvancementsByGame.remove(game) ?: emptyList()
         val allGamePlayerUuids = gamePlayersByGame.remove(game) ?: emptySet()
 
@@ -188,7 +221,7 @@ object AdvancementManager {
         if (players.containsKey(uuid)) return players[uuid]!!
         val file = dataPath.resolve("$uuid.json")
         val advancements = Advancements(uuid)
-        players[uuid] = Advancements(uuid)
+        players[uuid] = advancements
         if (file.exists()) {
             val inputStream = try {
                 file.inputStream()
@@ -248,6 +281,8 @@ object AdvancementManager {
         @Suppress("DEPRECATION_ERROR")
         advancement.isCompleted = true
 
+        if (advancement is ListenerAdvancement.AssignedListenerAdvancement) stopListener(advancement)
+
         val definition = advancement.definition
         logger.info("Awarding advancement ${definition.id} to player ${advancement.player}")
 
@@ -273,6 +308,9 @@ object AdvancementManager {
             .getOrCreate(advancement.castHelper())
         awardAdvancement(assignedAdvancement)
     }
+
+    fun <A : Advancement<A, AA>, AA : AssignedAdvancement<A, AA>> getAssigned(uuid: UUID, advancement: A): AA =
+        getOrLoad(uuid).getOrCreate(advancement)
 
     fun getAdvancementsForPlayer(uuid: UUID): List<Pair<Advancement<*, *>, AssignedAdvancement<*, *>>> {
         val playerAdvancements = getOrLoad(uuid)
