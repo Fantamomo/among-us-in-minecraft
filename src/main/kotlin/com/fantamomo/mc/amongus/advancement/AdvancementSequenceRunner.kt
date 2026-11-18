@@ -1,7 +1,15 @@
 package com.fantamomo.mc.amongus.advancement
 
 @ExperimentalAdvancementApi
-class AdvancementSequenceRunner(val runner: suspend AdvancementSequence.() -> Unit)
+class AdvancementSequenceRunner(
+    val runner: suspend AdvancementSequence.() -> Unit,
+    /**
+     * The keys of all `withPart("...")` calls inside [runner], in source order (nested parts after their parent).
+     *
+     * Extracted at compile time by the `advancement-compiler-plugin`, the runner is never executed for this.
+     */
+    val partIds: List<String> = emptyList(),
+)
 
 /**
  * This is used to define the sequence of actions that need to be completed for to complete an advancement.
@@ -55,8 +63,17 @@ class AdvancementSequenceRunner(val runner: suspend AdvancementSequence.() -> Un
  * If you have custom logic, you need to use [awaitCustomLogic] around it, so that the system can detect what the first action is.
  * Only need to use this on the first action of the sequence. **This might change in the future**
  *
+ * ### Parts
+ *
+ * [partIds] is filled in automatically by the `advancement-compiler-plugin`, do not pass it manually.
+ * See [AdvancementSequenceRunner.partIds].
+ *
  * @author Fantamomo
  * @since 2.4-SNAPSHOT
  */
+@Suppress("NOTHING_TO_INLINE") // inline for the `advancement-compiler-plugin`
 @ExperimentalAdvancementApi
-fun SequencedAdvancement.createRunner(runner: suspend AdvancementSequence.() -> Unit) = AdvancementSequenceRunner(runner)
+inline fun SequencedAdvancement.createRunner(
+    partIds: Array<String> = emptyArray(),
+    noinline runner: suspend AdvancementSequence.() -> Unit
+) = AdvancementSequenceRunner(runner, partIds.asList())
