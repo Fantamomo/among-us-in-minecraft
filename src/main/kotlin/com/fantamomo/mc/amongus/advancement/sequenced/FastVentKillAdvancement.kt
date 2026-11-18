@@ -1,6 +1,7 @@
 package com.fantamomo.mc.amongus.advancement.sequenced
 
 import com.fantamomo.mc.amongus.advancement.*
+import com.fantamomo.mc.amongus.advancement.utils.step.step
 import org.bukkit.inventory.ItemType
 import kotlin.time.Duration.Companion.seconds
 
@@ -17,10 +18,16 @@ data object FastVentKillAdvancement : SequencedAdvancement("fast_vent_kill") {
     override val icon: ItemType = ItemType.IRON_TRAPDOOR
 
     override val runner = createRunner {
-        awaitOwnPlayer { awaitExitVent() }
+        step("exit_vent") {
+            awaitOwnPlayer { awaitExitVent() }
+        }
         withTimeout(10.seconds) {
-            awaitOwnPlayer { awaitKill() }
-            awaitOwnPlayer { awaitEnterVent() }
+            step("kill") {
+                awaitOwnPlayer { awaitKill() }
+            }
+            step("enter_vent") {
+                awaitOwnPlayer { awaitEnterVent() }
+            }
         }
         award()
     }

@@ -1,6 +1,8 @@
 package com.fantamomo.mc.amongus.advancement.sequenced
 
 import com.fantamomo.mc.amongus.advancement.*
+import com.fantamomo.mc.amongus.advancement.utils.step.step
+import com.fantamomo.mc.amongus.advancement.utils.step.stepFailed
 import com.fantamomo.mc.amongus.player.HumanAmongUsPlayer
 import com.fantamomo.mc.amongus.player.internalEntity
 import com.fantamomo.mc.amongus.role.Team
@@ -25,7 +27,9 @@ object ThePerfectKillAdvancement : SequencedAdvancement("the_perfect_kill") {
         player.role.definition.team == Team.IMPOSTERS
 
     override val runner = createRunner {
-        val killEvent = awaitOwnPlayer { awaitKill() }
+        val killEvent = step("kill") {
+            awaitOwnPlayer { awaitKill() }
+        }
         val victim = killEvent.victim
 
         val victimEntity = victim.internalEntity ?: return@createRunner
@@ -51,17 +55,22 @@ object ThePerfectKillAdvancement : SequencedAdvancement("the_perfect_kill") {
         }
 
         // at least two witnesses are required
-        if (witnesses.size < 2) return@createRunner
+        step("at_least_two_witnesses") {
+            val enoughWitnesses = witnesses.size >= 2
+            if (!enoughWitnesses) stepFailed()
+        }
 
         // a witness must report the body within 15 seconds
-        val meetingCall = withTimeout(15.seconds) { awaitMeetingCall() }
-
-        if (meetingCall.player !in witnesses) return@createRunner
+        step("witness_meeting_call") {
+            val meetingCall = withTimeout(15.seconds) { awaitMeetingCall() }
+            if (meetingCall.player !in witnesses) stepFailed()
+        }
 
         // the killer must survive the meeting
-        val meetingEnd = awaitMeetingEnd()
-
-        if (meetingEnd.ejectedPlayer == player) return@createRunner
+        step("survive_meeting") {
+            val meetingEnd = awaitMeetingEnd()
+            if (meetingEnd.ejectedPlayer == player) stepFailed()
+        }
 
         award()
     }

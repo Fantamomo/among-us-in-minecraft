@@ -1,6 +1,8 @@
 package com.fantamomo.mc.amongus.advancement.sequenced
 
 import com.fantamomo.mc.amongus.advancement.*
+import com.fantamomo.mc.amongus.advancement.utils.step.step
+import com.fantamomo.mc.amongus.advancement.utils.step.stepFailed
 import com.fantamomo.mc.amongus.player.HumanAmongUsPlayer
 import com.fantamomo.mc.amongus.role.Team
 import org.bukkit.inventory.ItemType
@@ -21,13 +23,23 @@ object SelfReportAdvancement : SequencedAdvancement("self_report") {
     override fun applicableTo(player: HumanAmongUsPlayer) = player.role.definition.team == Team.IMPOSTERS
 
     override val runner = createRunner {
-        val killEvent = awaitOwnPlayer { awaitKill() }
+        val killEvent = step("kill") {
+            awaitOwnPlayer {
+                awaitKill()
+            }
+        }
 
-        val meetingCall = withTimeout(10.seconds) { awaitMeetingCall() }
-        if (meetingCall.player != player || meetingCall.body != killEvent.victim) return@createRunner
+        step("meeting_call") {
+            val meetingCall = withTimeout(10.seconds) {
+                awaitMeetingCall()
+            }
+            if (meetingCall.player != player || meetingCall.body != killEvent.victim) stepFailed()
+        }
 
-        val meetingEnd = awaitMeetingEnd()
-        if (meetingEnd.ejectedPlayer == player) return@createRunner
+        step("meeting_end") {
+            val meetingEnd = awaitMeetingEnd()
+            if (meetingEnd.ejectedPlayer == player) stepFailed()
+        }
 
         award()
     }
