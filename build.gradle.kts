@@ -49,6 +49,8 @@ dependencies {
 
 
     testImplementation(kotlin("test"))
+
+    kotlinCompilerPluginClasspath(project(":advancement-compiler-plugin"))
 }
 
 val targetJavaVersion = 25
@@ -108,6 +110,10 @@ tasks.jar {
             "Jar-Type" to "thin"
         )
     }
+}
+
+tasks.shadowJar {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
 
 val liteJar = tasks.register<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("liteJar") {
