@@ -116,7 +116,15 @@ class EventManager(val game: Game) {
         }
 
         fun stop() {
-            continuation.resumeWithException(CancellationException("Game stopped"))
+            try {
+                continuation.resumeWithException(CancellationException("Game stopped"))
+            } catch (e: Exception) {
+                if (e is IllegalStateException && e.message?.contains("Already resumed, but proposed with update") == true) {
+                    return
+                } else {
+                    logger.warn("Failed to resume $continuation with CancellationException", e)
+                }
+            }
         }
     }
 
