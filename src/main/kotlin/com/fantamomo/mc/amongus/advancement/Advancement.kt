@@ -1,7 +1,14 @@
 package com.fantamomo.mc.amongus.advancement
 
+import com.fantamomo.mc.amongus.advancement.progressive.TaskMasterAdvancement
+import com.fantamomo.mc.amongus.advancement.progressive.VentRatAdvancement
+import com.fantamomo.mc.amongus.advancement.progressive.VeteranAdvancement
 import com.fantamomo.mc.amongus.advancement.sequenced.FastVentKillAdvancement
+import com.fantamomo.mc.amongus.advancement.sequenced.SelfReportAdvancement
 import com.fantamomo.mc.amongus.advancement.sequenced.ThePerfectKillAdvancement
+import com.fantamomo.mc.amongus.advancement.single.FirstGameAdvancement
+import com.fantamomo.mc.amongus.advancement.single.GhostVictoryAdvancement
+import com.fantamomo.mc.amongus.player.HumanAmongUsPlayer
 import kotlinx.serialization.json.JsonElement
 import net.kyori.adventure.text.Component
 import org.bukkit.inventory.ItemType
@@ -43,8 +50,16 @@ interface Advancement<A : Advancement<A, AA>, AA : AssignedAdvancement<A, AA>> {
      *
      * If true, we award the player with this advancement **after** the game finishes.
      * If false, we award the player with this advancement the moment they complete it.
+     *
+     * Other players still only see the advancement after the game finishes.
      */
     val hasGameAdvantage: Boolean
+        get() = false
+
+    /**
+     * If true, the name and description are hidden in the inventory GUI until the advancement is completed.
+     */
+    val isSecret: Boolean
         get() = false
 
     /**
@@ -58,6 +73,18 @@ interface Advancement<A : Advancement<A, AA>, AA : AssignedAdvancement<A, AA>> {
 
     fun createOf(player: UUID, data: JsonElement): AA
 
+    /**
+     * Returns the state of this advancement for [player] (loading or creating it if needed).
+     *
+     * Use this to update the advancement directly from code, e.g. `MyAdvancement.of(player).award()`.
+     */
+    fun of(player: UUID): AA {
+        @Suppress("UNCHECKED_CAST")
+        return AdvancementManager.getAssigned(player, this as A)
+    }
+
+    fun of(player: HumanAmongUsPlayer): AA = of(player.uuid)
+
     companion object {
         internal const val GOING_THROUGH_SEQUENCES_DISABLED = 10000
         internal const val GOING_THROUGH_SEQUENCES_LIMIT = 100
@@ -66,8 +93,14 @@ interface Advancement<A : Advancement<A, AA>, AA : AssignedAdvancement<A, AA>> {
         internal const val GOING_THROUGH_SEQUENCES_DECREMENT = 1
 
         val advancements = listOf<Advancement<*, *>>(
+            FirstGameAdvancement,
+            VeteranAdvancement,
+            TaskMasterAdvancement,
+            VentRatAdvancement,
             FastVentKillAdvancement,
-            ThePerfectKillAdvancement
+            ThePerfectKillAdvancement,
+            SelfReportAdvancement,
+            GhostVictoryAdvancement,
         )
 
         val advancementMap = advancements.associateBy { it.id }
