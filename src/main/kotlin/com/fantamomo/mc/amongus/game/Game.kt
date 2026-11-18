@@ -5,6 +5,7 @@ import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.AmongUsConstants
 import com.fantamomo.mc.amongus.ability.AbilityManager
 import com.fantamomo.mc.amongus.advancement.AdvancementManager
+import com.fantamomo.mc.amongus.advancement.single.GhostVictoryAdvancement
 import com.fantamomo.mc.amongus.ai.AiGameSummarizer
 import com.fantamomo.mc.amongus.ai.AiService
 import com.fantamomo.mc.amongus.ai.LobbyChatAiService
@@ -640,6 +641,7 @@ class Game(
                 playTime.timerStop()
                 playedGames.increment()
             }
+            if (hasWon && !player.isAlive()) player.humanOrNull?.let(GhostVictoryAdvancement::award)
 
             val subtitle = textComponent {
                 if (hasWon) translatable("win.win") else translatable("win.lose")
