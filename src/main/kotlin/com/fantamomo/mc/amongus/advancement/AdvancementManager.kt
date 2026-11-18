@@ -3,6 +3,7 @@ package com.fantamomo.mc.amongus.advancement
 import com.fantamomo.mc.adventure.text.*
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.AmongUsConstants
+import com.fantamomo.mc.amongus.advancement.utils.step.StepFailedException
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.languages.string
@@ -141,7 +142,7 @@ object AdvancementManager {
 
         val runner = advancement.runner
 
-        val runningSequence = RunningAdvancementSequence(player, advancement, runner, assigned)
+        val runningSequence = RunningAdvancementSequence(player, advancement, runner, assigned, assigned.startedParts, assigned.completedParts)
         val playerSequences = activeSequencesByPlayer.getOrPut(player.uuid) { mutableSetOf() }
         if (playerSequences.any { it.runner == runner && !it.finishedFirstAction }) return
 
@@ -364,7 +365,9 @@ object AdvancementManager {
         val advancement: SequencedAdvancement,
         val runner: AdvancementSequenceRunner,
         val assigned: SequencedAdvancement.AssignedSequencedAdvancement,
-    ) : Continuation<Unit> {
+        val startedParts: MutableSet<String>,
+        val completedParts: MutableSet<String>
+    ) : Continuation<Unit>, PartChangeListener {
 
         override val context = EmptyCoroutineContext
 
@@ -373,7 +376,7 @@ object AdvancementManager {
             player = player,
             scheduleTimeout = ::scheduleTimeout,
             cancelEventWait = player.game.eventManager::removeListener,
-            onBlockerChange = ::onBlockerChange
+            partChangeListener = this
         )
 
         var finishedFirstAction = false
@@ -395,15 +398,34 @@ object AdvancementManager {
             }
         }
 
-        private fun onBlockerChange(
-            blockers: List<AdvancementSequenceBlocker>,
-            element: AdvancementSequenceBlocker,
-            removed: Boolean
+        override fun onPartAdded(
+            parts: List<AdvancementSequencePart>,
+            element: AdvancementSequencePart
         ) {
-            if (finishedFirstAction) return
-            if (blockers.isEmpty() && removed) {
-                finishedFirstAction = true
-                runSequencedAdvancement(player, advancement, assigned)
+            when (element) {
+                is AdvancementSequencePart.Blocking -> {}
+                is AdvancementSequencePart.NamedPart -> {
+                    startedParts.add(element.key)
+                }
+            }
+        }
+
+        override fun onPartRemoved(
+            parts: List<AdvancementSequencePart>,
+            element: AdvancementSequencePart,
+            exceptional: Boolean
+        ) {
+            when (element) {
+                is AdvancementSequencePart.Blocking -> {
+                    if (finishedFirstAction) return
+                    if (parts.none { it is AdvancementSequencePart.Blocking }) {
+                        finishedFirstAction = true
+                        runSequencedAdvancement(player, advancement, assigned)
+                    }
+                }
+                is AdvancementSequencePart.NamedPart -> {
+                    completedParts.add(element.key)
+                }
             }
         }
 
@@ -424,6 +446,8 @@ object AdvancementManager {
             val throwable = result.exceptionOrNull()
             if (throwable == null) {
                 logger.info("Advancement sequence completed ($advancement) successfully") // TODO: remove success log
+            } else if (throwable is StepFailedException) {
+                logger.info("Step ${throwable.stepId} failed") // TODO: remove after testing
             } else if (throwable !is CancellationException) {
                 logger.error("Advancement sequence failed ($advancement)", throwable)
             }
