@@ -1,15 +1,38 @@
 package com.fantamomo.mc.amongus.advancement
 
+import com.fantamomo.mc.amongus.advancement.utils.step.StepInfo
+
 @ExperimentalAdvancementApi
 class AdvancementSequenceRunner(
     val runner: suspend AdvancementSequence.() -> Unit,
     /**
-     * The keys of all `withPart("...")` calls inside [runner], in source order (nested parts after their parent).
+     * The top-level `step("...")` calls inside [runner] in source order, nested steps are in [StepInfo.children].
      *
      * Extracted at compile time by the `advancement-compiler-plugin`, the runner is never executed for this.
      */
-    val partIds: List<String> = emptyList(),
-)
+    val steps: List<StepInfo>,
+    /**
+     * Lazy, because [createRunner] is called while the advancement itself is still being initialized.
+     */
+    advancement: () -> SequencedAdvancement,
+) {
+    val advancement: SequencedAdvancement by lazy(advancement)
+
+    /** All steps (nested ones included) in pre-order, i.e. parents before their children. */
+    val allSteps: List<StepInfo> = steps.flatMap { it.flatten() }
+
+    private val stepsByKey: Map<String, StepInfo> = allSteps.associateBy { it.key }
+
+    init {
+        require(stepsByKey.size == allSteps.size) { "Step keys must be unique: ${allSteps.map { it.key }}" }
+        for ([index, step] in steps.withIndex()) step.bind(this, null, index)
+    }
+
+    fun stepOrNull(key: String): StepInfo? = stepsByKey[key]
+
+    fun step(key: String): StepInfo = stepsByKey[key]
+        ?: error("Unknown step '$key' in ${advancement.id}, is the advancement-compiler-plugin applied?")
+}
 
 /**
  * This is used to define the sequence of actions that need to be completed for to complete an advancement.
@@ -65,8 +88,8 @@ class AdvancementSequenceRunner(
  *
  * ### Parts
  *
- * [partIds] is filled in automatically by the `advancement-compiler-plugin`, do not pass it manually.
- * See [AdvancementSequenceRunner.partIds].
+ * [steps] is filled in automatically by the `advancement-compiler-plugin`, do not pass it manually.
+ * See [AdvancementSequenceRunner.steps] and [StepInfo].
  *
  * @author Fantamomo
  * @since 2.4-SNAPSHOT
@@ -74,6 +97,6 @@ class AdvancementSequenceRunner(
 @Suppress("NOTHING_TO_INLINE") // inline for the `advancement-compiler-plugin`
 @ExperimentalAdvancementApi
 inline fun SequencedAdvancement.createRunner(
-    partIds: Array<String> = emptyArray(),
+    steps: Array<StepInfo> = emptyArray(),
     noinline runner: suspend AdvancementSequence.() -> Unit
-) = AdvancementSequenceRunner(runner, partIds.asList())
+) = AdvancementSequenceRunner(runner, steps.asList()) { this }
