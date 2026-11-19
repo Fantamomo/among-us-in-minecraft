@@ -34,3 +34,23 @@ suspend fun <R> AdvancementSequence.awaitCustomLogic(block: suspend AdvancementS
         return block()
     }
 }
+
+@ExperimentalAdvancementApi
+suspend fun <T> AdvancementSequence.awaitCustomLogicFilter(
+    provider: suspend AdvancementSequence.() -> T,
+    filter: (T) -> Boolean
+): T {
+    contract {
+        callsInPlace(provider, InvocationKind.AT_LEAST_ONCE)
+        callsInPlace(filter, InvocationKind.AT_LEAST_ONCE)
+        returnsResultOf(provider)
+    }
+    ensureActive()
+    withPart(AdvancementSequencePart.Blocking.AwaitingCustomLogic) {
+        while (true) {
+            val result = provider()
+            ensureActive()
+            if (filter(result)) return result
+        }
+    }
+}

@@ -3,10 +3,7 @@ package com.fantamomo.mc.amongus.advancement
 import com.fantamomo.mc.amongus.advancement.progressive.TaskMasterAdvancement
 import com.fantamomo.mc.amongus.advancement.progressive.VentRatAdvancement
 import com.fantamomo.mc.amongus.advancement.progressive.VeteranAdvancement
-import com.fantamomo.mc.amongus.advancement.sequenced.FastVentKillAdvancement
-import com.fantamomo.mc.amongus.advancement.sequenced.IdentityTheftAdvancement
-import com.fantamomo.mc.amongus.advancement.sequenced.SelfReportAdvancement
-import com.fantamomo.mc.amongus.advancement.sequenced.ThePerfectKillAdvancement
+import com.fantamomo.mc.amongus.advancement.sequenced.*
 import com.fantamomo.mc.amongus.advancement.single.FirstGameAdvancement
 import com.fantamomo.mc.amongus.advancement.single.GhostVictoryAdvancement
 import com.fantamomo.mc.amongus.player.HumanAmongUsPlayer
@@ -101,6 +98,7 @@ interface Advancement<A : Advancement<A, AA>, AA : AssignedAdvancement<A, AA>> {
             FastVentKillAdvancement,
             IdentityTheftAdvancement,
             ThePerfectKillAdvancement,
+            WhoTurnedOffTheLightsAdvancement,
             SelfReportAdvancement,
             GhostVictoryAdvancement,
         )

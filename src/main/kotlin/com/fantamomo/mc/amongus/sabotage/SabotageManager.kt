@@ -3,6 +3,8 @@ package com.fantamomo.mc.amongus.sabotage
 import com.fantamomo.mc.adventure.text.textComponent
 import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.AmongUs
+import com.fantamomo.mc.amongus.events.sabotage.SabotageEndEvent
+import com.fantamomo.mc.amongus.events.sabotage.SabotageStartEvent
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.player.HumanAmongUsPlayer
@@ -30,6 +32,8 @@ class SabotageManager(private val game: Game) {
         game.settings[SettingsKey.UTILS.SABOTAGE_CRISIS_COOLDOWN].seconds
 
     private val cooldowns = mutableMapOf<Sabotage<*, *>, Cooldown>()
+    var currentSabotageStart: Long? = null
+        private set
     private var currentSabotage: Sabotage<*, *>? = null
 
     val bossBar = BossBar.bossBar(
@@ -69,7 +73,11 @@ class SabotageManager(private val game: Game) {
 
         game.actionLog.add(SabotageActionElements.Start(player?.uuid, sabotage.sabotageType.id))
 
+        currentSabotageStart = System.currentTimeMillis()
         currentSabotage = sabotage
+
+        // we call it AFTER setting currentSabotageStart
+        game.eventManager.call(SabotageStartEvent(sabotage, player, currentSabotageStart!!))
 
         game.sendTitle(TitlePart.TITLE, textComponent {
             translatable("sabotage.start.${sabotage.sabotageType.id}")
@@ -125,6 +133,9 @@ class SabotageManager(private val game: Game) {
             )
         )
 
+        game.eventManager.call(SabotageEndEvent(sabotage, currentSabotageStart!!))
+
+        currentSabotageStart = null
         currentSabotage = null
 
         sabotage.stop(SabotageStopCause.UNKNOWN)

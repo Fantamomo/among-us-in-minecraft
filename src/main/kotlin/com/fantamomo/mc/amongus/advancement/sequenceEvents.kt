@@ -7,6 +7,7 @@ import com.fantamomo.mc.amongus.events.meeting.MeetingEndEvent
 import com.fantamomo.mc.amongus.events.player.PlayerKillEvent
 import com.fantamomo.mc.amongus.events.roles.MorphStartEvent
 import com.fantamomo.mc.amongus.events.roles.MorphStopEvent
+import com.fantamomo.mc.amongus.events.sabotage.SabotageStartEvent
 import com.fantamomo.mc.amongus.events.vents.VentEnterEvent
 import com.fantamomo.mc.amongus.events.vents.VentExitEvent
 
@@ -24,3 +25,5 @@ suspend fun AdvancementSequence.awaitMeetingEnd(): MeetingEndEvent = awaitEvent(
 suspend fun AdvancementSequence.awaitMorphStart(): MorphStartEvent = awaitEvent()
 
 suspend fun AdvancementSequence.awaitMorphStop(): MorphStopEvent = awaitEvent()
+
+suspend fun AdvancementSequence.awaitSabotageStart(): SabotageStartEvent = awaitEvent()

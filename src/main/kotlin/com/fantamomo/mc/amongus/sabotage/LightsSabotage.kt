@@ -2,6 +2,7 @@ package com.fantamomo.mc.amongus.sabotage
 
 import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.AmongUs
+import com.fantamomo.mc.amongus.events.sabotage.LightLeverFlipEvent
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.manager.EntityManager
 import com.fantamomo.mc.amongus.manager.waypoint.FixedWaypointPosProvider
@@ -166,6 +167,7 @@ class LightsSabotage internal constructor(override val game: Game) :
         }
         val data = location.block.blockData as Switch
         data.isPowered = !data.isPowered
+        game.eventManager.call(LightLeverFlipEvent(amongUsPlayer, data.isPowered))
         val display = levers[block]
         if (display != null) {
             display.block = data
