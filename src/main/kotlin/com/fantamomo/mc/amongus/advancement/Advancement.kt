@@ -96,6 +96,7 @@ interface Advancement<A : Advancement<A, AA>, AA : AssignedAdvancement<A, AA>> {
             TaskMasterAdvancement,
             VentRatAdvancement,
             FastVentKillAdvancement,
+            HiredGunFiredGunAdvancement,
             IdentityTheftAdvancement,
             StandingOvationAdvancement,
             ThePerfectKillAdvancement,
