@@ -99,6 +99,7 @@ interface Advancement<A : Advancement<A, AA>, AA : AssignedAdvancement<A, AA>> {
             VeteranAdvancement,
 
             // sequenced
+            DramaticExitAdvancement,
             FastVentKillAdvancement,
             HiredGunFiredGunAdvancement,
             IdentityTheftAdvancement,
