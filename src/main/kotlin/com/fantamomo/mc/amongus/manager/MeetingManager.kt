@@ -418,7 +418,7 @@ class MeetingManager(private val game: Game) {
             showVoteResult(ejectedPlayer)
             showVoteDetails()
 
-            game.eventManager.call(MeetingEndEvent(ejectedPlayer))
+            game.eventManager.call(MeetingEndEvent(ejectedPlayer, votes))
 
             game.actionLog.add(MeetingActionElement.MeetingResult(ejectedPlayer?.uuid))
 
