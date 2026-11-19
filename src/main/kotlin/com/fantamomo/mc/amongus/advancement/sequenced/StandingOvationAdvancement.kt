@@ -10,6 +10,8 @@ import com.fantamomo.mc.amongus.role.neutral.JesterRole
 
 @OptIn(ExperimentalAdvancementApi::class)
 object StandingOvationAdvancement : SequencedAdvancement("standing_ovation") {
+    override val isSecret = true
+
     override fun applicableTo(player: HumanAmongUsPlayer) = player.role.definition == JesterRole
 
     override val runner = createRunner {
