@@ -3,11 +3,14 @@ package com.fantamomo.mc.amongus.advancement
 import com.fantamomo.mc.amongus.events.AmongUsEvent
 import com.fantamomo.mc.amongus.player.HumanAmongUsPlayer
 import com.fantamomo.mc.amongus.util.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.RestrictsSuspension
+import kotlin.coroutines.resume
+import kotlin.reflect.KClass
 import kotlin.time.Duration
 
 
@@ -180,12 +183,55 @@ class AdvancementSequence(
         return event
     }
 
+    suspend fun <E : AmongUsEvent> awaitEvents(vararg types: Class<out E>): E {
+        if (types.isEmpty()) throw IllegalArgumentException("Can not await Events without any event type")
+        if (types.size == 1) return awaitEvent(types.first())
+        val distinct = types.distinct()
+        if (distinct.size == 1) return awaitEvent(distinct.first())
+        return awaitEvents0(distinct)
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private suspend fun <E : AmongUsEvent> awaitEvents0(types: List<Class<out E>>): E {
+        val blocker = AdvancementSequencePart.Blocking.AwaitingEvents(types as List<Class<AmongUsEvent>>)
+        return withPart(blocker) { awaitEvent1(types) }
+    }
+
+    suspend fun <E : AmongUsEvent> awaitEvents(vararg types: KClass<out E>): E {
+        if (types.isEmpty()) throw IllegalArgumentException("Can not await Events without any event type")
+        if (types.size == 1) return awaitEvent(types.first().java)
+        val distinct = types.distinct()
+        if (distinct.size == 1) return awaitEvent(distinct.first().java)
+        return awaitEvents0(types.map { it.java })
+    }
+
+    private suspend inline fun <E : AmongUsEvent> awaitEvent1(types: List<Class<out E>>): E {
+        return suspendCancellableCoroutine { continuation ->
+            var resumed = false
+            var handler: (AmongUsEvent) -> Unit = {}
+            handler = {
+                if (!resumed) {
+                    resumed = true
+                    @Suppress("UNCHECKED_CAST")
+                    continuation.resume(it as E)
+                    player.game.eventManager.unregister(handler)
+                }
+            }
+
+            for (type in types) {
+                player.game.eventManager.register(type, handler)
+            }
+        }
+    }
+
     private suspend inline fun <E : AmongUsEvent> awaitEvent0(
         type: Class<E>,
         noinline continuationHandler: ((Continuation<E>) -> Unit)
     ) = player.game.eventManager.awaitEvent(type, continuationHandler)
 
     suspend inline fun <reified E : AmongUsEvent> awaitEvent() = awaitEvent(E::class.java)
+
+    suspend inline fun awaitInfinity() = suspendCancellableCoroutine<Unit> {}
 
     fun ensureActive() {
         if (exception != null) throw exception!!

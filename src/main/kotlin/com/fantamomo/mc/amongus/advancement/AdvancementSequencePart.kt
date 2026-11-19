@@ -14,6 +14,8 @@ sealed interface AdvancementSequencePart {
     sealed interface Blocking : AdvancementSequencePart {
         data class AwaitingEvent(val event: Class<AmongUsEvent>) : Blocking
 
+        data class AwaitingEvents(val events: List<Class<AmongUsEvent>>) : Blocking
+
         data object AwaitingOwnPlayer : Blocking
 
         data object AwaitingCustomLogic : Blocking

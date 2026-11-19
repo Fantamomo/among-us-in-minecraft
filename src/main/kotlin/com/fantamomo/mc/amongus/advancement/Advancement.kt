@@ -103,6 +103,7 @@ interface Advancement<A : Advancement<A, AA>, AA : AssignedAdvancement<A, AA>> {
             SelfReportAdvancement,
             StandingOvationAdvancement,
             ThePerfectKillAdvancement,
+            TheSnitchWhoSnitchedTooLateAdvancement,
             TwoForOneAdvancement,
             WhoTurnedOffTheLightsAdvancement,
 
