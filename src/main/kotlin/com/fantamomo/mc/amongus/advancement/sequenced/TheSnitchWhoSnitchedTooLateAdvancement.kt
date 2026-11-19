@@ -9,10 +9,14 @@ import com.fantamomo.mc.amongus.advancement.utils.step.stepFailed
 import com.fantamomo.mc.amongus.events.meeting.MeetingCallEvent
 import com.fantamomo.mc.amongus.events.player.PlayerKillEvent
 import com.fantamomo.mc.amongus.events.player.TaskFinishedEvent
+import com.fantamomo.mc.amongus.player.HumanAmongUsPlayer
+import com.fantamomo.mc.amongus.role.crewmates.SnitchRole
 
 @OptIn(ExperimentalAdvancementApi::class)
 object TheSnitchWhoSnitchedTooLateAdvancement : SequencedAdvancement("the_snitch_who_snitched_too_late") {
     override val isSecret = true
+
+    override fun applicableTo(player: HumanAmongUsPlayer) = player.role.definition == SnitchRole
 
     override val runner = createRunner {
         val alreadyCompleted = player.tasks.any { !it.completed }
