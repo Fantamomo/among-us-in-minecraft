@@ -9,11 +9,9 @@ interface ProgressiveAdvancement<A : ProgressiveAdvancement<A, AA>, AA : Progres
     Advancement<A, AA> {
 
     val max: Int
-        get() = 1
 
     interface AssignedProgressiveAdvancement<A : ProgressiveAdvancement<A, AA>, AA : AssignedProgressiveAdvancement<A, AA>> :
         AssignedAdvancement<A, AA> {
         val current: Int
-            get() = 0
     }
 }
