@@ -91,17 +91,22 @@ interface Advancement<A : Advancement<A, AA>, AA : AssignedAdvancement<A, AA>> {
         internal const val GOING_THROUGH_SEQUENCES_DECREMENT = 1
 
         val advancements = listOf<Advancement<*, *>>(
-            FirstGameAdvancement,
-            VeteranAdvancement,
+            // progressiv
             TaskMasterAdvancement,
             VentRatAdvancement,
+            VeteranAdvancement,
+
+            // sequenced
             FastVentKillAdvancement,
             HiredGunFiredGunAdvancement,
             IdentityTheftAdvancement,
+            SelfReportAdvancement,
             StandingOvationAdvancement,
             ThePerfectKillAdvancement,
             WhoTurnedOffTheLightsAdvancement,
-            SelfReportAdvancement,
+
+            // single
+            FirstGameAdvancement,
             GhostVictoryAdvancement,
         )
 
