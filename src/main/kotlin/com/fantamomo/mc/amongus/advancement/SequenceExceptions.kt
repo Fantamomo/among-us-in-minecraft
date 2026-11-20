@@ -38,7 +38,7 @@ class GuardViolationException(val event: AmongUsEvent) :
     SequenceCancellationException("Forbidden event ${event::class.simpleName} happened")
 
 /**
- * Used to cancel branches that are no longer needed, e.g. the losers of a [race] or the siblings of a failed [allOf] branch.
+ * Used to cancel branches that are no longer needed, e.g. the losers of a [AdvancementSequence.race] or the siblings of a failed [AdvancementSequence.allOf] branch.
  */
 class BranchCancelledException internal constructor(reason: String) : SequenceCancellationException(reason)
 

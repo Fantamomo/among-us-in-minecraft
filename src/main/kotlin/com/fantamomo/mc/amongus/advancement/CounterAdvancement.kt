@@ -118,7 +118,7 @@ abstract class CounterAdvancement(override val id: String, final override val ma
         override fun toJson(): JsonElement {
             if (definition === VentRatAdvancement) {
                 /**
-                 * if its the VentRatAdvancement we store the cheater count for the player (if exists)
+                 * if it's the VentRatAdvancement we store the cheater count for the player (if exists)
                  * @see VentRatAdvancement.createOf
                  */
                 (val count, val lastCheat) = VentRatAdvancement.cheaters[player] ?: return JsonNull

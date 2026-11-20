@@ -82,7 +82,7 @@ interface Advancement<A : Advancement<A, AA>, AA : AssignedAdvancement<A, AA>> {
     fun of(player: HumanAmongUsPlayer): AA = of(player.uuid)
 
     companion object {
-        val advancements = listOf<Advancement<*, *>>(
+        val advancements = listOf(
             // progressiv
             GottaEjectEmAllAdvancement,
             HostileTakeoverAdvancement,

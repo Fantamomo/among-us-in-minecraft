@@ -44,7 +44,7 @@ class AdvancementSequenceRunner(
  * See [AdvancementSequence] for everything that can be used inside the [runner].
  *
  * Because of how the system works, there are some rules:
- * 1. The runner must not keep state outside itself, it can be cancelled at any time and several attempts run in parallel.
+ * 1. The runner must not keep state outside itself, it can be canceled at any time and several attempts run in parallel.
  * 2. Returning normally means "all requirements are met", the advancement is awarded.
  *    To fail an attempt, throw (`stepFailed()`, [AdvancementSequence.fail], timeouts, guards), **never** just `return`.
  * 3. The runner must wait for something (an event, a timer, ...) before it can fail or finish,

@@ -60,11 +60,11 @@ internal class SequenceScope(val parent: SequenceScope?, val fiber: SequenceFibe
         parent?.let { (it.children ?: mutableListOf<SequenceScope>().also { list -> it.children = list }).add(this) }
     }
 
-    /** False if this scope or any scope above it was cancelled. */
+    /** False if this scope or any scope above it was canceled. */
     val isActive: Boolean
         get() = cancellation() == null
 
-    /** The cause of the innermost cancelled scope from here upwards, `null` if active. */
+    /** The cause of the innermost canceled scope from here upwards, `null` if active. */
     fun cancellation(): Throwable? {
         var scope: SequenceScope? = this
         while (scope != null) {
@@ -102,7 +102,7 @@ internal class SequenceScope(val parent: SequenceScope?, val fiber: SequenceFibe
     /**
      * Cancels this scope and everything below it.
      *
-     * First everything is marked as cancelled, then the suspended fibers are resumed with their cancellation cause,
+     * First everything is marked as canceled, then the suspended fibers are resumed with their cancellation cause,
      * innermost (child fibers) first, so a parent always continues after its children have finished.
      */
     fun cancel(cause: Throwable) {
@@ -140,7 +140,7 @@ internal class Suspension<T>(val fiber: SequenceFiber, val scope: SequenceScope)
     var isDone = false
         private set
 
-    /** Binds [registration] to this suspension, it is cancelled as soon as the suspension is resumed. */
+    /** Binds [registration] to this suspension, it is canceled as soon as the suspension is resumed. */
     fun register(registration: Registration) {
         if (isDone) {
             registration.cancel()

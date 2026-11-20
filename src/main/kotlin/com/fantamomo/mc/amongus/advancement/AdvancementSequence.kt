@@ -99,12 +99,11 @@ class AdvancementSequence internal constructor(
     var result: Result<Unit>? = null
         private set
 
-    private val completedSteps0 = linkedSetOf<String>()
-
     /** The keys of all steps that completed in this attempt, in completion order. */
-    val completedSteps: Set<String> get() = completedSteps0
+    val completedSteps: Set<String>
+        field = linkedSetOf<String>()
 
-    /** The innermost step every exception passed through (by identity, cancelled branches have their own exceptions). */
+    /** The innermost step every exception passed through (by identity, canceled branches have their own exceptions). */
     private val stepFailures = IdentityHashMap<Throwable, StepInfo>()
 
     /** The innermost step this attempt failed in, `null` if it did not fail in a step (or did not fail at all). */
@@ -172,8 +171,8 @@ class AdvancementSequence internal constructor(
     private fun currentFiber(): SequenceFiber =
         runningFiber ?: error("Not running inside an advancement sequence")
 
-    /** Throws the cancellation cause if the current part of the sequence was cancelled. */
-    suspend fun ensureActive() {
+    /** Throws the cancellation cause if the current part of the sequence was canceled. */
+    fun ensureActive() {
         currentFiber().scope.cancellation()?.let { throw it }
     }
 
@@ -200,7 +199,7 @@ class AdvancementSequence internal constructor(
     /**
      * Marks [block] as an await region, see "First action" on [AdvancementSequence].
      */
-    internal suspend inline fun <R> region(part: AdvancementSequencePart.Blocking, block: () -> R): R {
+    internal inline fun <R> region(part: AdvancementSequencePart.Blocking, block: () -> R): R {
         val fiber = enterRegion(part)
         var completed = false
         try {
@@ -268,7 +267,7 @@ class AdvancementSequence internal constructor(
         fiber.parts += AdvancementSequencePart.NamedPart(info)
         try {
             val result = if (info.timeoutSeconds > 0) withTimeout(info.timeoutSeconds.seconds, block) else block()
-            completedSteps0 += info.key
+            completedSteps += info.key
             return result
         } catch (e: Throwable) {
             // only the innermost step a failure passes through is the failed one
@@ -341,7 +340,7 @@ class AdvancementSequence internal constructor(
     suspend fun awaitCondition(checkEvery: Duration = 50.milliseconds, condition: () -> Boolean) {
         require(checkEvery.isPositive()) { "checkEvery must be positive (was $checkEvery)" }
         region(AdvancementSequencePart.Blocking.AwaitingCondition) {
-            if (!condition()) suspendFiber<Unit> { suspension ->
+            if (!condition()) suspendFiber { suspension ->
                 suspension.register(host.repeat(checkEvery) {
                     if (suspension.isDone) return@repeat
                     val fulfilled = try {
@@ -359,13 +358,13 @@ class AdvancementSequence internal constructor(
     /** Waits for [duration]. */
     suspend fun delay(duration: Duration) {
         region(AdvancementSequencePart.Blocking.Delay(duration)) {
-            if (duration.isPositive()) suspendFiber<Unit> { suspension ->
+            if (duration.isPositive()) suspendFiber { suspension ->
                 suspension.register(host.schedule(duration) { suspension.resume(Result.success(Unit)) })
             }
         }
     }
 
-    /** Waits until the sequence is cancelled (it never returns normally). */
+    /** Waits until the sequence is canceled (it never returns normally). */
     suspend fun awaitInfinity(): Nothing {
         region(AdvancementSequencePart.Blocking.AwaitingInfinity) {
             suspendFiber<Unit> { }
@@ -406,7 +405,7 @@ class AdvancementSequence internal constructor(
     /**
      * Runs [block] while [handler] is called for every event of [type].
      *
-     * If [handler] throws (e.g. [fail] or a [GuardViolationException]), [block] is cancelled with that exception.
+     * If [handler] throws (e.g. [fail] or a [GuardViolationException]), [block] is canceled with that exception.
      * This is the base of [forbid], but can also be used to collect information in the background:
      *
      * ```
@@ -437,7 +436,7 @@ class AdvancementSequence internal constructor(
 
     /**
      * Runs all branches at the same time and waits until **every** branch completed, in any order.
-     * If one branch fails, the others are cancelled and [allOf] fails with that exception.
+     * If one branch fails, the others are canceled and [allOf] fails with that exception.
      *
      * Returns the result of [block], use the [Branch] handles to get the results of the branches:
      *
@@ -459,7 +458,7 @@ class AdvancementSequence internal constructor(
     }
 
     /**
-     * Runs all branches at the same time, the first branch that **completes** wins and the others are cancelled.
+     * Runs all branches at the same time, the first branch that **completes** wins and the others are canceled.
      *
      * A branch that fails (e.g. `stepFailed()` or a timeout) only drops out of the race, the race fails
      * when every branch failed. Unexpected exceptions (bugs) fail the race immediately.
@@ -483,7 +482,7 @@ class AdvancementSequence internal constructor(
         require(branches.isNotEmpty()) { "At least one branch is required" }
         return region(AdvancementSequencePart.Blocking.Parallel(requireAll, branches.size)) {
             withScope(null, {}) { groupScope ->
-                suspendFiber<Any?> { suspension -> BranchGroup(groupScope, branches, requireAll, suspension).start() }
+                suspendFiber { suspension -> BranchGroup(groupScope, branches, requireAll, suspension).start() }
             }
         }
     }
@@ -499,7 +498,7 @@ class AdvancementSequence internal constructor(
         private var resolved = false
 
         fun start() {
-            for ((index, branch) in branches.withIndex()) {
+            for ([index, branch] in branches.withIndex()) {
                 if (resolved || !scope.isActive) break
                 fibers += launchFiber(scope, branch.body()) { result -> onDone(index, result) }
             }
@@ -511,7 +510,7 @@ class AdvancementSequence internal constructor(
         }
 
         private fun onDone(index: Int, result: Result<Any?>) {
-            // when the group scope was cancelled, the cancellation resumes the parent fiber itself
+            // when the group scope was canceled, the cancellation resumes the parent fiber itself
             if (resolved || !scope.isActive) return
             remaining--
             val exception = result.exceptionOrNull()

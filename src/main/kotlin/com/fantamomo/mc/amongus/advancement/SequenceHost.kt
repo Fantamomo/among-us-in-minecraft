@@ -21,14 +21,14 @@ interface SequenceHost {
 
     /**
      * Calls [handler] for every event of exactly [type] (subclasses are not delivered, like in the event manager)
-     * until the returned registration is cancelled.
+     * until the returned registration is canceled.
      */
     fun <E : AmongUsEvent> listen(type: Class<E>, handler: (E) -> Unit): Registration
 
     /** Calls [action] once after [delay]. */
     fun schedule(delay: Duration, action: () -> Unit): Registration
 
-    /** Calls [action] every [period] until the registration is cancelled. */
+    /** Calls [action] every [period] until the registration is canceled. */
     fun repeat(period: Duration, action: () -> Unit): Registration
 }
 

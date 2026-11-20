@@ -37,10 +37,9 @@ internal class SequenceSupervisor(
         fun onWarning(reason: String) {}
     }
 
-    private val running = mutableListOf<AdvancementSequence>()
-
     /** The attempts that are currently running. */
-    val attempts: List<AdvancementSequence> get() = running
+    val attempts: List<AdvancementSequence>
+        field = mutableListOf<AdvancementSequence>()
 
     var isStopped = false
         private set
@@ -56,15 +55,15 @@ internal class SequenceSupervisor(
     fun stop() {
         if (isStopped) return
         isStopped = true
-        for (sequence in running.toList()) sequence.stop()
-        running.clear()
+        for (sequence in attempts.toList()) sequence.stop()
+        attempts.clear()
     }
 
     private fun ensureWaitingAttempt() {
         if (isStopped || isDisabled) return
-        if (running.any { !it.isFirstActionCompleted }) return
+        if (attempts.any { !it.isFirstActionCompleted }) return
         if (!listener.canStart()) return
-        if (running.size >= maxAttempts) {
+        if (attempts.size >= maxAttempts) {
             if (!warnedAboutLimit) {
                 warnedAboutLimit = true
                 listener.onWarning("More than $maxAttempts attempts are running at the same time, no new attempts are started until some finished")
@@ -72,7 +71,7 @@ internal class SequenceSupervisor(
             return
         }
         val sequence = AdvancementSequence(runner, host, this)
-        running += sequence
+        attempts += sequence
         sequence.start()
     }
 
@@ -82,7 +81,7 @@ internal class SequenceSupervisor(
     }
 
     override fun onFinished(sequence: AdvancementSequence, result: Result<Unit>) {
-        running.remove(sequence)
+        attempts.remove(sequence)
         val exception = result.exceptionOrNull()
         if (exception != null && exception !is SequenceCancellationException) listener.onError(sequence, exception)
         if (sequence.isFirstActionCompleted || result.isSuccess) listener.onAttemptFinished(sequence, result)

@@ -31,7 +31,8 @@ class Branch<T> internal constructor(
         this.value = value
     }
 
-    private object NOT_COMPLETED
+    @Suppress("ClassName")
+    private data object NOT_COMPLETED
 }
 
 /**

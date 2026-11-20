@@ -113,11 +113,11 @@ abstract class SequencedAdvancement(override val id: String) :
             if (attempts == 0 && bestAttempt == null && failures.isEmpty()) return JsonNull
             return buildJsonObject {
                 if (attempts > 0) put("attempts", attempts)
-                bestAttempt?.let { best ->
+                bestAttempt?.let { (val completedSteps, val failedStep, val timestamp) ->
                     putJsonObject("best_attempt") {
-                        putJsonArray("completed_steps") { best.completedSteps.forEach { add(it) } }
-                        best.failedStep?.let { put("failed_step", it) }
-                        put("timestamp", best.timestamp)
+                        putJsonArray("completed_steps") { completedSteps.forEach { add(it) } }
+                        failedStep?.let { put("failed_step", it) }
+                        put("timestamp", timestamp)
                     }
                 }
                 if (failures.isNotEmpty()) putJsonObject("failures") {
