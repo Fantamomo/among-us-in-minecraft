@@ -10,7 +10,7 @@ import org.bukkit.inventory.ItemType
  */
 object VeteranAdvancement : CounterAdvancement("veteran", 100) {
     @Suppress("UnstableApiUsage")
-    override val icon: ItemType = ItemType.CLOCK
+    override val icon: ItemType get() = ItemType.CLOCK
 
     override fun AdvancementListenerScope<AssignedCounterAdvancement>.listen() {
         mirror(player.statistics.playedGames)

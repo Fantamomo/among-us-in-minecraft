@@ -1,47 +1,34 @@
 package com.fantamomo.mc.amongus.advancement.sequenced
 
-import com.fantamomo.mc.amongus.advancement.ExperimentalAdvancementApi
-import com.fantamomo.mc.amongus.advancement.SequencedAdvancement
-import com.fantamomo.mc.amongus.advancement.awaitCustomLogic
-import com.fantamomo.mc.amongus.advancement.createRunner
+import com.fantamomo.mc.amongus.advancement.*
 import com.fantamomo.mc.amongus.advancement.utils.step.step
-import com.fantamomo.mc.amongus.advancement.utils.step.stepFailed
 import com.fantamomo.mc.amongus.events.meeting.MeetingCallEvent
-import com.fantamomo.mc.amongus.events.player.PlayerKillEvent
-import com.fantamomo.mc.amongus.events.player.TaskFinishedEvent
 import com.fantamomo.mc.amongus.player.HumanAmongUsPlayer
 import com.fantamomo.mc.amongus.role.crewmates.SnitchRole
+import org.bukkit.inventory.ItemType
 
+/**
+ * As the Snitch, finish all your tasks (and find out who the imposters are), but get killed before the next meeting.
+ */
 @OptIn(ExperimentalAdvancementApi::class)
 object TheSnitchWhoSnitchedTooLateAdvancement : SequencedAdvancement("the_snitch_who_snitched_too_late") {
     override val isSecret = true
 
+    @Suppress("UnstableApiUsage")
+    override val icon: ItemType get() = ItemType.SPYGLASS
+
     override fun applicableTo(player: HumanAmongUsPlayer) = player.role.definition == SnitchRole
 
     override val runner = createRunner {
-        val alreadyCompleted = player.tasks.any { !it.completed }
-        if (alreadyCompleted) awaitInfinity()
         step("finish_tasks") {
-            awaitCustomLogic {
-                while (player.tasks.any { !it.completed }) {
-                    awaitEvent<TaskFinishedEvent>()
-                }
-            }
+            // the event is called after the task is marked as completed
+            awaitTaskFinished { it.player == player && player.tasks.all { task -> task.completed } }
         }
 
         step("ignorance_is_bliss") {
-            awaitCustomLogic {
-                while (true) {
-                    when (val event = awaitEvents(PlayerKillEvent::class, MeetingCallEvent::class)) {
-                        is MeetingCallEvent -> stepFailed()
-                        is PlayerKillEvent -> {
-                            if (event.victim == player) break
-                        }
-                    }
-                }
+            forbid(MeetingCallEvent::class) {
+                awaitKilled()
             }
         }
-
-        award()
     }
 }

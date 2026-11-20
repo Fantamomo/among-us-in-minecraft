@@ -8,6 +8,7 @@ import com.fantamomo.mc.amongus.player.HumanAmongUsPlayer
 import com.fantamomo.mc.amongus.role.Role
 import com.fantamomo.mc.amongus.role.util.KillerRole
 import kotlinx.serialization.json.*
+import org.bukkit.inventory.ItemType
 import java.util.*
 
 object HostileTakeoverAdvancement :
@@ -18,7 +19,10 @@ object HostileTakeoverAdvancement :
     override val max: Int
         get() = killerRoleIds.size
 
-    val killerRoleIds = Role.roles.filter { it is KillerRole }.map { it.id }
+    @Suppress("UnstableApiUsage")
+    override val icon: ItemType get() = ItemType.SKELETON_SKULL
+
+    val killerRoleIds by lazy { Role.roles.filter { it is KillerRole }.map { it.id } }
 
     override fun new(player: UUID) = AssignedHostileTakeoverAdvancement(player, mutableSetOf())
 

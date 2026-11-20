@@ -10,7 +10,7 @@ import org.bukkit.inventory.ItemType
  */
 object TaskMasterAdvancement : CounterAdvancement("task_master", 500) {
     @Suppress("UnstableApiUsage")
-    override val icon: ItemType = ItemType.WRITABLE_BOOK
+    override val icon: ItemType get() = ItemType.WRITABLE_BOOK
 
     override fun AdvancementListenerScope<AssignedCounterAdvancement>.listen() {
         mirror(player.statistics.tasksCompleted)

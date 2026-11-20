@@ -7,10 +7,17 @@ import com.fantamomo.mc.amongus.manager.MeetingManager
 import com.fantamomo.mc.amongus.player.HumanAmongUsPlayer
 import com.fantamomo.mc.amongus.player.isAlive
 import com.fantamomo.mc.amongus.role.neutral.JesterRole
+import org.bukkit.inventory.ItemType
 
+/**
+ * As the Jester, get ejected with every other living player voting for you.
+ */
 @OptIn(ExperimentalAdvancementApi::class)
 object StandingOvationAdvancement : SequencedAdvancement("standing_ovation") {
     override val isSecret = true
+
+    @Suppress("UnstableApiUsage")
+    override val icon: ItemType get() = ItemType.JUKEBOX
 
     override fun applicableTo(player: HumanAmongUsPlayer) = player.role.definition == JesterRole
 
@@ -25,10 +32,12 @@ object StandingOvationAdvancement : SequencedAdvancement("standing_ovation") {
             end
         }
         step("everybody_hates_you") {
-            val votes = meetingEnd.votes
-            val allVotesMatchPlayer = votes.all { it.key == player || (it.value as? MeetingManager.Vote.For)?.target == player }
-            if (!allVotesMatchPlayer) stepFailed()
-            val everyoneVoted = votes.keys.map { it.player }.containsAll(player.game.players.filter { it.isAlive() })
+            val otherVotes = meetingEnd.votes.filterKeys { it.player != player }
+            val allVotesForPlayer = otherVotes.values.all { (it as? MeetingManager.Vote.For)?.target == player }
+            if (!allVotesForPlayer) stepFailed()
+            // the meeting end event is called before the ejection, so the player is still alive here
+            val voters = otherVotes.keys.mapTo(mutableSetOf()) { it.player }
+            val everyoneVoted = player.game.players.all { it == player || !it.isAlive() || it in voters }
             if (!everyoneVoted) stepFailed()
         }
     }

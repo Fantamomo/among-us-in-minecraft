@@ -8,6 +8,7 @@ import com.fantamomo.mc.amongus.manager.MeetingManager
 import com.fantamomo.mc.amongus.player.HumanAmongUsPlayer
 import com.fantamomo.mc.amongus.role.Role
 import kotlinx.serialization.json.*
+import org.bukkit.inventory.ItemType
 import java.util.*
 
 object GottaEjectEmAllAdvancement :
@@ -19,7 +20,10 @@ object GottaEjectEmAllAdvancement :
         get() = Role.roles.size
 
     // this is used because I allow with the config.yml to disable roles, and without it, it would be possible to complete the advancement without having all roles
-    private val roleIds: Set<String> = Role.roles.mapTo(mutableSetOf(), Role<*, *>::id)
+    private val roleIds: Set<String> by lazy { Role.roles.mapTo(mutableSetOf(), Role<*, *>::id) }
+
+    @Suppress("UnstableApiUsage")
+    override val icon: ItemType get() = ItemType.BUNDLE
 
     override fun new(player: UUID) = AssignedGottaEjectEmAllAdvancement(player, mutableSetOf())
 

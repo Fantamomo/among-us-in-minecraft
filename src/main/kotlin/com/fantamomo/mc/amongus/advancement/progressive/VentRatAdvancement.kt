@@ -29,7 +29,7 @@ object VentRatAdvancement : CounterAdvancement("vent_rat", 15) {
     private val logger: Logger = LoggerFactory.getLogger(VentRatAdvancement::class.java)
 
     @Suppress("UnstableApiUsage")
-    override val icon: ItemType = ItemType.HOPPER
+    override val icon: ItemType get() = ItemType.HOPPER
 
     /**
      * If this ever change, [CounterAdvancement.AssignedCounterAdvancement.toJson] must be updated
