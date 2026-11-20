@@ -7,6 +7,7 @@ import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.languages.numeric
+import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.task.GuiAssignedTask
 import com.fantamomo.mc.amongus.util.splitLinesPreserveStyles
 import com.fantamomo.mc.amongus.util.translateTo
@@ -220,7 +221,7 @@ class AdvancementsInventory(
         val statusKey = when {
             isCompleted -> "advancement.ui.status.completed"
             progressive != null && progressive.current > 0 -> "advancement.ui.status.in_progress"
-            sequenced != null && sequenced.startedParts.isNotEmpty() -> "advancement.ui.status.in_progress"
+            sequenced != null && (sequenced.attempts > 0 || sequenced.bestAttempt != null) -> "advancement.ui.status.in_progress"
             else -> "advancement.ui.status.incomplete"
         }
         lore.add(Component.translatable(statusKey).loreLine(locale))
@@ -243,46 +244,7 @@ class AdvancementsInventory(
         }
 
         if (sequenced != null && !isHidden) {
-            val steps = sequenced.definition.runner.allSteps
-            val startedParts = sequenced.startedParts
-            val completedParts = sequenced.completedParts
-
-            lore.add(
-                textComponent {
-                    translatable("advancement.ui.steps") {
-                        args {
-                            val completedSize = completedParts.size
-                            val startedSize = startedParts.size
-                            val totalSize = steps.size
-                            numeric("completed", completedSize)
-                            numeric("started", startedSize - completedSize)
-                            numeric("untouched", totalSize - startedSize)
-                        }
-                    }
-                }.loreLine(locale)
-            )
-            for (step in steps) {
-                val line = textComponent {
-                    translatable("advancement.ui.steps.part") {
-                        args {
-                            numeric("index", step.index + 1)
-                            component("explanation") {
-                                translatable(step.languageKey) {
-                                    color(
-                                        when (step.key) {
-                                            in completedParts -> NamedTextColor.GREEN
-                                            in startedParts -> NamedTextColor.YELLOW
-                                            else -> NamedTextColor.GRAY
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-                // indent nested steps below their parent
-                lore.add(Component.text("  ".repeat(step.depth)).append(line).loreLine(locale))
-            }
+            lore.addAll(buildStepLines(sequenced, locale))
         }
 
         lore.add(Component.empty())
@@ -303,6 +265,75 @@ class AdvancementsInventory(
         item.setData(DataComponentTypes.TOOLTIP_DISPLAY, TOOLTIP_DISPLAY)
 
         return item
+    }
+
+    /**
+     * The best attempt and every visible step of a sequenced advancement:
+     * green = completed in the best attempt, red = the best attempt failed here, gray = not reached.
+     */
+    @OptIn(ExperimentalAdvancementApi::class)
+    private fun buildStepLines(
+        sequenced: SequencedAdvancement.AssignedSequencedAdvancement,
+        locale: Locale
+    ): List<Component> {
+        val steps = sequenced.definition.runner.visibleSteps
+        if (steps.isEmpty()) return emptyList()
+        val lines = mutableListOf<Component>()
+        val best = sequenced.bestAttempt
+        val completed = sequenced.isCompleted
+
+        if (!completed) {
+            if (best != null) {
+                lines += textComponent {
+                    translatable("advancement.ui.steps.best") {
+                        args {
+                            numeric("completed", steps.count { it.key in best.completedSteps })
+                            numeric("total", steps.size)
+                        }
+                    }
+                }.loreLine(locale)
+            }
+            if (sequenced.attempts > 0) {
+                lines += textComponent {
+                    translatable("advancement.ui.steps.attempts") {
+                        args { numeric("attempts", sequenced.attempts) }
+                    }
+                }.loreLine(locale)
+            }
+        }
+
+        for (step in steps) {
+            val indent = Component.text("  ".repeat(step.depth))
+            if (step.isFirstInGroup) {
+                val groupKey = if (step.groupRequiresAll) "advancement.ui.steps.group.all" else "advancement.ui.steps.group.any"
+                lines += indent.append(Component.translatable(groupKey)).loreLine(locale)
+            }
+            val color = when {
+                completed || best?.completedSteps?.contains(step.key) == true -> NamedTextColor.GREEN
+                best?.failedStep == step.key -> NamedTextColor.RED
+                else -> NamedTextColor.GRAY
+            }
+            val failures = if (completed) 0 else sequenced.failuresOf(step.key)
+            val line = textComponent {
+                translatable("advancement.ui.steps.part") {
+                    args {
+                        string("index", step.displayIndex)
+                        component("explanation") {
+                            translatable(step.languageKey) { color(color) }
+                        }
+                    }
+                }
+                if (step.timeoutSeconds > 0) translatable("advancement.ui.steps.timeout") {
+                    args { numeric("seconds", step.timeoutSeconds) }
+                }
+                if (failures > 0) translatable("advancement.ui.steps.failures") {
+                    args { numeric("count", failures) }
+                }
+            }
+            // indent nested steps below their parent
+            lines += indent.append(line).loreLine(locale)
+        }
+        return lines
     }
 
     fun onClick(event: InventoryClickEvent) {
