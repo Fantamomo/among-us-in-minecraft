@@ -3,7 +3,7 @@ package com.fantamomo.mc.amongus.advancement
 import com.fantamomo.mc.adventure.text.*
 import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.AmongUsConstants
-import com.fantamomo.mc.amongus.advancement.utils.step.StepFailedException
+import com.fantamomo.mc.amongus.events.AmongUsEvent
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.languages.string
@@ -13,17 +13,12 @@ import com.fantamomo.mc.amongus.player.humanOrNull
 import com.fantamomo.mc.amongus.player.isBot
 import com.fantamomo.mc.amongus.util.safeCreateDirectories
 import com.fantamomo.mc.amongus.util.ticks
-import io.ktor.utils.io.*
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.*
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
 import org.slf4j.LoggerFactory
 import java.util.*
-import java.util.concurrent.atomic.AtomicInteger
-import kotlin.coroutines.Continuation
-import kotlin.coroutines.EmptyCoroutineContext
-import kotlin.coroutines.startCoroutine
 import kotlin.io.path.exists
 import kotlin.io.path.inputStream
 import kotlin.io.path.outputStream
@@ -31,7 +26,6 @@ import kotlin.time.Duration
 
 @OptIn(ExperimentalAdvancementApi::class)
 object AdvancementManager {
-    private val WARNING_SEQUENCE_COUNT = if (AmongUsConstants.IN_DEVELOPMENT) 5 else 15
     private val logger = LoggerFactory.getLogger(AdvancementManager::class.java)
     private val json = Json {
         prettyPrint = AmongUsConstants.IN_DEVELOPMENT
@@ -41,7 +35,10 @@ object AdvancementManager {
     private val players: MutableMap<UUID, Advancements> = mutableMapOf()
     private val dataPath = AmongUs.dataPath.resolve("data").resolve("advancements")
 
-    private val activeSequencesByPlayer = mutableMapOf<UUID, MutableSet<RunningAdvancementSequence>>()
+    private val supervisorsByGame = mutableMapOf<Game, MutableList<PlayerSequence>>()
+
+    /** Attempts of advancements with [Advancement.hasGameAdvantage], they are only recorded after the game. */
+    private val pendingAttemptsByGame = mutableMapOf<Game, MutableList<() -> Unit>>()
     private val earnedAdvancementsByGame = mutableMapOf<Game, MutableList<Pair<UUID, Advancement<*, *>>>>()
     private val gamePlayersByGame = mutableMapOf<Game, MutableSet<UUID>>()
     private val activeListenersByGame = mutableMapOf<Game, MutableSet<ListenerAdvancement.AssignedListenerAdvancement>>()
@@ -80,7 +77,8 @@ object AdvancementManager {
                     startListener(game, player, advancement, assigned)
                 }
                 if (advancement is SequencedAdvancement) {
-                    runSequencedAdvancement(
+                    startSequence(
+                        game,
                         player,
                         advancement,
                         assigned as SequencedAdvancement.AssignedSequencedAdvancement
@@ -120,46 +118,27 @@ object AdvancementManager {
         }
     }
 
-    private fun runSequencedAdvancement(
+    private fun startSequence(
+        game: Game,
         player: HumanAmongUsPlayer,
         advancement: SequencedAdvancement,
         assigned: SequencedAdvancement.AssignedSequencedAdvancement
     ) {
-        if (!advancement.applicableTo(player)) return
         if (assigned.isCompleted) return
-
-        val goingThough = Advancement.goingThroughSequences[advancement]
-        if (goingThough != null) {
-            val value = goingThough.get()
-            if (value == Advancement.GOING_THROUGH_SEQUENCES_DISABLED) return
-            if (value > Advancement.GOING_THROUGH_SEQUENCES_LIMIT) {
-                logger.warn("Sequence runner of $advancement is running without any blocker, please report this to the plugin author (we disabled the advancement, because $value is to high)")
-                goingThough.set(Advancement.GOING_THROUGH_SEQUENCES_DISABLED)
-            } else if (AmongUsConstants.IN_DEVELOPMENT || value > Advancement.GOING_THROUGH_SEQUENCES_WARNING) {
-                logger.warn("Sequence runner of $advancement is running without any blocker (currently at $value), please report this to the plugin author")
-            }
+        val sequence = PlayerSequence(game, player, advancement, assigned)
+        supervisorsByGame.getOrPut(game) { mutableListOf() }.add(sequence)
+        try {
+            sequence.supervisor.start()
+        } catch (e: Exception) {
+            logger.error("Failed to start the sequence of advancement ${advancement.id} for player ${player.uuid}", e)
+            sequence.supervisor.stop()
         }
-
-        val runner = advancement.runner
-
-        val runningSequence = RunningAdvancementSequence(player, advancement, runner, assigned, assigned.startedParts, assigned.completedParts)
-        val playerSequences = activeSequencesByPlayer.getOrPut(player.uuid) { mutableSetOf() }
-        if (playerSequences.any { it.runner == runner && !it.finishedFirstAction }) return
-
-        val thisRunnerCount = playerSequences.count { it.runner == runner }
-        if (thisRunnerCount > WARNING_SEQUENCE_COUNT) {
-            logger.warn(
-                "Player $player has more than $WARNING_SEQUENCE_COUNT running sequences for runner $runner ($advancement)" +
-                        if (!AmongUsConstants.IN_DEVELOPMENT) " please report this to the plugin author" else " please fix this"
-            )
-        }
-        playerSequences.add(runningSequence)
-
-        runningSequence.start()
     }
 
     fun gameEnd(game: Game) {
         activeListenersByGame.remove(game)?.forEach(::stopListener)
+        supervisorsByGame.remove(game)?.forEach { it.supervisor.stop() }
+        pendingAttemptsByGame.remove(game)?.forEach { it() }
 
         val earned = earnedAdvancementsByGame.remove(game) ?: emptyList()
         val allGamePlayerUuids = gamePlayersByGame.remove(game) ?: emptySet()
@@ -181,7 +160,6 @@ object AdvancementManager {
         }
 
         for (uuid in allGamePlayerUuids) {
-            activeSequencesByPlayer.remove(uuid)?.clear()
             savePlayer(uuid)
         }
     }
@@ -283,6 +261,10 @@ object AdvancementManager {
         advancement.isCompleted = true
 
         if (advancement is ListenerAdvancement.AssignedListenerAdvancement) stopListener(advancement)
+        // e.g. awarded from code while attempts are still running
+        for (sequences in supervisorsByGame.values) {
+            sequences.filter { it.assigned === advancement }.forEach { it.supervisor.stop() }
+        }
 
         val definition = advancement.definition
         logger.info("Awarding advancement ${definition.id} to player ${advancement.player}")
@@ -360,113 +342,72 @@ object AdvancementManager {
     @Suppress("UNCHECKED_CAST", "NOTHING_TO_INLINE")
     private inline fun <A : Advancement<A, AA>, AA : AssignedAdvancement<A, AA>> Advancement<A, AA>.castHelper(): A = this as A
 
-    private class RunningAdvancementSequence(
-        val player: HumanAmongUsPlayer,
+    /**
+     * The attempts of one sequenced advancement for one player during one game.
+     */
+    private class PlayerSequence(
+        val game: Game,
+        override val player: HumanAmongUsPlayer,
         val advancement: SequencedAdvancement,
-        val runner: AdvancementSequenceRunner,
         val assigned: SequencedAdvancement.AssignedSequencedAdvancement,
-        val startedParts: MutableSet<String>,
-        val completedParts: MutableSet<String>
-    ) : Continuation<Unit>, PartChangeListener {
+    ) : SequenceHost, SequenceSupervisor.Listener {
 
-        override val context = EmptyCoroutineContext
+        val supervisor = SequenceSupervisor(advancement.runner, this, this)
 
-        val advancementSequence = AdvancementSequence(
-            advancement = advancement,
-            player = player,
-            scheduleTimeout = ::scheduleTimeout,
-            cancelEventWait = player.game.eventManager::removeListener,
-            partChangeListener = this
-        )
+        override fun <E : AmongUsEvent> listen(type: Class<E>, handler: (E) -> Unit): Registration {
+            val eventManager = game.eventManager
+            eventManager.register(type, handler)
+            @Suppress("UNCHECKED_CAST")
+            return Registration { eventManager.unregister(handler as (AmongUsEvent) -> Unit) }
+        }
 
-        var finishedFirstAction = false
-
-        var finished = false
-        var started = false
-
-        private fun scheduleTimeout(duration: Duration, callback: () -> Unit): TimeoutHandle {
-            var canceled = false
-            val task = AmongUs.server.scheduler.runTaskLater(AmongUs, { ->
-                if (!canceled) {
-                    callback()
-                }
-            }, duration.ticks)
-
-            return TimeoutHandle {
-                canceled = true
+        override fun schedule(delay: Duration, action: () -> Unit): Registration {
+            var cancelled = false
+            val task = AmongUs.server.scheduler.runTaskLater(AmongUs, { -> if (!cancelled) action() }, delay.ticks)
+            return Registration {
+                cancelled = true
                 task.cancel()
             }
         }
 
-        override fun onPartAdded(
-            parts: List<AdvancementSequencePart>,
-            element: AdvancementSequencePart
-        ) {
-            when (element) {
-                is AdvancementSequencePart.Blocking -> {}
-                is AdvancementSequencePart.NamedPart -> {
-                    startedParts.add(element.key)
-                }
+        override fun repeat(period: Duration, action: () -> Unit): Registration {
+            var cancelled = false
+            val ticks = period.ticks.coerceAtLeast(1)
+            val task = AmongUs.server.scheduler.runTaskTimer(AmongUs, { -> if (!cancelled) action() }, ticks, ticks)
+            return Registration {
+                cancelled = true
+                task.cancel()
             }
         }
 
-        override fun onPartRemoved(
-            parts: List<AdvancementSequencePart>,
-            element: AdvancementSequencePart,
-            exceptional: Boolean
-        ) {
-            when (element) {
-                is AdvancementSequencePart.Blocking -> {
-                    if (finishedFirstAction) return
-                    if (parts.none { it is AdvancementSequencePart.Blocking }) {
-                        finishedFirstAction = true
-                        runSequencedAdvancement(player, advancement, assigned)
-                    }
-                }
-                is AdvancementSequencePart.NamedPart -> {
-                    completedParts.add(element.key)
-                }
+        override fun canStart() = !assigned.isCompleted && advancement.applicableTo(player)
+
+        override fun onAttemptFinished(sequence: AdvancementSequence, result: Result<Unit>) {
+            val exception = result.exceptionOrNull()
+            // a stopped attempt (game end) did not really fail, it can only improve the best attempt
+            val counts = exception !is SequenceStoppedException
+            val completedSteps = sequence.completedSteps.toSet()
+            val failedStep = sequence.failedStep?.key
+            if (AmongUsConstants.IN_DEVELOPMENT) {
+                logger.info("Attempt of ${advancement.id} by ${player.name} ended: ${exception ?: "success"} (failed step: $failedStep, completed: $completedSteps)")
             }
+            val record = { assigned.recordAttempt(completedSteps, failedStep, counts) }
+            // the progress could reveal information during the game (e.g. that there were two witnesses)
+            if (advancement.hasGameAdvantage) pendingAttemptsByGame.getOrPut(game) { mutableListOf() }.add(record)
+            else record()
         }
 
-        override fun resumeWith(result: Result<Unit>) {
-            finished = true
-            if (started) {
-                val integer = Advancement.goingThroughSequences[advancement]
-                if (integer != null && integer.get() != Advancement.GOING_THROUGH_SEQUENCES_DISABLED && integer.addAndGet(-Advancement.GOING_THROUGH_SEQUENCES_DECREMENT) <= 0) {
-                    Advancement.goingThroughSequences.remove(advancement)
-                }
-            }
-            activeSequencesByPlayer[player.uuid]?.let {
-                it.remove(this)
-                if (it.isEmpty()) {
-                    activeSequencesByPlayer.remove(player.uuid)
-                }
-            }
-            val throwable = result.exceptionOrNull()
-            if (throwable == null) {
-                logger.info("Advancement sequence completed ($advancement) successfully") // TODO: remove success log
-            } else if (throwable is StepFailedException) {
-                logger.info("Step ${throwable.stepId} failed") // TODO: remove after testing
-            } else if (throwable !is CancellationException) {
-                logger.error("Advancement sequence failed ($advancement)", throwable)
-            }
-
-            runSequencedAdvancement(player, advancement, assigned)
+        override fun onError(sequence: AdvancementSequence, exception: Throwable) {
+            logger.error("Attempt of advancement ${advancement.id} by ${player.name} failed unexpectedly (${sequence.describe()})", exception)
         }
 
-        fun start() {
-            runner.runner.startCoroutine(
-                advancementSequence,
-                completion = this
-            )
-            if (finished) {
-                val integer = Advancement.goingThroughSequences.putIfAbsent(advancement, AtomicInteger())
-                if (integer?.get() != Advancement.GOING_THROUGH_SEQUENCES_DISABLED) {
-                    integer?.addAndGet(Advancement.GOING_THROUGH_SEQUENCES_INCREMENT)
-                }
-            }
-            started = true
+        override fun onCompleted(sequence: AdvancementSequence) {
+            awardAdvancement(assigned)
+        }
+
+        override fun onWarning(reason: String) {
+            logger.warn("Sequence of advancement ${advancement.id} (player ${player.name}): $reason" +
+                    if (AmongUsConstants.IN_DEVELOPMENT) "" else ", please report this to the plugin author")
         }
     }
 }
