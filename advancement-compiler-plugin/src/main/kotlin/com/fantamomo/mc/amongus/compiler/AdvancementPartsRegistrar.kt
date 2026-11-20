@@ -16,8 +16,10 @@ import org.jetbrains.kotlin.config.MessageCollectorAccess
 import org.jetbrains.kotlin.config.messageCollector
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
+import org.jetbrains.kotlin.ir.builders.irBoolean
 import org.jetbrains.kotlin.ir.builders.irCall
 import org.jetbrains.kotlin.ir.builders.irCallConstructor
+import org.jetbrains.kotlin.ir.builders.irInt
 import org.jetbrains.kotlin.ir.builders.irVararg
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.IrCall
@@ -26,21 +28,28 @@ import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.deepCopyWithSymbols
+import org.jetbrains.kotlin.ir.util.getAnnotation
+import org.jetbrains.kotlin.ir.util.hasAnnotation
 import org.jetbrains.kotlin.ir.util.kotlinFqName
 import org.jetbrains.kotlin.ir.util.primaryConstructor
 import org.jetbrains.kotlin.ir.util.render
 import org.jetbrains.kotlin.ir.visitors.IrTransformer
 import org.jetbrains.kotlin.ir.visitors.IrVisitorVoid
 import org.jetbrains.kotlin.ir.visitors.acceptChildrenVoid
+import org.jetbrains.kotlin.name.FqName
 
 /**
  * Fills in the `steps` argument of every `createRunner { ... }` call with a `StepInfo` tree of all
- * `step("...")` calls inside the runner lambda, in source order. A `step` call lexically nested in another
- * `step` call becomes a child of it.
+ * step declarations inside the runner lambda, in source order. A step declaration is a call of a function annotated
+ * with `@StepDeclaration` that has a `key` parameter (`step("...")`, named `branch("...")`). A step lexically nested
+ * in another step becomes a child of it.
  *
- * Every parameter of the `StepInfo` constructor (except `children`) is filled with the argument of the
- * `step` parameter with the same name, so adding a new parameter needs no changes here. Omitted arguments
- * fall back to the default value of the `StepInfo` parameter.
+ * Every parameter of the `StepInfo` constructor (except `children`, `groupId` and `groupRequiresAll`) is filled with
+ * the argument of the step function's parameter with the same name, so adding a new parameter needs no changes here.
+ * Omitted arguments fall back to the default value of the `StepInfo` parameter.
+ *
+ * Steps declared inside a call of a function annotated with `@StepGroupDeclaration` (`allOf`, `race`), but not inside
+ * another step, get the same `groupId`, so they can be shown as parallel branches.
  *
  * The lambda itself is left untouched and is never executed by this plugin.
  *
@@ -57,14 +66,31 @@ class AdvancementPartsRegistrar : CompilerPluginRegistrar() {
 }
 
 private const val CREATE_RUNNER = "com.fantamomo.mc.amongus.advancement.createRunner"
-private const val STEP = "com.fantamomo.mc.amongus.advancement.utils.step.step"
+private val STEP_DECLARATION = FqName("com.fantamomo.mc.amongus.advancement.utils.step.StepDeclaration")
+private val STEP_GROUP_DECLARATION = FqName("com.fantamomo.mc.amongus.advancement.utils.step.StepGroupDeclaration")
 private const val STEPS_PARAMETER = "steps"
 private const val KEY_PARAMETER = "key"
 private const val CHILDREN_PARAMETER = "children"
+private const val GROUP_ID_PARAMETER = "groupId"
+private const val GROUP_REQUIRES_ALL_PARAMETER = "groupRequiresAll"
 
-/** A `step(...)` call together with the `step(...)` calls nested inside it. */
-private class StepNode(val call: IrCall) {
+/** A parallel group (`allOf`/`race` call), [id] is unique per runner. */
+private class StepGroup(val id: Int, val requiresAll: Boolean)
+
+/** A step declaration together with the step declarations nested inside it. */
+private class StepNode(val call: IrCall, val group: StepGroup?) {
     val children = mutableListOf<StepNode>()
+}
+
+private fun IrCall.isStepDeclaration(): Boolean {
+    val function = symbol.owner
+    return function.hasAnnotation(STEP_DECLARATION) && function.parameters.any { it.name.asString() == KEY_PARAMETER }
+}
+
+/** The group started by this call, `null` if it is not a `@StepGroupDeclaration` call. */
+private fun IrCall.groupRequiresAll(): Boolean? {
+    val annotation = symbol.owner.getAnnotation(STEP_GROUP_DECLARATION) ?: return null
+    return (annotation.arguments.firstOrNull() as? IrConst)?.value as? Boolean ?: false
 }
 
 private class AdvancementPartsExtension(private val messages: MessageCollector) : IrGenerationExtension {
@@ -95,7 +121,8 @@ private class AdvancementPartsExtension(private val messages: MessageCollector) 
                 ?: return expression.also { report(it, "'$STEPS_PARAMETER' of createRunner must be an Array<StepInfo>") }
 
             val roots = mutableListOf<StepNode>()
-            for (argument in expression.arguments) argument?.let { collectSteps(it, roots) }
+            val groupIds = generateSequence(0) { it + 1 }.iterator()
+            for (argument in expression.arguments) argument?.let { collectSteps(it, roots, groupIds) }
             checkUniqueKeys(roots)
 
             val builder = DeclarationIrBuilder(context, expression.symbol, expression.startOffset, expression.endOffset)
@@ -107,23 +134,36 @@ private class AdvancementPartsExtension(private val messages: MessageCollector) 
         }
 
         /**
-         * Collects all `step` calls in [root] into [roots], nested `step` calls are added as children of their parent.
+         * Collects all step declarations in [root] into [roots], nested ones are added as children of their parent.
          */
-        private fun collectSteps(root: IrExpression, roots: MutableList<StepNode>) {
+        private fun collectSteps(root: IrExpression, roots: MutableList<StepNode>, groupIds: Iterator<Int>) {
             root.acceptChildrenVoid(object : IrVisitorVoid() {
                 var current = roots
+                var group: StepGroup? = null
 
                 override fun visitElement(element: IrElement) = element.acceptChildrenVoid(this)
 
                 override fun visitCall(expression: IrCall) {
-                    if (expression.symbol.owner.kotlinFqName.asString() != STEP) return expression.acceptChildrenVoid(this)
+                    val requiresAll = expression.groupRequiresAll()
+                    if (requiresAll != null) {
+                        val parentGroup = group
+                        group = StepGroup(groupIds.next(), requiresAll)
+                        expression.acceptChildrenVoid(this)
+                        group = parentGroup
+                        return
+                    }
+                    if (!expression.isStepDeclaration()) return expression.acceptChildrenVoid(this)
 
-                    val node = StepNode(expression)
+                    val node = StepNode(expression, group)
                     current += node
                     val parent = current
+                    val parentGroup = group
                     current = node.children
+                    // a group only applies to the steps directly inside it, not to the children of those steps
+                    group = null
                     expression.acceptChildrenVoid(this)
                     current = parent
+                    group = parentGroup
                 }
             })
         }
@@ -147,9 +187,19 @@ private class AdvancementPartsExtension(private val messages: MessageCollector) 
             return irCallConstructor(constructor.symbol, emptyList()).apply {
                 for (parameter in constructor.parameters) {
                     val name = parameter.name.asString()
-                    if (name == CHILDREN_PARAMETER) {
-                        arguments[parameter] = irArrayOf(stepInfoType, node.children.map { buildStepInfo(it, stepInfoType, constructor) })
-                        continue
+                    when (name) {
+                        CHILDREN_PARAMETER -> {
+                            arguments[parameter] = irArrayOf(stepInfoType, node.children.map { buildStepInfo(it, stepInfoType, constructor) })
+                            continue
+                        }
+                        GROUP_ID_PARAMETER -> {
+                            node.group?.let { arguments[parameter] = irInt(it.id) }
+                            continue
+                        }
+                        GROUP_REQUIRES_ALL_PARAMETER -> {
+                            node.group?.let { arguments[parameter] = irBoolean(it.requiresAll) }
+                            continue
+                        }
                     }
 
                     val stepParameter = stepFunction.parameters.firstOrNull {
