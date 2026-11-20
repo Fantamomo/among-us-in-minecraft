@@ -96,6 +96,7 @@ interface Advancement<A : Advancement<A, AA>, AA : AssignedAdvancement<A, AA>> {
             HighNoonAdvancement,
             HiredGunFiredGunAdvancement,
             IdentityTheftAdvancement,
+            OutOfBodyAdvancement,
             SelfReportAdvancement,
             StandingOvationAdvancement,
             ThePerfectKillAdvancement,

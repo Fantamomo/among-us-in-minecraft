@@ -1,6 +1,8 @@
 package com.fantamomo.mc.amongus.manager
 
 import com.fantamomo.mc.amongus.ability.builder.AbilityTimer
+import com.fantamomo.mc.amongus.events.roles.PhantomEnterGhostStateEvent
+import com.fantamomo.mc.amongus.events.roles.PhantomExitGhostStateEvent
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.settings.SettingsKey
@@ -22,12 +24,14 @@ class GhostFormManager(val game: Game) {
 
         init {
             player.game.actionLog.add(GhostFormActionElements.Enter(player.uuid))
+            player.game.eventManager.call(PhantomEnterGhostStateEvent(player))
             player.mannequinController.freezeWithPhysics()
             player.mannequinController.showToSelf()
         }
 
         internal fun exit() {
             player.game.actionLog.add(GhostFormActionElements.Exit(player.uuid))
+            player.game.eventManager.call(PhantomExitGhostStateEvent(player))
             ghostCooldown?.start(player.game.settings[SettingsKey.ROLES.GHOST.FORM_COOLDOWN])
             player.mannequinController.also { controller ->
                 controller.getEntity()?.location?.let { player.teleport(it) }
