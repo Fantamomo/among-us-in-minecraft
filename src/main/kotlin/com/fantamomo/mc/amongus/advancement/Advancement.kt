@@ -1,9 +1,6 @@
 package com.fantamomo.mc.amongus.advancement
 
-import com.fantamomo.mc.amongus.advancement.progressive.GottaEjectEmAllAdvancement
-import com.fantamomo.mc.amongus.advancement.progressive.TaskMasterAdvancement
-import com.fantamomo.mc.amongus.advancement.progressive.VentRatAdvancement
-import com.fantamomo.mc.amongus.advancement.progressive.VeteranAdvancement
+import com.fantamomo.mc.amongus.advancement.progressive.*
 import com.fantamomo.mc.amongus.advancement.sequenced.*
 import com.fantamomo.mc.amongus.advancement.single.FirstGameAdvancement
 import com.fantamomo.mc.amongus.advancement.single.GhostVictoryAdvancement
@@ -94,6 +91,7 @@ interface Advancement<A : Advancement<A, AA>, AA : AssignedAdvancement<A, AA>> {
         val advancements = listOf<Advancement<*, *>>(
             // progressiv
             GottaEjectEmAllAdvancement,
+            HostileTakeoverAdvancement,
             TaskMasterAdvancement,
             VentRatAdvancement,
             VeteranAdvancement,
