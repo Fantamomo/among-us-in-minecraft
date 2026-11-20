@@ -9,7 +9,6 @@ import kotlinx.serialization.json.JsonElement
 import net.kyori.adventure.text.Component
 import org.bukkit.inventory.ItemType
 import java.util.*
-import java.util.concurrent.atomic.AtomicInteger
 
 interface Advancement<A : Advancement<A, AA>, AA : AssignedAdvancement<A, AA>> {
     val id: String
@@ -91,8 +90,10 @@ interface Advancement<A : Advancement<A, AA>, AA : AssignedAdvancement<A, AA>> {
             VeteranAdvancement,
 
             // sequenced
+            CleanUpOnAisle3Advancement,
             DramaticExitAdvancement,
             FastVentKillAdvancement,
+            HighNoonAdvancement,
             HiredGunFiredGunAdvancement,
             IdentityTheftAdvancement,
             SelfReportAdvancement,
