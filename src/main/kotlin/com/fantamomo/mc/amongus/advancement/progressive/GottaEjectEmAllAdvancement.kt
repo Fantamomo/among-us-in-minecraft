@@ -11,7 +11,8 @@ import kotlinx.serialization.json.*
 import java.util.*
 
 object GottaEjectEmAllAdvancement :
-    ProgressiveAdvancement<GottaEjectEmAllAdvancement, GottaEjectEmAllAdvancement.AssignedGottaEjectEmAllAdvancement> {
+    ProgressiveAdvancement<GottaEjectEmAllAdvancement, GottaEjectEmAllAdvancement.AssignedGottaEjectEmAllAdvancement>,
+    ListenerAdvancement {
     override val id: String = "gotta_eject_em_all"
 
     override val max: Int
@@ -67,12 +68,14 @@ object GottaEjectEmAllAdvancement :
         }
 
         override fun start(player: HumanAmongUsPlayer) {
+            require(player.uuid == this.player) { "$this is assigned to ${this.player} but was started by $player" }
             this.humanAmongUsPlayer = player
             @Suppress("UNCHECKED_CAST")
             listenerHandler?.let { player.game.eventManager.unregister(it as (AmongUsEvent) -> Unit) }
-            listenerHandler = handler@ { event ->
+            listenerHandler = handler@{ event ->
                 if (isCompleted) return@handler
-                val votes = (event.votes.entries.find { it.key.player == player }?.value as? MeetingManager.Vote.For)?.target
+                val votes =
+                    (event.votes.entries.find { it.key.player == player }?.value as? MeetingManager.Vote.For)?.target
                 if (votes != null && votes == event.ejectedPlayer) {
                     completedRoles.add(player.role.definition.id)
                     if (current == max) {
