@@ -82,12 +82,6 @@ interface Advancement<A : Advancement<A, AA>, AA : AssignedAdvancement<A, AA>> {
     fun of(player: HumanAmongUsPlayer): AA = of(player.uuid)
 
     companion object {
-        internal const val GOING_THROUGH_SEQUENCES_DISABLED = 10000
-        internal const val GOING_THROUGH_SEQUENCES_LIMIT = 100
-        internal const val GOING_THROUGH_SEQUENCES_WARNING = 40
-        internal const val GOING_THROUGH_SEQUENCES_INCREMENT = 7
-        internal const val GOING_THROUGH_SEQUENCES_DECREMENT = 1
-
         val advancements = listOf<Advancement<*, *>>(
             // progressiv
             GottaEjectEmAllAdvancement,
@@ -114,12 +108,5 @@ interface Advancement<A : Advancement<A, AA>, AA : AssignedAdvancement<A, AA>> {
         )
 
         val advancementMap = advancements.associateBy { it.id }
-
-        /**
-         * This is used to detect and disabled advancements where the runner does not actually wait for something.
-         * If we wouldnt block the advancement, it would just be an infinity loop.
-         */
-        @OptIn(ExperimentalAdvancementApi::class)
-        internal val goingThroughSequences = mutableMapOf<SequencedAdvancement, AtomicInteger>()
     }
 }
