@@ -34,7 +34,7 @@ object TwoForOneAdvancement : SequencedAdvancement("two_for_one") {
 
         step("tie_breaker") {
             val ejectedWithoutMayorVote = calculateResult(meetingEnd)
-            if (ejectedWithoutMayorVote != target) stepFailed()
+            if (ejectedWithoutMayorVote == target) stepFailed()
         }
 
         award()
