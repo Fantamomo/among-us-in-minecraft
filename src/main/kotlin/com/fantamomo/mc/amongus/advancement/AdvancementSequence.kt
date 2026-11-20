@@ -5,6 +5,9 @@ import com.fantamomo.mc.amongus.advancement.utils.step.StepInfo
 import com.fantamomo.mc.amongus.events.AmongUsEvent
 import com.fantamomo.mc.amongus.player.HumanAmongUsPlayer
 import java.util.*
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.coroutines.RestrictsSuspension
@@ -67,6 +70,7 @@ import kotlin.time.Duration.Companion.seconds
  */
 @RestrictsSuspension
 @ExperimentalAdvancementApi
+@OptIn(ExperimentalContracts::class)
 class AdvancementSequence internal constructor(
     val runner: AdvancementSequenceRunner,
     private val host: SequenceHost,
@@ -180,8 +184,12 @@ class AdvancementSequence internal constructor(
      * Suspends the current fiber until the [Suspension] is resumed. [setup] registers whatever resumes it
      * (bind listeners/timers to the suspension, they are removed automatically).
      */
-    internal suspend fun <T> suspendFiber(setup: (Suspension<T>) -> Unit): T =
-        suspendCoroutineUninterceptedOrReturn { continuation ->
+    internal suspend fun <T> suspendFiber(setup: (Suspension<T>) -> Unit): T {
+        contract {
+            callsInPlace(setup, InvocationKind.EXACTLY_ONCE)
+            returnsResultOf(setup)
+        }
+        return suspendCoroutineUninterceptedOrReturn { continuation ->
             val fiber = currentFiber()
             fiber.scope.cancellation()?.let { throw it }
             val suspension = Suspension<T>(fiber, fiber.scope)
@@ -195,11 +203,16 @@ class AdvancementSequence internal constructor(
             if (result === COROUTINE_SUSPENDED) hasSuspended = true
             result
         }
+    }
 
     /**
      * Marks [block] as an await region, see "First action" on [AdvancementSequence].
      */
     internal inline fun <R> region(part: AdvancementSequencePart.Blocking, block: () -> R): R {
+        contract {
+            callsInPlace(block, InvocationKind.EXACTLY_ONCE)
+            returnsResultOf(block)
+        }
         val fiber = enterRegion(part)
         var completed = false
         try {
@@ -237,6 +250,11 @@ class AdvancementSequence internal constructor(
         setup: (SequenceScope) -> Unit,
         block: suspend AdvancementSequence.(SequenceScope) -> R,
     ): R {
+        contract {
+            callsInPlace(block, InvocationKind.EXACTLY_ONCE)
+            callsInPlace(setup, InvocationKind.EXACTLY_ONCE)
+            returnsResultOf(block)
+        }
         val fiber = currentFiber()
         fiber.scope.cancellation()?.let { throw it }
         val parent = fiber.scope
@@ -262,6 +280,10 @@ class AdvancementSequence internal constructor(
 
     /** Runtime part of `step(...)` and `branch("key")`, tracks the step for the GUI and applies its timeout. */
     internal suspend fun <R> withStep(info: StepInfo, block: suspend AdvancementSequence.() -> R): R {
+        contract {
+            callsInPlace(block, InvocationKind.EXACTLY_ONCE)
+            returnsResultOf(block)
+        }
         val fiber = currentFiber()
         fiber.scope.cancellation()?.let { throw it }
         fiber.parts += AdvancementSequencePart.NamedPart(info)
@@ -379,8 +401,13 @@ class AdvancementSequence internal constructor(
     /**
      * Runs [block] and fails with a [SequenceTimeoutException] if it takes longer than [duration].
      */
-    suspend fun <T> withTimeout(duration: Duration, block: suspend AdvancementSequence.() -> T): T =
-        timeout(duration, Any(), block)
+    suspend fun <T> withTimeout(duration: Duration, block: suspend AdvancementSequence.() -> T): T {
+        contract {
+            callsInPlace(block, InvocationKind.EXACTLY_ONCE)
+            returnsResultOf(block)
+        }
+        return timeout(duration, Any(), block)
+    }
 
     /**
      * Like [withTimeout], but returns `null` instead of failing when **this** timeout runs out.
@@ -395,12 +422,17 @@ class AdvancementSequence internal constructor(
         }
     }
 
-    private suspend fun <T> timeout(duration: Duration, origin: Any, block: suspend AdvancementSequence.() -> T): T =
-        withScope(AdvancementSequencePart.Timeout(duration), { scope ->
+    private suspend fun <T> timeout(duration: Duration, origin: Any, block: suspend AdvancementSequence.() -> T): T {
+        contract {
+            callsInPlace(block, InvocationKind.EXACTLY_ONCE)
+            returnsResultOf(block)
+        }
+        return withScope(AdvancementSequencePart.Timeout(duration), { scope ->
             val exception = SequenceTimeoutException(duration, origin)
             if (duration.isPositive()) scope.register(host.schedule(duration) { scope.cancel(exception) })
             else scope.cancel(exception)
         }) { block() }
+    }
 
     /**
      * Runs [block] while [handler] is called for every event of [type].
@@ -419,16 +451,22 @@ class AdvancementSequence internal constructor(
         type: KClass<E>,
         handler: (E) -> Unit,
         block: suspend AdvancementSequence.() -> R,
-    ): R = withScope(AdvancementSequencePart.Guard(type.java), { scope ->
-        scope.register(host.listen(type.java) { event ->
-            if (scope.isClosed || !scope.isActive) return@listen
-            try {
-                handler(event)
-            } catch (e: Throwable) {
-                scope.cancel(e)
-            }
-        })
-    }) { block() }
+    ): R {
+        contract {
+            callsInPlace(block, InvocationKind.EXACTLY_ONCE)
+            returnsResultOf(block)
+        }
+        return withScope(AdvancementSequencePart.Guard(type.java), { scope ->
+            scope.register(host.listen(type.java) { event ->
+                if (scope.isClosed || !scope.isActive) return@listen
+                try {
+                    handler(event)
+                } catch (e: Throwable) {
+                    scope.cancel(e)
+                }
+            })
+        }) { block() }
+    }
 
     // ------------------------------------------------------------------------------------------------------------
     // Parallel branches
@@ -451,6 +489,10 @@ class AdvancementSequence internal constructor(
      */
     @StepGroupDeclaration(requireAll = true)
     suspend fun <R> allOf(block: AllOfScope.() -> R): R {
+        contract {
+            callsInPlace(block, InvocationKind.EXACTLY_ONCE)
+            returnsResultOf(block)
+        }
         val scope = AllOfScope(this)
         val result = scope.block()
         runBranches(scope.branches, requireAll = true)
@@ -472,6 +514,10 @@ class AdvancementSequence internal constructor(
      */
     @StepGroupDeclaration(requireAll = false)
     suspend fun <T> race(block: RaceScope<T>.() -> Unit): T {
+        contract {
+            callsInPlace(block, InvocationKind.EXACTLY_ONCE)
+            returnsResultOf(block)
+        }
         val scope = RaceScope<T>(this)
         scope.block()
         @Suppress("UNCHECKED_CAST")

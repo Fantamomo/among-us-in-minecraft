@@ -29,6 +29,7 @@ suspend inline fun <reified E : PlayerAmongUsEvent> AdvancementSequence.awaitOwn
  */
 @ExperimentalAdvancementApi
 suspend fun <E : PlayerAmongUsEvent> AdvancementSequence.awaitOwnPlayer(block: suspend AdvancementSequence.() -> E): E {
+    @Suppress("WRONG_INVOCATION_KIND")
     contract {
         callsInPlace(block, InvocationKind.AT_LEAST_ONCE)
         returnsResultOf(block)
@@ -100,7 +101,13 @@ suspend fun <E : AmongUsEvent, R> AdvancementSequence.forbid(
     type: KClass<E>,
     where: (E) -> Boolean = { true },
     block: suspend AdvancementSequence.() -> R,
-): R = withListener(type, { if (where(it)) throw GuardViolationException(it) }, block)
+): R {
+    contract {
+        callsInPlace(block, InvocationKind.EXACTLY_ONCE)
+        returnsResultOf(block)
+    }
+    return withListener(type, { if (where(it)) throw GuardViolationException(it) }, block)
+}
 
 /**
  * Like [forbid], but only events caused by the owner of the sequence are forbidden.
@@ -110,4 +117,10 @@ suspend fun <E : PlayerAmongUsEvent, R> AdvancementSequence.forbidOwn(
     type: KClass<E>,
     where: (E) -> Boolean = { true },
     block: suspend AdvancementSequence.() -> R,
-): R = forbid(type, { it.player == player && where(it) }, block)
+): R {
+    contract {
+        callsInPlace(block, InvocationKind.EXACTLY_ONCE)
+        returnsResultOf(block)
+    }
+    return forbid(type, { it.player == player && where(it) }, block)
+}
