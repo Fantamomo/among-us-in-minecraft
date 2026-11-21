@@ -23,7 +23,7 @@ object HighNoonAdvancement : SequencedAdvancement("high_noon") {
         val crime = step("witness") {
             awaitKill { it.player != player && player.canSee(it.victim) }
         }
-        step("draw", timeoutSeconds = 5) {
+        step("draw", timeoutSeconds = 10) {
             forbid(MeetingCallEvent::class) {
                 awaitOwnKill { it.victim == crime.player }
             }
