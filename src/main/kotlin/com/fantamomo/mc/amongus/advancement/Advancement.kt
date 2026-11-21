@@ -98,6 +98,7 @@ interface Advancement<A : Advancement<A, AA>, AA : AssignedAdvancement<A, AA>> {
             IdentityTheftAdvancement,
             OutOfBodyAdvancement,
             SelfReportAdvancement,
+            SpeedrunnerAdvancement,
             StandingOvationAdvancement,
             ThePerfectKillAdvancement,
             TheSnitchWhoSnitchedTooLateAdvancement,
