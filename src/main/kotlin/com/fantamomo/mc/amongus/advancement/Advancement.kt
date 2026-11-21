@@ -110,6 +110,7 @@ interface Advancement<A : Advancement<A, AA>, AA : AssignedAdvancement<A, AA>> {
             FirstGameAdvancement,
             GhostVictoryAdvancement,
             InPlainSightAdvancement,
+            LazyCrewmateAdvancement,
             SelfDoubtAdvancement,
             WinnerWinnerAdvancement,
         )
