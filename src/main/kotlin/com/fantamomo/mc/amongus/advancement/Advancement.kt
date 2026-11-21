@@ -2,8 +2,7 @@ package com.fantamomo.mc.amongus.advancement
 
 import com.fantamomo.mc.amongus.advancement.progressive.*
 import com.fantamomo.mc.amongus.advancement.sequenced.*
-import com.fantamomo.mc.amongus.advancement.single.FirstGameAdvancement
-import com.fantamomo.mc.amongus.advancement.single.GhostVictoryAdvancement
+import com.fantamomo.mc.amongus.advancement.single.*
 import com.fantamomo.mc.amongus.player.HumanAmongUsPlayer
 import kotlinx.serialization.json.JsonElement
 import net.kyori.adventure.text.Component
@@ -107,8 +106,12 @@ interface Advancement<A : Advancement<A, AA>, AA : AssignedAdvancement<A, AA>> {
             WrongPlaceWrongTimeAdvancement,
 
             // single
+            FirstBloodAdvancement,
             FirstGameAdvancement,
             GhostVictoryAdvancement,
+            InPlainSightAdvancement,
+            SelfDoubtAdvancement,
+            WinnerWinnerAdvancement,
         )
 
         val advancementMap = advancements.associateBy { it.id }
