@@ -75,7 +75,8 @@ class MeetingManager(private val game: Game) {
 
     private val buttonCooldown = Cooldown(game.settings[SettingsKey.MEETING.MEETING_BUTTON_COOLDOWN], true)
 
-    private var currentMeetingNumber = 0
+    var currentMeetingNumber = 0
+        private set
 
     private val actionBar = game.actionBarManager.ActionBarPart(
         "meeting",
@@ -418,7 +419,7 @@ class MeetingManager(private val game: Game) {
             showVoteResult(ejectedPlayer)
             showVoteDetails()
 
-            game.eventManager.call(MeetingEndEvent(ejectedPlayer, votes))
+            game.eventManager.call(MeetingEndEvent(ejectedPlayer, votes, this))
 
             game.actionLog.add(MeetingActionElement.MeetingResult(ejectedPlayer?.uuid))
 

@@ -104,6 +104,7 @@ interface Advancement<A : Advancement<A, AA>, AA : AssignedAdvancement<A, AA>> {
             TheSnitchWhoSnitchedTooLateAdvancement,
             TwoForOneAdvancement,
             WhoTurnedOffTheLightsAdvancement,
+            WrongPlaceWrongTimeAdvancement,
 
             // single
             FirstGameAdvancement,

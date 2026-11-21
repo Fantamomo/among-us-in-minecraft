@@ -6,5 +6,6 @@ import com.fantamomo.mc.amongus.player.AmongUsPlayer
 
 class MeetingEndEvent(
     val ejectedPlayer: AmongUsPlayer?,
-    val votes: Map<MeetingManager.Voter, MeetingManager.Vote>
+    val votes: Map<MeetingManager.Voter, MeetingManager.Vote>,
+    val meeting: MeetingManager.Meeting
 ) : AmongUsEvent
