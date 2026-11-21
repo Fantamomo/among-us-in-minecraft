@@ -18,7 +18,7 @@ import org.bukkit.inventory.ItemType
 object ThePerfectKillAdvancement : SequencedAdvancement("the_perfect_kill") {
 
     @Suppress("UnstableApiUsage")
-    override val icon: ItemType get() = ItemType.IRON_SWORD
+    override val icon: ItemType = ItemType.IRON_SWORD
 
     override fun applicableTo(player: HumanAmongUsPlayer) =
         player.role.definition.team == Team.IMPOSTERS

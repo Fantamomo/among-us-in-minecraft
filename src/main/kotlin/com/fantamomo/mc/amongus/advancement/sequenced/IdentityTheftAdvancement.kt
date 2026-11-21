@@ -16,7 +16,7 @@ import org.bukkit.inventory.ItemType
 @OptIn(ExperimentalAdvancementApi::class)
 object IdentityTheftAdvancement : SequencedAdvancement("identity_theft") {
     @Suppress("UnstableApiUsage")
-    override val icon: ItemType get() = ItemType.PLAYER_HEAD
+    override val icon: ItemType = ItemType.PLAYER_HEAD
 
     override fun applicableTo(player: HumanAmongUsPlayer) = player.role.definition === MorphlingRole
 

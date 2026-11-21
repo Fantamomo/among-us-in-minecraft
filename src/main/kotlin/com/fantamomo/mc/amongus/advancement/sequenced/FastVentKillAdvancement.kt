@@ -17,7 +17,7 @@ import kotlin.time.Duration.Companion.seconds
 @OptIn(ExperimentalAdvancementApi::class)
 data object FastVentKillAdvancement : SequencedAdvancement("fast_vent_kill") {
     @Suppress("UnstableApiUsage")
-    override val icon: ItemType get() = ItemType.IRON_TRAPDOOR
+    override val icon: ItemType = ItemType.IRON_TRAPDOOR
 
     override val runner = createRunner {
         val exit = step("exit_vent") {

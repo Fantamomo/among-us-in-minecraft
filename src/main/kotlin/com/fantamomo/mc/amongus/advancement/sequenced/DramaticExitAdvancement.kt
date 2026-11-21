@@ -14,7 +14,7 @@ import org.bukkit.inventory.ItemType
 @OptIn(ExperimentalAdvancementApi::class)
 object DramaticExitAdvancement : SequencedAdvancement("dramatic_exit") {
     @Suppress("UnstableApiUsage")
-    override val icon: ItemType get() = ItemType.ARMOR_STAND
+    override val icon: ItemType = ItemType.ARMOR_STAND
 
     override fun applicableTo(player: HumanAmongUsPlayer) = player.role.definition.team == Team.CREWMATES
 

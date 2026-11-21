@@ -15,7 +15,7 @@ import org.bukkit.inventory.ItemType
 @OptIn(ExperimentalAdvancementApi::class)
 object HiredGunFiredGunAdvancement : SequencedAdvancement("hired_gun_fired_gun") {
     @Suppress("UnstableApiUsage")
-    override val icon: ItemType get() = ItemType.CROSSBOW
+    override val icon: ItemType = ItemType.CROSSBOW
 
     override fun applicableTo(player: HumanAmongUsPlayer) = player.role.definition == ExecutionerRole
 

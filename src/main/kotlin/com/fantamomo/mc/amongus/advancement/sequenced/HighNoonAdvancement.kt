@@ -15,7 +15,7 @@ import org.bukkit.inventory.ItemType
 @OptIn(ExperimentalAdvancementApi::class)
 object HighNoonAdvancement : SequencedAdvancement("high_noon") {
     @Suppress("UnstableApiUsage")
-    override val icon: ItemType get() = ItemType.BOW
+    override val icon: ItemType = ItemType.BOW
 
     override fun applicableTo(player: HumanAmongUsPlayer) = player.role.definition == SheriffRole
 

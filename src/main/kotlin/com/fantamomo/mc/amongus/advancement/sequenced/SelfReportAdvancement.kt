@@ -17,7 +17,7 @@ import org.bukkit.inventory.ItemType
 object SelfReportAdvancement : SequencedAdvancement("self_report") {
 
     @Suppress("UnstableApiUsage")
-    override val icon: ItemType get() = ItemType.BELL
+    override val icon: ItemType = ItemType.BELL
 
     override fun applicableTo(player: HumanAmongUsPlayer) = player.role.definition.team == Team.IMPOSTERS
 

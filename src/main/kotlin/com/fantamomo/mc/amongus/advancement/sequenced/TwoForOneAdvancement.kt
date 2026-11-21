@@ -15,7 +15,7 @@ import org.bukkit.inventory.ItemType
 @OptIn(ExperimentalAdvancementApi::class)
 object TwoForOneAdvancement : SequencedAdvancement("two_for_one") {
     @Suppress("UnstableApiUsage")
-    override val icon: ItemType get() = ItemType.GOLDEN_HELMET
+    override val icon: ItemType = ItemType.GOLDEN_HELMET
 
     override fun applicableTo(player: HumanAmongUsPlayer) = player.role.definition == MayorRole
 

@@ -19,7 +19,7 @@ object TheSnitchWhoSnitchedTooLateAdvancement : SequencedAdvancement("the_snitch
     override val isSecret = true
 
     @Suppress("UnstableApiUsage")
-    override val icon: ItemType get() = ItemType.SPYGLASS
+    override val icon: ItemType = ItemType.SPYGLASS
 
     override fun applicableTo(player: HumanAmongUsPlayer) = player.role.definition == SnitchRole
 

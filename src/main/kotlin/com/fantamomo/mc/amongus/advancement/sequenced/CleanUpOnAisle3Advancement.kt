@@ -17,7 +17,7 @@ object CleanUpOnAisle3Advancement : SequencedAdvancement("clean_up_on_aisle_3") 
     override val hasGameAdvantage = true
 
     @Suppress("UnstableApiUsage")
-    override val icon: ItemType get() = ItemType.SPONGE
+    override val icon: ItemType = ItemType.SPONGE
 
     override fun applicableTo(player: HumanAmongUsPlayer) = player.role.definition.team === Team.IMPOSTERS
 

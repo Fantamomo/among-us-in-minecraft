@@ -10,7 +10,7 @@ import org.bukkit.inventory.ItemType
  */
 object GhostVictoryAdvancement : SingleAdvancement("ghost_victory") {
     @Suppress("UnstableApiUsage")
-    override val icon: ItemType get() = ItemType.PHANTOM_MEMBRANE
+    override val icon: ItemType = ItemType.PHANTOM_MEMBRANE
 
     override val isSecret: Boolean = true
 }

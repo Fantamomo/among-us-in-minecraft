@@ -11,7 +11,7 @@ import org.bukkit.inventory.ItemType
  */
 object FirstGameAdvancement : SingleAdvancement("first_game") {
     @Suppress("UnstableApiUsage")
-    override val icon: ItemType get() = ItemType.OAK_SAPLING
+    override val icon: ItemType = ItemType.OAK_SAPLING
 
     override fun AdvancementListenerScope<AssignedSingleAdvancement>.listen() {
         val playedGames = player.statistics.playedGames

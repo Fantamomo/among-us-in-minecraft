@@ -17,7 +17,7 @@ object StandingOvationAdvancement : SequencedAdvancement("standing_ovation") {
     override val isSecret = true
 
     @Suppress("UnstableApiUsage")
-    override val icon: ItemType get() = ItemType.JUKEBOX
+    override val icon: ItemType = ItemType.JUKEBOX
 
     override fun applicableTo(player: HumanAmongUsPlayer) = player.role.definition == JesterRole
 

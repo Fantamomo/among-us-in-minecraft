@@ -15,7 +15,7 @@ import org.bukkit.inventory.ItemType
 @OptIn(ExperimentalAdvancementApi::class)
 object WhoTurnedOffTheLightsAdvancement : SequencedAdvancement("who_turned_off_the_lights") {
     @Suppress("UnstableApiUsage")
-    override val icon: ItemType get() = ItemType.REDSTONE_LAMP
+    override val icon: ItemType = ItemType.REDSTONE_LAMP
 
     override fun applicableTo(player: HumanAmongUsPlayer) = player.role.definition.team === Team.IMPOSTERS
 
