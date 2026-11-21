@@ -9,8 +9,9 @@ import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.languages.numeric
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.task.GuiAssignedTask
-import com.fantamomo.mc.amongus.util.splitLinesPreserveStyles
+import com.fantamomo.mc.amongus.util.ComponentWrapConfig
 import com.fantamomo.mc.amongus.util.translateTo
+import com.fantamomo.mc.amongus.util.wrapComponent
 import io.papermc.paper.datacomponent.DataComponentTypes
 import io.papermc.paper.datacomponent.item.ItemLore
 import io.papermc.paper.datacomponent.item.TooltipDisplay
@@ -251,7 +252,7 @@ class AdvancementsInventory(
 
         // Description / What is needed to complete
         val description = if (isHidden) Component.translatable("advancement.ui.secret.description") else advancement.description
-        val descLines = splitLinesPreserveStyles(description.translateTo(locale)).map {
+        val descLines = wrapComponent(description.translateTo(locale), ComponentWrapConfig.TEXT).map {
             it.color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)
         }
         lore.addAll(descLines)

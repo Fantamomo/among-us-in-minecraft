@@ -11,8 +11,10 @@ import com.fantamomo.mc.amongus.player.HumanAmongUsPlayer
 import com.fantamomo.mc.amongus.player.PlayerManager
 import com.fantamomo.mc.amongus.player.humanOrNull
 import com.fantamomo.mc.amongus.player.isBot
+import com.fantamomo.mc.amongus.util.ComponentWrapConfig
 import com.fantamomo.mc.amongus.util.safeCreateDirectories
 import com.fantamomo.mc.amongus.util.ticks
+import com.fantamomo.mc.amongus.util.wrapComponent
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.*
 import net.kyori.adventure.text.Component
@@ -41,7 +43,8 @@ object AdvancementManager {
     private val pendingAttemptsByGame = mutableMapOf<Game, MutableList<() -> Unit>>()
     private val earnedAdvancementsByGame = mutableMapOf<Game, MutableList<Pair<UUID, Advancement<*, *>>>>()
     private val gamePlayersByGame = mutableMapOf<Game, MutableSet<UUID>>()
-    private val activeListenersByGame = mutableMapOf<Game, MutableSet<ListenerAdvancement.AssignedListenerAdvancement>>()
+    private val activeListenersByGame =
+        mutableMapOf<Game, MutableSet<ListenerAdvancement.AssignedListenerAdvancement>>()
 
     private class Advancements(val uuid: UUID) {
         val advancements: MutableMap<Advancement<*, *>, AssignedAdvancement<*, *>> = mutableMapOf()
@@ -330,8 +333,14 @@ object AdvancementManager {
                         append(advancement.name)
                         hoverEvent(KHoverEventType.ShowText) {
                             append(advancement.name)
-                            newLine()
-                            append(advancement.descriptionOther)
+                            val lines = wrapComponent(
+                                advancement.descriptionOther,
+                                ComponentWrapConfig.TEXT
+                            )
+                            for (line in lines) {
+                                newLine()
+                                append(line)
+                            }
                         }
                     }
                 }
@@ -340,7 +349,8 @@ object AdvancementManager {
     }
 
     @Suppress("UNCHECKED_CAST", "NOTHING_TO_INLINE")
-    private inline fun <A : Advancement<A, AA>, AA : AssignedAdvancement<A, AA>> Advancement<A, AA>.castHelper(): A = this as A
+    private inline fun <A : Advancement<A, AA>, AA : AssignedAdvancement<A, AA>> Advancement<A, AA>.castHelper(): A =
+        this as A
 
     /**
      * The attempts of one sequenced advancement for one player during one game.
@@ -398,7 +408,10 @@ object AdvancementManager {
         }
 
         override fun onError(sequence: AdvancementSequence, exception: Throwable) {
-            logger.error("Attempt of advancement ${advancement.id} by ${player.name} failed unexpectedly (${sequence.describe()})", exception)
+            logger.error(
+                "Attempt of advancement ${advancement.id} by ${player.name} failed unexpectedly (${sequence.describe()})",
+                exception
+            )
         }
 
         override fun onCompleted(sequence: AdvancementSequence) {
@@ -406,8 +419,10 @@ object AdvancementManager {
         }
 
         override fun onWarning(reason: String) {
-            logger.warn("Sequence of advancement ${advancement.id} (player ${player.name}): $reason" +
-                    if (AmongUsConstants.IN_DEVELOPMENT) "" else ", please report this to the plugin author")
+            logger.warn(
+                "Sequence of advancement ${advancement.id} (player ${player.name}): $reason" +
+                        if (AmongUsConstants.IN_DEVELOPMENT) "" else ", please report this to the plugin author"
+            )
         }
     }
 }

@@ -81,7 +81,12 @@ data class ComponentWrapConfig(
     val maxLineLength: Int = 30,
     val wordWrap: Boolean = true,
     val maxLines: Int? = null
-)
+) {
+    companion object {
+        val SCOREBOARD = ComponentWrapConfig(maxLineLength = 30)
+        val TEXT = ComponentWrapConfig(maxLineLength = 60)
+    }
+}
 
 /**
  * Splits a given component into a list of smaller components according to the specified wrapping configuration.
@@ -102,7 +107,7 @@ data class ComponentWrapConfig(
  */
 fun wrapComponent(
     component: Component,
-    config: ComponentWrapConfig = ComponentWrapConfig()
+    config: ComponentWrapConfig = ComponentWrapConfig.SCOREBOARD
 ): List<Component> {
 
     val result = mutableListOf<Component>()
