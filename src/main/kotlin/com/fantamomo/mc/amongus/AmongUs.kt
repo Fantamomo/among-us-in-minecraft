@@ -138,12 +138,24 @@ object AmongUs : JavaPlugin() {
         // This ensures that class loading does not trigger NoClassDefFoundError, if the JAR is changed
         // (read more in onDisable)
         ActionLogManager
-        AiService
         Role
         Modification
         PlayerDataManager
         BotsJoinMessages
         catch { classLoader.loadClass("kotlin.io.FilesKt") }
+
+        // the ai.koog AI provider implementations loads classes and service files,
+        // if we don't switch the classloader, it will throw a NoClassDefFoundError
+        val thread = Thread.currentThread()
+        val oldClassLoader = thread.contextClassLoader
+
+        try {
+            thread.contextClassLoader = this.javaClass.classLoader
+
+            AiService
+        } finally {
+            thread.contextClassLoader = oldClassLoader
+        }
     }
 
     private val classNotFoundExceptions: MutableList<NoClassDefFoundError> = mutableListOf()

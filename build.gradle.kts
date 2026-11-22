@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "com.fantamomo.mc"
-version = "2.5-SNAPSHOT"
+version = "2.5.1-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -114,6 +114,7 @@ tasks.jar {
 
 tasks.shadowJar {
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    mergeServiceFiles()
 }
 
 val liteJar = tasks.register<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("liteJar") {
