@@ -30,8 +30,9 @@ open class SettingsGroup(
         key: String,
         type: S,
         defaultValue: T,
-        defaultValueOnDebug: T? = null
-    ) = SettingsKey(key, type, defaultValue, group = this, defaultValueOnDebug = defaultValueOnDebug)
+        defaultValueOnDebug: T? = null,
+        useCustomName: Boolean = false
+    ) = SettingsKey(key, type, defaultValue, group = this, defaultValueOnDebug = defaultValueOnDebug, useCustomName = useCustomName)
 
     fun <T : Any, S : SettingsType<T>> key(
         key: String,
@@ -39,6 +40,7 @@ open class SettingsGroup(
         defaultValue: T,
         displayName: Component,
         description: Component?,
-        defaultValueOnDebug: T? = null
-    ) = SettingsKey(key, type, defaultValue, displayName, description, this, defaultValueOnDebug = defaultValueOnDebug)
+        defaultValueOnDebug: T? = null,
+        useCustomName: Boolean = false
+    ) = SettingsKey(key, type, defaultValue, displayName, description, this, defaultValueOnDebug = defaultValueOnDebug, useCustomName = useCustomName)
 }
