@@ -114,6 +114,7 @@ tasks.jar {
 
 tasks.shadowJar {
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    mergeServiceFiles()
 }
 
 val liteJar = tasks.register<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("liteJar") {
