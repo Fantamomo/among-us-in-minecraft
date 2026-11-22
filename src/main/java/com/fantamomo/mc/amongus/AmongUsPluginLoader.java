@@ -89,10 +89,10 @@ public class AmongUsPluginLoader implements PluginLoader {
         );
 
         centralResolver.addDependency(new Dependency(new DefaultArtifact("org.jetbrains.kotlin:kotlin-stdlib:2.5.0-Beta2"), null));
-        centralResolver.addDependency(new Dependency(new DefaultArtifact("ai.koog:koog-agents-jvm:1.3.0"), null));
-        centralResolver.addDependency(new Dependency(new DefaultArtifact("ai.koog:prompt-executor-openrouter-client:1.3.0"), null));
         centralResolver.addDependency(new Dependency(new DefaultArtifact("org.jetbrains.kotlinx:kotlinx-serialization-json:1.12.0"), null));
         centralResolver.addDependency(new Dependency(new DefaultArtifact("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0"), null));
+        centralResolver.addDependency(new Dependency(new DefaultArtifact("ai.koog:koog-agents-jvm:1.3.0"), null));
+        centralResolver.addDependency(new Dependency(new DefaultArtifact("ai.koog:prompt-executor-openrouter-client-jvm:1.3.0"), null));
 
         MavenLibraryResolver inventiveResolver = new MavenLibraryResolver();
 
