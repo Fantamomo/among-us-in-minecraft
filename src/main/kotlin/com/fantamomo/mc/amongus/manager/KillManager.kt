@@ -252,13 +252,13 @@ class KillManager(val game: Game) {
             p.sendHurtAnimation(0f)
         }
         markAsDead(target, DeadReason.Poisoned(witch))
-        if (target.role.definition == TheDamnedRole) {
-            game.meetingManager.callMeeting(
-                witch,
-                MeetingManager.MeetingReason.BODY,
-                body = target
-            )
-        }
+//        if (target.role.definition == TheDamnedRole) {
+//            game.meetingManager.callMeeting(
+//                witch,
+//                MeetingManager.MeetingReason.BODY,
+//                body = target
+//            )
+//        }
         game.checkWin()
     }
 

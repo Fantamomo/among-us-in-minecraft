@@ -9,6 +9,7 @@ import com.fantamomo.mc.amongus.ability.abilities.PoisonAbility
 import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.player.AmongUsPlayer
 import com.fantamomo.mc.amongus.player.bot.mangement.BotVoteTargetController
+import com.fantamomo.mc.amongus.player.isAlive
 import com.fantamomo.mc.amongus.role.AssignedRole
 import com.fantamomo.mc.amongus.role.Role
 import com.fantamomo.mc.amongus.role.SupportBotsRole
@@ -57,7 +58,7 @@ object WitchRole : Role<WitchRole, WitchRole.AssignedWitchRole>, KillerRole {
         private var killed = false
 
         fun canPoisonNewPlayer(): Boolean {
-            if (currentTarget == null) return true
+            if (currentTarget?.isAlive() != true) return true
             val diesAt = diesAt ?: return true
             val now = Clock.System.now()
             return now > diesAt
