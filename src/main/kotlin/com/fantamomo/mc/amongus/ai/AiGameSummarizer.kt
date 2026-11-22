@@ -36,6 +36,7 @@ class AiGameSummarizer(val game: Game) {
                 val reason = when (val deadReason = player.deadReason) {
                     null -> "unknown"
                     is DeadReason.Murdered -> "murdered by ${deadReason.murderer.name}"
+                    is DeadReason.Poisoned -> "poisened by ${deadReason.witch.name}"
                     else -> PlainTextComponentSerializer.plainText().serialize(deadReason.name.translateTo(Locale.ENGLISH))
                 }
                 dead.add("${player.name} ($reason)")
@@ -85,6 +86,8 @@ class AiGameSummarizer(val game: Game) {
                     val reason = action.reason
                     if (reason is DeadReason.Murdered) {
                         "$time: ${reason.murderer.name} killed ${game.getPlayer(action.player)!!.name}"
+                    } else if (reason is DeadReason.Poisoned) {
+                        "$time: ${reason.witch.name} poisened ${game.getPlayer(action.player)!!.name}"
                     } else {
                         "$time: ${game.getPlayer(action.player)!!.name} died (${reason})"
                     }
