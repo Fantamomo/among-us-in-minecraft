@@ -1,13 +1,17 @@
 package com.fantamomo.mc.amongus.advancement
 
 import com.fantamomo.mc.adventure.text.args
+import com.fantamomo.mc.adventure.text.color
 import com.fantamomo.mc.adventure.text.textComponent
 import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.AmongUs
+import com.fantamomo.mc.amongus.languages.component
 import com.fantamomo.mc.amongus.languages.numeric
+import com.fantamomo.mc.amongus.languages.string
 import com.fantamomo.mc.amongus.task.GuiAssignedTask
-import com.fantamomo.mc.amongus.util.splitLinesPreserveStyles
+import com.fantamomo.mc.amongus.util.ComponentWrapConfig
 import com.fantamomo.mc.amongus.util.translateTo
+import com.fantamomo.mc.amongus.util.wrapComponent
 import io.papermc.paper.datacomponent.DataComponentTypes
 import io.papermc.paper.datacomponent.item.ItemLore
 import io.papermc.paper.datacomponent.item.TooltipDisplay
@@ -47,6 +51,9 @@ class AdvancementsInventory(
         private val HIDDEN_TOOLTIP_DISPLAY = TooltipDisplay.tooltipDisplay()
             .hideTooltip(true)
             .build()
+
+        private const val PROGRESS_BAR_LENGTH = 20
+        private const val PROGRESS_BAR_CHAR = "|"
     }
 
     override fun getInventory(): Inventory {
@@ -70,6 +77,7 @@ class AdvancementsInventory(
         val background = ItemType.BLACK_STAINED_GLASS_PANE.createItemStack()
         background.setData(DataComponentTypes.TOOLTIP_DISPLAY, HIDDEN_TOOLTIP_DISPLAY)
         borderSlots.forEach { inv.setItem(it, background) }
+        inv.setItem(4, buildSummaryItem(advancementsList, player.locale()))
 
         val startIndex = page * pageSize
         val pageItems = advancementsList.drop(startIndex).take(pageSize)
@@ -133,18 +141,66 @@ class AdvancementsInventory(
         }
     }
 
+    private fun buildSummaryItem(
+        advancementsList: List<Pair<Advancement<*, *>, AssignedAdvancement<*, *>>>,
+        locale: Locale
+    ): ItemStack {
+        val completed = advancementsList.count { it.second.isCompleted }
+        val total = advancementsList.size
+        val item = ItemType.NETHER_STAR.createItemStack()
+        item.setData(
+            DataComponentTypes.CUSTOM_NAME,
+            Component.translatable("advancement.ui.title")
+                .color(NamedTextColor.GOLD)
+                .decoration(TextDecoration.ITALIC, false)
+                .translateTo(locale)
+        )
+        val lore = listOf(
+            textComponent {
+                translatable("advancement.ui.summary") {
+                    args {
+                        numeric("current", completed)
+                        numeric("total", total)
+                    }
+                }
+            }.decoration(TextDecoration.ITALIC, false).translateTo(locale),
+            progressBar(completed, total)
+        )
+        item.setData(DataComponentTypes.LORE, ItemLore.lore(lore))
+        item.setData(DataComponentTypes.TOOLTIP_DISPLAY, TOOLTIP_DISPLAY)
+        return item
+    }
+
+    private fun progressBar(current: Int, max: Int): Component {
+        val ratio = if (max <= 0) 1.0 else (current.toDouble() / max).coerceIn(0.0, 1.0)
+        val filled = (ratio * PROGRESS_BAR_LENGTH).toInt()
+        val percent = (ratio * 100).toInt()
+        return Component.text()
+            .append(Component.text(PROGRESS_BAR_CHAR.repeat(filled), NamedTextColor.GREEN))
+            .append(Component.text(PROGRESS_BAR_CHAR.repeat(PROGRESS_BAR_LENGTH - filled), NamedTextColor.DARK_GRAY))
+            .append(Component.text(" $percent%", NamedTextColor.GRAY))
+            .decoration(TextDecoration.ITALIC, false)
+            .build()
+    }
+
+    private fun Component.loreLine(locale: Locale, color: NamedTextColor? = null): Component {
+        val styled = if (color != null) color(color) else this
+        return styled.decoration(TextDecoration.ITALIC, false).translateTo(locale)
+    }
+
+    @OptIn(ExperimentalAdvancementApi::class)
     private fun buildAdvancementItem(
         advancement: Advancement<*, *>,
         assigned: AssignedAdvancement<*, *>,
-        locale: Locale
+        locale: Locale,
     ): ItemStack {
         val isCompleted = assigned.isCompleted
-        val itemType = advancement.icon
-        val item = itemType.createItemStack()
+        val isHidden = advancement.isSecret && !isCompleted
+        val item = if (isHidden) ItemType.GRAY_DYE.createItemStack() else advancement.createItemStack(player)
 
         val nameColor = if (isCompleted) NamedTextColor.GOLD else NamedTextColor.WHITE
-        val nameComponent = advancement.name.translateTo(locale).color(nameColor).decoration(TextDecoration.ITALIC, false)
-        item.setData(DataComponentTypes.CUSTOM_NAME, nameComponent)
+        val name = if (isHidden) Component.translatable("advancement.ui.secret.name") else advancement.name
+        item.setData(DataComponentTypes.CUSTOM_NAME, name.loreLine(locale, nameColor))
 
         if (isCompleted) {
             item.setData(DataComponentTypes.ENCHANTMENT_GLINT_OVERRIDE, true)
@@ -152,29 +208,29 @@ class AdvancementsInventory(
 
         val lore = mutableListOf<Component>()
 
+        // Type line
+        val typeKey = when (advancement) {
+            is SequencedAdvancement -> "advancement.ui.type.sequenced"
+            is ProgressiveAdvancement<*, *> -> "advancement.ui.type.progressive"
+            else -> "advancement.ui.type.single"
+        }
+        lore.add(Component.translatable(typeKey).loreLine(locale, NamedTextColor.DARK_GRAY))
+
         // Status line
-        if (isCompleted) {
-            lore.add(
-                Component.translatable("advancement.ui.status.completed")
-                    .color(NamedTextColor.GREEN)
-                    .decoration(TextDecoration.ITALIC, false)
-                    .translateTo(locale)
-            )
-        } else if (assigned is ProgressiveAdvancement.AssignedProgressiveAdvancement<*, *>) {
-            val current = assigned.current
+        val progressive = assigned as? ProgressiveAdvancement.AssignedProgressiveAdvancement<*, *>
+        val sequenced = assigned as? SequencedAdvancement.AssignedSequencedAdvancement
+        val statusKey = when {
+            isCompleted -> "advancement.ui.status.completed"
+            progressive != null && progressive.current > 0 -> "advancement.ui.status.in_progress"
+            sequenced != null && (sequenced.attempts > 0 || sequenced.bestAttempt != null) -> "advancement.ui.status.in_progress"
+            else -> "advancement.ui.status.incomplete"
+        }
+        lore.add(Component.translatable(statusKey).loreLine(locale))
+
+        // Progress
+        if (progressive != null && !isHidden) {
             val max = (advancement as? ProgressiveAdvancement<*, *>)?.max ?: 1
-            val statusComp = if (current > 0) {
-                Component.translatable("advancement.ui.status.in_progress")
-                    .color(NamedTextColor.YELLOW)
-                    .decoration(TextDecoration.ITALIC, false)
-                    .translateTo(locale)
-            } else {
-                Component.translatable("advancement.ui.status.incomplete")
-                    .color(NamedTextColor.RED)
-                    .decoration(TextDecoration.ITALIC, false)
-                    .translateTo(locale)
-            }
-            lore.add(statusComp)
+            val current = if (isCompleted) max else progressive.current
             lore.add(
                 textComponent {
                     translatable("advancement.ui.progress") {
@@ -183,30 +239,102 @@ class AdvancementsInventory(
                             numeric("max", max)
                         }
                     }
-                }.decoration(TextDecoration.ITALIC, false).translateTo(locale)
+                }.loreLine(locale)
             )
-        } else {
-            lore.add(
-                Component.translatable("advancement.ui.status.incomplete")
-                    .color(NamedTextColor.RED)
-                    .decoration(TextDecoration.ITALIC, false)
-                    .translateTo(locale)
-            )
+            lore.add(progressBar(current, max))
+        }
+
+        if (sequenced != null && !isHidden) {
+            lore.addAll(buildStepLines(sequenced, locale))
         }
 
         lore.add(Component.empty())
 
         // Description / What is needed to complete
-        val descComponent = advancement.description.translateTo(locale)
-        val descLines = splitLinesPreserveStyles(descComponent).map {
+        val description = if (isHidden) Component.translatable("advancement.ui.secret.description") else advancement.description
+        val descLines = wrapComponent(description.translateTo(locale), ComponentWrapConfig.TEXT).map {
             it.color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)
         }
         lore.addAll(descLines)
+
+        if (advancement.hasGameAdvantage && !isCompleted && !isHidden) {
+            lore.add(Component.empty())
+            lore.add(Component.translatable("advancement.ui.awarded_after_game").loreLine(locale, NamedTextColor.DARK_GRAY))
+        }
 
         item.setData(DataComponentTypes.LORE, ItemLore.lore(lore))
         item.setData(DataComponentTypes.TOOLTIP_DISPLAY, TOOLTIP_DISPLAY)
 
         return item
+    }
+
+    /**
+     * The best attempt and every visible step of a sequenced advancement:
+     * green = completed in the best attempt, red = the best attempt failed here, gray = not reached.
+     */
+    @OptIn(ExperimentalAdvancementApi::class)
+    private fun buildStepLines(
+        sequenced: SequencedAdvancement.AssignedSequencedAdvancement,
+        locale: Locale
+    ): List<Component> {
+        val steps = sequenced.definition.runner.visibleSteps
+        if (steps.isEmpty()) return emptyList()
+        val lines = mutableListOf<Component>()
+        val best = sequenced.bestAttempt
+        val completed = sequenced.isCompleted
+
+        if (!completed) {
+            if (best != null) {
+                lines += textComponent {
+                    translatable("advancement.ui.steps.best") {
+                        args {
+                            numeric("completed", steps.count { it.key in best.completedSteps })
+                            numeric("total", steps.size)
+                        }
+                    }
+                }.loreLine(locale)
+            }
+            if (sequenced.attempts > 0) {
+                lines += textComponent {
+                    translatable("advancement.ui.steps.attempts") {
+                        args { numeric("attempts", sequenced.attempts) }
+                    }
+                }.loreLine(locale)
+            }
+        }
+
+        for (step in steps) {
+            val indent = Component.text("  ".repeat(step.depth))
+            if (step.isFirstInGroup) {
+                val groupKey = if (step.groupRequiresAll) "advancement.ui.steps.group.all" else "advancement.ui.steps.group.any"
+                lines += indent.append(Component.translatable(groupKey)).loreLine(locale)
+            }
+            val color = when {
+                completed || best?.completedSteps?.contains(step.key) == true -> NamedTextColor.GREEN
+                best?.failedStep == step.key -> NamedTextColor.RED
+                else -> NamedTextColor.GRAY
+            }
+            val failures = if (completed) 0 else sequenced.failuresOf(step.key)
+            val line = textComponent {
+                translatable("advancement.ui.steps.part") {
+                    args {
+                        string("index", step.displayIndex)
+                        component("explanation") {
+                            translatable(step.languageKey) { color(color) }
+                        }
+                    }
+                }
+                if (step.timeoutSeconds > 0) translatable("advancement.ui.steps.timeout") {
+                    args { numeric("seconds", step.timeoutSeconds) }
+                }
+                if (failures > 0) translatable("advancement.ui.steps.failures") {
+                    args { numeric("count", failures) }
+                }
+            }
+            // indent nested steps below their parent
+            lines += indent.append(line).loreLine(locale)
+        }
+        return lines
     }
 
     fun onClick(event: InventoryClickEvent) {

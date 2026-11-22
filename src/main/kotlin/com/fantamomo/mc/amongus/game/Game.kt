@@ -5,6 +5,8 @@ import com.fantamomo.mc.amongus.AmongUs
 import com.fantamomo.mc.amongus.AmongUsConstants
 import com.fantamomo.mc.amongus.ability.AbilityManager
 import com.fantamomo.mc.amongus.advancement.AdvancementManager
+import com.fantamomo.mc.amongus.advancement.single.GhostVictoryAdvancement
+import com.fantamomo.mc.amongus.advancement.single.LazyCrewmateAdvancement
 import com.fantamomo.mc.amongus.ai.AiGameSummarizer
 import com.fantamomo.mc.amongus.ai.AiService
 import com.fantamomo.mc.amongus.ai.LobbyChatAiService
@@ -593,6 +595,17 @@ class Game(
         )
 
         killManager.removeAllCorpses()
+
+        if (team != Team.CREWMATES) {
+            for (player in players) {
+                if (player.isBot) continue
+                if (!player.isAlive()) continue
+                if (player.role.definition.team != Team.CREWMATES) continue
+                if (player.tasks.all { !it.completed }) {
+                    LazyCrewmateAdvancement.award(player)
+                }
+            }
+        }
         taskManager.end()
 
         waypointManager.end()
@@ -640,6 +653,7 @@ class Game(
                 playTime.timerStop()
                 playedGames.increment()
             }
+            if (hasWon && !player.isAlive()) player.humanOrNull?.let(GhostVictoryAdvancement::award)
 
             val subtitle = textComponent {
                 if (hasWon) translatable("win.win") else translatable("win.lose")

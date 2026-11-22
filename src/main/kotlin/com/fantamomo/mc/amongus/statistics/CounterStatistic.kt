@@ -10,7 +10,22 @@ class CounterStatistic(override val id: String) : Statistic {
 
     fun increment() {
         value++
-        listeners.forEach { it(value, value - 1) }
+        // It is possible for a listener to unregister itself when called
+        when (listeners.size) {
+            0 -> {}
+            1 -> {
+                listeners.first().invoke(value, value - 1)
+            }
+            2 -> {
+                val first = listeners.first()
+                val second = listeners.last()
+                first(value, value - 1)
+                second(value, value - 1)
+            }
+            3 -> {
+                listeners.toList().forEach { it(value, value - 1) }
+            }
+        }
     }
 
     override fun shouldSave() = value != 0

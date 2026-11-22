@@ -126,7 +126,7 @@ class VentManager(val game: Game) {
                     vent.normalizedLocation.run { Triple(blockX, blockY, blockZ) })
             )
 
-            game.eventManager.call(VentEnterEvent(this.player))
+            game.eventManager.call(VentEnterEvent(this.player, this.vent))
 
             this.player.mannequinController.hideFromAll()
             actionBar?.remove()
@@ -188,7 +188,7 @@ class VentManager(val game: Game) {
                 }
             }
             player.mannequinController.showToSeeingPlayers()
-            game.eventManager.call(VentExitEvent(this.player))
+            game.eventManager.call(VentExitEvent(this.player, this.vent))
             AbilityManager.invalidatePlayer(this.player)
         }
     }

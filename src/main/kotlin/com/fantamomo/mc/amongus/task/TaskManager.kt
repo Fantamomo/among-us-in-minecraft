@@ -4,6 +4,7 @@ import com.fantamomo.mc.adventure.text.args
 import com.fantamomo.mc.adventure.text.textComponent
 import com.fantamomo.mc.adventure.text.translatable
 import com.fantamomo.mc.amongus.AmongUs
+import com.fantamomo.mc.amongus.events.player.TaskFinishedEvent
 import com.fantamomo.mc.amongus.game.Game
 import com.fantamomo.mc.amongus.languages.numeric
 import com.fantamomo.mc.amongus.manager.EntityManager
@@ -81,6 +82,7 @@ class TaskManager(val game: Game) {
         val allTasksCompleted = tasks[player]?.all { it.completed } ?: true
         game.actionLog.add(TaskActionElements.TaskCompleted(player.uuid, task.task.id))
         registeredTask.completed = true
+        game.eventManager.call(TaskFinishedEvent(task)) // need to be called AFTER completed is set to true
         registeredTask.hideCompletely()
         registeredTask.task.stop()
         updateBossbar(taskCompleted = true)

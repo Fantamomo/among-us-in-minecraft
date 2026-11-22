@@ -49,13 +49,15 @@ dependencies {
 
 
     testImplementation(kotlin("test"))
+
+    kotlinCompilerPluginClasspath(project(":advancement-compiler-plugin"))
 }
 
 val targetJavaVersion = 25
 kotlin {
     jvmToolchain(targetJavaVersion)
     compilerOptions {
-        freeCompilerArgs = listOf("-opt-in=kotlin.uuid.ExperimentalUuidApi", "-Xcontext-parameters")
+        freeCompilerArgs = listOf("-opt-in=kotlin.uuid.ExperimentalUuidApi")
     }
 }
 
@@ -108,6 +110,10 @@ tasks.jar {
             "Jar-Type" to "thin"
         )
     }
+}
+
+tasks.shadowJar {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
 
 val liteJar = tasks.register<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("liteJar") {

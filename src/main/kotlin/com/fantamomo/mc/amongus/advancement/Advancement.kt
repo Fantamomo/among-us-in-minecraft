@@ -1,12 +1,15 @@
 package com.fantamomo.mc.amongus.advancement
 
-import com.fantamomo.mc.amongus.advancement.sequenced.FastVentKillAdvancement
-import com.fantamomo.mc.amongus.advancement.sequenced.ThePerfectKillAdvancement
+import com.fantamomo.mc.amongus.advancement.progressive.*
+import com.fantamomo.mc.amongus.advancement.sequenced.*
+import com.fantamomo.mc.amongus.advancement.single.*
+import com.fantamomo.mc.amongus.player.HumanAmongUsPlayer
 import kotlinx.serialization.json.JsonElement
 import net.kyori.adventure.text.Component
+import org.bukkit.entity.Player
+import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.ItemType
 import java.util.*
-import java.util.concurrent.atomic.AtomicInteger
 
 interface Advancement<A : Advancement<A, AA>, AA : AssignedAdvancement<A, AA>> {
     val id: String
@@ -43,8 +46,16 @@ interface Advancement<A : Advancement<A, AA>, AA : AssignedAdvancement<A, AA>> {
      *
      * If true, we award the player with this advancement **after** the game finishes.
      * If false, we award the player with this advancement the moment they complete it.
+     *
+     * Other players still only see the advancement after the game finishes.
      */
     val hasGameAdvantage: Boolean
+        get() = false
+
+    /**
+     * If true, the name and description are hidden in the inventory GUI until the advancement is completed.
+     */
+    val isSecret: Boolean
         get() = false
 
     /**
@@ -54,29 +65,70 @@ interface Advancement<A : Advancement<A, AA>, AA : AssignedAdvancement<A, AA>> {
     val icon: ItemType
         get() = ItemType.BOOK
 
+    /**
+     * The [AdvancementsInventory] calls this method to create the item stack representing this advancement in the inventory GUI.
+     *
+     * The Advancement can override this method to customize the item stack.
+     * It should still return a valid [ItemType] when [icon] is called.
+     *
+     * The item stack should be always created, never cached. The [AdvancementsInventory] may modify metadata of this item stack.
+     *
+     * This method will not be called if the advancement [isSecret] and not completed.
+     */
+    fun createItemStack(viewer: Player): ItemStack = icon.createItemStack()
+
     fun new(player: UUID): AA
 
     fun createOf(player: UUID, data: JsonElement): AA
 
-    companion object {
-        internal const val GOING_THROUGH_SEQUENCES_DISABLED = 10000
-        internal const val GOING_THROUGH_SEQUENCES_LIMIT = 100
-        internal const val GOING_THROUGH_SEQUENCES_WARNING = 40
-        internal const val GOING_THROUGH_SEQUENCES_INCREMENT = 7
-        internal const val GOING_THROUGH_SEQUENCES_DECREMENT = 1
+    /**
+     * Returns the state of this advancement for [player] (loading or creating it if needed).
+     *
+     * Use this to update the advancement directly from code, e.g. `MyAdvancement.of(player).award()`.
+     */
+    fun of(player: UUID): AA {
+        @Suppress("UNCHECKED_CAST")
+        return AdvancementManager.getAssigned(player, this as A)
+    }
 
-        val advancements = listOf<Advancement<*, *>>(
+    fun of(player: HumanAmongUsPlayer): AA = of(player.uuid)
+
+    companion object {
+        val advancements = listOf(
+            // progressiv
+            GottaEjectEmAllAdvancement,
+            HostileTakeoverAdvancement,
+            TaskMasterAdvancement,
+            VentRatAdvancement,
+            VeteranAdvancement,
+
+            // sequenced
+            CleanUpOnAisle3Advancement,
+            DramaticExitAdvancement,
             FastVentKillAdvancement,
-            ThePerfectKillAdvancement
+            HighNoonAdvancement,
+            HiredGunFiredGunAdvancement,
+            IdentityTheftAdvancement,
+            OutOfBodyAdvancement,
+            SelfReportAdvancement,
+            SpeedrunnerAdvancement,
+            StandingOvationAdvancement,
+            ThePerfectKillAdvancement,
+            TheSnitchWhoSnitchedTooLateAdvancement,
+            TwoForOneAdvancement,
+            WhoTurnedOffTheLightsAdvancement,
+            WrongPlaceWrongTimeAdvancement,
+
+            // single
+            FirstBloodAdvancement,
+            FirstGameAdvancement,
+            GhostVictoryAdvancement,
+            InPlainSightAdvancement,
+            LazyCrewmateAdvancement,
+            SelfDoubtAdvancement,
+            WinnerWinnerAdvancement,
         )
 
         val advancementMap = advancements.associateBy { it.id }
-
-        /**
-         * This is used to detect and disabled advancements where the runner does not actually wait for something.
-         * If we wouldnt block the advancement, it would just be an infinity loop.
-         */
-        @OptIn(ExperimentalAdvancementApi::class)
-        internal val goingThroughSequences = mutableMapOf<SequencedAdvancement, AtomicInteger>()
     }
 }

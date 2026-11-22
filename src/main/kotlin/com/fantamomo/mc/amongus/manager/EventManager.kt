@@ -2,16 +2,10 @@ package com.fantamomo.mc.amongus.manager
 
 import com.fantamomo.mc.amongus.events.AmongUsEvent
 import com.fantamomo.mc.amongus.game.Game
-import kotlinx.coroutines.suspendCancellableCoroutine
 import org.slf4j.LoggerFactory
-import kotlin.coroutines.Continuation
-import kotlin.coroutines.cancellation.CancellationException
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 
 class EventManager(val game: Game) {
     private val listeners: MutableMap<Class<out AmongUsEvent>, MutableList<(AmongUsEvent) -> Unit>> = mutableMapOf()
-    private val markAsDeleted = mutableSetOf<(AmongUsEvent) -> Unit>()
 
     private var gameStopped = false
 
@@ -25,91 +19,35 @@ class EventManager(val game: Game) {
     fun unregister(handler: (AmongUsEvent) -> Unit) {
         if (gameStopped) return
         listeners.values.forEach { it.remove(handler) }
-        for (deleted in markAsDeleted) {
-            listeners.values.forEach { it.remove(deleted) }
-        }
     }
 
     inline fun <reified E : AmongUsEvent> register(noinline handler: (E) -> Unit) {
         register(E::class.java, handler)
     }
 
-    internal suspend fun <E : AmongUsEvent> awaitEvent(
-        clazz: Class<E>,
-        continuationHandler: ((Continuation<E>) -> Unit)?
-    ): E {
-//        logger.info("Awaiting event of type $clazz")
-        return suspendCancellableCoroutine { continuation ->
-            val callback = SuspendCallback(continuation)
-//            logger.info("Registered callback for event of type $clazz for $continuation")
-            register(clazz, callback)
-
-            continuationHandler?.invoke(continuation)
-
-            continuation.invokeOnCancellation {
-//                logger.info("Unregistering callback for event of type $clazz for $continuation")
-                @Suppress("UNCHECKED_CAST")
-                unregister(callback as SuspendCallback<AmongUsEvent>)
-            }
-        }
-    }
-
-    internal suspend inline fun <reified E : AmongUsEvent> awaitEvent(noinline continuationHandler: ((Continuation<E>) -> Unit)? = null) =
-        awaitEvent(E::class.java, continuationHandler)
-
-    suspend fun <E : AmongUsEvent> awaitEvent(clazz: Class<E>) = awaitEvent(clazz, null)
-    suspend inline fun <reified E : AmongUsEvent> awaitEvent() = awaitEvent(E::class.java)
-
+    /**
+     * Calls every handler registered for exactly the class of [event].
+     *
+     * Handlers are allowed to (un)register listeners, handlers registered during the call
+     * do not receive this event.
+     */
     fun call(event: AmongUsEvent) {
         if (gameStopped) throw IllegalStateException("Cannot call event $event because game is stopped")
         val eventListeners = listeners[event::class.java] ?: return
-        val suspendCallbacks = mutableListOf<SuspendCallback<AmongUsEvent>>()
-        for (handler in eventListeners) {
-            if (handler is SuspendCallback<AmongUsEvent>) {
-                suspendCallbacks.add(handler)
-                continue
-            }
+        if (eventListeners.isEmpty()) return
+        // iterate over a copy, handlers are allowed to (un)register listeners
+        for (handler in eventListeners.toList()) {
             try {
                 handler(event)
             } catch (e: Exception) {
                 logger.error("Error while calling event handler $handler with $event", e)
             }
         }
-        suspendCallbacks.forEach { it.invoke(event) }
-        eventListeners.removeAll(suspendCallbacks)
-
     }
 
     fun onGameStop() {
         gameStopped = true
-        listeners.values.forEach { listeners ->
-            listeners.forEach {
-                (it as? SuspendCallback<*>)?.stop()
-            }
-            listeners.clear()
-        }
         listeners.clear()
-        markAsDeleted.clear()
-    }
-
-    fun removeListener(continuation: Continuation<*>) {
-        if (gameStopped) return
-        listeners.values.forEach { listeners ->
-            listeners.removeIf {
-                (it as? SuspendCallback<*>)?.continuation == continuation
-            }
-        }
-    }
-
-    private inner class SuspendCallback<E : AmongUsEvent>(val continuation: Continuation<E>) : (E) -> Unit {
-        override fun invoke(event: E) {
-//            logger.info("Resumed $continuation with $event", Throwable("Just for the stacktrace"))
-            continuation.resume(event)
-        }
-
-        fun stop() {
-            continuation.resumeWithException(CancellationException("Game stopped"))
-        }
     }
 
     companion object {
