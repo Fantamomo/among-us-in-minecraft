@@ -192,11 +192,11 @@ class AdvancementsInventory(
     private fun buildAdvancementItem(
         advancement: Advancement<*, *>,
         assigned: AssignedAdvancement<*, *>,
-        locale: Locale
+        locale: Locale,
     ): ItemStack {
         val isCompleted = assigned.isCompleted
         val isHidden = advancement.isSecret && !isCompleted
-        val item = (if (isHidden) ItemType.GRAY_DYE else advancement.icon).createItemStack()
+        val item = if (isHidden) ItemType.GRAY_DYE.createItemStack() else advancement.createItemStack(player)
 
         val nameColor = if (isCompleted) NamedTextColor.GOLD else NamedTextColor.WHITE
         val name = if (isHidden) Component.translatable("advancement.ui.secret.name") else advancement.name

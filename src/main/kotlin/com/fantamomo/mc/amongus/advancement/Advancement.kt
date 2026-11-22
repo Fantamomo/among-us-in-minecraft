@@ -6,6 +6,8 @@ import com.fantamomo.mc.amongus.advancement.single.*
 import com.fantamomo.mc.amongus.player.HumanAmongUsPlayer
 import kotlinx.serialization.json.JsonElement
 import net.kyori.adventure.text.Component
+import org.bukkit.entity.Player
+import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.ItemType
 import java.util.*
 
@@ -62,6 +64,18 @@ interface Advancement<A : Advancement<A, AA>, AA : AssignedAdvancement<A, AA>> {
     @Suppress("UnstableApiUsage")
     val icon: ItemType
         get() = ItemType.BOOK
+
+    /**
+     * The [AdvancementsInventory] calls this method to create the item stack representing this advancement in the inventory GUI.
+     *
+     * The Advancement can override this method to customize the item stack.
+     * It should still return a valid [ItemType] when [icon] is called.
+     *
+     * The item stack should be always created, never cached. The [AdvancementsInventory] may modify metadata of this item stack.
+     *
+     * This method will not be called if the advancement [isSecret] and not completed.
+     */
+    fun createItemStack(viewer: Player): ItemStack = icon.createItemStack()
 
     fun new(player: UUID): AA
 
