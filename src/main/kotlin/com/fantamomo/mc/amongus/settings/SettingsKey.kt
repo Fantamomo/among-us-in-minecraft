@@ -27,7 +27,8 @@ data class SettingsKey<T : Any, S : SettingsType<T>>(
      * If [com.fantamomo.mc.amongus.data.AmongUsDebug.DebugValues.SET_SETTING_VALUES_FOR_DEBUG] is set,
      * the value in this property will be used instead of [defaultValue] if it's not `null`.
      */
-    internal val defaultValueOnDebug: T? = null
+    internal val defaultValueOnDebug: T? = null,
+    val useCustomName: Boolean = false
 ) {
     val effectiveDefaultValue: T
         get() = defaultValueOnDebug?.takeIf { AmongUsDebug.DebugValues.SET_SETTING_VALUES_FOR_DEBUG.isEnabled() } ?: defaultValue
@@ -108,6 +109,12 @@ data class SettingsKey<T : Any, S : SettingsType<T>>(
             val MORPH_DURATION = key("morphling.morph.duration", DurationSettingsType.min(5.seconds), 15.seconds)
         }
 
+        object WITCH : SettingsGroup("roles.witch", ItemType.POTION, parent = ROLES, useCustomName = true) {
+            val POISON_DURATION = key("witch.poison.duration", DurationSettingsType.min(5.seconds), 30.seconds, defaultValueOnDebug = 10.seconds)
+            val POISON_COOLDOWN = key("witch.poison.cooldown", DurationSettingsType.min(10.seconds), 45.seconds, defaultValueOnDebug = 15.seconds)
+            val POISON_DISTANCE = key("witch.poison.distance", EnumSettingsType.create<DistanceEnum>(), DistanceEnum.NORMAL)
+        }
+
         object GHOST : SettingsGroup("roles.ghost", ItemType.PHANTOM_MEMBRANE, parent = ROLES) {
             val FORM_COOLDOWN = key("ghost.form.cooldown", DurationSettingsType.min(1.seconds), 30.seconds, defaultValueOnDebug = 1.seconds)
             val FORM_DURATION = key("ghost.form.duration", DurationSettingsType.min(1.seconds), 15.seconds)
@@ -139,7 +146,7 @@ data class SettingsKey<T : Any, S : SettingsType<T>>(
 
         init {
             // force init all sub objects
-            ROLE_CHANCES; MINER; MORPHLING; GHOST; CANNIBAL; ARSONIST; REVEAL_TEAM; CAMOUFLAGE
+            ROLE_CHANCES; MINER; MORPHLING; WITCH; GHOST; CANNIBAL; ARSONIST; REVEAL_TEAM; CAMOUFLAGE
         }
     }
 

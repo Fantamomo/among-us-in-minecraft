@@ -52,4 +52,21 @@ sealed interface DeadReason {
             }
         }
     }
+
+    /** If the player is poisoned by a witch */
+    data class Poisoned(val witch: AmongUsPlayer) : DeadReason {
+        override val name = textComponent {
+            translatable("dead.reason.poisend") {
+                args {
+                    component(
+                        "witch",
+                        Component.text(
+                            witch.name,
+                            witch.role.definition.team.textColor
+                        )
+                    )
+                }
+            }
+        }
+    }
 }

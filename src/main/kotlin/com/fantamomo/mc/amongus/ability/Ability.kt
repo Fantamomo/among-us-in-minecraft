@@ -20,6 +20,7 @@ interface Ability<A : Ability<A, S>, S : AssignedAbility<A, S>> {
             GhostFormAbility,
             KillAbility,
             MorphAbility,
+            PoisonAbility,
             RemoteCameraAbility,
             ReportAbility,
             RevealTeamAbility,

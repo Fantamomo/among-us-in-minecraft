@@ -186,14 +186,22 @@ class SettingsInventory(
         val value = settings[key]
         val item = key.type.itemRepresentation(value)
 
-        item.setData(
-            DataComponentTypes.ITEM_NAME,
-            textComponent(owner.locale) {
-                append(key.settingsDisplayName)
-                text(": ", NamedTextColor.GRAY)
-                append(key.type.componentRepresentation(value))
-            }
-        )
+        val itemName = textComponent(owner.locale) {
+            append(key.settingsDisplayName)
+            text(": ", NamedTextColor.GRAY)
+            append(key.type.componentRepresentation(value))
+        }
+        if (keyRaw.useCustomName) {
+            item.setData(
+                DataComponentTypes.CUSTOM_NAME,
+                itemName.decoration(TextDecoration.ITALIC, false)
+            )
+        } else {
+            item.setData(
+                DataComponentTypes.ITEM_NAME,
+                itemName
+            )
+        }
 
         val lore = item.getData(DataComponentTypes.LORE)?.lines()?.toMutableList() ?: mutableListOf()
         val hadLore = lore.isNotEmpty()

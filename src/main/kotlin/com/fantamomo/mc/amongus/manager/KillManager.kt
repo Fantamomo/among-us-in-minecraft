@@ -9,6 +9,7 @@ import com.fantamomo.mc.amongus.player.*
 import com.fantamomo.mc.amongus.player.info.DeadReason
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.role.crewmates.TheDamnedRole
+import com.fantamomo.mc.amongus.role.imposters.WitchRole
 import com.fantamomo.mc.amongus.role.neutral.CannibalRole.AssignedCannibalRole
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.util.log.elements.CustomAbilityActionElements
@@ -129,11 +130,25 @@ class KillManager(val game: Game) {
         return false
     }
 
-    fun canKillAsImposter(sheriff: AmongUsPlayer): Boolean {
-        val loc = sheriff.location
+    fun canKillAsImposter(imposter: AmongUsPlayer): Boolean {
+        val loc = imposter.location
         val distance = game.settings[SettingsKey.KILL.KILL_DISTANCE].distance
         for (player in game.players) {
-            if (player === sheriff) continue
+            if (player === imposter) continue
+            if (!player.isAlive()) continue
+            if (game.ventManager.isVented(player)) continue
+            if (player.role.definition.team == Team.IMPOSTERS) continue
+            val location = player.location
+            if (loc.distanceSquared(location) < distance * distance) return true
+        }
+        return false
+    }
+
+    fun canPoisonAsWitch(witch: AmongUsPlayer): Boolean {
+        val loc = witch.location
+        val distance = game.settings[SettingsKey.ROLES.WITCH.POISON_DISTANCE].distance
+        for (player in game.players) {
+            if (player === witch) continue
             if (!player.isAlive()) continue
             if (game.ventManager.isVented(player)) continue
             if (player.role.definition.team == Team.IMPOSTERS) continue
@@ -160,6 +175,91 @@ class KillManager(val game: Game) {
             }
         }
         if (nearest != null) killByImposter(imposter, nearest)
+    }
+
+    fun poisonNearestAsWitch(witch: AmongUsPlayer) {
+        val witchRole = witch.role as? WitchRole.AssignedWitchRole ?: throw IllegalArgumentException("Player ${witch.name} is not a witch")
+        val loc = witch.location
+        var nearest: AmongUsPlayer? = null
+        var nearestDistance = Double.MAX_VALUE
+        val distance = game.settings[SettingsKey.ROLES.WITCH.POISON_DISTANCE].distance
+        for (player in game.players) {
+            if (!player.isAlive()) continue
+            if (game.ventManager.isVented(player)) continue
+            if (player.role.definition.team == Team.IMPOSTERS) continue
+            val location = player.location
+            val distanceSquared = loc.distanceSquared(location)
+            if (distanceSquared < nearestDistance && distanceSquared < distance * distance) {
+                nearest = player
+                nearestDistance = distanceSquared
+            }
+        }
+        if (nearest != null) witchRole.setTarget(nearest)
+    }
+
+    fun killAsWitch(witch: AmongUsPlayer) {
+        val witchRole = witch.role as? WitchRole.AssignedWitchRole ?: throw IllegalArgumentException("Player ${witch.name} is not a witch")
+        val target = witchRole.currentTarget ?: throw IllegalArgumentException("Witch ${witch.name} has no target")
+        if (target.isInCams()) {
+            game.cameraManager.leaveCams(target)
+        }
+        target.audience.run {
+            sendTitlePart(
+                TitlePart.TITLE,
+                textComponent {
+                    translatable("dead.by.witch")
+                }
+            )
+            sendTitlePart(
+                TitlePart.SUBTITLE,
+                textComponent {
+                    translatable("dead.by.witch.subtitle") {
+                        args {
+                            component("player") {
+                                objectComponent {
+                                    playerHead {
+                                        id(witch.uuid)
+                                    }
+                                }
+                                space()
+                                text(witch.name)
+                            }
+                        }
+                    }
+                }
+            )
+        }
+        val location = target.location
+
+        if (game.sabotageManager.isCurrentlySabotage()) {
+            witch.humanOrNull?.statistics?.killsAsImposterWhileSabotage?.increment()
+            target.humanOrNull?.statistics?.killedByImposterWhileSabotage?.increment()
+        }
+
+        updateStatistics(target, witch)
+
+//        witch.internalEntity?.also { p ->
+//            val clone = location.clone()
+//            clone.rotation = p.location.rotation
+//            p.teleport(clone)
+//            p.addPotionEffect(slownessEffect)
+//        }
+
+        showCorpse(target, location)
+        target.humanOrNull?.player?.also { p ->
+            p.addPotionEffect(blindnessEffect)
+            p.closeInventory()
+            p.sendHurtAnimation(0f)
+        }
+        markAsDead(target, DeadReason.Poisoned(witch))
+//        if (target.role.definition == TheDamnedRole) {
+//            game.meetingManager.callMeeting(
+//                witch,
+//                MeetingManager.MeetingReason.BODY,
+//                body = target
+//            )
+//        }
+        game.checkWin()
     }
 
     fun kill(target: AmongUsPlayer, reason: DeadReason, corpse: Boolean = false) {
@@ -210,6 +310,8 @@ class KillManager(val game: Game) {
         mannequin.isInvisible = true
         if (reason is DeadReason.Murdered) {
             reason.murderer.internal.lastKillTime = Clock.System.now()
+        } else if (reason is DeadReason.Poisoned) {
+            reason.witch.internal.lastKillTime = Clock.System.now()
         }
         showGhosts(target)
         val scoreboard = game.scoreboardManager.get(target)

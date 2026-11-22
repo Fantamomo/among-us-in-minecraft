@@ -45,7 +45,7 @@ object PlayerActionElements {
     class PlayerDeath(val player: UUID, val reason: DeadReason) : IdActionElement("player_death") {
         override fun toJson(): JsonElement = buildJsonObject {
             put("player", player.toString())
-            if (reason !is DeadReason.Murdered) {
+            if (reason !is DeadReason.Murdered && reason !is DeadReason.Poisoned) {
                 val name = when (reason) {
                     DeadReason.Command -> "command"
                     DeadReason.Disconnected -> "disconnected"
@@ -54,10 +54,15 @@ object PlayerActionElements {
                     DeadReason.Unknown -> "unknown"
                 }
                 put("reason", name)
-            } else {
+            } else if (reason is DeadReason.Murdered) {
                 putJsonObject("reason") {
                     put("type", "murdered")
                     put("killer", reason.murderer.uuid.toString())
+                }
+            } else if (reason is DeadReason.Poisoned) {
+                putJsonObject("reason") {
+                    put("type", "poisoned")
+                    put("killer", reason.witch.uuid.toString())
                 }
             }
         }

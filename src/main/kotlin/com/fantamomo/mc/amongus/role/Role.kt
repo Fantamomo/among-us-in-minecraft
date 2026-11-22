@@ -50,7 +50,8 @@ interface Role<R : Role<R, A>, A : AssignedRole<R, A>> {
             MinerRole,
             MorphlingRole,
             PhantomRole,
-            CamouflagerRole
+            CamouflagerRole,
+            WitchRole
         )
         val neutrals: Set<Role<*, *>> = createSet(
             JesterRole,

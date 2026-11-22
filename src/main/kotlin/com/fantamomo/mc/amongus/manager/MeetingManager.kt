@@ -18,6 +18,7 @@ import com.fantamomo.mc.amongus.player.bot.mangement.BotVoteTargetController
 import com.fantamomo.mc.amongus.player.info.DeadReason
 import com.fantamomo.mc.amongus.role.Team
 import com.fantamomo.mc.amongus.role.crewmates.MayorRole
+import com.fantamomo.mc.amongus.role.imposters.WitchRole
 import com.fantamomo.mc.amongus.settings.SettingsKey
 import com.fantamomo.mc.amongus.util.Cooldown
 import com.fantamomo.mc.amongus.util.internal.NMS
@@ -205,6 +206,14 @@ class MeetingManager(private val game: Game) {
         val number: Int = currentMeetingNumber++
 
         init {
+            for (player in game.players) {
+                val witch = player.role as? WitchRole.AssignedWitchRole ?: continue
+                val currentTarget = witch.currentTarget ?: continue
+                if (currentTarget.isAlive()) {
+                    game.killManager.killAsWitch(player)
+                }
+            }
+
             registerRecipes()
             startMeeting()
         }
