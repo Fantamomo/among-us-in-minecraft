@@ -19,6 +19,7 @@ interface Modification<M : Modification<M, A>, A : AssignedModification<M, A>> {
 
     companion object {
         val modifications: List<Modification<*, *>> = listOf(
+            GhostlyStepsModification,
             TorchModification,
             LaggyModification,
             SmallModification,

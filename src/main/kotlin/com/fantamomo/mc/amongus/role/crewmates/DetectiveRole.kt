@@ -2,6 +2,7 @@ package com.fantamomo.mc.amongus.role.crewmates
 
 import com.destroystokyo.paper.ParticleBuilder
 import com.fantamomo.mc.amongus.ability.Ability
+import com.fantamomo.mc.amongus.modification.modifications.GhostlyStepsModification
 import com.fantamomo.mc.amongus.player.*
 import com.fantamomo.mc.amongus.role.AssignedRole
 import com.fantamomo.mc.amongus.role.Role
@@ -62,7 +63,14 @@ object DetectiveRole : Role<DetectiveRole, DetectiveRole.AssignedDetectiveRole> 
                     .getEntity()
                     ?.location
 
-                if (entityLoc != null && other.isAlive() && !other.isVented()) {
+                if (entityLoc != null &&
+                    other.isAlive() &&
+                    !other.isVented() &&
+                    // we cannot check this in onGameStart and don't give the player a modification because
+                    // when onGameStart is called, the player does not have a modification yet
+                    // so we do it every time here
+                    other.modification?.definition !== GhostlyStepsModification
+                ) {
                     trail.addLast(
                         TrailPoint(
                             entityLoc.clone(),
@@ -70,7 +78,7 @@ object DetectiveRole : Role<DetectiveRole, DetectiveRole.AssignedDetectiveRole> 
                             other.visibleColor
                         )
                     )
-                }
+                } else if (trail.isEmpty()) continue
 
                 while (trail.isNotEmpty() && trail.first().expireTick <= tickContext.ticks) {
                     trail.removeFirst()
